@@ -326,7 +326,7 @@ function ColorPickerPanel({state}: {state: AeeState}) {
       <button
         className="pointer-events-auto flex h-12 w-6 shrink-0 items-center justify-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-950 text-zinc-400 shadow-lg hover:text-violet-300"
         onClick={() => setColorPickerCollapsed(!picker.collapsed)}
-      ><ChevronIcon direction={collapsed ? 'right' : 'left'}/></button>
+      ><ChevronIcon direction={collapsed ? 'left' : 'right'}/></button>
       <div className={collapsed ? 'pointer-events-none' : 'pointer-events-auto'}>{cardEl}</div>
     </div>
   </div>;

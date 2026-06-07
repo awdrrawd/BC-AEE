@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import type {AeeState} from '../core/types';
 import {t} from '../core/lang';
 import {closeColorPicker, moveColorPicker, setColorPickerCollapsed, setColorPickerValue} from '../controllers/uiController';
@@ -63,12 +63,14 @@ export function ColorPicker({state}: {state: AeeState}) {
 function ColorPickerPanel({state}: {state: AeeState}) {
   const picker = state.colorPicker;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
   const [hsv, setHsv] = useState(() => hexToHsv(picker.hex));
   const [alpha, setAlpha] = useState(Math.round(picker.opacityPct / 100 * 255));
   const [rule, setRule] = useState('complementary');
   const [saved, setSaved] = useState(() => Array.from({length: 18}, (_, index) => ({h: (index * 20) % 360, s: 45, v: 80, a: 255})));
   const [selectedSaved, setSelectedSaved] = useState(0);
+  const [cardSize, setCardSize] = useState<{w: number; h: number} | null>(null);
 
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
   const alphaPct = Math.round(alpha / 255 * 100);
@@ -84,6 +86,21 @@ function ColorPickerPanel({state}: {state: AeeState}) {
     runtime.colorPickerAlpha = alpha;
     if (picker.open && (picker.hex !== hex || picker.opacityPct !== alphaPct)) setColorPickerValue(hex, alphaPct);
   }, [hex, alphaPct, alpha, picker.open, picker.hex, picker.opacityPct]);
+
+  // Measure the card's on-screen footprint so the collapse/expand toggle can be
+  // anchored relative to it even while the card is visually hidden (collapsed).
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width && r.height) setCardSize({w: r.width, h: r.height});
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [scale, picker.bcMode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,11 +188,14 @@ function ColorPickerPanel({state}: {state: AeeState}) {
     document.addEventListener('mouseup', onUp, true);
   };
 
-  return <div className="fixed z-[1000002]" style={{left, top}}>
-    <div className={`fixed inset-0 ${picker.bcMode ? 'hidden' : ''}`} onClick={() => closeColorPicker(false)}/>
-    <div className="inline-flex items-center">
-      <div className={picker.collapsed ? 'hidden' : 'block'} style={{zoom: scale}}>
-        <div className="flex w-[500px] flex-col gap-2 rounded-xl border border-zinc-700 bg-zinc-950 p-3 text-sm text-zinc-100 shadow-2xl">
+  const toggleW = 24;
+  const fw = cardSize?.w ?? 500 * scale;
+  const fh = cardSize?.h ?? 0;
+  const collapsed = picker.bcMode && picker.collapsed;
+
+  const cardEl = (
+    <div ref={cardRef} style={{zoom: scale}}>
+      <div className="flex w-125 flex-col gap-2 rounded-xl border border-zinc-700 bg-zinc-950 p-3 text-sm text-zinc-100 shadow-2xl">
           <div
             className="cursor-grab select-none text-[11px] font-bold uppercase tracking-[0.12em] text-violet-400 active:cursor-grabbing"
             onPointerDown={event => {
@@ -280,9 +300,34 @@ function ColorPickerPanel({state}: {state: AeeState}) {
             <button className="flex-1 rounded-lg border border-violet-500 bg-violet-600 px-3 py-2 text-sm font-bold text-white hover:bg-violet-500" onClick={() => closeColorPicker(true)}>{t('colorPickerConfirm')}</button>
             <button className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-bold text-zinc-400 hover:text-zinc-100" onClick={() => closeColorPicker(false)}>{t('colorPickerCancel')}</button>
           </div> : null}
-        </div>
       </div>
-      {picker.bcMode ? <button className="flex h-12 w-5 items-center justify-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-950 text-xs text-zinc-400 hover:text-violet-300" onClick={() => setColorPickerCollapsed(!picker.collapsed)}>{picker.collapsed ? '▶' : '◀'}</button> : null}
+    </div>
+  );
+
+  // Normal (non-BC) mode: free-floating, draggable card with a click-away backdrop.
+  if (!picker.bcMode) {
+    return <div className="fixed z-[1000002]" style={{left, top}}>
+      <div className="fixed inset-0" onClick={() => closeColorPicker(false)}/>
+      <div className="relative">{cardEl}</div>
+    </div>;
+  }
+
+  // BC mode: docked to the right edge of the screen. The toggle is a tab glued to the
+  // card's left edge; collapsing slides card + tab right together so the card tucks off
+  // the right edge and only the tab remains, flush against the screen border.
+  return <div
+    className="pointer-events-none fixed z-[1000002] overflow-hidden"
+    style={{top, right: 0, width: toggleW + fw, height: fh}}
+  >
+    <div
+      className="flex items-center"
+      style={{transform: collapsed ? `translateX(${fw}px)` : 'translateX(0)', transition: 'transform 0.35s ease'}}
+    >
+      <button
+        className="pointer-events-auto flex h-12 w-6 shrink-0 items-center justify-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-950 text-xs text-zinc-400 shadow-lg hover:text-violet-300"
+        onClick={() => setColorPickerCollapsed(!picker.collapsed)}
+      >{collapsed ? '▶' : '◀'}</button>
+      <div className={collapsed ? 'pointer-events-none' : 'pointer-events-auto'}>{cardEl}</div>
     </div>
   </div>;
 

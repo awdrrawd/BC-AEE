@@ -215,6 +215,7 @@ export interface CharControlState {
 }
 
 export interface ColorPickerState {
+  sessionId: number;
   open: boolean;
   bcMode: boolean;
   collapsed: boolean;

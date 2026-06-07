@@ -56,6 +56,11 @@ function hsvaString(h: number, s: number, v: number, a: number) {
 }
 
 export function ColorPicker({state}: {state: AeeState}) {
+  if (!state.colorPicker.open) return null;
+  return <ColorPickerPanel key={state.colorPicker.sessionId} state={state}/>;
+}
+
+function ColorPickerPanel({state}: {state: AeeState}) {
   const picker = state.colorPicker;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<{sx: number; sy: number; left: number; top: number} | null>(null);
@@ -64,12 +69,6 @@ export function ColorPicker({state}: {state: AeeState}) {
   const [rule, setRule] = useState('complementary');
   const [saved, setSaved] = useState(() => Array.from({length: 18}, (_, index) => ({h: (index * 20) % 360, s: 45, v: 80, a: 255})));
   const [selectedSaved, setSelectedSaved] = useState(0);
-
-  useEffect(() => {
-    if (!picker.open) return;
-    setHsv(hexToHsv(picker.hex));
-    setAlpha(Math.round(picker.opacityPct / 100 * 255));
-  }, [picker.open, picker.hex, picker.opacityPct]);
 
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
   const alphaPct = Math.round(alpha / 255 * 100);
@@ -134,8 +133,6 @@ export function ColorPicker({state}: {state: AeeState}) {
     [hsv.h, clamp(hsv.s + 12, 0, 100), clamp(hsv.v - 20, 0, 100)],
     [hsv.h, clamp(hsv.s + 22, 0, 100), clamp(hsv.v - 38, 0, 100)],
   ], [hsv]);
-
-  if (!picker.open) return null;
 
   const pickTrack = (event: React.MouseEvent, callback: (pct: number) => void) => {
     const el = event.currentTarget as HTMLElement;

@@ -33,6 +33,7 @@ let state: AeeState = {
   itemAssetName: null,
   itemGroupName: null,
   colorPicker: {
+    sessionId: 0,
     open: false,
     bcMode: false,
     collapsed: false,

@@ -74,6 +74,7 @@ export function openColorPicker(initialHex: string, onLiveChange: (hex: string) 
   runtime.colorPickerLiveChange = onLiveChange;
   runtime.colorPickerInitialHex = initialHex || '#FFFFFF';
   mutateState(draft => {
+    draft.colorPicker.sessionId += 1;
     draft.colorPicker.open = true;
     draft.colorPicker.bcMode = bcMode;
     draft.colorPicker.collapsed = false;
@@ -97,7 +98,13 @@ export function closeColorPicker(commit = true) {
 }
 
 export function setColorPickerValue(hex: string, opacityPct?: number) {
-  runtime.colorPickerAlpha = Math.round(((opacityPct ?? getState().colorPicker.opacityPct) / 100) * 255);
+  const state = getState();
+  const nextOpacityPct = opacityPct ?? state.colorPicker.opacityPct;
+  runtime.colorPickerAlpha = Math.round((nextOpacityPct / 100) * 255);
+  if (state.colorPicker.hex === hex && state.colorPicker.opacityPct === nextOpacityPct) {
+    runtime.colorPickerLiveChange?.(hex);
+    return;
+  }
   mutateState(draft => {
     draft.colorPicker.hex = hex;
     if (opacityPct !== undefined) draft.colorPicker.opacityPct = opacityPct;

@@ -149,13 +149,6 @@ Offset and opacity features do not depend on LSCG and are more stable.
 
 ---
 
-## 🔧 相依 · Dependencies
-
-- [bcModSdk](https://github.com/Jomshir98/bondage-club-mod-sdk) — 自動載入，無需手動安裝。Auto-loaded, no manual install needed.
-- LSCG（可選 · Optional）— 安裝後部分功能可與其協同運作。Some features integrate with LSCG if installed.
-
----
-
 ## 📄 授權 · License
 
 MIT License © Likolisu

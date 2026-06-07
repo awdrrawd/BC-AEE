@@ -13,7 +13,7 @@ const ROT_CY_PCT = 0.89;
 const ROT_RADIUS = 60;
 
 export function OpacityOverlay({state}: {state: AeeState}) {
-  const drag = useRef<{sx: number; sy: number; left: number; top: number} | null>(null);
+  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
   if (!state.opacityOverlay.open || !state.canvasRect || !state.item || state.selectedLayer === null) return null;
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const value = Math.round((layerOverride.Opacity ?? 1) * 100);
@@ -27,13 +27,24 @@ export function OpacityOverlay({state}: {state: AeeState}) {
         className="flex h-4 w-full cursor-grab select-none items-center justify-center text-[11px] tracking-[3px] text-white/25 active:cursor-grabbing"
         onPointerDown={event => {
           event.preventDefault();
-          drag.current = {sx: event.clientX, sy: event.clientY, left, top};
+          event.currentTarget.setPointerCapture(event.pointerId);
+          drag.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top};
         }}
         onPointerMove={event => {
-          if (!drag.current) return;
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
           moveOpacityOverlay(drag.current.left + event.clientX - drag.current.sx, drag.current.top + event.clientY - drag.current.sy);
         }}
-        onPointerUp={() => { drag.current = null; }}
+        onPointerUp={event => {
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          drag.current = null;
+        }}
+        onPointerCancel={event => {
+          if (drag.current?.pointerId === event.pointerId) drag.current = null;
+        }}
+        onLostPointerCapture={event => {
+          if (drag.current?.pointerId === event.pointerId) drag.current = null;
+        }}
       >. . .</div>
       <div className="text-[11px] font-semibold tracking-wide text-white/55">{t('opacity')}</div>
       <div className="flex items-center gap-1.5">

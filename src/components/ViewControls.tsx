@@ -62,7 +62,7 @@ export function ViewControls({state}: {state: AeeState}) {
 }
 
 function CharControl({state}: {state: AeeState}) {
-  const drag = useRef<{sx: number; sy: number; left: number; top: number; moved: boolean} | null>(null);
+  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number; moved: boolean} | null>(null);
   const left = state.charControl.left ?? state.canvasRect!.width * 0.01;
   const top = state.charControl.top ?? state.canvasRect!.height * 0.87;
   const expandedStyle = state.charControl.expandUp
@@ -86,18 +86,28 @@ function CharControl({state}: {state: AeeState}) {
         title={t('viewControl')}
         onPointerDown={event => {
           event.preventDefault();
-          drag.current = {sx: event.clientX, sy: event.clientY, left, top, moved: false};
+          event.currentTarget.setPointerCapture(event.pointerId);
+          drag.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top, moved: false};
         }}
         onPointerMove={event => {
-          if (!drag.current) return;
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
           const dx = event.clientX - drag.current.sx;
           const dy = event.clientY - drag.current.sy;
           if (Math.abs(dx) > 3 || Math.abs(dy) > 3) drag.current.moved = true;
           if (drag.current.moved) moveCharControl(drag.current.left + dx, drag.current.top + dy);
         }}
-        onPointerUp={() => {
+        onPointerUp={event => {
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
           if (drag.current && !drag.current.moved) toggleCharControlOpen();
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
           drag.current = null;
+        }}
+        onPointerCancel={event => {
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+          drag.current = null;
+        }}
+        onLostPointerCapture={event => {
+          if (drag.current?.pointerId === event.pointerId) drag.current = null;
         }}
       >
         <img className="pointer-events-none block h-full w-full" src={CTRL_ICON_MAIN} alt="AEE"/>
@@ -139,7 +149,7 @@ function subButton(active: boolean, label: string, icon: ReactNode, onClick: () 
 }
 
 function OffsetPanel({state}: {state: AeeState}) {
-  const drag = useRef<{sx: number; sy: number; left: number; top: number} | null>(null);
+  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
   if (!state.offset.open || !state.canvasRect) return null;
   const left = state.offset.left ?? state.canvasRect.left + state.canvasRect.width * 0.4;
   const top = state.offset.top ?? state.canvasRect.top + state.canvasRect.height * 0.3;
@@ -170,13 +180,25 @@ function OffsetPanel({state}: {state: AeeState}) {
       className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {
         if ((event.target as HTMLElement).closest('button')) return;
-        drag.current = {sx: event.clientX, sy: event.clientY, left, top};
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        drag.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top};
       }}
       onPointerMove={event => {
-        if (!drag.current) return;
+        if (!drag.current || drag.current.pointerId !== event.pointerId) return;
         moveOffsetPanel(drag.current.left + event.clientX - drag.current.sx, drag.current.top + event.clientY - drag.current.sy);
       }}
-      onPointerUp={() => { drag.current = null; }}
+      onPointerUp={event => {
+        if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        drag.current = null;
+      }}
+      onPointerCancel={event => {
+        if (drag.current?.pointerId === event.pointerId) drag.current = null;
+      }}
+      onLostPointerCapture={event => {
+        if (drag.current?.pointerId === event.pointerId) drag.current = null;
+      }}
     >
       <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">⟳ {isZh() ? '位移控制' : 'Offset'}</span>
       <div className="flex gap-1">
@@ -215,7 +237,7 @@ function OffsetSlider({label, min, max, step, value, display, onChange, onReset}
 }
 
 function BgSettingsPanel({state}: {state: AeeState}) {
-  const drag = useRef<{sx: number; sy: number; left: number; top: number} | null>(null);
+  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
   const urlRef = useRef<HTMLInputElement>(null);
   if (!state.bg.settingsOpen) return null;
   const fallback = defaultBgSettingsPosition();
@@ -228,13 +250,25 @@ function BgSettingsPanel({state}: {state: AeeState}) {
         className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-3 py-2 active:cursor-grabbing"
         onPointerDown={event => {
           if ((event.target as HTMLElement).closest('button')) return;
-          drag.current = {sx: event.clientX, sy: event.clientY, left, top};
+          event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          drag.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top};
         }}
         onPointerMove={event => {
-          if (!drag.current) return;
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
           moveBgSettings(drag.current.left + event.clientX - drag.current.sx, drag.current.top + event.clientY - drag.current.sy);
         }}
-        onPointerUp={() => { drag.current = null; }}
+        onPointerUp={event => {
+          if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          drag.current = null;
+        }}
+        onPointerCancel={event => {
+          if (drag.current?.pointerId === event.pointerId) drag.current = null;
+        }}
+        onLostPointerCapture={event => {
+          if (drag.current?.pointerId === event.pointerId) drag.current = null;
+        }}
       >
         <span className="text-[11px] font-bold uppercase tracking-widest text-violet-400">BG Settings</span>
         <button className={panelButton} onClick={() => openBgSettings(false)}>x</button>
@@ -295,7 +329,7 @@ function BgSection({title, enabled, onToggle, children}: {title: string; enabled
 }
 
 function PoseWindow({state}: {state: AeeState}) {
-  const drag = useRef<{sx: number; sy: number; left: number; top: number} | null>(null);
+  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
   if (!state.pose.open || !state.canvasRect) return null;
   const left = state.pose.left ?? Math.round(state.canvasRect.left + state.canvasRect.width * 0.36);
   const top = state.pose.top ?? Math.round(state.canvasRect.top + state.canvasRect.height * 0.08);
@@ -304,13 +338,25 @@ function PoseWindow({state}: {state: AeeState}) {
       className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {
         if ((event.target as HTMLElement).closest('button')) return;
-        drag.current = {sx: event.clientX, sy: event.clientY, left, top};
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        drag.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top};
       }}
       onPointerMove={event => {
-        if (!drag.current) return;
+        if (!drag.current || drag.current.pointerId !== event.pointerId) return;
         movePoseWindow(drag.current.left + event.clientX - drag.current.sx, drag.current.top + event.clientY - drag.current.sy);
       }}
-      onPointerUp={() => { drag.current = null; }}
+      onPointerUp={event => {
+        if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        drag.current = null;
+      }}
+      onPointerCancel={event => {
+        if (drag.current?.pointerId === event.pointerId) drag.current = null;
+      }}
+      onLostPointerCapture={event => {
+        if (drag.current?.pointerId === event.pointerId) drag.current = null;
+      }}
     >
       <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">POSE</span>
       <button className={panelButton} onClick={() => togglePoseWindow(false)}>x</button>

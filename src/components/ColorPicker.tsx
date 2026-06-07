@@ -63,7 +63,7 @@ export function ColorPicker({state}: {state: AeeState}) {
 function ColorPickerPanel({state}: {state: AeeState}) {
   const picker = state.colorPicker;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dragRef = useRef<{sx: number; sy: number; left: number; top: number} | null>(null);
+  const dragRef = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
   const [hsv, setHsv] = useState(() => hexToHsv(picker.hex));
   const [alpha, setAlpha] = useState(Math.round(picker.opacityPct / 100 * 255));
   const [rule, setRule] = useState('complementary');
@@ -180,13 +180,24 @@ function ColorPickerPanel({state}: {state: AeeState}) {
             className="cursor-grab select-none text-[11px] font-bold uppercase tracking-[0.12em] text-violet-400 active:cursor-grabbing"
             onPointerDown={event => {
               event.preventDefault();
-              dragRef.current = {sx: event.clientX, sy: event.clientY, left, top};
+              event.currentTarget.setPointerCapture(event.pointerId);
+              dragRef.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top};
             }}
             onPointerMove={event => {
-              if (!dragRef.current) return;
+              if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
               moveColorPicker(dragRef.current.left + event.clientX - dragRef.current.sx, dragRef.current.top + event.clientY - dragRef.current.sy);
             }}
-            onPointerUp={() => { dragRef.current = null; }}
+            onPointerUp={event => {
+              if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+              dragRef.current = null;
+            }}
+            onPointerCancel={event => {
+              if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+            }}
+            onLostPointerCapture={event => {
+              if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+            }}
           >- {t('colorPickerTitle').toUpperCase()} -</div>
           <div className="flex items-start gap-2">
             <div className="flex shrink-0 flex-col gap-1.5 pt-1">

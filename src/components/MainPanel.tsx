@@ -110,8 +110,8 @@ function ToggleBar({state, left}: {state: AeeState; left: number}) {
     <button className={`${iconButton} ${active ? activeIconButton : ''}`} title={title} onClick={onClick}>{icon}</button>;
 
   return <div
-    className="pointer-events-auto absolute top-1/2 z-[1000000] flex -translate-y-1/2 flex-col items-center gap-1 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-950 px-0.5 py-1"
-    style={{left}}
+    className="pointer-events-auto absolute z-1000000 flex flex-col items-center gap-1 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-950 px-0.5 py-1"
+    style={{left, top: '50%', transform: 'translateY(-50%)'}}
   >
     {state.collapsed ? <div className="flex flex-col items-center gap-1">
       {makeIcon(state.partsOpen, t('secPart'), <LayersIcon/>, () => togglePartsOpen())}

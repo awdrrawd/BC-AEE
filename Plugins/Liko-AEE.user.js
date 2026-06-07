@@ -2453,8 +2453,8 @@ hr{border:none;border-top:1px solid var(--color-border-tertiary)}
     const _savedCtrlPos = getAeeSetting('charCtrlPos', null);
     if (_savedCtrlPos) _charCtrlCustomPos = _savedCtrlPos;
     const _CTRL_BTN_SIZE   = 52;
-    const _CTRL_ICON_MAIN  = 'https://raw.githubusercontent.com/awdrrawd/liko-tool-Image-storage/refs/heads/main/Images/AEE_ICON.png';
-    const _CTRL_ICON_FRAME = 'https://raw.githubusercontent.com/awdrrawd/liko-tool-Image-storage/refs/heads/main/Images/AEE_ICON2.png';
+    const _CTRL_ICON_MAIN  = 'https://raw.githubusercontent.com/awdrrawd/BC-AEE/refs/heads/main/Images/AEE_ICON.png';
+    const _CTRL_ICON_FRAME = 'https://raw.githubusercontent.com/awdrrawd/BC-AEE/refs/heads/main/Images/AEE_ICON2.png';
 
     // ── 背景系統狀態 ──
     let _bgEnabled       = getAeeSetting('bgEnabled',      false);

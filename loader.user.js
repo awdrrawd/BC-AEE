@@ -15,4 +15,4 @@
 // @run-at document-end
 // ==/UserScript==
 
-import(`https://awdrrawd.github.io/BC-AEE/assets/main.js`);
+import(`https://awdrrawd.github.io/BC-AEE/assets/main.js?v=` + new Date().getTime());

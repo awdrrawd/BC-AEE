@@ -43,7 +43,7 @@ import {
   setGridOpacity,
   setGridPx,
 } from '../controllers/backgroundController';
-import {BgIcon, CloseupIcon, FullBodyIcon, HideIcon, OffsetIcon, PoseIcon} from './icons/Icons';
+import {BgIcon, ChevronIcon, CloseupIcon, FullBodyIcon, HideIcon, OffsetIcon, PoseIcon} from './icons/Icons';
 
 const ctrlButtonBase = 'relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-lg border-0 bg-transparent p-0 pointer-events-auto';
 const ctrlLabel = 'pointer-events-none absolute inset-x-0 bottom-0.5 text-center text-[8px] tracking-wide text-white [text-shadow:0_1px_2px_rgba(0,0,0,.9)]';
@@ -132,8 +132,12 @@ function CharControl({state}: {state: AeeState}) {
           </div>
         </div>
         <div className="flex gap-0.5 pointer-events-auto">
-          <button className="flex h-6 w-6 items-center justify-center rounded border border-zinc-700 bg-zinc-950 text-xs text-zinc-400 hover:text-violet-300" onClick={toggleExpandDirection}>{state.charControl.expandUp ? '▲' : '▼'}</button>
-          <button className="flex h-6 w-6 items-center justify-center rounded border border-zinc-700 bg-zinc-950 text-xs text-zinc-400 hover:text-violet-300" onClick={toggleSubDirection}>{state.charControl.subLeft ? '◀' : '▶'}</button>
+          <button className="flex h-6 w-6 items-center justify-center rounded border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-violet-300" onClick={toggleExpandDirection}>
+            <ChevronIcon direction={state.charControl.expandUp ? 'up' : 'down'} size={12}/>
+          </button>
+          <button className="flex h-6 w-6 items-center justify-center rounded border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-violet-300" onClick={toggleSubDirection}>
+            <ChevronIcon direction={state.charControl.subLeft ? 'left' : 'right'} size={12}/>
+          </button>
         </div>
       </div>
     </div>
@@ -202,7 +206,9 @@ function OffsetPanel({state}: {state: AeeState}) {
     >
       <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">⟳ {isZh() ? '位移控制' : 'Offset'}</span>
       <div className="flex gap-1">
-        <button className={panelButton} onClick={toggleOffsetCollapsed}>{state.offset.collapsed ? '▲' : '▼'}</button>
+        <button className={panelButton} onClick={toggleOffsetCollapsed}>
+          <ChevronIcon direction={state.offset.collapsed ? 'up' : 'down'} size={12}/>
+        </button>
         <button className={panelButton} onClick={() => resetOffset('all')}>↺</button>
         <button className={panelButton} onClick={() => toggleOffsetPanel(false)}>x</button>
       </div>

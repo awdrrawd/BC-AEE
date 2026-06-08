@@ -10,8 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.7.0-rc.0",
-    "@nyariv/sandboxjs": "^0.8.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

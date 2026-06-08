@@ -36,6 +36,7 @@ import {
 } from '../controllers/uiController';
 import {LayerList} from './LayerRows';
 import {
+  ChevronIcon,
   ColorIcon,
   LayersIcon,
   LinkIcon,
@@ -123,7 +124,9 @@ function ToggleBar({state, left}: {state: AeeState; left: number}) {
       {makeIcon(state.opacityOverlay.open, t('opacity'), <OpacityIcon/>, () => state.opacityOverlay.open ? closeOpacityOverlay() : openOpacityOverlay())}
       {makeIcon(false, 'Reset transforms', <ResetIcon/>, resetSelectedTransforms)}
     </div> : null}
-    <button className="flex h-7 w-5 items-center justify-center text-xs text-zinc-400 hover:text-violet-300" onClick={toggleCollapse}>{state.collapsed ? '▶' : '◀'}</button>
+    <button className="flex h-7 w-5 items-center justify-center text-zinc-400 hover:text-violet-300" onClick={toggleCollapse}>
+      <ChevronIcon direction={state.collapsed ? 'right' : 'left'} size={12}/>
+    </button>
   </div>;
 }
 

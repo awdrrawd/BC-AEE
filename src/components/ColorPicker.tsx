@@ -3,6 +3,7 @@ import type {AeeState} from '../core/types';
 import {t} from '../core/lang';
 import {closeColorPicker, moveColorPicker, setColorPickerCollapsed, setColorPickerValue} from '../controllers/uiController';
 import {runtime} from '../core/runtime';
+import {ChevronIcon} from './icons/Icons';
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -348,12 +349,6 @@ function ColorPickerPanel({state}: {state: AeeState}) {
       }}/>
     </div>;
   }
-}
-
-function ChevronIcon({direction}: {direction: 'left' | 'right'}) {
-  return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points={direction === 'right' ? '9 6 15 12 9 18' : '15 6 9 12 15 18'}/>
-  </svg>;
 }
 
 function CopyIcon() {

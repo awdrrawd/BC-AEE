@@ -27,10 +27,12 @@ try {
 }
 */
 
+import {MOD_VERSION} from './core/version';
+
 const bcAeeModSdk = bcModSdk.registerMod({
   name: 'Liko - AEE',
   fullName: 'Liko - Appearance Editor',
-  version: '0.8.0',
+  version: MOD_VERSION,
   repository: 'https://github.com/awdrrawd/BC-AEE',
 }, { allowReplace: false })
 

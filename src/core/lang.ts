@@ -1,5 +1,3 @@
-export const MOD_VERSION = '0.8.0';
-
 export function isZh() {
   if (typeof TranslationLanguage === 'string' && TranslationLanguage) {
     const language = TranslationLanguage.toLowerCase();

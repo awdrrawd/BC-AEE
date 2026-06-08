@@ -1,10 +1,13 @@
 {
   "name": "bc-aee",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-version.mjs",
     "dev": "tsc -b && (vite build --watch & vite preview --port 5174)",
+    "sync-version": "node scripts/sync-version.mjs",
+    "prebuild": "node scripts/sync-version.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

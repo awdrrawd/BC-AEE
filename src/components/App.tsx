@@ -1,9 +1,11 @@
 import {useAeeStore} from '../core/store';
 import {MainPanel} from './MainPanel';
 import {ColorPicker} from './ColorPicker';
-import {OpacityOverlay, RotationOverlay, TransformOverlay} from './Overlays';
 import {ViewControls} from './ViewControls';
 import {ImportDialog} from './ImportDialog';
+import {OpacityOverlay} from './overlays/OpacityOverlay';
+import {RotationOverlay} from './overlays/RotationOverlay';
+import {TransformOverlay} from './overlays/TransformOverlay';
 
 export function App() {
   const state = useAeeStore();

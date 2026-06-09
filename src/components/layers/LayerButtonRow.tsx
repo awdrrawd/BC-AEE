@@ -1,8 +1,6 @@
-import type {LayerId} from '../core/types';
-import {getLayerColor, getLayerDisplayName} from '../core/bc';
-import {selectLayer, startHoverHighlight, stopHoverHighlight} from '../controllers/uiController';
-import {getState} from '../core/store';
-import {t} from '../core/lang';
+import type {LayerId} from '../../core/types';
+import {selectLayer, startHoverHighlight, stopHoverHighlight} from '../../controllers/uiController';
+import {getState} from '../../core/store';
 
 export function LayerButtonRow({id, name, color, selected}: {id: LayerId; name: string; color: string | null; selected: boolean}) {
   return <button
@@ -27,19 +25,4 @@ export function LayerButtonRow({id, name, color, selected}: {id: LayerId; name: 
       <span className="absolute inset-0" style={color ? {background: color} : undefined}/>
     </span>
   </button>;
-}
-
-export function LayerList({item, layers, selectedLayer}: {item: Item | null; layers: readonly AssetLayer[]; selectedLayer: LayerId | null}) {
-  return <div>
-    <LayerButtonRow id="all" name={t('allParts')} color={getLayerColor(item, 'all')} selected={selectedLayer === 'all'}/>
-    {layers.map((layer, index) =>
-      <LayerButtonRow
-        key={`${layer.Name}-${index}`}
-        id={String(index)}
-        name={getLayerDisplayName(layer, index)}
-        color={getLayerColor(item, String(index))}
-        selected={selectedLayer === String(index)}
-      />
-    )}
-  </div>;
 }

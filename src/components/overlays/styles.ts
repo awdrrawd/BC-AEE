@@ -1,0 +1,12 @@
+export const OP_BASE_CX = 0.5;
+export const OP_BASE_CY = 0.97;
+export const OP_OFFSET_X = 300;
+export const OP_OFFSET_Y = -200;
+export const ROT_CX_PCT = 0.5;
+export const ROT_CY_PCT = 0.89;
+export const ROT_RADIUS = 60;
+export const sliderRangeClass = 'h-1.5 w-full cursor-pointer appearance-none rounded accent-violet-500';
+export const panelButtonBaseClass = 'rounded border bg-zinc-900 px-2 text-[11px] font-semibold transition';
+export const panelButtonNormalClass = 'border-zinc-700 text-zinc-300 hover:border-violet-400 hover:text-violet-100';
+export const panelButtonActiveClass = 'border-teal-300 bg-teal-400/10 text-teal-300 hover:border-teal-300 hover:text-teal-300';
+export const panelButtonDangerClass = 'border-zinc-700 text-zinc-400 hover:border-red-300 hover:text-red-200';

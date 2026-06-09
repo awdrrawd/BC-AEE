@@ -48,7 +48,7 @@ import {
   SkewIcon,
 } from './icons/Icons';
 
-const panel = 'absolute left-0 top-0 z-[999999] flex h-full flex-col overflow-hidden border-r border-zinc-700 bg-zinc-950 text-zinc-100 shadow-2xl';
+const panel = 'z-[999999] flex h-full flex-col overflow-hidden border-r border-zinc-700 bg-zinc-950 text-zinc-100 shadow-2xl';
 const iconButton = 'flex h-7 w-7 items-center justify-center rounded border border-transparent text-zinc-400 transition hover:bg-violet-500/15 hover:text-violet-200';
 const activeIconButton = 'bg-violet-500/25 text-violet-200 shadow-[inset_-2px_0_0_#8b5cf6]';
 const stepButton = 'flex h-6 min-w-0 flex-1 items-center justify-center rounded border border-zinc-700 bg-zinc-800 px-1 text-[11px] text-zinc-100 transition hover:border-violet-500 hover:bg-violet-600 hover:text-white';
@@ -66,53 +66,61 @@ export function MainPanel({state}: {state: AeeState}) {
   const rect = state.canvasRect;
   if (!rect || !state.visible || !state.item) return null;
   const panelWidth = Math.max(200, Math.min(320, rect.width * 0.27));
-  const toggleLeft = state.collapsed ? 0 : panelWidth;
+  const toggleWidth = 34;
 
   return <div className="fixed z-[999998] pointer-events-none" style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}>
-    <div className={`${panel} ${state.collapsed ? 'hidden' : ''} pointer-events-auto`} style={{width: panelWidth}}>
-      <div className="flex shrink-0 border-b border-zinc-700">
-        {tabs.map(([tab, label]) =>
-          <button
-            key={tab}
-            className={[
-              'h-9 flex-1 border-b-2 text-xs font-bold tracking-wide transition',
-              state.tab === tab ? 'border-violet-500 text-violet-300' : 'border-transparent text-zinc-400 hover:text-zinc-100',
-            ].join(' ')}
-            onClick={() => setTab(tab)}
-          >
-            {t(label)}
-          </button>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-2 py-1">
-        <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-medium text-zinc-400">AEE v{state.version}</span>
-        <button
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${state.partsOpen ? 'border-violet-400 bg-violet-500/15 text-violet-200' : 'border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-200'}`}
-          title={t('secPart')}
-          onClick={() => togglePartsOpen()}
-        >
-          <LayersIcon/>
-        </button>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-0 [scrollbar-width:thin] [scrollbar-color:#8b5cf6_transparent]">
-        {state.tab === 'edit' ? <EditTab state={state}/> : null}
-        {state.tab === 'opacity' ? <OpacityTab state={state}/> : null}
-        {state.tab === 'layers' ? <LayersTab state={state}/> : null}
-        {state.tab === 'settings' ? <SettingsTab state={state}/> : null}
+    <div className="pointer-events-none absolute left-0 top-0 h-full overflow-hidden" style={{width: panelWidth + toggleWidth}}>
+      <div
+        className="flex h-full"
+        style={{transform: state.collapsed ? `translateX(-${panelWidth}px)` : 'translateX(0)', transition: 'transform 0.35s ease'}}
+      >
+        <div className={`${panel} pointer-events-auto`} style={{width: panelWidth}}>
+          <div className="flex shrink-0 border-b border-zinc-700">
+            {tabs.map(([tab, label]) =>
+              <button
+                key={tab}
+                className={[
+                  'h-9 flex-1 border-b-2 text-xs font-bold tracking-wide transition',
+                  state.tab === tab ? 'border-violet-500 text-violet-300' : 'border-transparent text-zinc-400 hover:text-zinc-100',
+                ].join(' ')}
+                onClick={() => setTab(tab)}
+              >
+                {t(label)}
+              </button>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-2 py-1">
+            <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-medium text-zinc-400">AEE v{state.version}</span>
+            <button
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${state.partsOpen ? 'border-violet-400 bg-violet-500/15 text-violet-200' : 'border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-200'}`}
+              title={t('secPart')}
+              onClick={() => togglePartsOpen()}
+            >
+              <LayersIcon/>
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-0 [scrollbar-width:thin] [scrollbar-color:#8b5cf6_transparent]">
+            {state.tab === 'edit' ? <EditTab state={state}/> : null}
+            {state.tab === 'opacity' ? <OpacityTab state={state}/> : null}
+            {state.tab === 'layers' ? <LayersTab state={state}/> : null}
+            {state.tab === 'settings' ? <SettingsTab state={state}/> : null}
+          </div>
+        </div>
+        <div className="flex h-full items-center">
+          <ToggleBar state={state}/>
+        </div>
       </div>
     </div>
-    <ToggleBar state={state} left={toggleLeft}/>
     <PartsFloat state={state}/>
   </div>;
 }
 
-function ToggleBar({state, left}: {state: AeeState; left: number}) {
+function ToggleBar({state}: {state: AeeState}) {
   const makeIcon = (active: boolean, title: string, icon: ReactNode, onClick: () => void) =>
     <button className={`${iconButton} ${active ? activeIconButton : ''}`} title={title} onClick={onClick}>{icon}</button>;
 
   return <div
-    className="pointer-events-auto absolute z-1000000 flex flex-col items-center gap-1 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-950 px-0.5 py-1"
-    style={{left, top: '50%', transform: 'translateY(-50%)'}}
+    className="pointer-events-auto z-1000000 flex flex-col items-center gap-1 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-950 px-0.5 py-1"
   >
     {state.collapsed ? <div className="flex flex-col items-center gap-1">
       {makeIcon(state.partsOpen, t('secPart'), <LayersIcon/>, () => togglePartsOpen())}

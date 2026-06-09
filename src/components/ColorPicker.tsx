@@ -193,6 +193,8 @@ function ColorPickerPanel({state}: {state: AeeState}) {
   const fw = cardSize?.w ?? 500 * scale;
   const fh = cardSize?.h ?? 0;
   const collapsed = picker.bcMode && picker.collapsed;
+  const dockRight = rect?.right ?? window.innerWidth;
+  const dockLeft = Math.max(0, dockRight - toggleW - fw);
 
   const cardEl = (
     <div ref={cardRef} style={{zoom: scale}}>
@@ -313,12 +315,12 @@ function ColorPickerPanel({state}: {state: AeeState}) {
     </div>;
   }
 
-  // BC mode: docked to the right edge of the screen. The toggle is a tab glued to the
+  // BC mode: docked to the right edge of the game canvas. The toggle is a tab glued to the
   // card's left edge; collapsing slides card + tab right together so the card tucks off
-  // the right edge and only the tab remains, flush against the screen border.
+  // the canvas edge and only the tab remains, flush against the game border.
   return <div
     className="pointer-events-none fixed z-[1000002] overflow-hidden"
-    style={{top, right: 0, width: toggleW + fw, height: fh}}
+    style={{top, left: dockLeft, width: toggleW + fw, height: fh}}
   >
     <div
       className="flex items-center"

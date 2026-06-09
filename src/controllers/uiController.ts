@@ -73,6 +73,7 @@ export function setScaleLock(value?: boolean) {
 export function openColorPicker(initialHex: string, onLiveChange: (hex: string) => void, bcMode = false, opacityPct = 100) {
   runtime.colorPickerLiveChange = onLiveChange;
   runtime.colorPickerInitialHex = initialHex || '#FFFFFF';
+  syncCanvasRect();
   mutateState(draft => {
     draft.colorPicker.sessionId += 1;
     draft.colorPicker.open = true;

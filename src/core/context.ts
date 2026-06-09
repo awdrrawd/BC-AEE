@@ -6,6 +6,13 @@ let lastGroup: string | null = null;
 let lastAsset: string | null = null;
 let lastMode: string | null = null;
 
+function closeContextOverlays(draft: ReturnType<typeof getState>) {
+  draft.activeDrag = null;
+  draft.rotationOverlayOpen = false;
+  draft.opacityOverlay.open = false;
+  draft.transformOverlay.mode = null;
+}
+
 export function syncCanvasRect() {
   const rect = getCanvasRect();
   setState({canvasRect: rect});
@@ -31,15 +38,11 @@ export function syncCurrentContext() {
     draft.itemAssetName = visible ? assetName : null;
     draft.itemGroupName = visible ? groupName : null;
     if (!visible) {
-      draft.activeDrag = null;
-      draft.rotationOverlayOpen = false;
-      draft.opacityOverlay.open = false;
+      closeContextOverlays(draft);
     } else if (itemChanged) {
       draft.selectedLayer = null;
-      draft.activeDrag = null;
       draft.partsOpen = false;
-      draft.rotationOverlayOpen = false;
-      draft.opacityOverlay.open = false;
+      closeContextOverlays(draft);
     }
   });
 

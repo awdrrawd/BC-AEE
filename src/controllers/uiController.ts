@@ -1,4 +1,4 @@
-import type {AeeTab, DragMode, LayerId} from '../core/types';
+import type {AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '../core/types';
 import {getState, mutateState} from '../core/store';
 import {setAeeSetting} from '../core/settings';
 import {
@@ -17,9 +17,19 @@ import {
 } from '../core/bc';
 import {runtime} from '../core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '../core/context';
+import {
+  clampPanelPosition,
+  getAnchoredPanelPosition,
+  PARTS_PANEL_MIN_HEIGHT,
+  PARTS_PANEL_WIDTH,
+  TOOL_PANEL_MIN_HEIGHT,
+  TOOL_PANEL_WIDTH,
+  type OverlayAnchor,
+} from '../core/overlay';
 import {hideTouchBlocker, showTouchBlocker} from './dragController';
 
 type AssetPriority = Asset & {DrawingPriority?: number};
+type ToolOverlay = 'parts' | 'opacity' | 'transform';
 
 export function setTab(tab: AeeTab) {
   stopHoverHighlight(true);
@@ -41,16 +51,73 @@ export function toggleCollapse() {
   });
 }
 
-export function togglePartsOpen(open?: boolean) {
+function closeToolOverlays(draft: AeeState, keep: ToolOverlay) {
+  if (keep !== 'parts') draft.partsOpen = false;
+  if (keep !== 'opacity') draft.opacityOverlay.open = false;
+  if (keep !== 'transform') draft.transformOverlay.mode = null;
+}
+
+function getClampedCurrentPanelPosition(left: number, top: number, panelWidth = TOOL_PANEL_WIDTH, panelMinHeight = TOOL_PANEL_MIN_HEIGHT) {
+  const rect = getState().canvasRect;
+  return rect ? clampPanelPosition(left, top, rect, panelWidth, panelMinHeight) : {left, top};
+}
+
+export function togglePartsOpen(open?: boolean, anchor?: OverlayAnchor) {
+  syncCanvasRect();
+  const current = getState();
+  const nextOpen = open ?? !current.partsOpen;
   mutateState(draft => {
-    draft.partsOpen = open ?? !draft.partsOpen;
+    draft.partsOpen = nextOpen;
+    if (nextOpen) {
+      closeToolOverlays(draft, 'parts');
+      if (anchor && draft.canvasRect) {
+        const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH, PARTS_PANEL_MIN_HEIGHT);
+        draft.partsLeft = pos.left;
+        draft.partsTop = pos.top;
+      }
+    }
   });
 }
 
 export function movePartsPanel(left: number, top: number) {
+  const pos = getClampedCurrentPanelPosition(left, top, PARTS_PANEL_WIDTH, PARTS_PANEL_MIN_HEIGHT);
   mutateState(draft => {
-    draft.partsLeft = left;
-    draft.partsTop = top;
+    draft.partsLeft = pos.left;
+    draft.partsTop = pos.top;
+  });
+}
+
+export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: OverlayAnchor) {
+  const item = getCurrentItem();
+  if (!item) return;
+  syncCanvasRect();
+  const current = getState();
+  const nextMode = current.transformOverlay.mode === mode ? null : mode;
+  mutateState(draft => {
+    draft.transformOverlay.mode = nextMode;
+    if (nextMode) {
+      closeToolOverlays(draft, 'transform');
+      if (draft.selectedLayer === null) draft.selectedLayer = 'all';
+      if (anchor && draft.canvasRect) {
+        const pos = getAnchoredPanelPosition(draft.canvasRect, anchor);
+        draft.transformOverlay.left = pos.left;
+        draft.transformOverlay.top = pos.top;
+      }
+    }
+  });
+}
+
+export function closeTransformOverlay() {
+  mutateState(draft => {
+    draft.transformOverlay.mode = null;
+  });
+}
+
+export function moveTransformOverlay(left: number, top: number) {
+  const pos = getClampedCurrentPanelPosition(left, top);
+  mutateState(draft => {
+    draft.transformOverlay.left = pos.left;
+    draft.transformOverlay.top = pos.top;
   });
 }
 
@@ -142,13 +209,20 @@ export function openSelectedLayerColorPicker() {
   openLayerColorPicker(state.selectedLayer ?? 'all');
 }
 
-export function openOpacityOverlay() {
+export function openOpacityOverlay(anchor?: OverlayAnchor) {
   const item = getCurrentItem();
   const selected = getState().selectedLayer;
-  if (!item || selected === null) return;
+  if (!item) return;
   syncCanvasRect();
   mutateState(draft => {
     draft.opacityOverlay.open = true;
+    closeToolOverlays(draft, 'opacity');
+    if (selected === null) draft.selectedLayer = 'all';
+    if (anchor && draft.canvasRect) {
+      const pos = getAnchoredPanelPosition(draft.canvasRect, anchor);
+      draft.opacityOverlay.left = pos.left;
+      draft.opacityOverlay.top = pos.top;
+    }
   });
 }
 
@@ -159,9 +233,10 @@ export function closeOpacityOverlay() {
 }
 
 export function moveOpacityOverlay(left: number, top: number) {
+  const pos = getClampedCurrentPanelPosition(left, top);
   mutateState(draft => {
-    draft.opacityOverlay.left = left;
-    draft.opacityOverlay.top = top;
+    draft.opacityOverlay.left = pos.left;
+    draft.opacityOverlay.top = pos.top;
   });
 }
 

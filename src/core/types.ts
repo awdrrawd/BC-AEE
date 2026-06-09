@@ -1,5 +1,6 @@
 export type AeeTab = 'edit' | 'opacity' | 'layers' | 'settings';
 export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | null;
+export type TransformOverlayMode = Exclude<DragMode, null>;
 export type LayerId = 'all' | string;
 export type UnknownFunction = (...args: unknown[]) => unknown;
 export type LayerOverrideKey =
@@ -232,6 +233,12 @@ export interface OpacityOverlayState {
   top?: number;
 }
 
+export interface TransformOverlayState {
+  mode: TransformOverlayMode | null;
+  left?: number;
+  top?: number;
+}
+
 export interface AeeState {
   version: string;
   visible: boolean;
@@ -261,6 +268,7 @@ export interface AeeState {
   itemGroupName: string | null;
   colorPicker: ColorPickerState;
   opacityOverlay: OpacityOverlayState;
+  transformOverlay: TransformOverlayState;
   rotationOverlayOpen: boolean;
   bg: BgState;
   offset: OffsetState;

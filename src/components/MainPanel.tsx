@@ -1,4 +1,4 @@
-import {useRef, type ReactNode} from 'react';
+import {type MouseEvent as ReactMouseEvent, type ReactNode} from 'react';
 import type {AeeLayerOverride, AeeState, DragMode, LayerId} from '../core/types';
 import {isZh, t} from '../core/lang';
 import {
@@ -33,8 +33,11 @@ import {
   toggleCollapse,
   toggleMirror,
   togglePartsOpen,
+  toggleTransformOverlay,
 } from '../controllers/uiController';
 import {LayerList} from './LayerRows';
+import {FloatingPanel} from './FloatingPanel';
+import {getElementOverlayAnchor, PARTS_PANEL_WIDTH} from '../core/overlay';
 import {
   ChevronIcon,
   ColorIcon,
@@ -67,6 +70,9 @@ export function MainPanel({state}: {state: AeeState}) {
   if (!rect || !state.visible || !state.item) return null;
   const panelWidth = Math.max(200, Math.min(320, rect.width * 0.27));
   const toggleWidth = 34;
+  const openParts = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    togglePartsOpen(undefined, getElementOverlayAnchor(event.currentTarget));
+  };
 
   return <div className="fixed z-[999998] pointer-events-none" style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}>
     <div className="pointer-events-none absolute left-0 top-0 h-full overflow-hidden" style={{width: panelWidth + toggleWidth}}>
@@ -94,7 +100,7 @@ export function MainPanel({state}: {state: AeeState}) {
             <button
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${state.partsOpen ? 'border-violet-400 bg-violet-500/15 text-violet-200' : 'border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-200'}`}
               title={t('secPart')}
-              onClick={() => togglePartsOpen()}
+              onClick={openParts}
             >
               <LayersIcon/>
             </button>
@@ -116,21 +122,34 @@ export function MainPanel({state}: {state: AeeState}) {
 }
 
 function ToggleBar({state}: {state: AeeState}) {
-  const makeIcon = (active: boolean, title: string, icon: ReactNode, onClick: () => void) =>
+  const makeIcon = (active: boolean, title: string, icon: ReactNode, onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void) =>
     <button className={`${iconButton} ${active ? activeIconButton : ''}`} title={title} onClick={onClick}>{icon}</button>;
+  const openTransform = (mode: Exclude<DragMode, null>) => (event: ReactMouseEvent<HTMLButtonElement>) => {
+    toggleTransformOverlay(mode, getElementOverlayAnchor(event.currentTarget));
+  };
+  const openParts = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    togglePartsOpen(undefined, getElementOverlayAnchor(event.currentTarget));
+  };
+  const openOpacity = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (state.opacityOverlay.open) {
+      closeOpacityOverlay();
+      return;
+    }
+    openOpacityOverlay(getElementOverlayAnchor(event.currentTarget));
+  };
 
   return <div
     className="pointer-events-auto z-1000000 flex flex-col items-center gap-1 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-950 px-0.5 py-1"
   >
     {state.collapsed ? <div className="flex flex-col items-center gap-1">
-      {makeIcon(state.partsOpen, t('secPart'), <LayersIcon/>, () => togglePartsOpen())}
-      {makeIcon(state.activeDrag === 'xy', t('coord'), <MoveIcon/>, () => setActiveDrag('xy'))}
-      {makeIcon(state.activeDrag === 'rot', t('rotate'), <RotateIcon/>, () => setActiveDrag('rot'))}
-      {makeIcon(state.activeDrag === 'scale', t('scale'), <ScaleIcon/>, () => setActiveDrag('scale'))}
-      {makeIcon(state.activeDrag === 'skew', t('skew'), <SkewIcon/>, () => setActiveDrag('skew'))}
-      {makeIcon(state.colorPicker.open && !state.colorPicker.bcMode, t('colorPickerTitle'), <ColorIcon/>, openSelectedLayerColorPicker)}
-      {makeIcon(state.opacityOverlay.open, t('opacity'), <OpacityIcon/>, () => state.opacityOverlay.open ? closeOpacityOverlay() : openOpacityOverlay())}
-      {makeIcon(false, 'Reset transforms', <ResetIcon/>, resetSelectedTransforms)}
+      {makeIcon(state.partsOpen, t('secPart'), <LayersIcon/>, openParts)}
+      {makeIcon(state.transformOverlay.mode === 'xy' || state.activeDrag === 'xy', t('coord'), <MoveIcon/>, openTransform('xy'))}
+      {makeIcon(state.transformOverlay.mode === 'rot' || state.activeDrag === 'rot', t('rotate'), <RotateIcon/>, openTransform('rot'))}
+      {makeIcon(state.transformOverlay.mode === 'scale' || state.activeDrag === 'scale', t('scale'), <ScaleIcon/>, openTransform('scale'))}
+      {makeIcon(state.transformOverlay.mode === 'skew' || state.activeDrag === 'skew', t('skew'), <SkewIcon/>, openTransform('skew'))}
+      {makeIcon(state.colorPicker.open && !state.colorPicker.bcMode, t('colorPickerTitle'), <ColorIcon/>, () => openSelectedLayerColorPicker())}
+      {makeIcon(state.opacityOverlay.open, t('opacity'), <OpacityIcon/>, openOpacity)}
+      {makeIcon(false, 'Reset transforms', <ResetIcon/>, () => resetSelectedTransforms())}
     </div> : null}
     <button className="flex h-7 w-5 items-center justify-center text-zinc-400 hover:text-violet-300" onClick={toggleCollapse}>
       <ChevronIcon direction={state.collapsed ? 'right' : 'left'} size={12}/>
@@ -139,36 +158,20 @@ function ToggleBar({state}: {state: AeeState}) {
 }
 
 function PartsFloat({state}: {state: AeeState}) {
-  const drag = useRef<{ox: number; oy: number} | null>(null);
-  if (!state.partsOpen || !state.item) return null;
-  return <div className="pointer-events-auto absolute z-[1000001] flex max-h-64 min-h-20 w-52 flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-2xl" style={{left: state.partsLeft, top: state.partsTop}}>
-    <div
-      className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400 active:cursor-grabbing"
-      onMouseDown={event => {
-        const rect = (event.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
-        drag.current = {ox: event.clientX - rect.left, oy: event.clientY - rect.top};
-        const onMove = (ev: MouseEvent) => {
-          if (!drag.current || !state.canvasRect) return;
-          const left = Math.max(0, Math.min(ev.clientX - state.canvasRect.left - drag.current.ox, state.canvasRect.width - 210));
-          const top = Math.max(0, Math.min(ev.clientY - state.canvasRect.top - drag.current.oy, state.canvasRect.height - 100));
-          movePartsPanel(left, top);
-        };
-        const onUp = () => {
-          drag.current = null;
-          document.removeEventListener('mousemove', onMove, true);
-          document.removeEventListener('mouseup', onUp, true);
-        };
-        document.addEventListener('mousemove', onMove, true);
-        document.addEventListener('mouseup', onUp, true);
-      }}
-    >
-      <span>{t('secPart')}</span>
-      <button className="flex h-4 w-4 items-center justify-center rounded text-sm text-zinc-500 hover:bg-red-500/10 hover:text-red-300" onMouseDown={event => event.stopPropagation()} onClick={() => togglePartsOpen(false)}>×</button>
-    </div>
-    <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
+  if (!state.partsOpen || !state.item || !state.canvasRect) return null;
+  return <FloatingPanel
+    canvasRect={state.canvasRect}
+    left={state.partsLeft}
+    top={state.partsTop}
+    width={PARTS_PANEL_WIDTH}
+    title={t('secPart')}
+    onClose={() => togglePartsOpen(false)}
+    onMove={movePartsPanel}
+    className="max-h-64 min-h-20"
+    bodyClassName="min-h-0 flex-1 overflow-y-auto p-1.5"
+  >
       <LayerList item={state.item} layers={state.layers} selectedLayer={state.selectedLayer}/>
-    </div>
-  </div>;
+  </FloatingPanel>;
 }
 
 function EditTab({state}: {state: AeeState}) {

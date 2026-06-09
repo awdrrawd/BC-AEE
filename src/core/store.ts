@@ -44,6 +44,9 @@ let state: AeeState = {
   opacityOverlay: {
     open: false,
   },
+  transformOverlay: {
+    mode: null,
+  },
   rotationOverlayOpen: false,
   bg: {
     enabled: getAeeSetting('bgEnabled', false),
@@ -112,6 +115,7 @@ function structuredCloneShallow(value: AeeState): AeeState {
     layers: value.layers,
     colorPicker: {...value.colorPicker},
     opacityOverlay: {...value.opacityOverlay},
+    transformOverlay: {...value.transformOverlay},
     bg: {...value.bg},
     offset: {...value.offset},
     pose: {...value.pose},

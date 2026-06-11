@@ -1,4 +1,4 @@
-import {type MouseEvent as ReactMouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {type PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import type {AeeState} from '../../core/types';
 import {t} from '../../core/lang';
 import {closeColorPicker, moveColorPicker, setColorPickerCollapsed, setColorPickerValue} from '../../controllers/uiController';
@@ -19,6 +19,7 @@ export function ColorPickerPanel({state}: {state: AeeState}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
+  const svDragRef = useRef<number | null>(null);
   const [hsv, setHsv] = useState(() => hexToHsv(picker.hex));
   const [alpha, setAlpha] = useState(Math.round(picker.opacityPct / 100 * 255));
   const [rule, setRule] = useState('complementary');
@@ -69,19 +70,7 @@ export function ColorPickerPanel({state}: {state: AeeState}) {
     gv.addColorStop(1, '#000');
     ctx.fillStyle = gv;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const px = hsv.s / 100 * canvas.width;
-    const py = (1 - hsv.v / 100) * canvas.height;
-    ctx.beginPath();
-    ctx.arc(px, py, 7, 0, Math.PI * 2);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(px, py, 5, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }, [hsv]);
+  }, [hsv.h]);
 
   const harmony = useMemo(() => {
     const h = hsv.h, s = hsv.s, v = hsv.v;
@@ -103,25 +92,42 @@ export function ColorPickerPanel({state}: {state: AeeState}) {
     [hsv.h, clamp(hsv.s + 22, 0, 100), clamp(hsv.v - 38, 0, 100)],
   ], [hsv]);
 
-  const pickSv = (event: ReactMouseEvent<HTMLCanvasElement>) => {
+  const pickSv = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const pick = (clientX: number, clientY: number) => {
-      const r = canvas.getBoundingClientRect();
-      setHsv(current => ({
-        ...current,
-        s: Math.round(clamp((clientX - r.left) / r.width, 0, 1) * 100),
-        v: Math.round((1 - clamp((clientY - r.top) / r.height, 0, 1)) * 100),
-      }));
-    };
-    pick(event.clientX, event.clientY);
-    const onMove = (ev: MouseEvent) => pick(ev.clientX, ev.clientY);
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove, true);
-      document.removeEventListener('mouseup', onUp, true);
-    };
-    document.addEventListener('mousemove', onMove, true);
-    document.addEventListener('mouseup', onUp, true);
+    const r = canvas.getBoundingClientRect();
+    setHsv(current => ({
+      ...current,
+      s: Math.round(clamp((clientX - r.left) / r.width, 0, 1) * 100),
+      v: Math.round((1 - clamp((clientY - r.top) / r.height, 0, 1)) * 100),
+    }));
+  };
+
+  const startSvPick = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    svDragRef.current = event.pointerId;
+    pickSv(event.clientX, event.clientY);
+  };
+
+  const moveSvPick = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (svDragRef.current !== event.pointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    pickSv(event.clientX, event.clientY);
+  };
+
+  const stopSvPick = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (svDragRef.current !== event.pointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    svDragRef.current = null;
+  };
+
+  const cancelSvPick = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (svDragRef.current === event.pointerId) svDragRef.current = null;
   };
 
   const setTrackValue = (label: string, value: number) => {
@@ -205,12 +211,36 @@ export function ColorPickerPanel({state}: {state: AeeState}) {
               <span>B</span><span className="w-6 font-mono text-zinc-100">{String(rgb[2]).padStart(3, '0')}</span>
             </div>
           </div>
-          <canvas ref={canvasRef} className="ml-0.5 shrink-0 cursor-crosshair rounded-lg border border-zinc-700" width={260} height={140} onMouseDown={pickSv}/>
+          <div className="relative ml-0.5 h-[140px] w-[260px] shrink-0">
+            <canvas
+              ref={canvasRef}
+              className="block h-full w-full cursor-crosshair select-none touch-none rounded-lg border border-zinc-700 [-webkit-user-drag:none]"
+              width={260}
+              height={140}
+              draggable={false}
+              onDragStart={event => event.preventDefault()}
+              onPointerDown={startSvPick}
+              onPointerMove={moveSvPick}
+              onPointerUp={stopSvPick}
+              onPointerCancel={cancelSvPick}
+              onLostPointerCapture={cancelSvPick}
+            />
+            <div
+              className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
+              style={{
+                left: `${hsv.s}%`,
+                top: `${100 - hsv.v}%`,
+                border: '3px solid #fff',
+                outline: '1px solid rgba(0,0,0,.7)',
+                boxShadow: '0 1px 4px rgba(0,0,0,.55)',
+              }}
+            />
+          </div>
         </div>
-        <Track label="H" value={hsv.h} max={360} bg="linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)" color={hsvToHex(hsv.h, 100, 100)} inputValue={Math.round(hsv.h)} onPick={pct => setHsv(current => ({...current, h: Math.round(pct * 360)}))} onInput={value => setTrackValue('H', value)}/>
-        <Track label="S" value={hsv.s} max={100} bg={`linear-gradient(to right,${hsvToHex(hsv.h, 0, hsv.v)},${hsvToHex(hsv.h, 100, hsv.v)})`} color={hex} inputValue={Math.round(hsv.s)} onPick={pct => setHsv(current => ({...current, s: Math.round(pct * 100)}))} onInput={value => setTrackValue('S', value)}/>
-        <Track label="V" value={hsv.v} max={100} bg={`linear-gradient(to right,${hsvToHex(hsv.h, hsv.s, 0)},${hsvToHex(hsv.h, hsv.s, 100)})`} color={hex} inputValue={Math.round(hsv.v)} onPick={pct => setHsv(current => ({...current, v: Math.round(pct * 100)}))} onInput={value => setTrackValue('V', value)}/>
-        <Track label="A" value={alpha} max={255} bg="repeating-conic-gradient(#444 0% 25%,#222 0% 50%) 0 0/8px 8px" color={`rgba(${rgb.join(',')},${alpha / 255})`} overlay={`linear-gradient(to right,transparent,${hex})`} inputValue={`${alphaPct}%`} onPick={pct => setAlpha(Math.round(pct * 255))} onInput={value => setTrackValue('A', value)}/>
+        <Track label="H" value={hsv.h} max={360} bg="linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)" inputValue={Math.round(hsv.h)} onPick={pct => setHsv(current => ({...current, h: Math.round(pct * 360)}))} onInput={value => setTrackValue('H', value)}/>
+        <Track label="S" value={hsv.s} max={100} bg={`linear-gradient(to right,${hsvToHex(hsv.h, 0, hsv.v)},${hsvToHex(hsv.h, 100, hsv.v)})`} inputValue={Math.round(hsv.s)} onPick={pct => setHsv(current => ({...current, s: Math.round(pct * 100)}))} onInput={value => setTrackValue('S', value)}/>
+        <Track label="V" value={hsv.v} max={100} bg={`linear-gradient(to right,${hsvToHex(hsv.h, hsv.s, 0)},${hsvToHex(hsv.h, hsv.s, 100)})`} inputValue={Math.round(hsv.v)} onPick={pct => setHsv(current => ({...current, v: Math.round(pct * 100)}))} onInput={value => setTrackValue('V', value)}/>
+        <Track label="A" value={alpha} max={255} bg="repeating-conic-gradient(#444 0% 25%,#222 0% 50%) 0 0/8px 8px" overlay={`linear-gradient(to right,transparent,${hex})`} inputValue={`${alphaPct}%`} onPick={pct => setAlpha(Math.round(pct * 255))} onInput={value => setTrackValue('A', value)}/>
         <div className="h-px bg-zinc-800"/>
         <div className="flex items-center gap-2">
           <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('harmSec')}</span>

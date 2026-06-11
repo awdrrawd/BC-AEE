@@ -25,6 +25,7 @@ const main: {
   main.shadowRoot = main.overlay.attachShadow({mode: 'open'});
   setShadowRoot(main.shadowRoot);
   main.root = document.createElement('div');
+  main.root.dataset.aeeRoot = 'true';
   main.shadowRoot.appendChild(main.root);
 
   createRoot(main.root).render(

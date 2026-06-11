@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@layer base {
+  /* Keep the Shadow DOM UI from creating browser text selections during clicks/drags. */
+  [data-aee-root],
+  [data-aee-root] * {
+    @apply select-none;
+  }
+
+  [data-aee-root] :where(input:not([type='button']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']), textarea, [contenteditable]:not([contenteditable='false'])),
+  [data-aee-root] :where(input:not([type='button']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']), textarea, [contenteditable]:not([contenteditable='false'])) * {
+    @apply select-text;
+  }
+}

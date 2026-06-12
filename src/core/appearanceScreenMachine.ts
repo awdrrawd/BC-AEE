@@ -92,8 +92,12 @@ export function isAppearanceGroupsPhase() {
   return snapshot.phase === 'groups';
 }
 
+export function isInAppearanceScreen() {
+  return snapshot.inAppearance;
+}
+
 export function shouldShowAppearanceViewControl() {
-  return snapshot.phase === 'groups' && getState().showCharCtrl;
+  return snapshot.inAppearance && getState().showCharCtrl;
 }
 
 export function markAppearanceRunStart() {

@@ -73,11 +73,14 @@ export function installAppearanceHooks() {
     if (Math.abs(scale - 1) < 0.1 || Math.abs(scale - 0.95) < 0.05) {
       if (!isTarget) return next(args);
       if (state.hideFullbody) return;
-      const hasOffset = state.offset.x !== 0 || state.offset.y !== 0 || state.offset.scale !== 1;
+      const previewOffset = runtime.offsetPreview;
+      const offsetX = previewOffset?.x ?? state.offset.x;
+      const offsetY = previewOffset?.y ?? state.offset.y;
+      const hasOffset = offsetX !== 0 || offsetY !== 0 || state.offset.scale !== 1;
       if (hasOffset) {
         const nextArgs: (typeof args) = [...args];
-        nextArgs[1] = args[1] + state.offset.x;
-        nextArgs[2] = args[2] + state.offset.y;
+        nextArgs[1] = args[1] + offsetX;
+        nextArgs[2] = args[2] + offsetY;
         nextArgs[3] = args[3] * state.offset.scale;
         return next(nextArgs);
       }

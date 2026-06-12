@@ -1,6 +1,6 @@
 import type {MirrorCopyFlags, PendingTransform, PickerContext} from './types';
 
-type ColorPickerLiveChange = (hex: string) => void;
+type ColorPickerLiveChange = (hex: string, preview?: boolean) => void;
 type HoverFlashData = { item: Item; overrides: Map<number, number> };
 
 export interface Runtime {
@@ -14,6 +14,7 @@ export interface Runtime {
   colorPickerLiveChange: ColorPickerLiveChange | null;
   colorPickerInitialHex: string;
   colorPickerAlpha: number;
+  offsetPreview: { x: number; y: number } | null;
   hoverLayerIdx: string | null;
   hoverCooldownUntil: number;
   hoverHighlightAnimFrame: number | null;
@@ -50,6 +51,7 @@ export const runtime: Runtime = {
   colorPickerLiveChange: null,
   colorPickerInitialHex: '#FFFFFF',
   colorPickerAlpha: 255,
+  offsetPreview: null,
   hoverLayerIdx: null,
   hoverCooldownUntil: 0,
   hoverHighlightAnimFrame: null,

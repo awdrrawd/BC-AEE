@@ -114,7 +114,7 @@ export function moveOffsetPanel(left: number, top: number) {
 }
 
 export function setOffsetX(x: number) {
-  const clamped = Math.max(-700, Math.min(800, x));
+  const clamped = clampOffsetX(x);
   setAeeSetting('charOffsetX', clamped);
   mutateState(draft => {
     draft.offset.x = clamped;
@@ -122,10 +122,23 @@ export function setOffsetX(x: number) {
 }
 
 export function setOffsetY(y: number) {
-  const clamped = Math.max(-2000, Math.min(2000, y));
+  const clamped = clampOffsetY(y);
   setAeeSetting('charOffsetY', clamped);
   mutateState(draft => {
     draft.offset.y = clamped;
+  });
+}
+
+export function setOffsetXY(x: number, y: number, persist = true) {
+  const clampedX = clampOffsetX(x);
+  const clampedY = clampOffsetY(y);
+  if (persist) {
+    setAeeSetting('charOffsetX', clampedX);
+    setAeeSetting('charOffsetY', clampedY);
+  }
+  mutateState(draft => {
+    draft.offset.x = clampedX;
+    draft.offset.y = clampedY;
   });
 }
 
@@ -135,6 +148,14 @@ export function setCharScale(scale: number) {
   mutateState(draft => {
     draft.offset.scale = clamped;
   });
+}
+
+function clampOffsetX(x: number) {
+  return Math.max(-700, Math.min(800, x));
+}
+
+function clampOffsetY(y: number) {
+  return Math.max(-2000, Math.min(2000, y));
 }
 
 export function resetOffset(kind: 'x' | 'y' | 'scale' | 'all') {

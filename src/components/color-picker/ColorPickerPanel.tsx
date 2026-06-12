@@ -4,6 +4,7 @@ import {t} from '../../core/lang';
 import {
   closeColorPicker,
   moveColorPicker,
+  previewColorPickerValue,
   setColorPickerCollapsed,
   setColorPickerValue
 } from '../../controllers/uiController';
@@ -25,7 +26,12 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
   const svDragRef = useRef<number | null>(null);
-  const [hsv, setHsv] = useState(() => hexToHsv(picker.hex));
+  const svThumbRef = useRef<HTMLDivElement>(null);
+  const hsvRef = useRef(hexToHsv(picker.hex));
+  const pendingHsvRef = useRef<{ h: number; s: number; v: number } | null>(null);
+  const latestPreviewHsvRef = useRef<{ h: number; s: number; v: number } | null>(null);
+  const hsvFrameRef = useRef<number | null>(null);
+  const [hsv, setHsvState] = useState(() => hsvRef.current);
   const [alpha, setAlpha] = useState(Math.round(picker.opacityPct / 100 * 255));
   const [rule, setRule] = useState('complementary');
   const [saved, setSaved] = useState(() => Array.from({length: 18}, (_, index) => ({
@@ -36,6 +42,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   })));
   const [selectedSaved, setSelectedSaved] = useState(0);
   const [cardSize, setCardSize] = useState<{ w: number; h: number } | null>(null);
+  const previewOnlyRef = useRef(false);
+  const lastAppliedColorRef = useRef<{ hex: string; opacityPct: number; preview: boolean } | null>(null);
 
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
   const alphaPct = Math.round(alpha / 255 * 100);
@@ -47,9 +55,31 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const left = picker.left ?? defaultLeft;
   const top = picker.top ?? defaultTop;
 
+  const setHsv = (next: { h: number; s: number; v: number } | ((current: { h: number; s: number; v: number }) => { h: number; s: number; v: number })) => {
+    setHsvState(current => {
+      const value = typeof next === 'function' ? next(current) : next;
+      hsvRef.current = value;
+      return value;
+    });
+  };
+
+  useEffect(() => () => {
+    if (hsvFrameRef.current !== null) cancelAnimationFrame(hsvFrameRef.current);
+  }, []);
+
   useEffect(() => {
     runtime.colorPickerAlpha = alpha;
-    if (picker.open && (picker.hex !== hex || picker.opacityPct !== alphaPct)) setColorPickerValue(hex, alphaPct);
+    if (!picker.open) return;
+    if (previewOnlyRef.current) {
+      const last = lastAppliedColorRef.current;
+      if (last?.hex === hex && last.opacityPct === alphaPct && last.preview) return;
+      previewColorPickerValue(hex, alphaPct);
+      lastAppliedColorRef.current = {hex, opacityPct: alphaPct, preview: true};
+      return;
+    }
+    if (picker.hex === hex && picker.opacityPct === alphaPct) return;
+    setColorPickerValue(hex, alphaPct);
+    lastAppliedColorRef.current = {hex, opacityPct: alphaPct, preview: false};
   }, [hex, alphaPct, alpha, picker.open, picker.hex, picker.opacityPct]);
 
   useLayoutEffect(() => {
@@ -106,11 +136,39 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const r = canvas.getBoundingClientRect();
-    setHsv(current => ({
-      ...current,
-      s: Math.round(clamp((clientX - r.left) / r.width, 0, 1) * 100),
-      v: Math.round((1 - clamp((clientY - r.top) / r.height, 0, 1)) * 100),
-    }));
+    const s = Math.round(clamp((clientX - r.left) / r.width, 0, 1) * 100);
+    const v = Math.round((1 - clamp((clientY - r.top) / r.height, 0, 1)) * 100);
+    previewOnlyRef.current = true;
+    const thumb = svThumbRef.current;
+    if (thumb) {
+      thumb.style.left = `${s}%`;
+      thumb.style.top = `${100 - v}%`;
+    }
+    const next = {h: hsvRef.current.h, s, v};
+    pendingHsvRef.current = next;
+    latestPreviewHsvRef.current = next;
+    if (hsvFrameRef.current !== null) return;
+    hsvFrameRef.current = requestAnimationFrame(() => {
+      hsvFrameRef.current = null;
+      const next = pendingHsvRef.current;
+      pendingHsvRef.current = null;
+      if (next) setHsv(next);
+    });
+  };
+
+  const flushSvPick = () => {
+    if (hsvFrameRef.current !== null) {
+      cancelAnimationFrame(hsvFrameRef.current);
+      hsvFrameRef.current = null;
+    }
+    const next = pendingHsvRef.current ?? latestPreviewHsvRef.current;
+    pendingHsvRef.current = null;
+    latestPreviewHsvRef.current = null;
+    if (next) {
+      setHsv(next);
+      setColorPickerValue(hsvToHex(next.h, next.s, next.v), alphaPct);
+    }
+    previewOnlyRef.current = false;
   };
 
   const startSvPick = (event: ReactPointerEvent<HTMLCanvasElement>) => {
@@ -134,10 +192,14 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     event.stopPropagation();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     svDragRef.current = null;
+    flushSvPick();
   };
 
   const cancelSvPick = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (svDragRef.current === event.pointerId) svDragRef.current = null;
+    if (svDragRef.current === event.pointerId) {
+      svDragRef.current = null;
+      flushSvPick();
+    }
   };
 
   const setTrackValue = (label: string, value: number) => {
@@ -244,6 +306,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
               onLostPointerCapture={cancelSvPick}
             />
             <div
+              ref={svThumbRef}
               className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
               style={{
                 left: `${hsv.s}%`,
@@ -257,21 +320,33 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
         </div>
         <Track label="H" value={hsv.h} max={360} bg="linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"
                inputValue={Math.round(hsv.h)}
-               onPick={pct => setHsv(current => ({...current, h: Math.round(pct * 360)}))}
+               onPick={(pct, preview) => {
+                 previewOnlyRef.current = !!preview;
+                 setHsv(current => ({...current, h: Math.round(pct * 360)}));
+               }}
                onInput={value => setTrackValue('H', value)}/>
         <Track label="S" value={hsv.s} max={100}
                bg={`linear-gradient(to right,${hsvToHex(hsv.h, 0, hsv.v)},${hsvToHex(hsv.h, 100, hsv.v)})`}
                inputValue={Math.round(hsv.s)}
-               onPick={pct => setHsv(current => ({...current, s: Math.round(pct * 100)}))}
+               onPick={(pct, preview) => {
+                 previewOnlyRef.current = !!preview;
+                 setHsv(current => ({...current, s: Math.round(pct * 100)}));
+               }}
                onInput={value => setTrackValue('S', value)}/>
         <Track label="V" value={hsv.v} max={100}
                bg={`linear-gradient(to right,${hsvToHex(hsv.h, hsv.s, 0)},${hsvToHex(hsv.h, hsv.s, 100)})`}
                inputValue={Math.round(hsv.v)}
-               onPick={pct => setHsv(current => ({...current, v: Math.round(pct * 100)}))}
+               onPick={(pct, preview) => {
+                 previewOnlyRef.current = !!preview;
+                 setHsv(current => ({...current, v: Math.round(pct * 100)}));
+               }}
                onInput={value => setTrackValue('V', value)}/>
         <Track label="A" value={alpha} max={255} bg="repeating-conic-gradient(#444 0% 25%,#222 0% 50%) 0 0/8px 8px"
                overlay={`linear-gradient(to right,transparent,${hex})`} inputValue={`${alphaPct}%`}
-               onPick={pct => setAlpha(Math.round(pct * 255))} onInput={value => setTrackValue('A', value)}/>
+               onPick={(pct, preview) => {
+                 previewOnlyRef.current = !!preview;
+                 setAlpha(Math.round(pct * 255));
+               }} onInput={value => setTrackValue('A', value)}/>
         <div className="h-px bg-zinc-800"/>
         <div className="flex items-center gap-2">
           <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('harmSec')}</span>

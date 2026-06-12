@@ -138,7 +138,7 @@ export function setScaleLock(value?: boolean) {
   });
 }
 
-export function openColorPicker(initialHex: string, onLiveChange: (hex: string) => void, bcMode = false, opacityPct = 100) {
+export function openColorPicker(initialHex: string, onLiveChange: (hex: string, preview?: boolean) => void, bcMode = false, opacityPct = 100) {
   runtime.colorPickerLiveChange = onLiveChange;
   runtime.colorPickerInitialHex = initialHex || '#FFFFFF';
   syncCanvasRect();
@@ -166,19 +166,26 @@ export function closeColorPicker(commit = true) {
   runtime.colorPickerLiveChange = null;
 }
 
+export function previewColorPickerValue(hex: string, opacityPct?: number) {
+  const state = getState();
+  const nextOpacityPct = opacityPct ?? state.colorPicker.opacityPct;
+  runtime.colorPickerAlpha = Math.round((nextOpacityPct / 100) * 255);
+  runtime.colorPickerLiveChange?.(hex, true);
+}
+
 export function setColorPickerValue(hex: string, opacityPct?: number) {
   const state = getState();
   const nextOpacityPct = opacityPct ?? state.colorPicker.opacityPct;
   runtime.colorPickerAlpha = Math.round((nextOpacityPct / 100) * 255);
   if (state.colorPicker.hex === hex && state.colorPicker.opacityPct === nextOpacityPct) {
-    runtime.colorPickerLiveChange?.(hex);
+    runtime.colorPickerLiveChange?.(hex, false);
     return;
   }
   mutateState(draft => {
     draft.colorPicker.hex = hex;
     if (opacityPct !== undefined) draft.colorPicker.opacityPct = opacityPct;
   });
-  runtime.colorPickerLiveChange?.(hex);
+  runtime.colorPickerLiveChange?.(hex, false);
 }
 
 export function setColorPickerCollapsed(collapsed: boolean) {
@@ -197,11 +204,11 @@ export function moveColorPicker(left: number, top: number) {
 export function openLayerColorPicker(layerId: LayerId) {
   const item = getCurrentItem();
   const currentColor = getLayerColor(item, layerId) || '#FFFFFF';
-  openColorPicker(currentColor, hex => {
+  openColorPicker(currentColor, (hex, preview) => {
     const currentItem = getCurrentItem();
     if (!currentItem) return;
     setLayerColor(currentItem, layerId, hex);
-    forceUiUpdate();
+    if (!preview) forceUiUpdate();
   });
 }
 

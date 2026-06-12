@@ -1,11 +1,13 @@
-import {type MouseEvent as ReactMouseEvent, useRef} from 'react';
+import {type MouseEvent as ReactMouseEvent, useEffect, useRef} from 'react';
 import type {AeeState} from '../../core/types';
 import {isZh} from '../../core/lang';
+import {runtime} from '../../core/runtime';
 import {
   moveOffsetPanel,
   resetOffset,
   setCharScale,
   setOffsetX,
+  setOffsetXY,
   setOffsetY,
   toggleOffsetCollapsed,
   toggleOffsetPanel,
@@ -18,6 +20,57 @@ import {PanelIconButton} from './PanelIconButton';
 
 export function OffsetPanel({state}: { state: AeeState }) {
   const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
+  const minimapThumbRef = useRef<HTMLSpanElement>(null);
+  const pendingOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const offsetFrameRef = useRef<number | null>(null);
+
+  const setMinimapThumbPosition = (x: number, y: number) => {
+    const thumb = minimapThumbRef.current;
+    if (!thumb) return;
+    const left = Math.max(2, Math.min(98, ((x + 700) / 1500) * 100));
+    const top = Math.max(2, Math.min(98, ((y + 2000) / 4000) * 100));
+    thumb.style.left = `${left}%`;
+    thumb.style.top = `${top}%`;
+  };
+
+  const flushPendingOffset = (persist: boolean) => {
+    if (offsetFrameRef.current !== null) {
+      cancelAnimationFrame(offsetFrameRef.current);
+      offsetFrameRef.current = null;
+    }
+    const pending = pendingOffsetRef.current;
+    pendingOffsetRef.current = null;
+    const next = pending ?? (persist ? runtime.offsetPreview : null);
+    if (next) setOffsetXY(next.x, next.y, persist);
+    if (persist) runtime.offsetPreview = null;
+  };
+
+  const queueOffset = (x: number, y: number) => {
+    const next = {
+      x: Math.max(-700, Math.min(800, Math.round(x))),
+      y: Math.max(-2000, Math.min(2000, Math.round(y))),
+    };
+    runtime.offsetPreview = next;
+    pendingOffsetRef.current = next;
+    setMinimapThumbPosition(next.x, next.y);
+    if (offsetFrameRef.current !== null) return;
+    offsetFrameRef.current = requestAnimationFrame(() => {
+      offsetFrameRef.current = null;
+      const pending = pendingOffsetRef.current;
+      pendingOffsetRef.current = null;
+      if (pending) setOffsetXY(pending.x, pending.y, false);
+    });
+  };
+
+  useEffect(() => () => {
+    flushPendingOffset(true);
+  }, []);
+
+  useEffect(() => {
+    if (pendingOffsetRef.current) return;
+    setMinimapThumbPosition(state.offset.x, state.offset.y);
+  }, [state.offset.x, state.offset.y]);
+
   if (!state.offset.open || !state.canvasRect) return null;
   const left = state.offset.left ?? state.canvasRect.left + state.canvasRect.width * 0.4;
   const top = state.offset.top ?? state.canvasRect.top + state.canvasRect.height * 0.3;
@@ -30,14 +83,14 @@ export function OffsetPanel({state}: { state: AeeState }) {
       const r = el.getBoundingClientRect();
       const rx = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
       const ry = Math.max(0, Math.min(1, (clientY - r.top) / r.height));
-      setOffsetX(Math.round(-700 + rx * 1500));
-      setOffsetY(Math.round(-2000 + ry * 4000));
+      queueOffset(-700 + rx * 1500, -2000 + ry * 4000);
     };
     pick(event.clientX, event.clientY);
     const onMove = (ev: MouseEvent) => pick(ev.clientX, ev.clientY);
     const onUp = () => {
       document.removeEventListener('mousemove', onMove, true);
       document.removeEventListener('mouseup', onUp, true);
+      flushPendingOffset(true);
     };
     document.addEventListener('mousemove', onMove, true);
     document.addEventListener('mouseup', onUp, true);
@@ -84,7 +137,8 @@ export function OffsetPanel({state}: { state: AeeState }) {
       <div className="relative h-28 cursor-crosshair overflow-visible rounded border border-zinc-700 bg-zinc-900"
            onMouseDown={minimapPick}>
         <span
-          className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-violet-500 transition-[left,top]"
+          ref={minimapThumbRef}
+          className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-violet-500"
           style={{left: `${mmX}%`, top: `${mmY}%`}}/>
       </div>
       <div

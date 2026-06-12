@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name Liko - AEE
+// @name Liko - AEE - Loader
 // @namespace https://www.bondageprojects.com/
-// @version 0.8.0
+// @version 0.1
 // @description Likolisu's Appearance editing extension.
-// @author InkerBot
+// @author InkerBot & Liko
 // @supportURL https://github.com/awdrrawd/BC-AEE
 // @match https://bondageprojects.elementfx.com/*
 // @match https://www.bondageprojects.elementfx.com/*

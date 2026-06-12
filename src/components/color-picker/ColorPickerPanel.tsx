@@ -20,6 +20,55 @@ import {SavedCell} from './SavedCell';
 import {ToolButton} from './ToolButton';
 import {Track} from './Track';
 
+const BC_HEADING_GAP = 4;
+const BC_HEADING_VIEWPORT_MARGIN = 8;
+const BC_HGROUP_STYLE_KEYS = [
+  'alignItems',
+  'bottom',
+  'boxSizing',
+  'display',
+  'height',
+  'justifyContent',
+  'left',
+  'margin',
+  'maxWidth',
+  'minHeight',
+  'overflow',
+  'padding',
+  'pointerEvents',
+  'position',
+  'right',
+  'textAlign',
+  'top',
+  'transform',
+  'visibility',
+  'width',
+  'zIndex',
+] as const;
+
+type BcHgroupStyleKey = typeof BC_HGROUP_STYLE_KEYS[number];
+type BcHgroupStyleSnapshot = Record<BcHgroupStyleKey, string>;
+
+function readInlineStyles(element: HTMLElement) {
+  const snapshot = {} as BcHgroupStyleSnapshot;
+  BC_HGROUP_STYLE_KEYS.forEach(key => {
+    snapshot[key] = element.style[key];
+  });
+  return snapshot;
+}
+
+function restoreInlineStyles(element: HTMLElement, snapshot: BcHgroupStyleSnapshot) {
+  BC_HGROUP_STYLE_KEYS.forEach(key => {
+    element.style[key] = snapshot[key];
+  });
+}
+
+function getBcColorPickerHgroup() {
+  return (document.getElementById('color-picker-hgroup')
+    ?? document.getElementById('color-picker-h1')?.closest('hgroup')
+    ?? document.getElementById('color-picker-h1')?.parentElement) as HTMLElement | null;
+}
+
 export function ColorPickerPanel({state}: { state: AeeState }) {
   const picker = state.colorPicker;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,6 +80,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const pendingHsvRef = useRef<{ h: number; s: number; v: number } | null>(null);
   const latestPreviewHsvRef = useRef<{ h: number; s: number; v: number } | null>(null);
   const hsvFrameRef = useRef<number | null>(null);
+  const bcHgroupRestoreRef = useRef<{ element: HTMLElement; styles: BcHgroupStyleSnapshot } | null>(null);
   const [hsv, setHsvState] = useState(() => hsvRef.current);
   const [alpha, setAlpha] = useState(Math.round(picker.opacityPct / 100 * 255));
   const [rule, setRule] = useState('complementary');
@@ -52,8 +102,14 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const defaultLeft = rect ? rect.left + rect.width * 0.66 : window.innerWidth * 0.6;
   const defaultTop = rect ? rect.top + rect.height * 0.2 : window.innerHeight * 0.2;
   const scale = rect ? (rect.width * 0.33) / 500 : 1;
-  const left = picker.left ?? defaultLeft;
   const top = picker.top ?? defaultTop;
+  const toggleW = 24;
+  const fw = cardSize?.w ?? 500 * scale;
+  const fh = cardSize?.h ?? 0;
+  const collapsed = picker.bcMode && picker.collapsed;
+  const dockRight = rect?.right ?? window.innerWidth;
+  const bcDefaultLeft = Math.max(0, dockRight - fw);
+  const left = picker.left ?? (picker.bcMode ? bcDefaultLeft : defaultLeft);
 
   const setHsv = (next: { h: number; s: number; v: number } | ((current: { h: number; s: number; v: number }) => { h: number; s: number; v: number })) => {
     setHsvState(current => {
@@ -94,6 +150,65 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [scale, picker.bcMode]);
+
+  useLayoutEffect(() => {
+    if (!picker.bcMode) {
+      const restore = bcHgroupRestoreRef.current;
+      if (restore) {
+        restoreInlineStyles(restore.element, restore.styles);
+        bcHgroupRestoreRef.current = null;
+      }
+      return;
+    }
+
+    const hgroup = getBcColorPickerHgroup();
+    if (!hgroup) return;
+
+    const restore = bcHgroupRestoreRef.current;
+    if (!restore || restore.element !== hgroup) {
+      if (restore) restoreInlineStyles(restore.element, restore.styles);
+      bcHgroupRestoreRef.current = {element: hgroup, styles: readInlineStyles(hgroup)};
+    }
+
+    const maxWidth = Math.max(0, window.innerWidth - BC_HEADING_VIEWPORT_MARGIN * 2);
+    const headingWidth = Math.min(maxWidth, fw);
+    const minCenter = headingWidth / 2 + BC_HEADING_VIEWPORT_MARGIN;
+    const maxCenter = window.innerWidth - headingWidth / 2 - BC_HEADING_VIEWPORT_MARGIN;
+    const centerX = minCenter <= maxCenter ? clamp(left + fw / 2, minCenter, maxCenter) : window.innerWidth / 2;
+
+    hgroup.style.alignItems = 'center';
+    hgroup.style.boxSizing = 'border-box';
+    hgroup.style.display = 'block';
+    hgroup.style.height = 'auto';
+    hgroup.style.justifyContent = 'center';
+    hgroup.style.margin = '0';
+    hgroup.style.minHeight = '0';
+    hgroup.style.overflow = 'visible';
+    hgroup.style.padding = '0';
+    hgroup.style.position = 'fixed';
+    hgroup.style.left = `${centerX}px`;
+    hgroup.style.right = 'auto';
+    hgroup.style.bottom = 'auto';
+    hgroup.style.width = `${headingWidth}px`;
+    hgroup.style.maxWidth = `${maxWidth}px`;
+    hgroup.style.transform = 'translate(-50%, -100%)';
+    hgroup.style.zIndex = '1000003';
+    hgroup.style.pointerEvents = collapsed ? 'none' : 'auto';
+    hgroup.style.visibility = collapsed ? 'hidden' : 'visible';
+    hgroup.style.textAlign = 'center';
+
+    const hgroupHeight = hgroup.getBoundingClientRect().height || 0;
+    hgroup.style.top = `${Math.max(hgroupHeight, top - BC_HEADING_GAP)}px`;
+  }, [picker.bcMode, collapsed, left, top, fw]);
+
+  useEffect(() => {
+    return () => {
+      const restore = bcHgroupRestoreRef.current;
+      if (!restore) return;
+      restoreInlineStyles(restore.element, restore.styles);
+      bcHgroupRestoreRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -208,13 +323,6 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     if (label === 'V') setHsv(current => ({...current, v: clamp(value, 0, 100)}));
     if (label === 'A') setAlpha(Math.round(clamp(value, 0, 100) / 100 * 255));
   };
-
-  const toggleW = 24;
-  const fw = cardSize?.w ?? 500 * scale;
-  const fh = cardSize?.h ?? 0;
-  const collapsed = picker.bcMode && picker.collapsed;
-  const dockRight = rect?.right ?? window.innerWidth;
-  const dockLeft = Math.max(0, dockRight - toggleW - fw);
 
   const cardEl = (
     <div ref={cardRef} style={{zoom: scale}}>
@@ -434,7 +542,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
 
   return <div
     className="pointer-events-none fixed z-[1000002] overflow-hidden"
-    style={{top, left: dockLeft, width: toggleW + fw, height: fh}}
+    style={{top, left: left - toggleW, width: toggleW + fw, height: fh}}
   >
     <div
       className="flex items-center"

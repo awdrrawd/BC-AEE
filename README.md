@@ -78,13 +78,6 @@ Standalone floating panel (CharCtrl) with the following features:
 
 ## 📦 安裝方式 · Installation
 
-### 🧩 透過 PCM 管理器（推薦） · Via PCM Manager (Recommended)
-
-若你已安裝 [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/)，可在插件列表中直接啟用 AEE，無需單獨安裝。  
-If you have [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/) installed, enable AEE directly from the plugin list.
-
----
-
 ### 🔌 透過 FUSAM（推薦） · Via FUSAM (Recommended)
 
 1. 安裝 FUSAM（若尚未安裝）：https://sidiousious.gitlab.io/bc-addon-loader/  
@@ -98,6 +91,13 @@ If you have [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/) insta
 
 4. 重新載入 BC。  
    Reload BondageClub.
+
+---
+
+### 🧩 透過 PCM 管理器（推薦） · Via PCM Manager (Recommended)
+
+若你已安裝 [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/)，可在插件列表中直接啟用 AEE，無需單獨安裝。  
+If you have [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/) installed, enable AEE directly from the plugin list.
 
 ---
 

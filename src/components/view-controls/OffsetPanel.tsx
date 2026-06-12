@@ -12,9 +12,9 @@ import {
   toggleWheelControl,
 } from '../../controllers/viewController';
 import {ChevronIcon} from '../icons/ChevronIcon';
+import {Switch} from '../Switch';
 import {OffsetSlider} from './OffsetSlider';
 import {PanelIconButton} from './PanelIconButton';
-import {SmallToggleButton} from './SmallToggleButton';
 
 export function OffsetPanel({state}: {state: AeeState}) {
   const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
@@ -90,7 +90,7 @@ export function OffsetPanel({state}: {state: AeeState}) {
       <div className="h-px bg-zinc-800"/>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] text-zinc-400">{isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}</span>
-        <SmallToggleButton enabled={state.offset.wheelControl} onClick={toggleWheelControl}/>
+        <Switch checked={state.offset.wheelControl} onChange={toggleWheelControl} ariaLabel={isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}/>
       </div>
       <div className={`whitespace-pre-line text-[9px] leading-4 text-zinc-600 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{isZh() ? '滾輪按住/空白鍵=移動\n滾動/Ctrl+±=縮放' : 'Hold wheel/Space=Move\nScroll/Ctrl+±=Scale'}</div>
     </div>

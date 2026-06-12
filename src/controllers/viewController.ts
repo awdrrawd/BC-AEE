@@ -142,9 +142,9 @@ export function toggleOffsetCollapsed() {
   });
 }
 
-export function toggleWheelControl() {
+export function toggleWheelControl(enabled?: boolean) {
   mutateState(draft => {
-    draft.offset.wheelControl = !draft.offset.wheelControl;
+    draft.offset.wheelControl = enabled ?? !draft.offset.wheelControl;
   });
 }
 

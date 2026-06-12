@@ -59,13 +59,13 @@ export function BgSettingsPanel({state}: {state: AeeState}) {
         <PanelIconButton onClick={() => openBgSettings(false)}>x</PanelIconButton>
       </div>
       <div className="flex flex-col gap-2.5 p-3">
-        <BgSection title={isZh() ? '素色背景' : 'Solid Color'} enabled={state.bg.enabled} onToggle={() => setBgEnabled(!state.bg.enabled)}>
+        <BgSection title={isZh() ? '素色背景' : 'Solid Color'} enabled={state.bg.enabled} onChange={setBgEnabled}>
           <div className="flex items-center gap-2">
             <ColorChipButton color={state.bg.color} size="md" onClick={() => openBgColorPicker('solid')}/>
             <span className="text-[11px] text-zinc-400">{isZh() ? '點擊選色' : 'Click to pick'}</span>
           </div>
         </BgSection>
-        <BgSection title={isZh() ? '格線' : 'Grid'} enabled={state.bg.gridEnabled} onToggle={() => setGridEnabled(!state.bg.gridEnabled)}>
+        <BgSection title={isZh() ? '格線' : 'Grid'} enabled={state.bg.gridEnabled} onChange={setGridEnabled}>
           <div className="flex gap-1">
             <BgModeButton active={state.bg.gridMode === 'line'} label="Line" onClick={() => setGridMode('line')}/>
             <BgModeButton active={state.bg.gridMode === 'checker'} label="Checker" onClick={() => setGridMode('checker')}/>
@@ -88,7 +88,7 @@ export function BgSettingsPanel({state}: {state: AeeState}) {
             <BgLayerButton active={state.bg.gridLayer === 'above'} label={isZh() ? '人物上' : 'Above'} onClick={() => setGridLayer('above')}/>
           </div>
         </BgSection>
-        <BgSection title={isZh() ? '圖片背景' : 'Image BG'} enabled={state.bg.imageEnabled} onToggle={() => setBgImageEnabled(!state.bg.imageEnabled)}>
+        <BgSection title={isZh() ? '圖片背景' : 'Image BG'} enabled={state.bg.imageEnabled} onChange={setBgImageEnabled}>
           <div className="flex gap-1.5">
             <input ref={urlRef} type="text" className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-100 outline-none focus:border-violet-400" defaultValue={state.bg.imageUrl} placeholder={isZh() ? '圖片網址...' : 'Image URL...'}/>
             <button className="rounded border border-violet-500/40 bg-violet-500/15 px-2 text-[10px] text-violet-300 hover:bg-violet-500/30" onClick={() => setBgImageUrl(urlRef.current?.value.trim() || '')}>{isZh() ? '載入' : 'Load'}</button>

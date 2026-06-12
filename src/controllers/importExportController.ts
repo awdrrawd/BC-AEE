@@ -1,4 +1,4 @@
-import {isZh} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {mutateState} from '@/core/store';
 import type {AppearanceImportItem, AssetGroupReference, BcxExportItem, CharacterWithAppearance} from '@/core/types';
 
@@ -19,21 +19,19 @@ export function exportBcxAppearance(character: Character | null | undefined) {
     }).filter((entry): entry is BcxExportItem => entry !== null);
 
     if (!bundle.length) {
-      alert('[AEE] No appearance data');
+      alert(t('export-controller-no-appearance-data-alert'));
       return;
     }
 
     const output = LZString.compressToBase64(JSON.stringify(bundle));
     navigator.clipboard.writeText(output).then(() => {
-      ChatRoomSendLocal(isZh()
-        ? `[AEE] 外觀已匯出（${bundle.length} 件）`
-        : `[AEE] Exported ${bundle.length} items`);
+      ChatRoomSendLocal(t('export-controller-export-success-message', {count: bundle.length}));
     }).catch(() => {
-      prompt('[AEE] Copy this:', output);
+      prompt(t('export-controller-copy-fallback-prompt'), output);
     });
   } catch (error) {
     console.error('[AEE] Export failed:', error);
-    alert('[AEE] Export failed: ' + error);
+    alert(t('export-controller-export-failed-alert', {error: String(error)}));
   }
 }
 
@@ -43,12 +41,12 @@ export async function importBcxAppearanceWithCategory(character: Character) {
     clipboardText = await navigator.clipboard.readText();
   } catch (error) {
     console.error('[AEE] Cannot read clipboard:', error);
-    alert('[AEE] Cannot read clipboard');
+    alert(t('import-controller-cannot-read-clipboard-alert'));
     return;
   }
   clipboardText = clipboardText.trim();
   if (!clipboardText) {
-    alert('[AEE] Clipboard is empty');
+    alert(t('import-controller-empty-clipboard-alert'));
     return;
   }
 
@@ -93,7 +91,7 @@ export async function importBcxAppearanceWithCategory(character: Character) {
   } catch {
     // Show parse error below.
   }
-  alert('[AEE] ' + (isZh() ? '無法解析剪貼板內容（請先用 AEE/BCX 匯出）' : 'Cannot parse clipboard content (please export with AEE/BCX first)'));
+  alert(t('import-controller-cannot-parse-clipboard-alert'));
 }
 
 export function closeImportDialog() {
@@ -119,7 +117,7 @@ export function getAppearanceItemCategory(item: AppearanceImportItem): 'clothes'
 export function applyImportCategories(character: CharacterWithAppearance, appearance: AppearanceImportItem[], selectedCategories: Set<string>) {
   const filtered = appearance.filter(item => selectedCategories.has(getAppearanceItemCategory(item)));
   if (!filtered.length) {
-    alert('[AEE] ' + (isZh() ? '沒有符合的物件' : 'No matching items'));
+    alert(t('import-controller-no-matching-items-alert'));
     return;
   }
 
@@ -148,14 +146,14 @@ export function applyImportCategories(character: CharacterWithAppearance, appear
       const itemName = entry.Asset?.Name ?? entry.Name;
       if (!groupName || !itemName) continue;
       try {
-        InventoryWear?.(character, itemName, groupName as AssetGroupName, entry.Color ?? 'Default', null, null, null, false);
+        InventoryWear(character, itemName, groupName as AssetGroupName, entry.Color ?? 'Default', null, null, null, false);
         if (entry.Property != null) {
-          const worn = InventoryGet?.(character, groupName as AssetGroupName)
+          const worn = InventoryGet(character, groupName as AssetGroupName)
             ?? character.Appearance.find(item => (item.Asset?.Group?.Name ?? item.Group) === groupName);
           if (worn) worn.Property = JSON.parse(JSON.stringify(entry.Property));
         }
         if (entry.Difficulty != null) {
-          const worn = InventoryGet?.(character, groupName as AssetGroupName)
+          const worn = InventoryGet(character, groupName as AssetGroupName)
             ?? character.Appearance.find(item => (item.Asset?.Group?.Name ?? item.Group) === groupName);
           if (worn) worn.Difficulty = entry.Difficulty;
         }
@@ -164,14 +162,12 @@ export function applyImportCategories(character: CharacterWithAppearance, appear
       }
     }
 
-    CharacterRefresh?.(character, false);
-    if (CurrentScreen === 'ChatRoom') ChatRoomCharacterUpdate?.(character);
-    ChatRoomSendLocal?.(isZh()
-      ? `[AEE] 已匯入 ${filtered.length} 個物件`
-      : `[AEE] Imported ${filtered.length} items`);
+    CharacterRefresh(character, false);
+    if (CurrentScreen === 'ChatRoom') ChatRoomCharacterUpdate(character);
+    ChatRoomSendLocal(t('import-controller-import-success-message', {count: filtered.length}));
   } catch (error) {
     console.error('[AEE] Import failed:', error);
-    alert('[AEE] Import failed: ' + error);
+    alert(t('import-controller-import-failed-alert', {error: String(error)}));
   } finally {
     closeImportDialog();
   }

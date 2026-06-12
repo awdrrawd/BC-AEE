@@ -1,6 +1,6 @@
 import {type MouseEvent as ReactMouseEvent, useEffect, useRef} from 'react';
 import type {AeeState} from '@/core/types';
-import {isZh} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {runtime} from '@/core/runtime';
 import {
   moveOffsetPanel,
@@ -124,7 +124,7 @@ export function OffsetPanel({state}: { state: AeeState }) {
       }}
     >
       <span
-        className="text-[11px] font-bold uppercase tracking-wider text-violet-400">⟳ {isZh() ? '位移控制' : 'Offset'}</span>
+        className="text-[11px] font-bold uppercase tracking-wider text-violet-400">⟳ {t('offset-panel-title')}</span>
       <div className="flex gap-1">
         <PanelIconButton onClick={toggleOffsetCollapsed}>
           <ChevronIcon direction={state.offset.collapsed ? 'up' : 'down'} size={12}/>
@@ -142,26 +142,26 @@ export function OffsetPanel({state}: { state: AeeState }) {
           style={{left: `${mmX}%`, top: `${mmY}%`}}/>
       </div>
       <div
-        className="mt-1 text-center text-[9px] tracking-wide text-zinc-600">{isZh() ? '點擊/拖移移動人物' : 'Click/drag to move character'}</div>
+        className="mt-1 text-center text-[9px] tracking-wide text-zinc-600">{t('offset-panel-minimap-help')}</div>
     </div>
     <div className={`${state.offset.collapsed ? 'hidden' : 'flex'} flex-col gap-2 px-3 py-2.5`}>
-      <OffsetSlider label={isZh() ? '左右' : 'X'} min={-700} max={800} step={10} value={state.offset.x}
+      <OffsetSlider label={t('offset-panel-x-slider-label')} min={-700} max={800} step={10} value={state.offset.x}
                     display={(state.offset.x > 0 ? '+' : '') + state.offset.x} onChange={setOffsetX}
                     onReset={() => resetOffset('x')}/>
-      <OffsetSlider label={isZh() ? '上下' : 'Y'} min={-2000} max={2000} step={10} value={state.offset.y}
+      <OffsetSlider label={t('offset-panel-y-slider-label')} min={-2000} max={2000} step={10} value={state.offset.y}
                     display={(state.offset.y > 0 ? '+' : '') + state.offset.y} onChange={setOffsetY}
                     onReset={() => resetOffset('y')}/>
-      <OffsetSlider label={isZh() ? '縮放' : 'Scale'} min={20} max={500} step={5}
+      <OffsetSlider label={t('offset-panel-scale-slider-label')} min={20} max={500} step={5}
                     value={Math.round(state.offset.scale * 100)} display={`${Math.round(state.offset.scale * 100)}%`}
                     onChange={(value: number) => setCharScale(value / 100)} onReset={() => resetOffset('scale')}/>
       <div className="h-px bg-zinc-800"/>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-zinc-400">{isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}</span>
+        <span className="text-[11px] text-zinc-400">{t('offset-panel-wheel-control-label')}</span>
         <Switch checked={state.offset.wheelControl} onChange={toggleWheelControl} size="md"
-                ariaLabel={isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}/>
+                ariaLabel={t('offset-panel-wheel-control-aria-label')}/>
       </div>
       <div
-        className={`whitespace-pre-line text-[9px] leading-4 text-zinc-600 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{isZh() ? '滾輪按住/空白鍵=移動\n滾動/Ctrl+±=縮放' : 'Hold wheel/Space=Move\nScroll/Ctrl+±=Scale'}</div>
+        className={`whitespace-pre-line text-[9px] leading-4 text-zinc-600 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{t('offset-panel-wheel-control-help')}</div>
     </div>
   </div>;
 }

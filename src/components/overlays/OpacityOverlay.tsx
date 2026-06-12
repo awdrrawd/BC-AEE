@@ -1,6 +1,6 @@
 import type {AeeState} from '@/core/types';
 import {getLayerOverride} from '@/core/bc';
-import {isZh, t} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {
   closeOpacityOverlay,
   moveOpacityOverlay,
@@ -29,7 +29,7 @@ export function OpacityOverlay({state}: { state: AeeState }) {
     canvasRect={state.canvasRect}
     left={left}
     top={top}
-    title={t('opacity')}
+    title={t('opacity-overlay-title')}
     subtitle={layerLabel}
     onClose={closeOpacityOverlay}
     onMove={moveOpacityOverlay}
@@ -40,7 +40,7 @@ export function OpacityOverlay({state}: { state: AeeState }) {
       <PanelButton className="flex-1" onClick={() => stepOpacity(state.selectedLayer!, -1)}>-1</PanelButton>
       <PanelButton className="flex-1" onClick={() => stepOpacity(state.selectedLayer!, 1)}>+1</PanelButton>
       <PanelButton tone="danger" onClick={() => resetEditProperty('op')}>
-        {isZh() ? '重置' : 'Reset'}
+        {t('opacity-overlay-reset-button')}
       </PanelButton>
     </div>
   </FloatingPanel>;

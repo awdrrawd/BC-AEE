@@ -1,6 +1,6 @@
 import type {LayerId} from '@/core/types';
 import {getLayerColor, getLayerDisplayName} from '@/core/bc';
-import {t} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {LayerButtonRow} from '@/components/layers/LayerButtonRow';
 
 export function LayerList({item, layers, selectedLayer}: {
@@ -9,7 +9,7 @@ export function LayerList({item, layers, selectedLayer}: {
   selectedLayer: LayerId | null
 }) {
   return <div>
-    <LayerButtonRow id="all" name={t('allParts')} color={getLayerColor(item, 'all')}
+    <LayerButtonRow id="all" name={t('layer-list-all-parts-row')} color={getLayerColor(item, 'all')}
                     selected={selectedLayer === 'all'}/>
     {layers.map((layer, index) =>
       <LayerButtonRow

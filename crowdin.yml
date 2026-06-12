@@ -1,0 +1,14 @@
+preserve_hierarchy: true
+
+files:
+  - source: /src/i18n/locales/EN/translation.json
+    translation: /src/i18n/locales/%locale%/translation.json
+    type: i18next_json
+    languages_mapping:
+      locale:
+        de: DE
+        fr: FR
+        ru: RU
+        zh-CN: CN
+        zh-TW: TW
+        uk: UA

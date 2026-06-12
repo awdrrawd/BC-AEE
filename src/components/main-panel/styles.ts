@@ -6,8 +6,8 @@ export const resetButtonClass = 'flex h-6 w-7 shrink-0 items-center justify-cent
 export const rangeClass = 'h-1 w-full cursor-pointer appearance-none rounded bg-zinc-800 accent-violet-500';
 
 export const panelTabs = [
-  ['edit', 'tabEdit'],
-  ['opacity', 'tabOpacity'],
-  ['layers', 'tabLayers'],
-  ['settings', 'tabSettings'],
+  ['edit', 'main-panel-tab-edit'],
+  ['opacity', 'main-panel-tab-opacity'],
+  ['layers', 'main-panel-tab-layers'],
+  ['settings', 'main-panel-tab-settings'],
 ] as const;

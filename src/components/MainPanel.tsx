@@ -1,6 +1,6 @@
 import {type MouseEvent as ReactMouseEvent} from 'react';
 import type {AeeState} from '@/core/types';
-import {t} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {getElementOverlayAnchor} from '@/core/overlay';
 import {setTab, togglePartsOpen} from '@/controllers/uiController';
 import {LayersIcon} from '@/components/icons/LayersIcon';
@@ -52,7 +52,7 @@ export function MainPanel({state}: { state: AeeState }) {
               className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-medium text-zinc-400">AEE v{state.version}</span>
             <button
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${state.partsOpen ? 'border-violet-400 bg-violet-500/15 text-violet-200' : 'border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-200'}`}
-              title={t('secPart')}
+              title={t('main-panel-parts-button-title')}
               onClick={openParts}
             >
               <LayersIcon/>

@@ -1,7 +1,7 @@
 import bcAeeModSdk from '@/modsdk';
 import {getState} from '@/core/store';
 import {exportBcxAppearance, importBcxAppearanceWithCategory} from '@/controllers/importExportController';
-import {isZh} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 
 export function installMenuHooks() {
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
@@ -17,8 +17,8 @@ export function installMenuHooks() {
     if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
       try {
         TextCache.Text_Appearance = TextCache.Text_Appearance || {};
-        TextCache.Text_Appearance.AEE_Export = isZh() ? 'BCX匯出' : 'Export';
-        TextCache.Text_Appearance.AEE_Import = isZh() ? 'BCX匯入' : 'Import';
+        TextCache.Text_Appearance.AEE_Export = t('menu-export-label');
+        TextCache.Text_Appearance.AEE_Import = t('menu-import-label');
       } catch {
         // ignore
       }
@@ -33,10 +33,10 @@ export function installMenuHooks() {
     for (let index = 0; index < menu.length; index++) {
       const buttonX = x + 117 * index;
       if (menu[index] === 'AEE_Export') {
-        DrawButton?.(buttonX, 25, 90, 90, '', 'White', 'Icons/Copy.png', isZh() ? 'BCX 匯出外觀至剪貼板' : 'BCX Export appearance to clipboard');
+        DrawButton(buttonX, 25, 90, 90, '', 'White', 'Icons/Copy.png', t('menu-export-tooltip'));
       }
       if (menu[index] === 'AEE_Import') {
-        DrawButton?.(buttonX, 25, 90, 90, '', 'White', 'Icons/Paste.png', isZh() ? 'BCX 匯入外觀（選擇種類）' : 'BCX Import appearance (select categories)');
+        DrawButton(buttonX, 25, 90, 90, '', 'White', 'Icons/Paste.png', t('menu-import-tooltip'));
       }
     }
   });
@@ -44,7 +44,7 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('AppearanceMenuClick', 10, (args, next) => {
     const x = 2000 - AppearanceMenu.length * 117;
     for (let index = 0; index < AppearanceMenu.length; index++) {
-      if (!MouseXIn?.(x + 117 * index, 90)) continue;
+      if (!MouseXIn(x + 117 * index, 90)) continue;
       if (AppearanceMenu[index] === 'AEE_Export') {
         exportBcxAppearance(CharacterAppearanceSelection);
         return;

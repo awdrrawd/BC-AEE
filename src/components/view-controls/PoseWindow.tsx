@@ -1,5 +1,6 @@
 import {useRef} from 'react';
 import type {AeeState} from '@/core/types';
+import {t} from '@/i18n/i18n';
 import {movePoseWindow, POSES, togglePoseWindow} from '@/controllers/viewController';
 import {PanelIconButton} from '@/components/view-controls/PanelIconButton';
 import {PoseButton} from '@/components/view-controls/PoseButton';
@@ -36,7 +37,7 @@ export function PoseWindow({state}: { state: AeeState }) {
         if (drag.current?.pointerId === event.pointerId) drag.current = null;
       }}
     >
-      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">POSE</span>
+      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">{t('pose-window-title')}</span>
       <PanelIconButton onClick={() => togglePoseWindow(false)}>x</PanelIconButton>
     </div>
     <div className="grid grid-cols-4 gap-1.5 p-2.5">

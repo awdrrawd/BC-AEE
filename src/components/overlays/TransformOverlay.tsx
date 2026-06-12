@@ -1,6 +1,6 @@
 import type {AeeState} from '@/core/types';
 import {getAssetBaseXY, getLayerOverride} from '@/core/bc';
-import {isZh, t} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {
   closeTransformOverlay,
   moveTransformOverlay,
@@ -31,7 +31,13 @@ export function TransformOverlay({state}: { state: AeeState }) {
   const left = state.transformOverlay.left ?? 46;
   const top = state.transformOverlay.top ?? 90;
   const activeDrag = state.activeDrag === mode;
-  const title = mode === 'xy' ? t('coord') : mode === 'rot' ? t('rotate') : mode === 'scale' ? t('scale') : t('skew');
+  const title = mode === 'xy'
+    ? t('transform-overlay-position-title')
+    : mode === 'rot'
+      ? t('transform-overlay-rotation-title')
+      : mode === 'scale'
+        ? t('transform-overlay-scale-title')
+        : t('transform-overlay-skew-title');
 
   const setScale = (ctrl: 'sx' | 'sy', value: number) => {
     const next = Math.max(0.05, value);
@@ -84,9 +90,9 @@ export function TransformOverlay({state}: { state: AeeState }) {
                  onChange={value => setEditProperty('rot', value)}/> : null}
     {mode === 'scale' ? <>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-zinc-500">{isZh() ? '等比例' : 'Linked scale'}</span>
+        <span className="text-[11px] text-zinc-500">{t('transform-overlay-linked-scale-label')}</span>
         <PanelButton size="sm" tone={state.scaleLock ? 'active' : 'normal'} onClick={() => setScaleLock()}>
-          {state.scaleLock ? (isZh() ? '鎖定' : 'Locked') : (isZh() ? '分離' : 'Free')}
+          {state.scaleLock ? t('transform-overlay-scale-locked-button') : t('transform-overlay-scale-free-button')}
         </PanelButton>
       </div>
       <SliderRow label="X" value={sx} min={0.05} max={Math.max(3, sx + 1)} step={0.01} display={sx.toFixed(2)}
@@ -102,10 +108,10 @@ export function TransformOverlay({state}: { state: AeeState }) {
     </> : null}
     <div className="mt-1 flex items-center gap-1.5 border-t border-zinc-800 pt-2">
       <PanelButton className="flex-1" tone={activeDrag ? 'active' : 'normal'} onClick={() => setActiveDrag(mode)}>
-        {activeDrag ? (isZh() ? '畫布拖移中' : 'Canvas drag on') : (isZh() ? '畫布拖移' : 'Canvas drag')}
+        {activeDrag ? t('transform-overlay-canvas-drag-active-button') : t('transform-overlay-canvas-drag-button')}
       </PanelButton>
       <PanelButton tone="danger" onClick={resetMode}>
-        {isZh() ? '重置' : 'Reset'}
+        {t('transform-overlay-reset-button')}
       </PanelButton>
     </div>
   </FloatingPanel>;

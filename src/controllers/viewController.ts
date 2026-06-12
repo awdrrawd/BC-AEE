@@ -189,18 +189,18 @@ export function movePoseWindow(left: number, top: number) {
   });
 }
 
-export const POSES: { name: AssetPoseName, zh: string, en: string }[] = [
-  {name: 'BaseUpper', zh: '放鬆手臂', en: 'Arms Relaxed'},
-  {name: 'Yoked', zh: '高舉雙手', en: 'Hands Raised'},
-  {name: 'OverTheHead', zh: '雙手過頭', en: 'Over Head'},
-  {name: 'BackBoxTie', zh: '反綁雙手', en: 'Box Tie'},
-  {name: 'BackElbowTouch', zh: '肘部相觸', en: 'Elbow Touch'},
-  {name: 'BackCuffs', zh: '右手反抓', en: 'Back Cuffs'},
-  {name: 'BaseLower', zh: '站立', en: 'Standing'},
-  {name: 'LegsClosed', zh: '併腿', en: 'Legs Closed'},
-  {name: 'Kneel', zh: '跪下', en: 'Kneeling'},
-  {name: 'KneelingSpread', zh: '跪姿分腿', en: 'Kneeling Spread'},
-  {name: 'AllFours', zh: '趴跪', en: 'All Fours'},
+export const POSES: { name: AssetPoseName, labelKey: string }[] = [
+  {name: 'BaseUpper', labelKey: 'pose-arms-relaxed'},
+  {name: 'Yoked', labelKey: 'pose-hands-raised'},
+  {name: 'OverTheHead', labelKey: 'pose-over-head'},
+  {name: 'BackBoxTie', labelKey: 'pose-box-tie'},
+  {name: 'BackElbowTouch', labelKey: 'pose-elbow-touch'},
+  {name: 'BackCuffs', labelKey: 'pose-back-cuffs'},
+  {name: 'BaseLower', labelKey: 'pose-standing'},
+  {name: 'LegsClosed', labelKey: 'pose-legs-closed'},
+  {name: 'Kneel', labelKey: 'pose-kneeling'},
+  {name: 'KneelingSpread', labelKey: 'pose-kneeling-spread'},
+  {name: 'AllFours', labelKey: 'pose-all-fours'},
 ];
 
 export function getPoseIconUrl(name: string) {

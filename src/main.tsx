@@ -1,6 +1,7 @@
 import {createRoot} from "react-dom/client";
 import {StrictMode} from "react";
 import '@/tailwind.css'
+import '@/i18n/i18n';
 import {setShadowRoot} from "@/shadow-style.ts";
 import {installAeeHooks} from "@/hooks";
 import {App} from "@/components/App";

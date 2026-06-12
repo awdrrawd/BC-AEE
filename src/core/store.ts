@@ -93,6 +93,10 @@ function emit() {
   listeners.forEach(listener => listener());
 }
 
+export function emitAeeStoreChange() {
+  emit();
+}
+
 export function getState() {
   return state;
 }

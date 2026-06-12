@@ -1,6 +1,6 @@
 import {useRef} from 'react';
 import type {AeeState} from '@/core/types';
-import {isZh, t} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {
   defaultBgSettingsPosition,
   moveBgSettings,
@@ -56,35 +56,35 @@ export function BgSettingsPanel({state}: { state: AeeState }) {
           if (drag.current?.pointerId === event.pointerId) drag.current = null;
         }}
       >
-        <span className="text-[11px] font-bold uppercase tracking-widest text-violet-400">BG Settings</span>
+        <span className="text-[11px] font-bold uppercase tracking-widest text-violet-400">{t('background-settings-panel-title')}</span>
         <PanelIconButton onClick={() => openBgSettings(false)}>x</PanelIconButton>
       </div>
       <div className="flex flex-col gap-2.5 p-3">
-        <BgSection title={isZh() ? '素色背景' : 'Solid Color'} enabled={state.bg.enabled} onChange={setBgEnabled}>
+        <BgSection title={t('background-settings-solid-section-title')} enabled={state.bg.enabled} onChange={setBgEnabled}>
           <div className="flex items-center gap-2">
             <ColorChipButton color={state.bg.color} size="md" onClick={() => openBgColorPicker('solid')}/>
-            <span className="text-[11px] text-zinc-400">{isZh() ? '點擊選色' : 'Click to pick'}</span>
+            <span className="text-[11px] text-zinc-400">{t('background-settings-solid-click-to-pick')}</span>
           </div>
         </BgSection>
-        <BgSection title={isZh() ? '格線' : 'Grid'} enabled={state.bg.gridEnabled} onChange={setGridEnabled}>
+        <BgSection title={t('background-settings-grid-section-title')} enabled={state.bg.gridEnabled} onChange={setGridEnabled}>
           <div className="flex gap-1">
-            <BgModeButton active={state.bg.gridMode === 'line'} label="Line" onClick={() => setGridMode('line')}/>
-            <BgModeButton active={state.bg.gridMode === 'checker'} label="Checker"
+            <BgModeButton active={state.bg.gridMode === 'line'} label={t('background-settings-grid-line-mode-button')} onClick={() => setGridMode('line')}/>
+            <BgModeButton active={state.bg.gridMode === 'checker'} label={t('background-settings-grid-checker-mode-button')}
                           onClick={() => setGridMode('checker')}/>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-14 text-[11px] text-zinc-400">{isZh() ? '顏色' : 'Color'}</span>
+            <span className="w-14 text-[11px] text-zinc-400">{t('background-settings-grid-color-label')}</span>
             <ColorChipButton color={state.bg.gridColor} size="sm" onClick={() => openBgColorPicker('grid')}/>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-14 text-[11px] text-zinc-400">Size</span>
+            <span className="w-14 text-[11px] text-zinc-400">{t('background-settings-grid-size-label')}</span>
             <input type="number"
                    className="w-14 rounded border border-zinc-700 bg-zinc-950 px-1 py-0.5 text-center font-mono text-[11px] text-violet-300 outline-none focus:border-violet-400"
                    min={5} max={200} step={5} value={state.bg.gridPx}
                    onChange={event => setGridPx(Number(event.target.value))}/>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-14 text-[11px] text-zinc-400">{t('opacity')}</span>
+            <span className="w-14 text-[11px] text-zinc-400">{t('background-settings-grid-opacity-label')}</span>
             <input type="range" className="h-1 flex-1 appearance-none rounded bg-zinc-800 accent-violet-500" min={5}
                    max={80} step={5} value={Math.round(state.bg.gridOpacity * 100)}
                    onChange={event => setGridOpacity(Number(event.target.value) / 100)}/>
@@ -92,21 +92,21 @@ export function BgSettingsPanel({state}: { state: AeeState }) {
               className="w-9 text-right font-mono text-[11px] text-violet-300">{Math.round(state.bg.gridOpacity * 100)}%</span>
           </div>
           <div className="flex gap-1">
-            <BgLayerButton active={state.bg.gridLayer === 'below'} label={isZh() ? '人物下' : 'Below'}
+            <BgLayerButton active={state.bg.gridLayer === 'below'} label={t('background-settings-grid-layer-below-button')}
                            onClick={() => setGridLayer('below')}/>
-            <BgLayerButton active={state.bg.gridLayer === 'above'} label={isZh() ? '人物上' : 'Above'}
+            <BgLayerButton active={state.bg.gridLayer === 'above'} label={t('background-settings-grid-layer-above-button')}
                            onClick={() => setGridLayer('above')}/>
           </div>
         </BgSection>
-        <BgSection title={isZh() ? '圖片背景' : 'Image BG'} enabled={state.bg.imageEnabled}
+        <BgSection title={t('background-settings-image-section-title')} enabled={state.bg.imageEnabled}
                    onChange={setBgImageEnabled}>
           <div className="flex gap-1.5">
             <input ref={urlRef} type="text"
                    className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-100 outline-none focus:border-violet-400"
-                   defaultValue={state.bg.imageUrl} placeholder={isZh() ? '圖片網址...' : 'Image URL...'}/>
+                   defaultValue={state.bg.imageUrl} placeholder={t('background-settings-image-url-placeholder')}/>
             <button
               className="rounded border border-violet-500/40 bg-violet-500/15 px-2 text-[10px] text-violet-300 hover:bg-violet-500/30"
-              onClick={() => setBgImageUrl(urlRef.current?.value.trim() || '')}>{isZh() ? '載入' : 'Load'}</button>
+              onClick={() => setBgImageUrl(urlRef.current?.value.trim() || '')}>{t('background-settings-image-load-button')}</button>
             <button
               className="rounded border border-red-400/40 bg-red-500/10 px-2 text-[10px] text-red-300 hover:bg-red-500/25"
               onClick={() => {

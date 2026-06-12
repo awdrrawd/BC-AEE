@@ -1,4 +1,4 @@
-import {isZh} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {setSetting} from '@/controllers/uiController';
 import {Switch} from '@/components/Switch';
 
@@ -7,7 +7,7 @@ export function SettingRow({label, settingKey, value}: { label: string; settingK
     <span className="text-xs text-zinc-300">{label}</span>
     <Switch checked={value} onChange={checked => setSetting(settingKey, checked)} ariaLabel={label}
             className="text-xs text-zinc-500">
-      <span>{value ? (isZh() ? '啟用' : 'ON') : (isZh() ? '停用' : 'OFF')}</span>
+      <span>{value ? t('setting-row-state-on') : t('setting-row-state-off')}</span>
     </Switch>
   </div>;
 }

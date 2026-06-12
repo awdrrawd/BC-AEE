@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {isZh} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {Switch} from '@/components/Switch';
 
 export function BgSection({title, enabled, onChange, children}: {
@@ -13,7 +13,7 @@ export function BgSection({title, enabled, onChange, children}: {
       <span className="text-xs font-bold tracking-wide text-zinc-100">{title}</span>
       <div className="flex items-center gap-2 text-[11px] text-zinc-400">
         <Switch checked={enabled} onChange={onChange} ariaLabel={title}/>
-        <span>{enabled ? (isZh() ? '啟用' : 'ON') : (isZh() ? '停用' : 'OFF')}</span>
+        <span>{enabled ? t('background-section-state-on') : t('background-section-state-off')}</span>
       </div>
     </div>
     <div className="flex flex-col gap-2 px-2.5 py-2">{children}</div>

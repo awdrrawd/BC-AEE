@@ -1,7 +1,7 @@
 import type {MouseEvent as ReactMouseEvent} from 'react';
 import type {AeeState} from '@/core/types';
 import {getLayerOverride} from '@/core/bc';
-import {t} from '@/core/lang';
+import {t} from '@/i18n/i18n';
 import {setEditProperty} from '@/controllers/uiController';
 import {ROT_CX_PCT, ROT_CY_PCT, ROT_RADIUS} from '@/components/overlays/styles';
 
@@ -49,7 +49,7 @@ export function RotationOverlay({state}: { state: AeeState }) {
             fontSize="14" fontWeight="700">{Math.round(rotation)}°
       </text>
       <text x={cx} y={cy + ROT_RADIUS + 18} textAnchor="middle" fill="rgba(255,255,255,0.45)"
-            fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotHint')}</text>
+            fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotation-overlay-handle-hint')}</text>
       <circle cx={cx} cy={cy} r={4} fill="rgba(139,92,246,0.5)"/>
       <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)"
               stroke="transparent" strokeWidth="28" onMouseDown={startDrag}/>

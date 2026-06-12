@@ -1,5 +1,5 @@
 export const importCategories = [
-  {key: 'clothes', zh: '衣服', en: 'Clothes', icon: '衣'},
-  {key: 'body', zh: '身體', en: 'Body', icon: '身'},
-  {key: 'restraints', zh: '拘束', en: 'Restraints', icon: '拘'},
+  {key: 'clothes', labelKey: 'import-dialog-category-clothes-label', iconKey: 'import-dialog-category-clothes-icon'},
+  {key: 'body', labelKey: 'import-dialog-category-body-label', iconKey: 'import-dialog-category-body-icon'},
+  {key: 'restraints', labelKey: 'import-dialog-category-restraints-label', iconKey: 'import-dialog-category-restraints-icon'},
 ];

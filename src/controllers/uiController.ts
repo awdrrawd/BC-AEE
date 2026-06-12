@@ -17,6 +17,7 @@ import {
 } from '../core/bc';
 import {runtime} from '../core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '../core/context';
+import {isAppearanceGroupsPhase, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
@@ -395,6 +396,7 @@ export function resetPriority(layerId: LayerId) {
 
 export function setSetting(key: string, value: boolean) {
   setAeeSetting(key, value);
+  if (key === 'showCharCtrl') updateAppearanceScreenState();
   mutateState(draft => {
     if (key === 'hoverHighlight') {
       draft.hoverHighlight = value;
@@ -407,7 +409,7 @@ export function setSetting(key: string, value: boolean) {
       applyLscgLayersVisibility(value);
     } else if (key === 'showCharCtrl') {
       draft.showCharCtrl = value;
-      draft.charControl.visible = value && CurrentScreen === 'Appearance';
+      draft.charControl.visible = value && isAppearanceGroupsPhase();
     } else if (key === 'enableAeeMenu') {
       draft.enableAeeMenu = value;
     } else if (key === 'useAeeColorPicker') {

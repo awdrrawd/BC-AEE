@@ -3,8 +3,33 @@ import {runtime} from '../core/runtime';
 import {syncAfterBcRender, setCharControlVisible, startHoverCharHighlight, stopHoverCharHighlight} from '../controllers/uiController';
 import {getState} from '../core/store';
 import {drawAboveGridIfNeeded, removeBgHook} from '../controllers/backgroundController';
+import {
+  isAppearanceGroupsPhase,
+  markAppearanceRunEnd,
+  markAppearanceRunStart,
+  observeAppearanceScreenState,
+  onAppearanceScreenTransition,
+  shouldShowAppearanceViewControl,
+  updateAppearanceScreenState,
+} from '../core/appearanceScreenMachine';
 
 export function installAppearanceHooks() {
+  onAppearanceScreenTransition(transition => {
+    if (shouldShowAppearanceViewControl()) setCharControlVisible(true);
+    else setCharControlVisible(false);
+
+    if (transition.leftAppearance) {
+      removeBgHook();
+      stopHoverCharHighlight();
+    }
+
+    if (transition.phaseChanged && transition.current.phase !== 'groups') {
+      stopHoverCharHighlight();
+    }
+
+    syncAfterBcRender();
+  });
+
   bcAeeModSdk.hookFunction('CharacterAppearanceVisible', 1, (args, next) => {
     if (!getState().hoverHighlightChar) return next(args);
     const character = args[0];
@@ -15,16 +40,16 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('AppearanceRun', 1, (args, next) => {
-    const isAppearance = CurrentScreen === 'Appearance';
-    const state = getState();
-    if (isAppearance && state.showCharCtrl) setCharControlVisible(true);
+    updateAppearanceScreenState();
+    if (shouldShowAppearanceViewControl()) setCharControlVisible(true);
     syncAfterBcRender();
 
-    handleHoverCharHighlight(isAppearance);
+    handleHoverCharHighlight(isAppearanceGroupsPhase());
 
-    runtime.inAppearanceRun = true;
+    markAppearanceRunStart();
     const result = next(args);
-    runtime.inAppearanceRun = false;
+    markAppearanceRunEnd();
+    updateAppearanceScreenState();
     drawAboveGridIfNeeded();
     return result;
   });
@@ -56,26 +81,33 @@ export function installAppearanceHooks() {
     return next(args);
   });
 
+  bcAeeModSdk.hookFunction('AppearanceLoad', 1, (args, next) => {
+    return observeAppearanceScreenState(next(args));
+  });
+
   bcAeeModSdk.hookFunction('AppearanceExit', 1, (args, next) => {
-    setCharControlVisible(false);
-    removeBgHook();
-    return next(args);
+    return observeAppearanceScreenState(next(args));
   });
 
   bcAeeModSdk.hookFunction('CharacterAppearanceExit', 1, (args, next) => {
-    setCharControlVisible(false);
-    return next(args);
+    return observeAppearanceScreenState(next(args));
+  });
+
+  bcAeeModSdk.hookFunction('CharacterAppearanceReady', 1, (args, next) => {
+    return observeAppearanceScreenState(next(args));
   });
 
   bcAeeModSdk.hookFunction('CharacterAppearanceWardrobeLoad', 1, (args, next) => {
-    setCharControlVisible(false);
-    return next(args);
+    return observeAppearanceScreenState(next(args));
+  });
+
+  bcAeeModSdk.hookFunction('AppearanceItemColor', 1, (args, next) => {
+    return observeAppearanceScreenState(next(args));
   });
 
   bcAeeModSdk.hookFunction('CommonSetScreen', 1, (args, next) => {
-    const result = next(args);
-    if (CurrentScreen !== 'Appearance') setCharControlVisible(false);
-    return result;
+    updateAppearanceScreenState();
+    return observeAppearanceScreenState(next(args));
   });
 
   bcAeeModSdk.hookFunction('AppearanceClick', 0, (args, next) => {

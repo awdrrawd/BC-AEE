@@ -1,6 +1,7 @@
 import {getCanvasRect, getCanvas} from '../core/bc';
 import {getState, mutateState} from '../core/store';
 import {setAeeSetting} from '../core/settings';
+import {isAppearanceGroupsPhase, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
 import {loadBgImage, openBgSettings, saveBgAndRefresh, setBgEnabled, setBgImageEnabled, setGridEnabled} from './backgroundController';
 
 export const CTRL_BTN_SIZE = 52;
@@ -235,7 +236,8 @@ export function installViewControlHandlers() {
 
   document.addEventListener('keydown', event => {
     const state = getState();
-    if (!state.offset.wheelControl || CurrentScreen !== 'Appearance') return;
+    updateAppearanceScreenState();
+    if (!state.offset.wheelControl || !isAppearanceGroupsPhase()) return;
     if (event.code === 'Space' && !event.repeat) {
       spaceDown = true;
       event.preventDefault();
@@ -268,7 +270,8 @@ export function installViewControlHandlers() {
 
   document.addEventListener('mousemove', event => {
     const state = getState();
-    if (!state.offset.wheelControl || CurrentScreen !== 'Appearance') return;
+    updateAppearanceScreenState();
+    if (!state.offset.wheelControl || !isAppearanceGroupsPhase()) return;
     const dragging = wheelButtonDown || (spaceDown && event.buttons === 1);
     if (!dragging) return;
     const canvas = getCanvas();
@@ -281,7 +284,8 @@ export function installViewControlHandlers() {
 
   document.addEventListener('wheel', event => {
     const state = getState();
-    if (!state.offset.wheelControl || CurrentScreen !== 'Appearance') return;
+    updateAppearanceScreenState();
+    if (!state.offset.wheelControl || !isAppearanceGroupsPhase()) return;
     if (spaceDown || wheelButtonDown) return;
     const canvas = getCanvas();
     if (!canvas) return;

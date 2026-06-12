@@ -3,6 +3,7 @@ import {runtime} from '../core/runtime';
 import {getState} from '../core/store';
 import {syncCurrentContext} from '../core/context';
 import {getCanvasRect, getLayerDisplayName, getLayerColor} from '../core/bc';
+import {observeAppearanceScreenState, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
 import {closeColorPicker, openColorPicker, setColorPickerValue, startHoverHighlight, stopHoverHighlight} from '../controllers/uiController';
 
 export function installItemColorHooks() {
@@ -17,9 +18,10 @@ export function installItemColorHooks() {
     runtime.itemColorChar = args[0];
     runtime.itemColorItem = args[1];
     runtime.itemColorDirty = false;
-    const result = next(args);
+    const result = observeAppearanceScreenState(next(args));
     syncCurrentContext();
     Promise.resolve(result).then(() => {
+      updateAppearanceScreenState();
       window.setTimeout(syncCurrentContext, 300);
     });
     return result;
@@ -30,7 +32,11 @@ export function installItemColorHooks() {
     const indices = typeof ItemColorPickerIndices !== 'undefined' ? [...ItemColorPickerIndices] : null;
     const pickerLayers = typeof ItemColorPickerLayers !== 'undefined' ? [...ItemColorPickerLayers.values()] : null;
     runtime.pickerContext = {item, indices, pickerLayers};
-    return next(args);
+    return observeAppearanceScreenState(next(args));
+  });
+
+  bcAeeModSdk.hookFunction('ItemColorCloseColorPicker', 0, (args, next) => {
+    return observeAppearanceScreenState(next(args));
   });
 
   bcAeeModSdk.hookFunction('ColorPickerUnload', 0, (args, next) => {
@@ -52,6 +58,7 @@ export function installItemColorHooks() {
       runtime.itemColorItem = null;
       runtime.itemColorDirty = false;
       closeAeeBcColorPicker();
+      updateAppearanceScreenState();
     }
     if (args[0] === true && dirtyChar) {
       try {
@@ -61,6 +68,7 @@ export function installItemColorHooks() {
       }
     }
     syncCurrentContext();
+    updateAppearanceScreenState();
     return result;
   });
 

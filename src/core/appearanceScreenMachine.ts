@@ -1,5 +1,5 @@
-import {getState} from './store';
-import {runtime} from './runtime';
+import {getState} from '@/core/store';
+import {runtime} from '@/core/runtime';
 
 export type AppearanceScreenMode = '' | 'Wardrobe' | 'Cloth' | 'Color' | 'Permissions';
 export type ItemColorSubMode = ItemColorMode | null;

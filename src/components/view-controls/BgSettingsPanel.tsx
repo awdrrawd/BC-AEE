@@ -1,6 +1,6 @@
 import {useRef} from 'react';
-import type {AeeState} from '../../core/types';
-import {isZh, t} from '../../core/lang';
+import type {AeeState} from '@/core/types';
+import {isZh, t} from '@/core/lang';
 import {
   defaultBgSettingsPosition,
   moveBgSettings,
@@ -14,12 +14,12 @@ import {
   setGridMode,
   setGridOpacity,
   setGridPx,
-} from '../../controllers/backgroundController';
-import {BgLayerButton} from './BgLayerButton';
-import {BgModeButton} from './BgModeButton';
-import {BgSection} from './BgSection';
-import {ColorChipButton} from './ColorChipButton';
-import {PanelIconButton} from './PanelIconButton';
+} from '@/controllers/backgroundController';
+import {BgLayerButton} from '@/components/view-controls/BgLayerButton';
+import {BgModeButton} from '@/components/view-controls/BgModeButton';
+import {BgSection} from '@/components/view-controls/BgSection';
+import {ColorChipButton} from '@/components/view-controls/ColorChipButton';
+import {PanelIconButton} from '@/components/view-controls/PanelIconButton';
 
 export function BgSettingsPanel({state}: { state: AeeState }) {
   const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);

@@ -1,6 +1,6 @@
 import {type ReactNode, useRef} from 'react';
-import type {CanvasRect} from '../core/types';
-import {TOOL_PANEL_WIDTH} from '../core/overlay';
+import type {CanvasRect} from '@/core/types';
+import {TOOL_PANEL_WIDTH} from '@/core/overlay';
 
 export function FloatingPanel({
                                 canvasRect,

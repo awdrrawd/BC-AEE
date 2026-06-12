@@ -1,5 +1,5 @@
-import {isZh} from '../../core/lang';
-import {applyPose, getPoseIconUrl} from '../../controllers/viewController';
+import {isZh} from '@/core/lang';
+import {applyPose, getPoseIconUrl} from '@/controllers/viewController';
 
 export function PoseButton({pose, index, active}: {
   pose: { name: AssetPoseName; zh: string; en: string };

@@ -1,6 +1,6 @@
-import {getAppearanceMode, getCanvasRect, getCurrentGroup, getCurrentItem, isEditableAppearanceContext} from './bc';
-import {getState, mutateState, setState} from './store';
-import {runtime} from './runtime';
+import {getAppearanceMode, getCanvasRect, getCurrentGroup, getCurrentItem, isEditableAppearanceContext} from '@/core/bc';
+import {getState, mutateState, setState} from '@/core/store';
+import {runtime} from '@/core/runtime';
 
 let lastGroup: string | null = null;
 let lastAsset: string | null = null;

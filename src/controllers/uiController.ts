@@ -1,6 +1,6 @@
-import type {AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '../core/types';
-import {getState, mutateState} from '../core/store';
-import {setAeeSetting} from '../core/settings';
+import type {AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '@/core/types';
+import {getState, mutateState} from '@/core/store';
+import {setAeeSetting} from '@/core/settings';
 import {
   applyPriority,
   clampPriority,
@@ -14,10 +14,10 @@ import {
   refreshCurrentCharacter,
   setLayerColor,
   setLayerOverride,
-} from '../core/bc';
-import {runtime} from '../core/runtime';
-import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '../core/context';
-import {isInAppearanceScreen, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
+} from '@/core/bc';
+import {runtime} from '@/core/runtime';
+import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '@/core/context';
+import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
@@ -26,8 +26,8 @@ import {
   PARTS_PANEL_WIDTH,
   TOOL_PANEL_MIN_HEIGHT,
   TOOL_PANEL_WIDTH,
-} from '../core/overlay';
-import {hideTouchBlocker, showTouchBlocker} from './dragController';
+} from '@/core/overlay';
+import {hideTouchBlocker, showTouchBlocker} from '@/controllers/dragController';
 
 type AssetPriority = Asset & { DrawingPriority?: number };
 type ToolOverlay = 'parts' | 'opacity' | 'transform';

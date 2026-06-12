@@ -1,5 +1,5 @@
-import type {SavedColor} from './types';
-import {hsvaString} from './colorMath';
+import type {SavedColor} from '@/components/color-picker/types';
+import {hsvaString} from '@/components/color-picker/colorMath';
 
 export function SavedCell({item, selected, onClick}: { item: SavedColor; selected: boolean; onClick: () => void }) {
   return <button

@@ -1,6 +1,6 @@
 import {useRef} from 'react';
-import type {AeeState} from '../../core/types';
-import {t} from '../../core/lang';
+import type {AeeState} from '@/core/types';
+import {t} from '@/core/lang';
 import {
   CTRL_BTN_SIZE,
   CTRL_ICON_MAIN,
@@ -16,16 +16,16 @@ import {
   togglePoseWindow,
   toggleSolidBg,
   toggleSubDirection,
-} from '../../controllers/viewController';
-import {openBgSettings} from '../../controllers/backgroundController';
-import {BgIcon} from '../icons/BgIcon';
-import {CloseupIcon} from '../icons/CloseupIcon';
-import {FullBodyIcon} from '../icons/FullBodyIcon';
-import {HideIcon} from '../icons/HideIcon';
-import {OffsetIcon} from '../icons/OffsetIcon';
-import {PoseIcon} from '../icons/PoseIcon';
-import {ControlButton} from './ControlButton';
-import {DirectionButton} from './DirectionButton';
+} from '@/controllers/viewController';
+import {openBgSettings} from '@/controllers/backgroundController';
+import {BgIcon} from '@/components/icons/BgIcon';
+import {CloseupIcon} from '@/components/icons/CloseupIcon';
+import {FullBodyIcon} from '@/components/icons/FullBodyIcon';
+import {HideIcon} from '@/components/icons/HideIcon';
+import {OffsetIcon} from '@/components/icons/OffsetIcon';
+import {PoseIcon} from '@/components/icons/PoseIcon';
+import {ControlButton} from '@/components/view-controls/ControlButton';
+import {DirectionButton} from '@/components/view-controls/DirectionButton';
 
 export function CharControl({state}: { state: AeeState }) {
   const drag = useRef<{

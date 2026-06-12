@@ -1,7 +1,7 @@
-import {getCanvas, getCanvasRect} from '../core/bc';
-import {getState, mutateState} from '../core/store';
-import {setAeeSetting} from '../core/settings';
-import {isInAppearanceScreen, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
+import {getCanvas, getCanvasRect} from '@/core/bc';
+import {getState, mutateState} from '@/core/store';
+import {setAeeSetting} from '@/core/settings';
+import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
   loadBgImage,
   openBgSettings,
@@ -9,7 +9,7 @@ import {
   setBgEnabled,
   setBgImageEnabled,
   setGridEnabled
-} from './backgroundController';
+} from '@/controllers/backgroundController';
 
 export const CTRL_BTN_SIZE = 52;
 

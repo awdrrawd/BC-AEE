@@ -1,4 +1,4 @@
-import {type ChevronDirection, ChevronIcon} from '../icons/ChevronIcon';
+import {type ChevronDirection, ChevronIcon} from '@/components/icons/ChevronIcon';
 
 export function DirectionButton({direction, onClick}: { direction: ChevronDirection; onClick: () => void }) {
   return <button

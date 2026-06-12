@@ -1,6 +1,6 @@
-import type {AeeState} from '../../core/types';
-import {getLayerDisplayName} from '../../core/bc';
-import {t} from '../../core/lang';
+import type {AeeState} from '@/core/types';
+import {getLayerDisplayName} from '@/core/bc';
+import {t} from '@/core/lang';
 
 export function getSelectedLayerLabel(state: AeeState) {
   if (state.selectedLayer === 'all') return t('allParts');

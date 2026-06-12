@@ -1,6 +1,6 @@
 import type {ReactNode} from 'react';
-import {CTRL_ICON_FRAME} from '../../controllers/viewController';
-import {ctrlButtonBaseClass, ctrlLabelClass} from './styles';
+import {CTRL_ICON_FRAME} from '@/controllers/viewController';
+import {ctrlButtonBaseClass, ctrlLabelClass} from '@/components/view-controls/styles';
 
 export function ControlButton({active, label, icon, onClick}: {
   active: boolean;

@@ -1,6 +1,6 @@
 import type {ReactNode} from 'react';
-import type {DragMode} from '../../core/types';
-import {DragCheck} from './DragCheck';
+import type {DragMode} from '@/core/types';
+import {DragCheck} from '@/components/main-panel/DragCheck';
 
 export function PropGroup({title, dragMode, dragLabel, activeDrag, children}: {
   title: string;

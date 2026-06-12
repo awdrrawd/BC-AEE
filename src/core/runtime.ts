@@ -1,4 +1,4 @@
-import type {MirrorCopyFlags, PendingTransform, PickerContext} from './types';
+import type {MirrorCopyFlags, PendingTransform, PickerContext} from '@/core/types';
 
 type ColorPickerLiveChange = (hex: string, preview?: boolean) => void;
 type HoverFlashData = { item: Item; overrides: Map<number, number> };

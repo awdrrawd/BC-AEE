@@ -1,5 +1,5 @@
 import type {MouseEvent as ReactMouseEvent, ReactNode} from 'react';
-import {activeIconButtonClass, iconButtonClass} from './styles';
+import {activeIconButtonClass, iconButtonClass} from '@/components/main-panel/styles';
 
 export function ToggleIconButton({active, title, children, onClick}: {
   active: boolean;

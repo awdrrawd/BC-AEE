@@ -1,8 +1,8 @@
 import {useRef} from 'react';
-import type {AeeState} from '../../core/types';
-import {movePoseWindow, POSES, togglePoseWindow} from '../../controllers/viewController';
-import {PanelIconButton} from './PanelIconButton';
-import {PoseButton} from './PoseButton';
+import type {AeeState} from '@/core/types';
+import {movePoseWindow, POSES, togglePoseWindow} from '@/controllers/viewController';
+import {PanelIconButton} from '@/components/view-controls/PanelIconButton';
+import {PoseButton} from '@/components/view-controls/PoseButton';
 
 export function PoseWindow({state}: { state: AeeState }) {
   const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);

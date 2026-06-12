@@ -1,9 +1,9 @@
-import type {AeeState} from '../../core/types';
-import {t} from '../../core/lang';
-import {PARTS_PANEL_WIDTH} from '../../core/overlay';
-import {movePartsPanel, togglePartsOpen} from '../../controllers/uiController';
-import {FloatingPanel} from '../FloatingPanel';
-import {LayerList} from '../layers/LayerList';
+import type {AeeState} from '@/core/types';
+import {t} from '@/core/lang';
+import {PARTS_PANEL_WIDTH} from '@/core/overlay';
+import {movePartsPanel, togglePartsOpen} from '@/controllers/uiController';
+import {FloatingPanel} from '@/components/FloatingPanel';
+import {LayerList} from '@/components/layers/LayerList';
 
 export function PartsFloat({state}: { state: AeeState }) {
   if (!state.partsOpen || !state.item || !state.canvasRect) return null;

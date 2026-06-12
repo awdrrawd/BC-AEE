@@ -1,4 +1,4 @@
-import {t} from '../../core/lang';
+import {t} from '@/core/lang';
 
 export function ruleLabel(rule: string) {
   if (rule === 'complementary') return t('harmCompl');

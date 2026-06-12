@@ -1,9 +1,9 @@
 import type {MouseEvent as ReactMouseEvent} from 'react';
-import type {AeeState} from '../../core/types';
-import {getLayerOverride} from '../../core/bc';
-import {t} from '../../core/lang';
-import {setEditProperty} from '../../controllers/uiController';
-import {ROT_CX_PCT, ROT_CY_PCT, ROT_RADIUS} from './styles';
+import type {AeeState} from '@/core/types';
+import {getLayerOverride} from '@/core/bc';
+import {t} from '@/core/lang';
+import {setEditProperty} from '@/controllers/uiController';
+import {ROT_CX_PCT, ROT_CY_PCT, ROT_RADIUS} from '@/components/overlays/styles';
 
 export function RotationOverlay({state}: { state: AeeState }) {
   if (!state.rotationOverlayOpen || !state.canvasRect || !state.item || state.selectedLayer === null) return null;

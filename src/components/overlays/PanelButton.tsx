@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {panelButtonActiveClass, panelButtonBaseClass, panelButtonDangerClass, panelButtonNormalClass,} from './styles';
+import {panelButtonActiveClass, panelButtonBaseClass, panelButtonDangerClass, panelButtonNormalClass,} from '@/components/overlays/styles';
 
 export function PanelButton({children, onClick, tone = 'normal', size = 'md', className = ''}: {
   children: ReactNode;

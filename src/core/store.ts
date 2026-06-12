@@ -1,7 +1,7 @@
 import {useSyncExternalStore} from 'react';
-import {getAeeSetting} from './settings';
-import type {AeeState} from './types';
-import {MOD_VERSION} from './version';
+import {getAeeSetting} from '@/core/settings';
+import type {AeeState} from '@/core/types';
+import {MOD_VERSION} from '@/core/version';
 
 const savedCtrlPos = getAeeSetting<{ left: number; top: number } | null>('charCtrlPos', null);
 

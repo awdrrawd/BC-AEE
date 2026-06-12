@@ -1,5 +1,5 @@
-import {isZh} from '../../core/lang';
-import {Switch} from '../Switch';
+import {isZh} from '@/core/lang';
+import {Switch} from '@/components/Switch';
 
 export function ImportCategoryOption({category, checked, onChange}: {
   category: { key: string; zh: string; en: string; icon: string };

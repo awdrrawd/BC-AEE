@@ -1,10 +1,10 @@
-import {installRenderHooks} from './renderHooks';
-import {installAppearanceHooks} from './appearanceHooks';
-import {installItemColorHooks} from './itemColorHooks';
-import {installMenuHooks} from './menuHooks';
-import {installDragHandlers} from '../controllers/dragController';
-import {initializeViewBackground, installViewControlHandlers} from '../controllers/viewController';
-import {syncAfterBcRender} from '../controllers/uiController';
+import {installRenderHooks} from '@/hooks/renderHooks';
+import {installAppearanceHooks} from '@/hooks/appearanceHooks';
+import {installItemColorHooks} from '@/hooks/itemColorHooks';
+import {installMenuHooks} from '@/hooks/menuHooks';
+import {installDragHandlers} from '@/controllers/dragController';
+import {initializeViewBackground, installViewControlHandlers} from '@/controllers/viewController';
+import {syncAfterBcRender} from '@/controllers/uiController';
 
 export function installAeeHooks() {
   installRenderHooks();

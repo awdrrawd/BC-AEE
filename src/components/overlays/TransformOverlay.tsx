@@ -1,6 +1,6 @@
-import type {AeeState} from '../../core/types';
-import {getAssetBaseXY, getLayerOverride} from '../../core/bc';
-import {isZh, t} from '../../core/lang';
+import type {AeeState} from '@/core/types';
+import {getAssetBaseXY, getLayerOverride} from '@/core/bc';
+import {isZh, t} from '@/core/lang';
 import {
   closeTransformOverlay,
   moveTransformOverlay,
@@ -8,11 +8,11 @@ import {
   setActiveDrag,
   setEditProperty,
   setScaleLock,
-} from '../../controllers/uiController';
-import {FloatingPanel} from '../FloatingPanel';
-import {PanelButton} from './PanelButton';
-import {SliderRow} from './SliderRow';
-import {getSelectedLayerLabel} from './getSelectedLayerLabel';
+} from '@/controllers/uiController';
+import {FloatingPanel} from '@/components/FloatingPanel';
+import {PanelButton} from '@/components/overlays/PanelButton';
+import {SliderRow} from '@/components/overlays/SliderRow';
+import {getSelectedLayerLabel} from '@/components/overlays/getSelectedLayerLabel';
 
 export function TransformOverlay({state}: { state: AeeState }) {
   const mode = state.transformOverlay.mode;

@@ -1,7 +1,7 @@
-import type {AeeState} from '../../core/types';
-import {isZh} from '../../core/lang';
-import {AboutAee} from './AboutAee';
-import {SettingRow} from './SettingRow';
+import type {AeeState} from '@/core/types';
+import {isZh} from '@/core/lang';
+import {AboutAee} from '@/components/main-panel/AboutAee';
+import {SettingRow} from '@/components/main-panel/SettingRow';
 
 export function SettingsTab({state}: { state: AeeState }) {
   return <>

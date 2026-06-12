@@ -1,7 +1,7 @@
-import type {LayerId} from '../../core/types';
-import {setOpacity, stepOpacity} from '../../controllers/uiController';
-import {RangeInput} from './RangeInput';
-import {StepPair} from './StepPair';
+import type {LayerId} from '@/core/types';
+import {setOpacity, stepOpacity} from '@/controllers/uiController';
+import {RangeInput} from '@/components/main-panel/RangeInput';
+import {StepPair} from '@/components/main-panel/StepPair';
 
 export function OpacityRow({layerId, name, value, display}: {
   layerId: LayerId;

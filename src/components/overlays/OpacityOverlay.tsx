@@ -1,19 +1,19 @@
-import type {AeeState} from '../../core/types';
-import {getLayerOverride} from '../../core/bc';
-import {isZh, t} from '../../core/lang';
+import type {AeeState} from '@/core/types';
+import {getLayerOverride} from '@/core/bc';
+import {isZh, t} from '@/core/lang';
 import {
   closeOpacityOverlay,
   moveOpacityOverlay,
   resetEditProperty,
   setOpacity,
   stepOpacity
-} from '../../controllers/uiController';
-import {clampPanelPosition, TOOL_PANEL_WIDTH} from '../../core/overlay';
-import {FloatingPanel} from '../FloatingPanel';
-import {PanelButton} from './PanelButton';
-import {SliderRow} from './SliderRow';
-import {getSelectedLayerLabel} from './getSelectedLayerLabel';
-import {OP_BASE_CX, OP_BASE_CY, OP_OFFSET_X, OP_OFFSET_Y} from './styles';
+} from '@/controllers/uiController';
+import {clampPanelPosition, TOOL_PANEL_WIDTH} from '@/core/overlay';
+import {FloatingPanel} from '@/components/FloatingPanel';
+import {PanelButton} from '@/components/overlays/PanelButton';
+import {SliderRow} from '@/components/overlays/SliderRow';
+import {getSelectedLayerLabel} from '@/components/overlays/getSelectedLayerLabel';
+import {OP_BASE_CX, OP_BASE_CY, OP_OFFSET_X, OP_OFFSET_Y} from '@/components/overlays/styles';
 
 export function OpacityOverlay({state}: { state: AeeState }) {
   if (!state.opacityOverlay.open || !state.canvasRect || !state.item || state.selectedLayer === null) return null;

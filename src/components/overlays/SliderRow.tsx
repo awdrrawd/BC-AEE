@@ -1,4 +1,4 @@
-import {sliderRangeClass} from './styles';
+import {sliderRangeClass} from '@/components/overlays/styles';
 
 export function SliderRow({label, value, min, max, step, display, inputValue, onChange}: {
   label: string;

@@ -1,8 +1,8 @@
-import {getCanvas, getCanvasRect} from '../core/bc';
-import {getState, mutateState} from '../core/store';
-import {setAeeSetting} from '../core/settings';
-import {runtime} from '../core/runtime';
-import {openColorPicker} from './uiController';
+import {getCanvas, getCanvasRect} from '@/core/bc';
+import {getState, mutateState} from '@/core/store';
+import {setAeeSetting} from '@/core/settings';
+import {runtime} from '@/core/runtime';
+import {openColorPicker} from '@/controllers/uiController';
 
 export function setBgEnabled(enabled: boolean) {
   setAeeSetting('bgEnabled', enabled);

@@ -27,7 +27,7 @@ try {
 }
 */
 
-import {MOD_VERSION} from './core/version';
+import {MOD_VERSION} from '@/core/version';
 
 const bcAeeModSdk = bcModSdk.registerMod({
   name: 'Liko - AEE',

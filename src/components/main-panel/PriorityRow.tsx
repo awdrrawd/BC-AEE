@@ -1,7 +1,7 @@
 import type {ReactNode} from 'react';
-import type {LayerId} from '../../core/types';
-import {getPriorityValue, resetPriority, setPriority, stepPriority} from '../../controllers/uiController';
-import {RangeInput} from './RangeInput';
+import type {LayerId} from '@/core/types';
+import {getPriorityValue, resetPriority, setPriority, stepPriority} from '@/controllers/uiController';
+import {RangeInput} from '@/components/main-panel/RangeInput';
 
 export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerId; name: ReactNode }) {
   const priority = getPriorityValue(item, layerId);

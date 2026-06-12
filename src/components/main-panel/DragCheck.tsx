@@ -1,6 +1,6 @@
-import type {DragMode} from '../../core/types';
-import {setActiveDrag} from '../../controllers/uiController';
-import {Switch} from '../Switch';
+import type {DragMode} from '@/core/types';
+import {setActiveDrag} from '@/controllers/uiController';
+import {Switch} from '@/components/Switch';
 
 export function DragCheck({mode, label, activeDrag}: {
   mode: Exclude<DragMode, null>;

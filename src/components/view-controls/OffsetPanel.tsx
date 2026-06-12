@@ -1,7 +1,7 @@
 import {type MouseEvent as ReactMouseEvent, useEffect, useRef} from 'react';
-import type {AeeState} from '../../core/types';
-import {isZh} from '../../core/lang';
-import {runtime} from '../../core/runtime';
+import type {AeeState} from '@/core/types';
+import {isZh} from '@/core/lang';
+import {runtime} from '@/core/runtime';
 import {
   moveOffsetPanel,
   resetOffset,
@@ -12,11 +12,11 @@ import {
   toggleOffsetCollapsed,
   toggleOffsetPanel,
   toggleWheelControl,
-} from '../../controllers/viewController';
-import {ChevronIcon} from '../icons/ChevronIcon';
-import {Switch} from '../Switch';
-import {OffsetSlider} from './OffsetSlider';
-import {PanelIconButton} from './PanelIconButton';
+} from '@/controllers/viewController';
+import {ChevronIcon} from '@/components/icons/ChevronIcon';
+import {Switch} from '@/components/Switch';
+import {OffsetSlider} from '@/components/view-controls/OffsetSlider';
+import {PanelIconButton} from '@/components/view-controls/PanelIconButton';
 
 export function OffsetPanel({state}: { state: AeeState }) {
   const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);

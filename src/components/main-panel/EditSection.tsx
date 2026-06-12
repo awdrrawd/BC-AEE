@@ -1,15 +1,15 @@
-import type {AeeState, LayerId} from '../../core/types';
-import {isZh, t} from '../../core/lang';
-import {getAssetBaseXY, getLayerColor, getLayerDisplayName, getLayerOverride, isGroupLocked} from '../../core/bc';
-import {openLayerColorPicker, setOpacity, setScaleLock, stepOpacity} from '../../controllers/uiController';
-import {LinkIcon} from '../icons/LinkIcon';
-import {DragCheck} from './DragCheck';
-import {MirrorGroup} from './MirrorGroup';
-import {PropGroup} from './PropGroup';
-import {PropRow} from './PropRow';
-import {RangeInput} from './RangeInput';
-import {Section} from './Section';
-import {StepPair} from './StepPair';
+import type {AeeState, LayerId} from '@/core/types';
+import {isZh, t} from '@/core/lang';
+import {getAssetBaseXY, getLayerColor, getLayerDisplayName, getLayerOverride, isGroupLocked} from '@/core/bc';
+import {openLayerColorPicker, setOpacity, setScaleLock, stepOpacity} from '@/controllers/uiController';
+import {LinkIcon} from '@/components/icons/LinkIcon';
+import {DragCheck} from '@/components/main-panel/DragCheck';
+import {MirrorGroup} from '@/components/main-panel/MirrorGroup';
+import {PropGroup} from '@/components/main-panel/PropGroup';
+import {PropRow} from '@/components/main-panel/PropRow';
+import {RangeInput} from '@/components/main-panel/RangeInput';
+import {Section} from '@/components/main-panel/Section';
+import {StepPair} from '@/components/main-panel/StepPair';
 
 export function EditSection({state, layerId}: { state: AeeState; layerId: LayerId }) {
   const item = state.item;

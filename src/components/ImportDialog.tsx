@@ -1,9 +1,9 @@
 import {useState} from 'react';
-import type {AeeState} from '../core/types';
-import {isZh} from '../core/lang';
-import {applyImportCategories, closeImportDialog} from '../controllers/importExportController';
-import {ImportCategoryOption} from './import-dialog/ImportCategoryOption';
-import {importCategories} from './import-dialog/importCategories';
+import type {AeeState} from '@/core/types';
+import {isZh} from '@/core/lang';
+import {applyImportCategories, closeImportDialog} from '@/controllers/importExportController';
+import {ImportCategoryOption} from '@/components/import-dialog/ImportCategoryOption';
+import {importCategories} from '@/components/import-dialog/importCategories';
 
 export function ImportDialog({state}: { state: AeeState }) {
   const dialog = state.importDialog;

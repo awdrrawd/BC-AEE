@@ -1,6 +1,6 @@
-import {isZh} from '../../core/lang';
-import {setSetting} from '../../controllers/uiController';
-import {Switch} from '../Switch';
+import {isZh} from '@/core/lang';
+import {setSetting} from '@/controllers/uiController';
+import {Switch} from '@/components/Switch';
 
 export function SettingRow({label, settingKey, value}: { label: string; settingKey: string; value: boolean }) {
   return <div className="flex items-center justify-between border-b border-zinc-800 py-2">

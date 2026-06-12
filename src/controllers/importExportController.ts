@@ -1,6 +1,6 @@
-import {isZh} from '../core/lang';
-import {mutateState} from '../core/store';
-import type {AppearanceImportItem, AssetGroupReference, BcxExportItem, CharacterWithAppearance} from '../core/types';
+import {isZh} from '@/core/lang';
+import {mutateState} from '@/core/store';
+import type {AppearanceImportItem, AssetGroupReference, BcxExportItem, CharacterWithAppearance} from '@/core/types';
 
 export function exportBcxAppearance(character: Character | null | undefined) {
   try {

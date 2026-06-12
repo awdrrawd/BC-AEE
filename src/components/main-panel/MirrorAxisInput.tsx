@@ -1,4 +1,4 @@
-import {setEditProperty, stepEditProperty} from '../../controllers/uiController';
+import {setEditProperty, stepEditProperty} from '@/controllers/uiController';
 
 export function MirrorAxisInput({label, ctrl, value}: { label: string; ctrl: 'fcx' | 'fcy'; value: number }) {
   return <div className="flex min-w-0 flex-1 items-center gap-1">

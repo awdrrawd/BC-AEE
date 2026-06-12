@@ -1,7 +1,7 @@
-import type {AeeState} from '../../core/types';
-import {getLayerDisplayName} from '../../core/bc';
-import {t} from '../../core/lang';
-import {PriorityRow} from './PriorityRow';
+import type {AeeState} from '@/core/types';
+import {getLayerDisplayName} from '@/core/bc';
+import {t} from '@/core/lang';
+import {PriorityRow} from '@/components/main-panel/PriorityRow';
 
 export function LayersTab({state}: { state: AeeState }) {
   if (!state.layers.length) return <div className="p-6 text-center text-sm text-zinc-500">{t('noLayers')}</div>;

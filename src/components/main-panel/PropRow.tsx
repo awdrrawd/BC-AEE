@@ -1,5 +1,5 @@
-import {resetEditProperty, setEditProperty, stepEditProperty} from '../../controllers/uiController';
-import {resetButtonClass, stepButtonClass} from './styles';
+import {resetEditProperty, setEditProperty, stepEditProperty} from '@/controllers/uiController';
+import {resetButtonClass, stepButtonClass} from '@/components/main-panel/styles';
 
 export function PropRow({label, value, ctrl, deltas}: {
   label: string;

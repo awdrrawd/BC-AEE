@@ -1,6 +1,6 @@
 import type {ReactNode} from 'react';
-import {isZh} from '../../core/lang';
-import {Switch} from '../Switch';
+import {isZh} from '@/core/lang';
+import {Switch} from '@/components/Switch';
 
 export function BgSection({title, enabled, onChange, children}: {
   title: string;

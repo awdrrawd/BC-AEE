@@ -1,4 +1,4 @@
-import type {LayerId} from '../core/types';
+import type {LayerId} from '@/core/types';
 import {
   ensureLayerOverrides,
   getAssetBaseXY,
@@ -7,9 +7,9 @@ import {
   getLayerOverride,
   refreshCurrentCharacter,
   setLayerOverride,
-} from '../core/bc';
-import {getState, mutateState} from '../core/store';
-import {forceUiUpdate} from '../core/context';
+} from '@/core/bc';
+import {getState, mutateState} from '@/core/store';
+import {forceUiUpdate} from '@/core/context';
 
 interface BaseDragState {
   layerId: LayerId;

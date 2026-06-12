@@ -1,16 +1,16 @@
 import {type MouseEvent as ReactMouseEvent} from 'react';
-import type {AeeState} from '../core/types';
-import {t} from '../core/lang';
-import {getElementOverlayAnchor} from '../core/overlay';
-import {setTab, togglePartsOpen} from '../controllers/uiController';
-import {LayersIcon} from './icons/LayersIcon';
-import {EditTab} from './main-panel/EditTab';
-import {LayersTab} from './main-panel/LayersTab';
-import {OpacityTab} from './main-panel/OpacityTab';
-import {PartsFloat} from './main-panel/PartsFloat';
-import {SettingsTab} from './main-panel/SettingsTab';
-import {panelClass, panelTabs} from './main-panel/styles';
-import {ToggleBar} from './main-panel/ToggleBar';
+import type {AeeState} from '@/core/types';
+import {t} from '@/core/lang';
+import {getElementOverlayAnchor} from '@/core/overlay';
+import {setTab, togglePartsOpen} from '@/controllers/uiController';
+import {LayersIcon} from '@/components/icons/LayersIcon';
+import {EditTab} from '@/components/main-panel/EditTab';
+import {LayersTab} from '@/components/main-panel/LayersTab';
+import {OpacityTab} from '@/components/main-panel/OpacityTab';
+import {PartsFloat} from '@/components/main-panel/PartsFloat';
+import {SettingsTab} from '@/components/main-panel/SettingsTab';
+import {panelClass, panelTabs} from '@/components/main-panel/styles';
+import {ToggleBar} from '@/components/main-panel/ToggleBar';
 
 export function MainPanel({state}: { state: AeeState }) {
   const rect = state.canvasRect;

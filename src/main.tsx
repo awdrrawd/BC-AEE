@@ -1,9 +1,9 @@
 import {createRoot} from "react-dom/client";
 import {StrictMode} from "react";
-import './tailwind.css'
-import {setShadowRoot} from "./shadow-style.ts";
-import {installAeeHooks} from "./hooks";
-import {App} from "./components/App";
+import '@/tailwind.css'
+import {setShadowRoot} from "@/shadow-style.ts";
+import {installAeeHooks} from "@/hooks";
+import {App} from "@/components/App";
 
 const main: {
   shadowRoot?: ShadowRoot,

@@ -1,13 +1,13 @@
-import bcAeeModSdk from '../modsdk';
-import {runtime} from '../core/runtime';
+import bcAeeModSdk from '@/modsdk';
+import {runtime} from '@/core/runtime';
 import {
   setCharControlVisible,
   startHoverCharHighlight,
   stopHoverCharHighlight,
   syncAfterBcRender
-} from '../controllers/uiController';
-import {getState} from '../core/store';
-import {drawAboveGridIfNeeded, removeBgHook} from '../controllers/backgroundController';
+} from '@/controllers/uiController';
+import {getState} from '@/core/store';
+import {drawAboveGridIfNeeded, removeBgHook} from '@/controllers/backgroundController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -16,7 +16,7 @@ import {
   onAppearanceScreenTransition,
   shouldShowAppearanceViewControl,
   updateAppearanceScreenState,
-} from '../core/appearanceScreenMachine';
+} from '@/core/appearanceScreenMachine';
 
 export function installAppearanceHooks() {
   onAppearanceScreenTransition(transition => {

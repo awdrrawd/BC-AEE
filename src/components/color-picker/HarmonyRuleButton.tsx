@@ -1,4 +1,4 @@
-import {ruleLabel} from './ruleLabel';
+import {ruleLabel} from '@/components/color-picker/ruleLabel';
 
 export function HarmonyRuleButton({name, active, onClick}: { name: string; active: boolean; onClick: () => void }) {
   return <button

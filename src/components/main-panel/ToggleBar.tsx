@@ -1,7 +1,7 @@
 import type {MouseEvent as ReactMouseEvent} from 'react';
-import type {AeeState, DragMode} from '../../core/types';
-import {t} from '../../core/lang';
-import {getElementOverlayAnchor} from '../../core/overlay';
+import type {AeeState, DragMode} from '@/core/types';
+import {t} from '@/core/lang';
+import {getElementOverlayAnchor} from '@/core/overlay';
 import {
   closeOpacityOverlay,
   openOpacityOverlay,
@@ -10,17 +10,17 @@ import {
   toggleCollapse,
   togglePartsOpen,
   toggleTransformOverlay,
-} from '../../controllers/uiController';
-import {ChevronIcon} from '../icons/ChevronIcon';
-import {ColorIcon} from '../icons/ColorIcon';
-import {LayersIcon} from '../icons/LayersIcon';
-import {MoveIcon} from '../icons/MoveIcon';
-import {OpacityIcon} from '../icons/OpacityIcon';
-import {ResetIcon} from '../icons/ResetIcon';
-import {RotateIcon} from '../icons/RotateIcon';
-import {ScaleIcon} from '../icons/ScaleIcon';
-import {SkewIcon} from '../icons/SkewIcon';
-import {ToggleIconButton} from './ToggleIconButton';
+} from '@/controllers/uiController';
+import {ChevronIcon} from '@/components/icons/ChevronIcon';
+import {ColorIcon} from '@/components/icons/ColorIcon';
+import {LayersIcon} from '@/components/icons/LayersIcon';
+import {MoveIcon} from '@/components/icons/MoveIcon';
+import {OpacityIcon} from '@/components/icons/OpacityIcon';
+import {ResetIcon} from '@/components/icons/ResetIcon';
+import {RotateIcon} from '@/components/icons/RotateIcon';
+import {ScaleIcon} from '@/components/icons/ScaleIcon';
+import {SkewIcon} from '@/components/icons/SkewIcon';
+import {ToggleIconButton} from '@/components/main-panel/ToggleIconButton';
 
 export function ToggleBar({state}: { state: AeeState }) {
   const openTransform = (mode: Exclude<DragMode, null>) => (event: ReactMouseEvent<HTMLButtonElement>) => {

@@ -1,8 +1,8 @@
-import type {AeeState} from '../../core/types';
-import {t} from '../../core/lang';
-import {LayerList} from '../layers/LayerList';
-import {EditSection} from './EditSection';
-import {Section} from './Section';
+import type {AeeState} from '@/core/types';
+import {t} from '@/core/lang';
+import {LayerList} from '@/components/layers/LayerList';
+import {EditSection} from '@/components/main-panel/EditSection';
+import {Section} from '@/components/main-panel/Section';
 
 export function EditTab({state}: { state: AeeState }) {
   return <>

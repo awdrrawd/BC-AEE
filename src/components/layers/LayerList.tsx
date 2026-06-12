@@ -1,7 +1,7 @@
-import type {LayerId} from '../../core/types';
-import {getLayerColor, getLayerDisplayName} from '../../core/bc';
-import {t} from '../../core/lang';
-import {LayerButtonRow} from './LayerButtonRow';
+import type {LayerId} from '@/core/types';
+import {getLayerColor, getLayerDisplayName} from '@/core/bc';
+import {t} from '@/core/lang';
+import {LayerButtonRow} from '@/components/layers/LayerButtonRow';
 
 export function LayerList({item, layers, selectedLayer}: {
   item: Item | null;

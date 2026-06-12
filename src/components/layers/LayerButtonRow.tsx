@@ -1,6 +1,6 @@
-import type {LayerId} from '../../core/types';
-import {selectLayer, startHoverHighlight, stopHoverHighlight} from '../../controllers/uiController';
-import {getState} from '../../core/store';
+import type {LayerId} from '@/core/types';
+import {selectLayer, startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
+import {getState} from '@/core/store';
 
 export function LayerButtonRow({id, name, color, selected}: {
   id: LayerId;

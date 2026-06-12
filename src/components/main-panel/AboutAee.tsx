@@ -1,4 +1,4 @@
-import {isZh} from '../../core/lang';
+import {isZh} from '@/core/lang';
 
 export function AboutAee() {
   return <div className="p-4 text-left text-xs leading-6 text-zinc-500">

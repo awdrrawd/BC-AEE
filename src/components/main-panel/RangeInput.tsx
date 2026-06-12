@@ -1,4 +1,4 @@
-import {rangeClass} from './styles';
+import {rangeClass} from '@/components/main-panel/styles';
 
 export function RangeInput({min, max, step, value, onChange}: {
   min: number;

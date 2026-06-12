@@ -1,12 +1,12 @@
-import bcAeeModSdk from '../modsdk';
-import {runtime} from '../core/runtime';
+import bcAeeModSdk from '@/modsdk';
+import {runtime} from '@/core/runtime';
 import type {
   AeeLayerOverride,
   BeforeDrawParams,
   BeforeDrawResult,
   WritableAsset,
   WritableAssetLayer
-} from '../core/types';
+} from '@/core/types';
 
 const AEE_DEBUG = false;
 

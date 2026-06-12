@@ -1,4 +1,4 @@
-import type {CanvasRect} from './types';
+import type {CanvasRect} from '@/core/types';
 
 export interface OverlayAnchor {
   left: number;

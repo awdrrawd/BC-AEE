@@ -1,24 +1,24 @@
 import {type PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import type {AeeState} from '../../core/types';
-import {t} from '../../core/lang';
+import type {AeeState} from '@/core/types';
+import {t} from '@/core/lang';
 import {
   closeColorPicker,
   moveColorPicker,
   previewColorPickerValue,
   setColorPickerCollapsed,
   setColorPickerValue
-} from '../../controllers/uiController';
-import {runtime} from '../../core/runtime';
-import {ChevronIcon} from '../icons/ChevronIcon';
-import {CopyIcon} from '../icons/CopyIcon';
-import {EyedropperIcon} from '../icons/EyedropperIcon';
-import {PasteIcon} from '../icons/PasteIcon';
-import {clamp, hexToHsv, hsvaString, hsvToHex, hsvToRgb} from './colorMath';
-import {ColorSwatchButton} from './ColorSwatchButton';
-import {HarmonyRuleButton} from './HarmonyRuleButton';
-import {SavedCell} from './SavedCell';
-import {ToolButton} from './ToolButton';
-import {Track} from './Track';
+} from '@/controllers/uiController';
+import {runtime} from '@/core/runtime';
+import {ChevronIcon} from '@/components/icons/ChevronIcon';
+import {CopyIcon} from '@/components/icons/CopyIcon';
+import {EyedropperIcon} from '@/components/icons/EyedropperIcon';
+import {PasteIcon} from '@/components/icons/PasteIcon';
+import {clamp, hexToHsv, hsvaString, hsvToHex, hsvToRgb} from '@/components/color-picker/colorMath';
+import {ColorSwatchButton} from '@/components/color-picker/ColorSwatchButton';
+import {HarmonyRuleButton} from '@/components/color-picker/HarmonyRuleButton';
+import {SavedCell} from '@/components/color-picker/SavedCell';
+import {ToolButton} from '@/components/color-picker/ToolButton';
+import {Track} from '@/components/color-picker/Track';
 
 const BC_HEADING_GAP = 4;
 const BC_HEADING_VIEWPORT_MARGIN = 8;

@@ -1,8 +1,8 @@
-import type {AeeState} from '../../core/types';
-import {getLayerDisplayName, getOpacity} from '../../core/bc';
-import {t} from '../../core/lang';
-import {readOpacityPct} from '../../controllers/uiController';
-import {OpacityRow} from './OpacityRow';
+import type {AeeState} from '@/core/types';
+import {getLayerDisplayName, getOpacity} from '@/core/bc';
+import {t} from '@/core/lang';
+import {readOpacityPct} from '@/controllers/uiController';
+import {OpacityRow} from '@/components/main-panel/OpacityRow';
 
 export function OpacityTab({state}: { state: AeeState }) {
   const item = state.item;

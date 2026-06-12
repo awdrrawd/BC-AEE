@@ -1,7 +1,7 @@
-import bcAeeModSdk from '../modsdk';
-import {getState} from '../core/store';
-import {exportBcxAppearance, importBcxAppearanceWithCategory} from '../controllers/importExportController';
-import {isZh} from '../core/lang';
+import bcAeeModSdk from '@/modsdk';
+import {getState} from '@/core/store';
+import {exportBcxAppearance, importBcxAppearanceWithCategory} from '@/controllers/importExportController';
+import {isZh} from '@/core/lang';
 
 export function installMenuHooks() {
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {

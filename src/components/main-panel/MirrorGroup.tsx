@@ -1,8 +1,8 @@
-import type {AeeLayerOverride} from '../../core/types';
-import {isZh, t} from '../../core/lang';
-import {resetEditProperty, toggleMirror} from '../../controllers/uiController';
-import {MirrorAxisInput} from './MirrorAxisInput';
-import {MirrorButton} from './MirrorButton';
+import type {AeeLayerOverride} from '@/core/types';
+import {isZh, t} from '@/core/lang';
+import {resetEditProperty, toggleMirror} from '@/controllers/uiController';
+import {MirrorAxisInput} from '@/components/main-panel/MirrorAxisInput';
+import {MirrorButton} from '@/components/main-panel/MirrorButton';
 
 export function MirrorGroup({layerOverride}: { layerOverride: AeeLayerOverride & { Opacity: number } }) {
   return <div className="mb-2">

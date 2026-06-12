@@ -101,13 +101,20 @@ If you have [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/) insta
 
 ---
 
+### 🐺 BC Mod Manager
+
+若你已安裝 [BC Mod Manager](https://inkerbot.github.io/bc-mod-manager/)，可在插件列表中直接啟用 AEE，無需單獨安裝。  
+If you have [BC Mod Manager](https://inkerbot.github.io/bc-mod-manager/) installed, enable AEE directly from the plugin list.
+
+---
+
 ### 🐵 直接安裝 · Direct installation
 Tampermonkey / Violentmonkey
 
 點擊以下連結直接安裝：  
 Click the link below to install:
 
-👉 **[Install Liko-AEE.user.js](https://github.com/awdrrawd/liko-Plugin-Repository/raw/refs/heads/main/Plugins/Liko-AEE.user.js)**
+👉 **[Install Liko-AEE.user.js](https://raw.githubusercontent.com/awdrrawd/BC-AEE/main/loader.user.js)**
 
 ---
 

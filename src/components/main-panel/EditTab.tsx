@@ -4,7 +4,7 @@ import {LayerList} from '../layers/LayerList';
 import {EditSection} from './EditSection';
 import {Section} from './Section';
 
-export function EditTab({state}: {state: AeeState}) {
+export function EditTab({state}: { state: AeeState }) {
   return <>
     {state.selectedLayer !== null ? <EditSection state={state} layerId={state.selectedLayer}/> : null}
     <Section title={t('secPart')}>

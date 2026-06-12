@@ -11,7 +11,7 @@ import {RangeInput} from './RangeInput';
 import {Section} from './Section';
 import {StepPair} from './StepPair';
 
-export function EditSection({state, layerId}: {state: AeeState; layerId: LayerId}) {
+export function EditSection({state, layerId}: { state: AeeState; layerId: LayerId }) {
   const item = state.item;
   const layers = state.layers;
   const layerOverride = getLayerOverride(item, layerId);
@@ -28,8 +28,11 @@ export function EditSection({state, layerId}: {state: AeeState; layerId: LayerId
 
   return <Section>
     <div className="mb-2 flex items-center justify-between gap-2">
-      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold uppercase tracking-wider text-zinc-100">✦ {label}</span>
-      <button className="relative h-6 w-10 shrink-0 overflow-hidden rounded border border-zinc-700 bg-[repeating-conic-gradient(#222_0%_25%,#111_0%_50%)] bg-[length:5px_5px] hover:border-teal-300" onClick={() => openLayerColorPicker(layerId)}>
+      <span
+        className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold uppercase tracking-wider text-zinc-100">✦ {label}</span>
+      <button
+        className="relative h-6 w-10 shrink-0 overflow-hidden rounded border border-zinc-700 bg-[repeating-conic-gradient(#222_0%_25%,#111_0%_50%)] bg-size-[5px_5px] hover:border-teal-300"
+        onClick={() => openLayerColorPicker(layerId)}>
         <span className="absolute inset-0" style={color ? {background: color} : undefined}/>
       </button>
     </div>
@@ -40,7 +43,8 @@ export function EditSection({state, layerId}: {state: AeeState; layerId: LayerId
       </div>
       <RangeInput min={0} max={100} step={1} value={opacity} onChange={value => setOpacity(layerId, value)}/>
     </div>
-    {locked ? <div className="rounded border border-zinc-800 bg-zinc-900/70 px-2 py-3 text-center text-xs leading-6 text-zinc-400">
+    {locked ? <div
+      className="rounded border border-zinc-800 bg-zinc-900/70 px-2 py-3 text-center text-xs leading-6 text-zinc-400">
       {isZh() ? '此部位已鎖定變形編輯' : 'Transform editing locked'}<br/>
       <span className="text-[10px]">{isZh() ? '仍可編輯透明度與圖層' : 'Opacity & layers still available'}</span>
     </div> : <>
@@ -54,7 +58,9 @@ export function EditSection({state, layerId}: {state: AeeState; layerId: LayerId
       <div className="mb-2">
         <div className="mb-1 flex items-center justify-between gap-2">
           <span className="text-xs font-bold tracking-wide text-zinc-100">{t('scale')}</span>
-          <button className={`flex h-6 w-6 rotate-90 items-center justify-center rounded border transition ${state.scaleLock ? 'border-teal-300 bg-teal-400/10 text-teal-300' : 'border-zinc-700 text-zinc-400 hover:border-teal-300 hover:text-teal-300'}`} onClick={() => setScaleLock()}>
+          <button
+            className={`flex h-6 w-6 rotate-90 items-center justify-center rounded border transition ${state.scaleLock ? 'border-teal-300 bg-teal-400/10 text-teal-300' : 'border-zinc-700 text-zinc-400 hover:border-teal-300 hover:text-teal-300'}`}
+            onClick={() => setScaleLock()}>
             <LinkIcon locked={state.scaleLock}/>
           </button>
           <DragCheck mode="scale" label={t('scaleDrag')} activeDrag={state.activeDrag}/>

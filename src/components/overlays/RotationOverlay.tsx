@@ -5,7 +5,7 @@ import {t} from '../../core/lang';
 import {setEditProperty} from '../../controllers/uiController';
 import {ROT_CX_PCT, ROT_CY_PCT, ROT_RADIUS} from './styles';
 
-export function RotationOverlay({state}: {state: AeeState}) {
+export function RotationOverlay({state}: { state: AeeState }) {
   if (!state.rotationOverlayOpen || !state.canvasRect || !state.item || state.selectedLayer === null) return null;
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const rotation = layerOverride.Rotation ?? 0;
@@ -34,16 +34,25 @@ export function RotationOverlay({state}: {state: AeeState}) {
     document.addEventListener('mouseup', onUp, true);
   };
 
-  return <div className="fixed z-[999997] pointer-events-none" style={{left: state.canvasRect.left, top: state.canvasRect.top, width: state.canvasRect.width, height: state.canvasRect.height}}>
+  return <div className="fixed z-999997 pointer-events-none" style={{
+    left: state.canvasRect.left,
+    top: state.canvasRect.top,
+    width: state.canvasRect.width,
+    height: state.canvasRect.height
+  }}>
     <svg className="overflow-visible" width={state.canvasRect.width} height={state.canvasRect.height}>
       <circle cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.3)" stroke="rgba(139,92,246,0.25)" strokeWidth="1"/>
       <circle cx={cx} cy={cy} r={ROT_RADIUS} fill="none" stroke="rgba(139,92,246,0.65)" strokeWidth="2"/>
       <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="rgba(139,92,246,0.8)" strokeWidth="1.5" strokeDasharray="5 3"/>
       <circle cx={hx} cy={hy} r={9} fill="#8b5cf6" stroke="#fff" strokeWidth="2"/>
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontFamily="Segoe UI, sans-serif" fontSize="14" fontWeight="700">{Math.round(rotation)}°</text>
-      <text x={cx} y={cy + ROT_RADIUS + 18} textAnchor="middle" fill="rgba(255,255,255,0.45)" fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotHint')}</text>
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontFamily="Segoe UI, sans-serif"
+            fontSize="14" fontWeight="700">{Math.round(rotation)}°
+      </text>
+      <text x={cx} y={cy + ROT_RADIUS + 18} textAnchor="middle" fill="rgba(255,255,255,0.45)"
+            fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotHint')}</text>
       <circle cx={cx} cy={cy} r={4} fill="rgba(139,92,246,0.5)"/>
-      <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)" stroke="transparent" strokeWidth="28" onMouseDown={startDrag}/>
+      <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)"
+              stroke="transparent" strokeWidth="28" onMouseDown={startDrag}/>
     </svg>
   </div>;
 }

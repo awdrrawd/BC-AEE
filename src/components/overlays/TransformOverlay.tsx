@@ -14,7 +14,7 @@ import {PanelButton} from './PanelButton';
 import {SliderRow} from './SliderRow';
 import {getSelectedLayerLabel} from './getSelectedLayerLabel';
 
-export function TransformOverlay({state}: {state: AeeState}) {
+export function TransformOverlay({state}: { state: AeeState }) {
   const mode = state.transformOverlay.mode;
   if (!mode || !state.canvasRect || !state.item || state.selectedLayer === null) return null;
 
@@ -74,10 +74,14 @@ export function TransformOverlay({state}: {state: AeeState}) {
     onMove={moveTransformOverlay}
   >
     {mode === 'xy' ? <>
-      <SliderRow label="X" value={x} min={Math.min(-500, x - 300)} max={Math.max(2500, x + 300)} step={1} display={String(Math.round(x))} onChange={value => setEditProperty('x', value)} />
-      <SliderRow label="Y" value={y} min={Math.min(-500, y - 300)} max={Math.max(1500, y + 300)} step={1} display={String(Math.round(y))} onChange={value => setEditProperty('y', value)} />
+      <SliderRow label="X" value={x} min={Math.min(-500, x - 300)} max={Math.max(2500, x + 300)} step={1}
+                 display={String(Math.round(x))} onChange={value => setEditProperty('x', value)}/>
+      <SliderRow label="Y" value={y} min={Math.min(-500, y - 300)} max={Math.max(1500, y + 300)} step={1}
+                 display={String(Math.round(y))} onChange={value => setEditProperty('y', value)}/>
     </> : null}
-    {mode === 'rot' ? <SliderRow label="°" value={rotation} min={0} max={359} step={1} display={`${Math.round(rotation)}°`} onChange={value => setEditProperty('rot', value)} /> : null}
+    {mode === 'rot' ?
+      <SliderRow label="°" value={rotation} min={0} max={359} step={1} display={`${Math.round(rotation)}°`}
+                 onChange={value => setEditProperty('rot', value)}/> : null}
     {mode === 'scale' ? <>
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-zinc-500">{isZh() ? '等比例' : 'Linked scale'}</span>
@@ -85,12 +89,16 @@ export function TransformOverlay({state}: {state: AeeState}) {
           {state.scaleLock ? (isZh() ? '鎖定' : 'Locked') : (isZh() ? '分離' : 'Free')}
         </PanelButton>
       </div>
-      <SliderRow label="X" value={sx} min={0.05} max={Math.max(3, sx + 1)} step={0.01} display={sx.toFixed(2)} onChange={value => setScale('sx', value)} />
-      <SliderRow label="Y" value={sy} min={0.05} max={Math.max(3, sy + 1)} step={0.01} display={sy.toFixed(2)} onChange={value => setScale('sy', value)} />
+      <SliderRow label="X" value={sx} min={0.05} max={Math.max(3, sx + 1)} step={0.01} display={sx.toFixed(2)}
+                 onChange={value => setScale('sx', value)}/>
+      <SliderRow label="Y" value={sy} min={0.05} max={Math.max(3, sy + 1)} step={0.01} display={sy.toFixed(2)}
+                 onChange={value => setScale('sy', value)}/>
     </> : null}
     {mode === 'skew' ? <>
-      <SliderRow label="X°" value={skewX} min={Math.min(-60, skewX - 15)} max={Math.max(60, skewX + 15)} step={0.1} display={`${skewX.toFixed(1)}°`} onChange={value => setEditProperty('skx', value)} />
-      <SliderRow label="Y°" value={skewY} min={Math.min(-60, skewY - 15)} max={Math.max(60, skewY + 15)} step={0.1} display={`${skewY.toFixed(1)}°`} onChange={value => setEditProperty('sky', value)} />
+      <SliderRow label="X°" value={skewX} min={Math.min(-60, skewX - 15)} max={Math.max(60, skewX + 15)} step={0.1}
+                 display={`${skewX.toFixed(1)}°`} onChange={value => setEditProperty('skx', value)}/>
+      <SliderRow label="Y°" value={skewY} min={Math.min(-60, skewY - 15)} max={Math.max(60, skewY + 15)} step={0.1}
+                 display={`${skewY.toFixed(1)}°`} onChange={value => setEditProperty('sky', value)}/>
     </> : null}
     <div className="mt-1 flex items-center gap-1.5 border-t border-zinc-800 pt-2">
       <PanelButton className="flex-1" tone={activeDrag ? 'active' : 'normal'} onClick={() => setActiveDrag(mode)}>

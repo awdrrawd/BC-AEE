@@ -1,4 +1,4 @@
-import type {AeeLayerOverride, LayerId, LayerOverrideKey, CanvasRect, LayerPositionOverride} from './types';
+import type {AeeLayerOverride, CanvasRect, LayerId, LayerOverrideKey, LayerPositionOverride} from './types';
 import {runtime} from './runtime';
 
 export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Pussy', 'Head']);
@@ -138,7 +138,7 @@ export function getOpacity(item: Item | null, idx: LayerId): number | null {
   return Array.isArray(rawOpacity) ? rawOpacity[index] : (typeof rawOpacity === 'number' ? rawOpacity : 1);
 }
 
-export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverride & {Opacity: number} {
+export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverride & { Opacity: number } {
   const index = idx === 'all' ? 0 : parseInt(idx, 10);
   const layerOverride = item?.Property?.LayerOverrides?.[index] || {};
   const opacity = getOpacity(item, idx) ?? 1;

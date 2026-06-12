@@ -3,7 +3,7 @@ import {getAeeSetting} from './settings';
 import type {AeeState} from './types';
 import {MOD_VERSION} from './version';
 
-const savedCtrlPos = getAeeSetting<{left: number; top: number} | null>('charCtrlPos', null);
+const savedCtrlPos = getAeeSetting<{ left: number; top: number } | null>('charCtrlPos', null);
 
 let state: AeeState = {
   version: MOD_VERSION,

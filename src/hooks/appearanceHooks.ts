@@ -1,6 +1,11 @@
 import bcAeeModSdk from '../modsdk';
 import {runtime} from '../core/runtime';
-import {syncAfterBcRender, setCharControlVisible, startHoverCharHighlight, stopHoverCharHighlight} from '../controllers/uiController';
+import {
+  setCharControlVisible,
+  startHoverCharHighlight,
+  stopHoverCharHighlight,
+  syncAfterBcRender
+} from '../controllers/uiController';
 import {getState} from '../core/store';
 import {drawAboveGridIfNeeded, removeBgHook} from '../controllers/backgroundController';
 import {

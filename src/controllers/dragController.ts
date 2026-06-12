@@ -40,11 +40,13 @@ let skewDragState: SkewDragState | null = null;
 let handlersInstalled = false;
 
 export function showTouchBlocker() {
-  mutateState(() => {});
+  mutateState(() => {
+  });
 }
 
 export function hideTouchBlocker() {
-  mutateState(() => {});
+  mutateState(() => {
+  });
 }
 
 function canStartCanvasDrag(event: MouseEvent | PointerEvent) {

@@ -16,8 +16,8 @@ import {Switch} from '../Switch';
 import {OffsetSlider} from './OffsetSlider';
 import {PanelIconButton} from './PanelIconButton';
 
-export function OffsetPanel({state}: {state: AeeState}) {
-  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
+export function OffsetPanel({state}: { state: AeeState }) {
+  const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
   if (!state.offset.open || !state.canvasRect) return null;
   const left = state.offset.left ?? state.canvasRect.left + state.canvasRect.width * 0.4;
   const top = state.offset.top ?? state.canvasRect.top + state.canvasRect.height * 0.3;
@@ -43,7 +43,9 @@ export function OffsetPanel({state}: {state: AeeState}) {
     document.addEventListener('mouseup', onUp, true);
   };
 
-  return <div className="fixed z-[999993] flex w-64 flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 shadow-2xl" style={{left, top}}>
+  return <div
+    className="fixed z-[999993] flex w-64 flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 shadow-2xl"
+    style={{left, top}}>
     <div
       className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {
@@ -68,7 +70,8 @@ export function OffsetPanel({state}: {state: AeeState}) {
         if (drag.current?.pointerId === event.pointerId) drag.current = null;
       }}
     >
-      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">⟳ {isZh() ? '位移控制' : 'Offset'}</span>
+      <span
+        className="text-[11px] font-bold uppercase tracking-wider text-violet-400">⟳ {isZh() ? '位移控制' : 'Offset'}</span>
       <div className="flex gap-1">
         <PanelIconButton onClick={toggleOffsetCollapsed}>
           <ChevronIcon direction={state.offset.collapsed ? 'up' : 'down'} size={12}/>
@@ -78,21 +81,33 @@ export function OffsetPanel({state}: {state: AeeState}) {
       </div>
     </div>
     <div className="bg-zinc-950 px-2.5 pt-2">
-      <div className="relative h-28 cursor-crosshair overflow-visible rounded border border-zinc-700 bg-zinc-900" onMouseDown={minimapPick}>
-        <span className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-violet-500 transition-[left,top]" style={{left: `${mmX}%`, top: `${mmY}%`}}/>
+      <div className="relative h-28 cursor-crosshair overflow-visible rounded border border-zinc-700 bg-zinc-900"
+           onMouseDown={minimapPick}>
+        <span
+          className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-violet-500 transition-[left,top]"
+          style={{left: `${mmX}%`, top: `${mmY}%`}}/>
       </div>
-      <div className="mt-1 text-center text-[9px] tracking-wide text-zinc-600">{isZh() ? '點擊/拖移移動人物' : 'Click/drag to move character'}</div>
+      <div
+        className="mt-1 text-center text-[9px] tracking-wide text-zinc-600">{isZh() ? '點擊/拖移移動人物' : 'Click/drag to move character'}</div>
     </div>
     <div className={`${state.offset.collapsed ? 'hidden' : 'flex'} flex-col gap-2 px-3 py-2.5`}>
-      <OffsetSlider label={isZh() ? '左右' : 'X'} min={-700} max={800} step={10} value={state.offset.x} display={(state.offset.x > 0 ? '+' : '') + state.offset.x} onChange={setOffsetX} onReset={() => resetOffset('x')}/>
-      <OffsetSlider label={isZh() ? '上下' : 'Y'} min={-2000} max={2000} step={10} value={state.offset.y} display={(state.offset.y > 0 ? '+' : '') + state.offset.y} onChange={setOffsetY} onReset={() => resetOffset('y')}/>
-      <OffsetSlider label={isZh() ? '縮放' : 'Scale'} min={20} max={500} step={5} value={Math.round(state.offset.scale * 100)} display={`${Math.round(state.offset.scale * 100)}%`} onChange={(value: number) => setCharScale(value / 100)} onReset={() => resetOffset('scale')}/>
+      <OffsetSlider label={isZh() ? '左右' : 'X'} min={-700} max={800} step={10} value={state.offset.x}
+                    display={(state.offset.x > 0 ? '+' : '') + state.offset.x} onChange={setOffsetX}
+                    onReset={() => resetOffset('x')}/>
+      <OffsetSlider label={isZh() ? '上下' : 'Y'} min={-2000} max={2000} step={10} value={state.offset.y}
+                    display={(state.offset.y > 0 ? '+' : '') + state.offset.y} onChange={setOffsetY}
+                    onReset={() => resetOffset('y')}/>
+      <OffsetSlider label={isZh() ? '縮放' : 'Scale'} min={20} max={500} step={5}
+                    value={Math.round(state.offset.scale * 100)} display={`${Math.round(state.offset.scale * 100)}%`}
+                    onChange={(value: number) => setCharScale(value / 100)} onReset={() => resetOffset('scale')}/>
       <div className="h-px bg-zinc-800"/>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] text-zinc-400">{isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}</span>
-        <Switch checked={state.offset.wheelControl} onChange={toggleWheelControl} ariaLabel={isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}/>
+        <Switch checked={state.offset.wheelControl} onChange={toggleWheelControl}
+                ariaLabel={isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}/>
       </div>
-      <div className={`whitespace-pre-line text-[9px] leading-4 text-zinc-600 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{isZh() ? '滾輪按住/空白鍵=移動\n滾動/Ctrl+±=縮放' : 'Hold wheel/Space=Move\nScroll/Ctrl+±=Scale'}</div>
+      <div
+        className={`whitespace-pre-line text-[9px] leading-4 text-zinc-600 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{isZh() ? '滾輪按住/空白鍵=移動\n滾動/Ctrl+±=縮放' : 'Hold wheel/Space=Move\nScroll/Ctrl+±=Scale'}</div>
     </div>
   </div>;
 }

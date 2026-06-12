@@ -2,9 +2,15 @@ import bcAeeModSdk from '../modsdk';
 import {runtime} from '../core/runtime';
 import {getState} from '../core/store';
 import {syncCurrentContext} from '../core/context';
-import {getCanvasRect, getLayerDisplayName, getLayerColor} from '../core/bc';
+import {getCanvasRect, getLayerColor, getLayerDisplayName} from '../core/bc';
 import {observeAppearanceScreenState, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
-import {closeColorPicker, openColorPicker, setColorPickerValue, startHoverHighlight, stopHoverHighlight} from '../controllers/uiController';
+import {
+  closeColorPicker,
+  openColorPicker,
+  setColorPickerValue,
+  startHoverHighlight,
+  stopHoverHighlight
+} from '../controllers/uiController';
 
 export function installItemColorHooks() {
   bcAeeModSdk.hookFunction('ItemColorDraw', 0, (args, next) => {

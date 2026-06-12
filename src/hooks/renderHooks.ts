@@ -1,8 +1,15 @@
 import bcAeeModSdk from '../modsdk';
 import {runtime} from '../core/runtime';
-import type {AeeLayerOverride, BeforeDrawParams, BeforeDrawResult, WritableAsset, WritableAssetLayer} from '../core/types';
+import type {
+  AeeLayerOverride,
+  BeforeDrawParams,
+  BeforeDrawResult,
+  WritableAsset,
+  WritableAssetLayer
+} from '../core/types';
 
 const AEE_DEBUG = false;
+
 function aeeLog(...args: unknown[]) {
   if (AEE_DEBUG) console.log('[AEE]', ...args);
 }
@@ -15,7 +22,7 @@ export function installRenderHooks() {
   bcAeeModSdk.hookFunction('GLDrawAppearanceBuild', 1, (args, next) => {
     const character = args[0];
     runtime.currentRenderChar = character;
-    const savedPriority: Array<{layer: WritableAssetLayer; original: number}> = [];
+    const savedPriority: Array<{ layer: WritableAssetLayer; original: number }> = [];
     character.Appearance?.forEach(item => {
       const assetLayers = item.Asset?.Layer;
       const override = item.Property?.OverridePriority;
@@ -51,7 +58,7 @@ export function installRenderHooks() {
 
   bcAeeModSdk.hookFunction('CommonDrawAppearanceBuild', 1, (args, next) => {
     const character = args[0];
-    const toRestore: Array<{asset: WritableAsset; original: boolean}> = [];
+    const toRestore: Array<{ asset: WritableAsset; original: boolean }> = [];
     character?.Appearance?.forEach(item => {
       const layerOverrides = item.Property?.LayerOverrides;
       const needsTransform = Array.isArray(layerOverrides) && layerOverrides.some((layerOverride: AeeLayerOverride | undefined) => layerOverride
@@ -152,7 +159,7 @@ function installWebGlPrototypePatch() {
   runtime.originalUniformMatrix4fv = WebGL2RenderingContext.prototype.uniformMatrix4fv;
   runtime.originalDrawArrays = WebGL2RenderingContext.prototype.drawArrays;
 
-  WebGL2RenderingContext.prototype.uniformMatrix4fv = function(location, transpose, data) {
+  WebGL2RenderingContext.prototype.uniformMatrix4fv = function (location, transpose, data) {
     if (data instanceof Float32Array && data.length === 16 && runtime.pendingTransform) {
       const transformData = runtime.pendingTransform;
       runtime.pendingTransformApplied++;
@@ -229,7 +236,7 @@ function installWebGlPrototypePatch() {
     return runtime.originalUniformMatrix4fv!.call(this, location, transpose, data);
   };
 
-  WebGL2RenderingContext.prototype.drawArrays = function(mode, first, count) {
+  WebGL2RenderingContext.prototype.drawArrays = function (mode, first, count) {
     const result = runtime.originalDrawArrays!.call(this, mode, first, count);
     if (runtime.mirrorCopyFlags && runtime.lastMatrixData && runtime.lastMatrixLocation && runtime.lastGl === this) {
       const matrix = new Float32Array(runtime.lastMatrixData);

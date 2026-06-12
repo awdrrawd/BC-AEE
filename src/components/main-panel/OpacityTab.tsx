@@ -4,7 +4,7 @@ import {t} from '../../core/lang';
 import {readOpacityPct} from '../../controllers/uiController';
 import {OpacityRow} from './OpacityRow';
 
-export function OpacityTab({state}: {state: AeeState}) {
+export function OpacityTab({state}: { state: AeeState }) {
   const item = state.item;
   const allOpacity = getOpacity(item, 'all');
   const allDisplay = allOpacity === null ? '—' : `${Math.round(allOpacity * 100)}%`;
@@ -13,7 +13,8 @@ export function OpacityTab({state}: {state: AeeState}) {
     <OpacityRow layerId="all" name={t('allParts')} value={allValue} display={allDisplay}/>
     {state.layers.map((layer, index) => {
       const value = readOpacityPct(item, String(index)) ?? 100;
-      return <OpacityRow key={`${layer.Name}-${index}`} layerId={String(index)} name={getLayerDisplayName(layer, index)} value={value} display={`${value}%`}/>;
+      return <OpacityRow key={`${layer.Name}-${index}`} layerId={String(index)} name={getLayerDisplayName(layer, index)}
+                         value={value} display={`${value}%`}/>;
     })}
   </>;
 }

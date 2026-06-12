@@ -4,12 +4,14 @@ import {movePoseWindow, POSES, togglePoseWindow} from '../../controllers/viewCon
 import {PanelIconButton} from './PanelIconButton';
 import {PoseButton} from './PoseButton';
 
-export function PoseWindow({state}: {state: AeeState}) {
-  const drag = useRef<{pointerId: number; sx: number; sy: number; left: number; top: number} | null>(null);
+export function PoseWindow({state}: { state: AeeState }) {
+  const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
   if (!state.pose.open || !state.canvasRect) return null;
   const left = state.pose.left ?? Math.round(state.canvasRect.left + state.canvasRect.width * 0.36);
   const top = state.pose.top ?? Math.round(state.canvasRect.top + state.canvasRect.height * 0.08);
-  return <div className="fixed z-999990 flex flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 shadow-2xl" style={{left, top, width: 4 * (58 + 6) - 6 + 20}}>
+  return <div
+    className="fixed z-999990 flex flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 shadow-2xl"
+    style={{left, top, width: 4 * (58 + 6) - 6 + 20}}>
     <div
       className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {
@@ -38,7 +40,8 @@ export function PoseWindow({state}: {state: AeeState}) {
       <PanelIconButton onClick={() => togglePoseWindow(false)}>x</PanelIconButton>
     </div>
     <div className="grid grid-cols-4 gap-1.5 p-2.5">
-      {POSES.map((pose, index) => <PoseButton key={pose.name} pose={pose} index={index} active={state.pose.activeIndex === index}/>)}
+      {POSES.map((pose, index) => <PoseButton key={pose.name} pose={pose} index={index}
+                                              active={state.pose.activeIndex === index}/>)}
     </div>
   </div>;
 }

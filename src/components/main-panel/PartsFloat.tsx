@@ -5,7 +5,7 @@ import {movePartsPanel, togglePartsOpen} from '../../controllers/uiController';
 import {FloatingPanel} from '../FloatingPanel';
 import {LayerList} from '../layers/LayerList';
 
-export function PartsFloat({state}: {state: AeeState}) {
+export function PartsFloat({state}: { state: AeeState }) {
   if (!state.partsOpen || !state.item || !state.canvasRect) return null;
   return <FloatingPanel
     canvasRect={state.canvasRect}

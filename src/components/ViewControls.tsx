@@ -4,7 +4,7 @@ import {CharControl} from './view-controls/CharControl';
 import {OffsetPanel} from './view-controls/OffsetPanel';
 import {PoseWindow} from './view-controls/PoseWindow';
 
-export function ViewControls({state}: {state: AeeState}) {
+export function ViewControls({state}: { state: AeeState }) {
   if (!state.charControl.visible || !state.canvasRect) return null;
   return <>
     <CharControl state={state}/>

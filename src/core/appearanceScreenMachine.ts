@@ -3,7 +3,16 @@ import {runtime} from './runtime';
 
 export type AppearanceScreenMode = '' | 'Wardrobe' | 'Cloth' | 'Color' | 'Permissions';
 export type ItemColorSubMode = ItemColorMode | null;
-export type AppearanceScreenPhase = 'outside' | 'groups' | 'wardrobe' | 'cloth' | 'permissions' | 'color' | 'color-picker' | 'extended-item' | 'layering';
+export type AppearanceScreenPhase =
+  'outside'
+  | 'groups'
+  | 'wardrobe'
+  | 'cloth'
+  | 'permissions'
+  | 'color'
+  | 'color-picker'
+  | 'extended-item'
+  | 'layering';
 
 export interface AppearanceScreenSnapshot {
   module: string;
@@ -148,7 +157,7 @@ function sameSnapshot(a: AppearanceScreenSnapshot, b: AppearanceScreenSnapshot) 
 }
 
 function isPromiseLike<T>(value: T): value is T & PromiseLike<unknown> {
-  const maybePromise = value as {then?: unknown} | null;
+  const maybePromise = value as { then?: unknown } | null;
   return !!maybePromise
     && typeof maybePromise === 'object'
     && typeof maybePromise.then === 'function';

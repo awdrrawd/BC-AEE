@@ -2,7 +2,7 @@ import type {ReactNode} from 'react';
 
 type SwitchSize = 'sm' | 'md';
 
-const switchSizeClass: Record<SwitchSize, {track: string; thumb: string; checkedThumbOffset: number}> = {
+const switchSizeClass: Record<SwitchSize, { track: string; thumb: string; checkedThumbOffset: number }> = {
   sm: {
     track: 'h-[18px] w-[34px]',
     thumb: 'h-3.5 w-3.5',
@@ -16,14 +16,14 @@ const switchSizeClass: Record<SwitchSize, {track: string; thumb: string; checked
 };
 
 export function Switch({
-  checked,
-  onChange,
-  ariaLabel,
-  size = 'sm',
-  disabled = false,
-  className = '',
-  children,
-}: {
+                         checked,
+                         onChange,
+                         ariaLabel,
+                         size = 'sm',
+                         disabled = false,
+                         className = '',
+                         children,
+                       }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   ariaLabel: string;
@@ -34,7 +34,8 @@ export function Switch({
 }) {
   const sizeClass = switchSizeClass[size];
 
-  return <label className={`inline-flex shrink-0 items-center gap-1.5 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${className}`}>
+  return <label
+    className={`inline-flex shrink-0 items-center gap-1.5 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${className}`}>
     <input
       className="peer sr-only"
       type="checkbox"

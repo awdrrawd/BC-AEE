@@ -1,8 +1,15 @@
-import {getCanvasRect, getCanvas} from '../core/bc';
+import {getCanvas, getCanvasRect} from '../core/bc';
 import {getState, mutateState} from '../core/store';
 import {setAeeSetting} from '../core/settings';
 import {isInAppearanceScreen, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
-import {loadBgImage, openBgSettings, saveBgAndRefresh, setBgEnabled, setBgImageEnabled, setGridEnabled} from './backgroundController';
+import {
+  loadBgImage,
+  openBgSettings,
+  saveBgAndRefresh,
+  setBgEnabled,
+  setBgImageEnabled,
+  setGridEnabled
+} from './backgroundController';
 
 export const CTRL_BTN_SIZE = 52;
 
@@ -301,7 +308,7 @@ export function installViewControlHandlers() {
     const mouseCanvasX = (event.clientX - rect.left) / rect.width * cw;
     const mouseCanvasY = (event.clientY - rect.top) / rect.height * ch;
     const pivotX = mouseCanvasX - 500;
-    const pivotY = mouseCanvasY - 0;
+    const pivotY = mouseCanvasY;
     const ratio = nextScale / oldScale;
     setOffsetX(Math.round(pivotX + (state.offset.x - pivotX) * ratio));
     setOffsetY(Math.round(pivotY + (state.offset.y - pivotY) * ratio));

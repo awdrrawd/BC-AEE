@@ -1,5 +1,6 @@
 interface LZStringLike {
   compressToBase64(input: string): string;
+
   decompressFromBase64(input: string): string | null;
 }
 

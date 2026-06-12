@@ -2,7 +2,12 @@ import type {LayerId} from '../../core/types';
 import {selectLayer, startHoverHighlight, stopHoverHighlight} from '../../controllers/uiController';
 import {getState} from '../../core/store';
 
-export function LayerButtonRow({id, name, color, selected}: {id: LayerId; name: string; color: string | null; selected: boolean}) {
+export function LayerButtonRow({id, name, color, selected}: {
+  id: LayerId;
+  name: string;
+  color: string | null;
+  selected: boolean
+}) {
   return <button
     className={[
       'mb-1 flex h-9 w-full items-center justify-between gap-2 rounded border px-2 text-left text-sm font-semibold transition',
@@ -21,7 +26,8 @@ export function LayerButtonRow({id, name, color, selected}: {id: LayerId; name: 
     }}
   >
     <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{name}</span>
-    <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded border border-white/15 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-[length:6px_6px]">
+    <span
+      className="relative h-4 w-4 shrink-0 overflow-hidden rounded border border-white/15 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-size-[6px_6px]">
       <span className="absolute inset-0" style={color ? {background: color} : undefined}/>
     </span>
   </button>;

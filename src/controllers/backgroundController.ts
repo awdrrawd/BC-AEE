@@ -1,5 +1,5 @@
 import {getCanvas, getCanvasRect} from '../core/bc';
-import {mutateState, getState} from '../core/store';
+import {getState, mutateState} from '../core/store';
 import {setAeeSetting} from '../core/settings';
 import {runtime} from '../core/runtime';
 import {openColorPicker} from './uiController';
@@ -219,7 +219,7 @@ export function applyBgHook() {
   const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage;
   runtime.originalCanvasDrawImage = originalDrawImage;
 
-  CanvasRenderingContext2D.prototype.drawImage = function(img: CanvasImageSource, ...rest: unknown[]) {
+  CanvasRenderingContext2D.prototype.drawImage = function (img: CanvasImageSource, ...rest: unknown[]) {
     const drawOriginal = () => Reflect.apply(originalDrawImage, this, [img, ...rest]);
     const state = getState().bg;
     if ('src' in img && typeof img.src === 'string' && img.src.includes('Backgrounds/Dressing') && CurrentScreen === 'Appearance') {

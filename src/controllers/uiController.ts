@@ -17,19 +17,19 @@ import {
 } from '../core/bc';
 import {runtime} from '../core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '../core/context';
-import {isAppearanceGroupsPhase, isInAppearanceScreen, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
+import {isInAppearanceScreen, updateAppearanceScreenState} from '../core/appearanceScreenMachine';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
+  type OverlayAnchor,
   PARTS_PANEL_MIN_HEIGHT,
   PARTS_PANEL_WIDTH,
   TOOL_PANEL_MIN_HEIGHT,
   TOOL_PANEL_WIDTH,
-  type OverlayAnchor,
 } from '../core/overlay';
 import {hideTouchBlocker, showTouchBlocker} from './dragController';
 
-type AssetPriority = Asset & {DrawingPriority?: number};
+type AssetPriority = Asset & { DrawingPriority?: number };
 type ToolOverlay = 'parts' | 'opacity' | 'transform';
 
 export function setTab(tab: AeeTab) {

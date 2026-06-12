@@ -1,7 +1,12 @@
 import {resetEditProperty, setEditProperty, stepEditProperty} from '../../controllers/uiController';
 import {resetButtonClass, stepButtonClass} from './styles';
 
-export function PropRow({label, value, ctrl, deltas}: {label: string; value: string | number; ctrl: string; deltas: number[]}) {
+export function PropRow({label, value, ctrl, deltas}: {
+  label: string;
+  value: string | number;
+  ctrl: string;
+  deltas: number[]
+}) {
   return <div className="mb-1">
     <div className="mb-1 flex items-center justify-between text-xs text-zinc-300">
       <span>{label}</span>
@@ -21,7 +26,8 @@ export function PropRow({label, value, ctrl, deltas}: {label: string; value: str
       />
     </div>
     <div className="flex gap-0.5">
-      {deltas.map(delta => <button key={delta} className={stepButtonClass} onClick={() => stepEditProperty(ctrl, delta)}>{delta > 0 ? '+' : ''}{delta}</button>)}
+      {deltas.map(delta => <button key={delta} className={stepButtonClass}
+                                   onClick={() => stepEditProperty(ctrl, delta)}>{delta > 0 ? '+' : ''}{delta}</button>)}
       <button className={resetButtonClass} onClick={() => resetEditProperty(ctrl)}>↺</button>
     </div>
   </div>;

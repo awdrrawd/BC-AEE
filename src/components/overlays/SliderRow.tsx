@@ -1,6 +1,15 @@
 import {sliderRangeClass} from './styles';
 
-export function SliderRow({label, value, min, max, step, display, inputValue, onChange}: {label: string; value: number; min: number; max: number; step: number; display: string; inputValue?: string; onChange: (value: number) => void}) {
+export function SliderRow({label, value, min, max, step, display, inputValue, onChange}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  display: string;
+  inputValue?: string;
+  onChange: (value: number) => void
+}) {
   const rangeValue = Math.max(min, Math.min(max, value));
   const pct = max === min ? 0 : ((rangeValue - min) / (max - min)) * 100;
   const displayValue = inputValue ?? display.replace(/[°%]/g, '');

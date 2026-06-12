@@ -1,4 +1,4 @@
-import {getCanvasRect, getCurrentGroup, getCurrentItem, getAppearanceMode, isEditableAppearanceContext} from './bc';
+import {getAppearanceMode, getCanvasRect, getCurrentGroup, getCurrentItem, isEditableAppearanceContext} from './bc';
 import {getState, mutateState, setState} from './store';
 import {runtime} from './runtime';
 
@@ -58,5 +58,6 @@ export function syncCurrentContext() {
 }
 
 export function forceUiUpdate() {
-  mutateState(() => {});
+  mutateState(() => {
+  });
 }

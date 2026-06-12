@@ -1,6 +1,15 @@
 import {type PointerEvent as ReactPointerEvent, useRef} from 'react';
 
-export function Track({label, value, max, bg, overlay, inputValue, onPick, onInput}: {label: string; value: number; max: number; bg: string; overlay?: string; inputValue: string | number; onPick: (pct: number) => void; onInput: (value: number) => void}) {
+export function Track({label, value, max, bg, overlay, inputValue, onPick, onInput}: {
+  label: string;
+  value: number;
+  max: number;
+  bg: string;
+  overlay?: string;
+  inputValue: string | number;
+  onPick: (pct: number) => void;
+  onInput: (value: number) => void
+}) {
   const dragRef = useRef<number | null>(null);
   const pct = Math.max(0, Math.min(1, value / max));
 
@@ -60,7 +69,9 @@ export function Track({label, value, max, bg, overlay, inputValue, onPick, onInp
         }}
       />
     </div>
-    <input className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-violet-400" value={inputValue} onChange={event => {
+    <input
+      className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-violet-400"
+      value={inputValue} onChange={event => {
       const n = parseInt(event.target.value.replace('%', ''), 10);
       if (!Number.isNaN(n)) onInput(n);
     }}/>

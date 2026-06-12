@@ -3,9 +3,14 @@ import {getLayerColor, getLayerDisplayName} from '../../core/bc';
 import {t} from '../../core/lang';
 import {LayerButtonRow} from './LayerButtonRow';
 
-export function LayerList({item, layers, selectedLayer}: {item: Item | null; layers: readonly AssetLayer[]; selectedLayer: LayerId | null}) {
+export function LayerList({item, layers, selectedLayer}: {
+  item: Item | null;
+  layers: readonly AssetLayer[];
+  selectedLayer: LayerId | null
+}) {
   return <div>
-    <LayerButtonRow id="all" name={t('allParts')} color={getLayerColor(item, 'all')} selected={selectedLayer === 'all'}/>
+    <LayerButtonRow id="all" name={t('allParts')} color={getLayerColor(item, 'all')}
+                    selected={selectedLayer === 'all'}/>
     {layers.map((layer, index) =>
       <LayerButtonRow
         key={`${layer.Name}-${index}`}

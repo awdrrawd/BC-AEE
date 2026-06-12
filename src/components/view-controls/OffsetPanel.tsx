@@ -157,7 +157,7 @@ export function OffsetPanel({state}: { state: AeeState }) {
       <div className="h-px bg-zinc-800"/>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] text-zinc-400">{isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}</span>
-        <Switch checked={state.offset.wheelControl} onChange={toggleWheelControl}
+        <Switch checked={state.offset.wheelControl} onChange={toggleWheelControl} size="md"
                 ariaLabel={isZh() ? '滾輪/鍵盤控制' : 'Wheel/Key ctrl'}/>
       </div>
       <div

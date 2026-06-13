@@ -17,4 +17,5 @@ interface EyeDropperConstructor {
 interface Window {
   LZString?: LZStringLike;
   EyeDropper?: EyeDropperConstructor;
+  Liko: Record<string, unknown>;
 }

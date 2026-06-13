@@ -6,6 +6,11 @@ import {setShadowRoot} from "@/shadow-style.ts";
 import {installAeeHooks} from "@/hooks";
 import {App} from "@/components/App";
 
+window.Liko = window.Liko ?? {};
+if (window.Liko.AEE) {
+  console.warn('🐈‍⬛ [AEE] ⚠️ Already loaded, skipping duplicate import.');
+}
+
 const main: {
   shadowRoot?: ShadowRoot,
   resourceUrl: (path: string) => string,
@@ -19,6 +24,9 @@ const main: {
     return url.toString()
   }
 };
+
+if (!window.Liko!.AEE) {
+window.Liko!.AEE = true;
 
 (async () => {
   main.overlay = document.createElement('div');
@@ -36,5 +44,6 @@ const main: {
   );
   installAeeHooks();
 })().catch(console.error);
+}
 
 export default main;

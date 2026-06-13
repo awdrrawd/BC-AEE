@@ -15,4 +15,10 @@
 // @run-at document-end
 // ==/UserScript==
 
-import(`https://awdrrawd.github.io/BC-AEE/assets/main.js?v=` + new Date().getTime());
+window.Liko = window.Liko ?? {};
+if (window.Liko.AEE) {
+  console.warn('🐈‍⬛ [AEE] ⚠️ Already loaded, skipping duplicate import.');
+} else {
+  window.Liko.AEE = true;
+  import(`https://awdrrawd.github.io/BC-AEE/assets/main.js?v=` + new Date().getTime());
+}

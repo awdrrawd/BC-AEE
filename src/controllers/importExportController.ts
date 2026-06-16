@@ -38,13 +38,29 @@ export function exportBcxAppearance(character: Character | null | undefined) {
 export async function importBcxAppearanceWithCategory(character: Character) {
   let clipboardText = '';
   try {
-    clipboardText = await navigator.clipboard.readText();
+    clipboardText = (await navigator.clipboard.readText()).trim();
   } catch (error) {
     console.error('[AEE] Cannot read clipboard:', error);
-    alert(t('import-controller-cannot-read-clipboard-alert'));
+    promptManualImport(character);
     return;
   }
-  clipboardText = clipboardText.trim();
+  if (!clipboardText) {
+    promptManualImport(character);
+    return;
+  }
+  importBcxFromText(character, clipboardText);
+}
+
+function promptManualImport(character: Character) {
+  const text = (prompt(t('import-controller-manual-paste-prompt')) ?? '').trim();
+  if (text) importBcxFromText(character, text);
+}
+
+// Shared entry point used by the button, the manual paste box, and the
+// Ctrl+V paste handler: parse the text (BCX/LZString or BC bundle), then either
+// open the diff picker or fall back to BC's native paste.
+export function importBcxFromText(character: Character, rawText: string) {
+  const clipboardText = (rawText ?? '').trim();
   if (!clipboardText) {
     alert(t('import-controller-empty-clipboard-alert'));
     return;
@@ -53,8 +69,12 @@ export async function importBcxAppearanceWithCategory(character: Character) {
   let appearance: AppearanceImportItem[] | null = null;
   const decoded = LZString.decompressFromBase64(clipboardText);
   if (decoded) {
-    const parsed: unknown = JSON.parse(decoded);
-    if (isAppearanceList(parsed)) appearance = parsed;
+    try {
+      const parsed: unknown = JSON.parse(decoded);
+      if (isAppearanceList(parsed)) appearance = parsed;
+    } catch {
+      // Not LZString JSON; try plain base64 below.
+    }
   }
 
   if (!appearance) {

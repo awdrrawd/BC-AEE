@@ -24,7 +24,8 @@ export type SettingKey =
   | 'hideLscgLayers'
   | 'showCharCtrl'
   | 'enableAeeMenu'
-  | 'useAeeColorPicker';
+  | 'useAeeColorPicker'
+  | 'pasteImport';
 export type EditControl =
   | 'x'
   | 'y'
@@ -266,6 +267,7 @@ export interface AeeState {
   fullbodyOffsetX: number;
   enableAeeMenu: boolean;
   useAeeColorPicker: boolean;
+  pasteImport: boolean;
   item: Item | null;
   group: string | null;
   mode: string | null;

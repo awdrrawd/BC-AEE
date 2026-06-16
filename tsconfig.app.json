@@ -26,6 +26,6 @@
   },
   "include": [
     "src",
-    "node_modules/bc-stubs/bc/**/*.d.ts"
+      "node_modules/bc-stubs/bc/**/*.d.ts"
   ]
 }

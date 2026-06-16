@@ -18,6 +18,8 @@ export function SettingsTab({state}: { state: AeeState }) {
                   value={state.hideLscgLayers}/>
       <SettingRow label={t('settings-enable-button-replacement')}
                   settingKey="enableAeeMenu" value={state.enableAeeMenu}/>
+      <SettingRow label={t('settings-paste-import')}
+                  settingKey="pasteImport" value={state.pasteImport}/>
     </section>
     <AboutAee/>
   </>;

@@ -26,6 +26,7 @@ let state: AeeState = {
   fullbodyOffsetX: getAeeSetting('fullbodyOffsetX', 0),
   enableAeeMenu: getAeeSetting('enableAeeMenu', false),
   useAeeColorPicker: getAeeSetting('useAeeColorPicker', false),
+  pasteImport: getAeeSetting('pasteImport', true),
   item: null,
   group: null,
   mode: null,

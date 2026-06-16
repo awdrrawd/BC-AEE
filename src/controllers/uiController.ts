@@ -421,6 +421,8 @@ export function setSetting(key: string, value: boolean) {
       draft.enableAeeMenu = value;
     } else if (key === 'useAeeColorPicker') {
       draft.useAeeColorPicker = value;
+    } else if (key === 'pasteImport') {
+      draft.pasteImport = value;
     }
   });
 }

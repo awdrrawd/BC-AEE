@@ -1,9 +1,35 @@
 import bcAeeModSdk from '@/modsdk';
 import {getState} from '@/core/store';
-import {exportBcxAppearance, importBcxAppearanceWithCategory} from '@/controllers/importExportController';
+import {exportBcxAppearance, importBcxAppearanceWithCategory, importBcxFromText} from '@/controllers/importExportController';
+import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
 import {t} from '@/i18n/i18n';
 
+// Don't hijack a paste when the user is pasting into a real text field.
+function isEditablePasteTarget(event: ClipboardEvent): boolean {
+  for (const node of event.composedPath()) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node.isContentEditable) return true;
+  }
+  return false;
+}
+
 export function installMenuHooks() {
+  // Ctrl+V on the dressing-room screen imports directly from the paste event -
+  // no clipboard-read permission popup, no user-activation requirement. Gated
+  // by the pasteImport setting. The button (readText) stays as the fallback.
+  document.addEventListener('paste', event => {
+    if (!getState().pasteImport) return;
+    if (typeof CharacterAppearanceMode === 'undefined' || CharacterAppearanceMode !== '') return;
+    if (!isInAppearanceScreen()) return;
+    if (isEditablePasteTarget(event)) return;
+    const character = typeof CharacterAppearanceSelection !== 'undefined' ? CharacterAppearanceSelection : null;
+    if (!character) return;
+    const text = event.clipboardData?.getData('text')?.trim();
+    if (!text) return;
+    event.preventDefault();
+    importBcxFromText(character, text);
+  });
+
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
     if (!getState().enableAeeMenu) return;

@@ -135,7 +135,14 @@
   "import-dialog-category-body-icon": "身",
   "import-dialog-category-restraints-label": "拘束",
   "import-dialog-category-restraints-icon": "拘",
+  "import-dialog-category-cosplay-label": "COS服",
+  "import-dialog-category-cosplay-icon": "C",
+  "import-dialog-category-other-label": "其他/模组",
+  "import-dialog-category-other-icon": "他",
+  "import-dialog-title-diff": "选择要导入的更改（{count} 项有差异）",
+  "import-dialog-empty-slot": "[空]",
   "import-dialog-import-button": "导入",
+  "import-dialog-done-button": "完成",
   "import-dialog-cancel-button": "取消",
   "menu-export-label": "BCX导出",
   "menu-export-tooltip": "BCX 导出外观至剪贴板",
@@ -149,6 +156,7 @@
   "import-controller-empty-clipboard-alert": "[AEE] 剪贴板为空",
   "import-controller-cannot-parse-clipboard-alert": "[AEE] 无法解析剪贴板内容（请先用 AEE/BCX 导出）",
   "import-controller-no-matching-items-alert": "[AEE] 没有匹配的物件",
+  "import-controller-no-diff-alert": "[AEE] 没有部位有差异，无需导入",
   "import-controller-import-success-message": "[AEE] 已导入 {count} 个物件",
   "import-controller-import-failed-alert": "[AEE] 导入失败：{error}"
 }

@@ -135,7 +135,14 @@
   "import-dialog-category-body-icon": "Т",
   "import-dialog-category-restraints-label": "Фиксаторы",
   "import-dialog-category-restraints-icon": "Ф",
+  "import-dialog-category-cosplay-label": "Косплей",
+  "import-dialog-category-cosplay-icon": "К",
+  "import-dialog-category-other-label": "Другое / Моды",
+  "import-dialog-category-other-icon": "М",
+  "import-dialog-title-diff": "Выберите изменения для импорта (отличий: {count})",
+  "import-dialog-empty-slot": "[Пусто]",
   "import-dialog-import-button": "Импорт",
+  "import-dialog-done-button": "Готово",
   "import-dialog-cancel-button": "Отмена",
   "menu-export-label": "BCX Экспорт",
   "menu-export-tooltip": "Экспорт внешности BCX в буфер обмена",
@@ -149,6 +156,7 @@
   "import-controller-empty-clipboard-alert": "[AEE] Буфер обмена пуст",
   "import-controller-cannot-parse-clipboard-alert": "[AEE] Не удалось разобрать содержимое буфера обмена (сначала экспортируйте через AEE/BCX)",
   "import-controller-no-matching-items-alert": "[AEE] Нет подходящих предметов",
+  "import-controller-no-diff-alert": "[AEE] Нет отличающихся слотов — импортировать нечего",
   "import-controller-import-success-message": "[AEE] Импортировано предметов: {count}",
   "import-controller-import-failed-alert": "[AEE] Ошибка импорта: {error}"
 }

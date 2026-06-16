@@ -135,7 +135,14 @@
   "import-dialog-category-body-icon": "B",
   "import-dialog-category-restraints-label": "Fesseln",
   "import-dialog-category-restraints-icon": "F",
+  "import-dialog-category-cosplay-label": "Cosplay",
+  "import-dialog-category-cosplay-icon": "Y",
+  "import-dialog-category-other-label": "Andere / Mods",
+  "import-dialog-category-other-icon": "M",
+  "import-dialog-title-diff": "Änderungen zum Importieren wählen ({count} abweichend)",
+  "import-dialog-empty-slot": "[Leer]",
   "import-dialog-import-button": "Importieren",
+  "import-dialog-done-button": "Fertig",
   "import-dialog-cancel-button": "Abbrechen",
   "menu-export-label": "BCX-Export",
   "menu-export-tooltip": "BCX-Export der Erscheinung in die Zwischenablage",
@@ -149,6 +156,7 @@
   "import-controller-empty-clipboard-alert": "[AEE] Zwischenablage ist leer",
   "import-controller-cannot-parse-clipboard-alert": "[AEE] Inhalt der Zwischenablage kann nicht gelesen werden (bitte zuerst mit AEE/BCX exportieren)",
   "import-controller-no-matching-items-alert": "[AEE] Keine passenden Items",
+  "import-controller-no-diff-alert": "[AEE] Keine abweichenden Slots — nichts zu importieren",
   "import-controller-import-success-message": "[AEE] {count} Items importiert",
   "import-controller-import-failed-alert": "[AEE] Import fehlgeschlagen: {error}"
 }

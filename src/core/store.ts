@@ -124,7 +124,10 @@ function structuredCloneShallow(value: AeeState): AeeState {
     offset: {...value.offset},
     pose: {...value.pose},
     charControl: {...value.charControl},
-    importDialog: value.importDialog ? {...value.importDialog} : null,
+    // Keep the same reference across frames: the dialog is replaced wholesale
+    // (open/close), never mutated in place. Cloning it on every render frame
+    // would make the picker's identity-based effect re-fire and reset itself.
+    importDialog: value.importDialog,
   };
 }
 

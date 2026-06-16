@@ -103,16 +103,6 @@ export interface BcxExportItem {
   Difficulty?: number;
 }
 
-export interface AssetGroupReference {
-  Name?: AssetGroupName | string;
-  Category?: AssetGroup['Category'];
-  Clothing?: boolean;
-}
-
-export interface CharacterWithAppearance extends Character {
-  Appearance: Item[];
-}
-
 export interface PickerContext {
   item: Item | null;
   indices: number[] | null;
@@ -164,9 +154,25 @@ export interface CanvasRect {
   bottom: number;
 }
 
-export interface ImportCategoryDialog {
+export type ImportCategoryKey = 'clothes' | 'cosplay' | 'body' | 'restraints' | 'other';
+
+// add: empty slot gains an item, remove: filled slot is emptied,
+// modify: item/color/property changes. Drives the git-style row coloring.
+export type ImportChangeType = 'add' | 'remove' | 'modify';
+
+export interface ImportDiff {
+  group: AssetGroupName | string;
+  category: ImportCategoryKey;
+  changeType: ImportChangeType;
+  entry: AppearanceImportItem;
+  fromText: string;
+  toText: string;
+}
+
+export interface ImportDiffDialog {
   character: Character;
-  appearance: AppearanceImportItem[];
+  diffs: ImportDiff[];
+  originalAppearance: string;
 }
 
 export interface BgState {
@@ -274,5 +280,5 @@ export interface AeeState {
   offset: OffsetState;
   pose: PoseState;
   charControl: CharControlState;
-  importDialog: ImportCategoryDialog | null;
+  importDialog: ImportDiffDialog | null;
 }

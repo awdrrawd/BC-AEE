@@ -8,6 +8,7 @@ import {
 } from '@/controllers/uiController';
 import {getState} from '@/core/store';
 import {drawAboveGridIfNeeded, removeBgHook} from '@/controllers/backgroundController';
+import {closeImportDialog} from '@/controllers/importExportController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -26,6 +27,7 @@ export function installAppearanceHooks() {
     if (transition.leftAppearance) {
       removeBgHook();
       stopHoverCharHighlight();
+      closeImportDialog();
     }
 
     if (transition.phaseChanged && transition.current.phase !== 'groups') {

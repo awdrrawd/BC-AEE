@@ -136,7 +136,7 @@ export function setScaleLock(value?: boolean) {
   });
 }
 
-export function openColorPicker(initialHex: string, onLiveChange: (hex: string, preview?: boolean) => void, bcMode = false, opacityPct = 100) {
+export function openColorPicker(initialHex: string, onLiveChange: (hex: string, preview?: boolean) => void, bcMode = false, opacityPct = 100, isDefault = false) {
   runtime.colorPickerLiveChange = onLiveChange;
   runtime.colorPickerInitialHex = initialHex || '#FFFFFF';
   syncCanvasRect();
@@ -148,6 +148,7 @@ export function openColorPicker(initialHex: string, onLiveChange: (hex: string, 
     draft.colorPicker.hex = initialHex || '#FFFFFF';
     draft.colorPicker.initialHex = initialHex || '#FFFFFF';
     draft.colorPicker.opacityPct = opacityPct;
+    draft.colorPicker.isDefault = isDefault;
   });
 }
 
@@ -212,13 +213,15 @@ export function moveColorPicker(left: number, top: number) {
 
 export function openLayerColorPicker(layerId: LayerId) {
   const item = getCurrentItem();
-  const currentColor = getLayerColor(item, layerId) || '#FFFFFF';
+  const storedColor = getLayerColor(item, layerId);
+  const isDefault = !storedColor || storedColor === 'Default';
+  const currentColor = (storedColor && storedColor !== 'Default' ? storedColor : null) || '#FFFFFF';
   openColorPicker(currentColor, (hex, preview) => {
     const currentItem = getCurrentItem();
     if (!currentItem) return;
     setLayerColor(currentItem, layerId, hex);
     if (!preview) forceUiUpdate();
-  });
+  }, false, 100, isDefault);
 }
 
 export function openSelectedLayerColorPicker() {

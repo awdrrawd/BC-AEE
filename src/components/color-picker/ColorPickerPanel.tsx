@@ -94,14 +94,29 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const [cardSize, setCardSize] = useState<{ w: number; h: number } | null>(null);
   const previewOnlyRef = useRef(false);
   const lastAppliedColorRef = useRef<{ hex: string; opacityPct: number; preview: boolean } | null>(null);
+  // Don't apply a color just because the picker opened — only when the user
+  // actually changes something. Also remember the initial state so a "Default"
+  // layer keeps showing "Default" until the user picks a real color.
+  const firstRunRef = useRef(true);
+  const initialHsvRef = useRef(hsvRef.current);
+  const initialAlphaRef = useRef(Math.round(picker.opacityPct / 100 * 255));
 
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
   const alphaPct = Math.round(alpha / 255 * 100);
   const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+  // Still showing the layer's original "Default" color (user hasn't picked yet).
+  const isAtDefault = picker.isDefault
+    && hsv.h === initialHsvRef.current.h
+    && hsv.s === initialHsvRef.current.s
+    && hsv.v === initialHsvRef.current.v
+    && alpha === initialAlphaRef.current;
   const rect = state.canvasRect;
   const defaultLeft = rect ? rect.left + rect.width * 0.66 : window.innerWidth * 0.6;
   const defaultTop = rect ? rect.top + rect.height * 0.2 : window.innerHeight * 0.2;
-  const scale = rect ? (rect.width * 0.33) / 500 : 1;
+  // Guard against a zero/near-zero canvas rect (e.g. when invoked outside the
+  // appearance screen via another mod's UI): a scale of 0 would render the card
+  // at zoom:0, so it never measures and the bcMode panel collapses to nothing.
+  const scale = rect && rect.width > 1 ? Math.max(0.45, (rect.width * 0.33) / 500) : 1;
   const top = picker.top ?? defaultTop;
   const toggleW = 24;
   const fw = cardSize?.w ?? 500 * scale;
@@ -126,6 +141,12 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   useEffect(() => {
     runtime.colorPickerAlpha = alpha;
     if (!picker.open) return;
+    // Opening the picker must not commit a color (would turn "Default" into an
+    // explicit hex). Only subsequent, user-driven changes apply.
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+      return;
+    }
     if (previewOnlyRef.current) {
       const last = lastAppliedColorRef.current;
       if (last?.hex === hex && last.opacityPct === alphaPct && last.preview) return;
@@ -378,7 +399,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
               className="relative h-[100px] w-[100px] overflow-hidden rounded-lg border border-zinc-700 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-[length:10px_10px]">
               <span className="absolute inset-0" style={{background: hsvaString(hsv.h, hsv.s, hsv.v, alpha)}}/>
             </div>
-            <div className="font-mono text-[11px] text-zinc-400">{hex}</div>
+            <div className="font-mono text-[11px] text-zinc-400">{isAtDefault ? 'Default' : hex}</div>
             <div className="flex gap-1">
               <input
                 className="w-[74px] rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-violet-400"
@@ -541,8 +562,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   }
 
   return <div
-    className="pointer-events-none fixed z-[1000002] overflow-hidden"
-    style={{top, left: left - toggleW, width: toggleW + fw, height: fh}}
+    className={`pointer-events-none fixed z-[1000002] ${collapsed ? 'overflow-hidden' : ''}`}
+    style={{top, left: left - toggleW, width: toggleW + fw, height: collapsed ? fh : 'auto'}}
   >
     <div
       className="flex items-center"

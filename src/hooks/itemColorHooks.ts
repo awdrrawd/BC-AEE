@@ -98,7 +98,12 @@ export function installItemColorHooks() {
     const hexInput = main.querySelector('input[name="output"]') as HTMLInputElement | null;
     const domHex6 = hexInput?.value?.match(/^#[0-9a-fA-F]{6}$/) ? hexInput.value
       : hexInput?.value?.match(/^#[0-9a-fA-F]{8}$/) ? hexInput.value.slice(0, 7) : null;
-    const cachedHex = domHex6 || (bcItem ? getLayerColor(bcItem, selectedLayer) : null) || '#FFFFFF';
+    // The stored color tells us whether this layer is still on "Default" (vs the
+    // resolved hex BC shows in its output field). Used to render a "Default"
+    // state and avoid committing the resolved hex when the user only opens it.
+    const storedColor = bcItem ? getLayerColor(bcItem, selectedLayer) : null;
+    const isDefault = !storedColor || storedColor === 'Default';
+    const cachedHex = domHex6 || (storedColor && storedColor !== 'Default' ? storedColor : null) || '#FFFFFF';
 
     const h1 = document.getElementById('color-picker-h1');
     const fullName = h1?.querySelector('q')?.textContent;
@@ -135,7 +140,7 @@ export function installItemColorHooks() {
         opInput.dispatchEvent(new Event('input', {bubbles: true}));
         opInput.dispatchEvent(new Event('change', {bubbles: true}));
       }
-    }, true, currentOpacityPct);
+    }, true, currentOpacityPct, isDefault);
     // Do NOT dispatch the initial value here: openColorPicker already populated
     // the panel's displayed hex/opacity. Dispatching would commit the cached hex
     // to BC, turning a layer's "Default" color into an explicit one even when the

@@ -40,6 +40,11 @@ export function installMenuHooks() {
       if (button === 'Paste') return 'AEE_Import';
       return button;
     });
+    // When editing another character's appearance there are no Copy/Paste
+    // buttons to replace, so add our buttons. Prepend so they sit on the left
+    // (Import leftmost) rather than at the far right of the menu.
+    if (!AppearanceMenu.includes('AEE_Export')) AppearanceMenu.unshift('AEE_Export');
+    if (!AppearanceMenu.includes('AEE_Import')) AppearanceMenu.unshift('AEE_Import');
     if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
       try {
         TextCache.Text_Appearance = TextCache.Text_Appearance || {};

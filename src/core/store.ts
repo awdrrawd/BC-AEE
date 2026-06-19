@@ -27,6 +27,7 @@ let state: AeeState = {
   enableAeeMenu: getAeeSetting('enableAeeMenu', false),
   useAeeColorPicker: getAeeSetting('useAeeColorPicker', false),
   pasteImport: getAeeSetting('pasteImport', true),
+  bcWheelScroll: getAeeSetting('bcWheelScroll', false),
   item: null,
   group: null,
   mode: null,

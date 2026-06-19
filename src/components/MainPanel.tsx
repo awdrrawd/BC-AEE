@@ -1,5 +1,5 @@
-import {type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent} from 'react';
-import type {AeeState, AeeTab} from '@/core/types';
+import {type MouseEvent as ReactMouseEvent, useRef} from 'react';
+import type {AeeState} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {getElementOverlayAnchor} from '@/core/overlay';
 import {setTab, togglePartsOpen} from '@/controllers/uiController';
@@ -21,15 +21,7 @@ export function MainPanel({state}: { state: AeeState }) {
     togglePartsOpen(undefined, getElementOverlayAnchor(event.currentTarget));
   };
 
-  const tabOrder = panelTabs.map(([tab]) => tab) as AeeTab[];
-  const onTabBarWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-    const currentIndex = tabOrder.indexOf(state.tab);
-    const next = event.deltaY > 0
-      ? tabOrder[(currentIndex + 1) % tabOrder.length]
-      : tabOrder[(currentIndex - 1 + tabOrder.length) % tabOrder.length];
-    setTab(next);
-  };
+  const panelRef = useRef<HTMLDivElement>(null);
 
   return <div className="fixed z-[999998] pointer-events-none"
               style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}>
@@ -42,28 +34,30 @@ export function MainPanel({state}: { state: AeeState }) {
           transition: 'transform 0.35s ease'
         }}
       >
-        <div className={`${panelClass} pointer-events-auto`} style={{width: panelWidth}}>
-          <div className="flex shrink-0 border-b border-zinc-700" onWheel={onTabBarWheel}>
+        <div ref={panelRef} className={`${panelClass} pointer-events-auto`} style={{width: panelWidth}}>
+          <div className="flex shrink-0 border-b border-zinc-700">
             {panelTabs.map(([tab, label]) =>
               <button
                 key={tab}
                 className={[
-                  'h-9 flex-1 border-b-2 text-xs font-bold tracking-wide transition',
+                  'h-9 flex-1 text-xs font-bold tracking-wide transition',
                   state.tab === tab
-                    ? 'border-violet-500 text-violet-300 ring-1 ring-inset ring-violet-500'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-100',
+                    ? 'text-violet-300'
+                    : 'text-zinc-400 hover:text-zinc-100',
                 ].join(' ')}
+                style={state.tab === tab ? {boxShadow: 'inset 0 -2px 0 #8b5cf6'} : undefined}
                 onClick={() => setTab(tab)}
               >
                 {t(label)}
               </button>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-2 py-1">
-            <span
-              className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-medium text-zinc-400">AEE v{state.version}</span>
+          <div className="relative flex shrink-0 items-center border-b border-zinc-700 bg-zinc-900 px-2 py-1">
+            <div className="h-8 w-8 shrink-0"/>
+            <span className="aee-wave-text absolute inset-x-0 text-center text-lg font-bold"
+                  style={{pointerEvents: 'none'}}>AEE v{state.version}</span>
             <button
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${state.partsOpen ? 'border-violet-400 bg-violet-500/15 text-violet-200' : 'border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-200'}`}
+              className={`ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded border transition ${state.partsOpen ? 'border-violet-400 bg-violet-500/15 text-violet-200' : 'border-zinc-700 text-zinc-400 hover:border-violet-400 hover:text-violet-200'}`}
               title={t('main-panel-parts-button-title')}
               onClick={openParts}
             >
@@ -71,7 +65,7 @@ export function MainPanel({state}: { state: AeeState }) {
             </button>
           </div>
           <div
-            className="min-h-0 flex-1 overflow-y-auto p-0 [scrollbar-width:thin] [scrollbar-color:#8b5cf6_transparent]">
+            className="aee-tab-content min-h-0 flex-1 overflow-y-auto p-0 [scrollbar-width:thin] [scrollbar-color:#8b5cf6_transparent]">
             {state.tab === 'edit' ? <EditTab state={state}/> : null}
             {state.tab === 'opacity' ? <OpacityTab state={state}/> : null}
             {state.tab === 'layers' ? <LayersTab state={state}/> : null}

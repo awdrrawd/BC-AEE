@@ -1,11 +1,13 @@
 import type {AeeState} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {AboutAee} from '@/components/main-panel/AboutAee';
+import {LanguageSelect} from '@/components/main-panel/LanguageSelect';
 import {SettingRow} from '@/components/main-panel/SettingRow';
 
 export function SettingsTab({state}: { state: AeeState }) {
   return <>
     <section className="border-b border-zinc-700 px-3 py-2">
+      <LanguageSelect/>
       <SettingRow label={t('settings-appearance-view-control')} settingKey="showCharCtrl"
                   value={state.showCharCtrl}/>
       <SettingRow label={t('settings-replace-bc-color-picker')} settingKey="useAeeColorPicker"
@@ -20,6 +22,8 @@ export function SettingsTab({state}: { state: AeeState }) {
                   settingKey="enableAeeMenu" value={state.enableAeeMenu}/>
       <SettingRow label={t('settings-paste-import')}
                   settingKey="pasteImport" value={state.pasteImport}/>
+      <SettingRow label={t('settings-bc-wheel-scroll')}
+                  settingKey="bcWheelScroll" value={state.bcWheelScroll}/>
     </section>
     <AboutAee/>
   </>;

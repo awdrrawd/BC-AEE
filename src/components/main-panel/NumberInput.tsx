@@ -1,7 +1,6 @@
 import {memo, useEffect, useRef} from 'react';
-import {rangeClass} from '@/components/main-panel/styles';
 
-export const RangeInput = memo(function RangeInput({min, max, step, value, onChange, className}: {
+export const NumberInput = memo(function NumberInput({min, max, step, value, onChange, className}: {
   min: number;
   max: number;
   step: number;
@@ -19,8 +18,8 @@ export const RangeInput = memo(function RangeInput({min, max, step, value, onCha
 
   return <input
     ref={ref}
-    type="range"
-    className={className ?? rangeClass}
+    type="number"
+    className={className}
     min={min}
     max={max}
     step={step}

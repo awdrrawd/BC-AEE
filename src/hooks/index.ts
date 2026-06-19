@@ -5,6 +5,7 @@ import {installMenuHooks} from '@/hooks/menuHooks';
 import {installDragHandlers} from '@/controllers/dragController';
 import {initializeViewBackground, installViewControlHandlers} from '@/controllers/viewController';
 import {syncAfterBcRender} from '@/controllers/uiController';
+import {initBcWheelScroll} from '@/hooks/bcWheelHooks';
 
 export function installAeeHooks() {
   installRenderHooks();
@@ -15,4 +16,5 @@ export function installAeeHooks() {
   installViewControlHandlers();
   initializeViewBackground();
   syncAfterBcRender();
+  initBcWheelScroll();
 }

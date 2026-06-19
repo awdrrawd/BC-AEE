@@ -7,7 +7,6 @@ import {observeAppearanceScreenState, updateAppearanceScreenState} from '@/core/
 import {
   closeColorPicker,
   openColorPicker,
-  setColorPickerValue,
   startHoverHighlight,
   stopHoverHighlight
 } from '@/controllers/uiController';
@@ -82,6 +81,11 @@ export function installItemColorHooks() {
     if (!getState().useAeeColorPicker) return await next(args);
     if (args[0]?.dispatch === false) return await next(args);
 
+    // Tear down any previously open AEE picker (e.g. the part>color picker the
+    // user left open) so its stale callback can't bridge into the new BC
+    // color-picker DOM, which would make LSCG read a mismatched item.
+    closeAeeBcColorPicker();
+
     const result = await next(args);
     const main = document.getElementById('color-picker-main');
     if (!main) return result;
@@ -132,7 +136,10 @@ export function installItemColorHooks() {
         opInput.dispatchEvent(new Event('change', {bubbles: true}));
       }
     }, true, currentOpacityPct);
-    setColorPickerValue(cachedHex, currentOpacityPct);
+    // Do NOT dispatch the initial value here: openColorPicker already populated
+    // the panel's displayed hex/opacity. Dispatching would commit the cached hex
+    // to BC, turning a layer's "Default" color into an explicit one even when the
+    // user only meant to tweak opacity or layers.
     return result;
   });
 }

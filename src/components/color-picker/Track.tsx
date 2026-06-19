@@ -1,6 +1,6 @@
-import {type PointerEvent as ReactPointerEvent, useEffect, useRef} from 'react';
+import {type PointerEvent as ReactPointerEvent, useEffect, useRef, memo} from 'react';
 
-export function Track({label, value, max, bg, overlay, inputValue, onPick, onInput}: {
+export const Track = memo(function Track({label, value, max, bg, overlay, inputValue, onPick, onInput}: {
   label: string;
   value: number;
   max: number;
@@ -12,10 +12,17 @@ export function Track({label, value, max, bg, overlay, inputValue, onPick, onInp
 }) {
   const dragRef = useRef<number | null>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
+  const trackInputRef = useRef<HTMLInputElement>(null);
   const pendingPctRef = useRef<number | null>(null);
   const latestPctRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const pct = Math.max(0, Math.min(1, value / max));
+
+  useEffect(() => {
+    if (trackInputRef.current && document.activeElement !== trackInputRef.current) {
+      trackInputRef.current.value = String(inputValue);
+    }
+  }, [inputValue]);
 
   useEffect(() => {
     if (dragRef.current !== null) return;
@@ -112,7 +119,7 @@ export function Track({label, value, max, bg, overlay, inputValue, onPick, onInp
       />
     </div>
     <input
-      key={inputValue}
+      ref={trackInputRef}
       className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-violet-400"
       defaultValue={inputValue}
       onBlur={event => {
@@ -124,4 +131,4 @@ export function Track({label, value, max, bg, overlay, inputValue, onPick, onInp
         if (!Number.isNaN(n)) onInput(n);
       }}/>
   </div>;
-}
+}, (prev, next) => prev.value === next.value && prev.max === next.max && prev.bg === next.bg && prev.overlay === next.overlay && prev.inputValue === next.inputValue);

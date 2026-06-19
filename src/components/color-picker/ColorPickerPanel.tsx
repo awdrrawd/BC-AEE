@@ -101,7 +101,10 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const rect = state.canvasRect;
   const defaultLeft = rect ? rect.left + rect.width * 0.66 : window.innerWidth * 0.6;
   const defaultTop = rect ? rect.top + rect.height * 0.2 : window.innerHeight * 0.2;
-  const scale = rect ? (rect.width * 0.33) / 500 : 1;
+  // Guard against a zero/near-zero canvas rect (e.g. when invoked outside the
+  // appearance screen via another mod's UI): a scale of 0 would render the card
+  // at zoom:0, so it never measures and the bcMode panel collapses to nothing.
+  const scale = rect && rect.width > 1 ? Math.max(0.45, (rect.width * 0.33) / 500) : 1;
   const top = picker.top ?? defaultTop;
   const toggleW = 24;
   const fw = cardSize?.w ?? 500 * scale;
@@ -541,8 +544,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   }
 
   return <div
-    className="pointer-events-none fixed z-[1000002] overflow-hidden"
-    style={{top, left: left - toggleW, width: toggleW + fw, height: fh}}
+    className={`pointer-events-none fixed z-[1000002] ${collapsed ? 'overflow-hidden' : ''}`}
+    style={{top, left: left - toggleW, width: toggleW + fw, height: collapsed ? fh : 'auto'}}
   >
     <div
       className="flex items-center"

@@ -1,16 +1,25 @@
+import {memo, useEffect, useRef} from 'react';
 import {resetEditProperty, setEditProperty, stepEditProperty} from '@/controllers/uiController';
 import {resetButtonClass, stepButtonClass} from '@/components/main-panel/styles';
 
-export function PropRow({label, value, ctrl, deltas}: {
+export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   label: string;
   value: string | number;
   ctrl: string;
   deltas: number[]
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (inputRef.current && document.activeElement !== inputRef.current) {
+      inputRef.current.value = String(value);
+    }
+  }, [value]);
+
   return <div className="mb-1">
     <div className="mb-1 flex items-center justify-between text-xs text-zinc-300">
       <span>{label}</span>
       <input
+        ref={inputRef}
         type="text"
         className="w-14 border-b border-transparent bg-transparent text-right font-mono text-xs text-teal-300 outline-none focus:border-teal-300 focus:bg-teal-300/10"
         defaultValue={value}
@@ -31,4 +40,4 @@ export function PropRow({label, value, ctrl, deltas}: {
       <button className={resetButtonClass} onClick={() => resetEditProperty(ctrl)}>↺</button>
     </div>
   </div>;
-}
+}, (prev, next) => prev.ctrl === next.ctrl && String(prev.value) === String(next.value));

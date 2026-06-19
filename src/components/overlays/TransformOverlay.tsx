@@ -90,7 +90,7 @@ export function TransformOverlay({state}: { state: AeeState }) {
                  onChange={value => setEditProperty('rot', value)}/> : null}
     {mode === 'scale' ? <>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-zinc-500">{t('transform-overlay-linked-scale-label')}</span>
+        <span className="text-[11px]" style={{color: 'oklch(0.871 0.006 286.286)'}}>{t('transform-overlay-linked-scale-label')}</span>
         <PanelButton size="sm" tone={state.scaleLock ? 'active' : 'normal'} onClick={() => setScaleLock()}>
           {state.scaleLock ? t('transform-overlay-scale-locked-button') : t('transform-overlay-scale-free-button')}
         </PanelButton>

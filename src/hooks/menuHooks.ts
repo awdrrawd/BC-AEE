@@ -33,13 +33,18 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
     if (!getState().enableAeeMenu) return;
-    if (typeof CharacterAppearanceMode === 'undefined' || CharacterAppearanceMode !== '') return;
+    if (typeof CharacterAppearanceMode !== 'undefined' && CharacterAppearanceMode !== '') return;
     AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
     AppearanceMenu = AppearanceMenu.map((button) => {
       if (button === 'Copy') return 'AEE_Export';
       if (button === 'Paste') return 'AEE_Import';
       return button;
     });
+    // When editing another character's appearance there are no Copy/Paste
+    // buttons to replace, so add our buttons. Prepend so they sit on the left
+    // (Import leftmost) rather than at the far right of the menu.
+    if (!AppearanceMenu.includes('AEE_Export')) AppearanceMenu.unshift('AEE_Export');
+    if (!AppearanceMenu.includes('AEE_Import')) AppearanceMenu.unshift('AEE_Import');
     if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
       try {
         TextCache.Text_Appearance = TextCache.Text_Appearance || {};

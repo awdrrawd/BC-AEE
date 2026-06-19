@@ -53,7 +53,8 @@ export function toggleCollapse() {
 }
 
 function closeToolOverlays(draft: AeeState, keep: ToolOverlay) {
-  if (keep !== 'parts') draft.partsOpen = false;
+  // The parts panel is intentionally exempt: it's used to quickly switch the
+  // edit target, so opening other tool overlays must not close it.
   if (keep !== 'opacity') draft.opacityOverlay.open = false;
   if (keep !== 'transform') draft.transformOverlay.mode = null;
 }
@@ -69,13 +70,10 @@ export function togglePartsOpen(open?: boolean, anchor?: OverlayAnchor) {
   const nextOpen = open ?? !current.partsOpen;
   mutateState(draft => {
     draft.partsOpen = nextOpen;
-    if (nextOpen) {
-      closeToolOverlays(draft, 'parts');
-      if (anchor && draft.canvasRect) {
-        const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH, PARTS_PANEL_MIN_HEIGHT);
-        draft.partsLeft = pos.left;
-        draft.partsTop = pos.top;
-      }
+    if (nextOpen && anchor && draft.canvasRect) {
+      const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH, PARTS_PANEL_MIN_HEIGHT);
+      draft.partsLeft = pos.left;
+      draft.partsTop = pos.top;
     }
   });
 }
@@ -156,7 +154,7 @@ export function openColorPicker(initialHex: string, onLiveChange: (hex: string, 
 export function closeColorPicker(commit = true) {
   const state = getState();
   if (!commit && runtime.colorPickerLiveChange) {
-    runtime.colorPickerLiveChange(state.colorPicker.initialHex);
+    safeCallLiveChange(state.colorPicker.initialHex, false);
   }
   mutateState(draft => {
     draft.colorPicker.open = false;
@@ -166,11 +164,22 @@ export function closeColorPicker(commit = true) {
   runtime.colorPickerLiveChange = null;
 }
 
+function safeCallLiveChange(hex: string, preview: boolean) {
+  if (!runtime.colorPickerLiveChange) return;
+  try {
+    runtime.colorPickerLiveChange(hex, preview);
+  } catch (err) {
+    console.warn('[AEE] colorPickerLiveChange threw, closing picker:', err);
+    runtime.colorPickerLiveChange = null;
+    mutateState(draft => { draft.colorPicker.open = false; draft.colorPicker.bcMode = false; });
+  }
+}
+
 export function previewColorPickerValue(hex: string, opacityPct?: number) {
   const state = getState();
   const nextOpacityPct = opacityPct ?? state.colorPicker.opacityPct;
   runtime.colorPickerAlpha = Math.round((nextOpacityPct / 100) * 255);
-  runtime.colorPickerLiveChange?.(hex, true);
+  safeCallLiveChange(hex, true);
 }
 
 export function setColorPickerValue(hex: string, opacityPct?: number) {
@@ -178,14 +187,14 @@ export function setColorPickerValue(hex: string, opacityPct?: number) {
   const nextOpacityPct = opacityPct ?? state.colorPicker.opacityPct;
   runtime.colorPickerAlpha = Math.round((nextOpacityPct / 100) * 255);
   if (state.colorPicker.hex === hex && state.colorPicker.opacityPct === nextOpacityPct) {
-    runtime.colorPickerLiveChange?.(hex, false);
+    safeCallLiveChange(hex, false);
     return;
   }
   mutateState(draft => {
     draft.colorPicker.hex = hex;
     if (opacityPct !== undefined) draft.colorPicker.opacityPct = opacityPct;
   });
-  runtime.colorPickerLiveChange?.(hex, false);
+  safeCallLiveChange(hex, false);
 }
 
 export function setColorPickerCollapsed(collapsed: boolean) {
@@ -423,6 +432,8 @@ export function setSetting(key: string, value: boolean) {
       draft.useAeeColorPicker = value;
     } else if (key === 'pasteImport') {
       draft.pasteImport = value;
+    } else if (key === 'bcWheelScroll') {
+      draft.bcWheelScroll = value;
     }
   });
 }

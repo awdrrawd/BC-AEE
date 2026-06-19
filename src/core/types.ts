@@ -25,7 +25,8 @@ export type SettingKey =
   | 'showCharCtrl'
   | 'enableAeeMenu'
   | 'useAeeColorPicker'
-  | 'pasteImport';
+  | 'pasteImport'
+  | 'bcWheelScroll';
 export type EditControl =
   | 'x'
   | 'y'
@@ -268,6 +269,7 @@ export interface AeeState {
   enableAeeMenu: boolean;
   useAeeColorPicker: boolean;
   pasteImport: boolean;
+  bcWheelScroll: boolean;
   item: Item | null;
   group: string | null;
   mode: string | null;

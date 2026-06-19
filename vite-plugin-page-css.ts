@@ -15,7 +15,7 @@ export default function pageCssPlugin(): Plugin {
     enforce: 'pre',
 
     configResolved(config: ResolvedConfig) {
-      shadowStylePath = join(config.root, 'src/shadow-style.ts');
+      shadowStylePath = join(config.root, 'src/shadow-style.ts').replace(/\\/g, '/');
     },
 
     async resolveId(source, importer) {

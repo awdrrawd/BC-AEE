@@ -8,5 +8,6 @@ export function ToggleIconButton({active, title, children, onClick}: {
   onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void
 }) {
   return <button className={`${iconButtonClass} ${active ? activeIconButtonClass : ''}`} title={title}
+                 style={active ? {boxShadow: 'inset 2px 0 0 #8b5cf6'} : undefined}
                  onClick={onClick}>{children}</button>;
 }

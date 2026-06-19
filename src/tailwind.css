@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+/* Version text: purple base with a green+blue wave that sweeps across, then a
+   pure-purple gap before the next pass. Sweep takes the first half of the cycle
+   (~1.5s), the hold is the gap (~1.5s). */
+@keyframes aee-wave {
+  0% { background-position: 200% 0; }
+  50% { background-position: 0% 0; }
+  100% { background-position: 0% 0; }
+}
+
+.aee-wave-text {
+  background-image: linear-gradient(
+    90deg,
+    #a78bfa 0%,
+    #a78bfa 50%,
+    oklch(85.5% .138 181.071) 62%,
+    #a78bfa 74%,
+    #1234de 86%,
+    #a78bfa 98%,
+    #a78bfa 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: aee-wave 3.5s linear infinite;
+}
+
+/* Brighten the muted zinc-400 text used across the AEE UI. */
+[data-aee-root] .text-zinc-400 {
+  color: oklch(0.91 0 0);
+}
+
 @layer base {
     /* Keep the Shadow DOM UI from creating browser text selections during clicks/drags. */
     [data-aee-root],

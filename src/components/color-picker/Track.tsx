@@ -112,10 +112,16 @@ export function Track({label, value, max, bg, overlay, inputValue, onPick, onInp
       />
     </div>
     <input
+      key={inputValue}
       className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-violet-400"
-      value={inputValue} onChange={event => {
-      const n = parseInt(event.target.value.replace('%', ''), 10);
-      if (!Number.isNaN(n)) onInput(n);
-    }}/>
+      defaultValue={inputValue}
+      onBlur={event => {
+        const n = parseInt(event.target.value.replace('%', ''), 10);
+        if (!Number.isNaN(n)) onInput(n);
+      }}
+      onChange={event => {
+        const n = parseInt(event.target.value.replace('%', ''), 10);
+        if (!Number.isNaN(n)) onInput(n);
+      }}/>
   </div>;
 }

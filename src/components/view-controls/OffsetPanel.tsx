@@ -161,7 +161,7 @@ export function OffsetPanel({state}: { state: AeeState }) {
                 ariaLabel={t('offset-panel-wheel-control-aria-label')}/>
       </div>
       <div
-        className={`whitespace-pre-line text-[9px] leading-4 text-zinc-600 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{t('offset-panel-wheel-control-help')}</div>
+        className={`whitespace-pre-line text-[11px] leading-4 text-zinc-400 ${state.offset.wheelControl ? 'block' : 'hidden'}`}>{t('offset-panel-wheel-control-help')}</div>
     </div>
   </div>;
 }

@@ -7,7 +7,7 @@ import {
   syncAfterBcRender
 } from '@/controllers/uiController';
 import {getState} from '@/core/store';
-import {drawAboveGridIfNeeded, removeBgHook} from '@/controllers/backgroundController';
+import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh} from '@/controllers/backgroundController';
 import {closeImportDialog} from '@/controllers/importExportController';
 import {
   isAppearanceGroupsPhase,
@@ -28,6 +28,10 @@ export function installAppearanceHooks() {
       removeBgHook();
       stopHoverCharHighlight();
       closeImportDialog();
+    }
+
+    if (transition.enteredAppearance) {
+      saveBgAndRefresh();
     }
 
     if (transition.phaseChanged && transition.current.phase !== 'groups') {

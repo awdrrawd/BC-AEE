@@ -33,7 +33,7 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
     if (!getState().enableAeeMenu) return;
-    if (typeof CharacterAppearanceMode === 'undefined' || CharacterAppearanceMode !== '') return;
+    if (typeof CharacterAppearanceMode !== 'undefined' && CharacterAppearanceMode !== '') return;
     AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
     AppearanceMenu = AppearanceMenu.map((button) => {
       if (button === 'Copy') return 'AEE_Export';

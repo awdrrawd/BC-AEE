@@ -1,5 +1,5 @@
-import {type MouseEvent as ReactMouseEvent} from 'react';
-import type {AeeState} from '@/core/types';
+import {type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent} from 'react';
+import type {AeeState, AeeTab} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {getElementOverlayAnchor} from '@/core/overlay';
 import {setTab, togglePartsOpen} from '@/controllers/uiController';
@@ -21,6 +21,16 @@ export function MainPanel({state}: { state: AeeState }) {
     togglePartsOpen(undefined, getElementOverlayAnchor(event.currentTarget));
   };
 
+  const tabOrder = panelTabs.map(([tab]) => tab) as AeeTab[];
+  const onTabBarWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    const currentIndex = tabOrder.indexOf(state.tab);
+    const next = event.deltaY > 0
+      ? tabOrder[(currentIndex + 1) % tabOrder.length]
+      : tabOrder[(currentIndex - 1 + tabOrder.length) % tabOrder.length];
+    setTab(next);
+  };
+
   return <div className="fixed z-[999998] pointer-events-none"
               style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}>
     <div className="pointer-events-none absolute left-0 top-0 h-full overflow-hidden"
@@ -33,13 +43,15 @@ export function MainPanel({state}: { state: AeeState }) {
         }}
       >
         <div className={`${panelClass} pointer-events-auto`} style={{width: panelWidth}}>
-          <div className="flex shrink-0 border-b border-zinc-700">
+          <div className="flex shrink-0 border-b border-zinc-700" onWheel={onTabBarWheel}>
             {panelTabs.map(([tab, label]) =>
               <button
                 key={tab}
                 className={[
                   'h-9 flex-1 border-b-2 text-xs font-bold tracking-wide transition',
-                  state.tab === tab ? 'border-violet-500 text-violet-300' : 'border-transparent text-zinc-400 hover:text-zinc-100',
+                  state.tab === tab
+                    ? 'border-violet-500 text-violet-300 ring-1 ring-inset ring-violet-500'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-100',
                 ].join(' ')}
                 onClick={() => setTab(tab)}
               >

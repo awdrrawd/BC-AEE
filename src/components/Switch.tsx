@@ -53,7 +53,7 @@ export function Switch({
     >
       <span
         className={`${sizeClass.thumb} block rounded-full bg-white shadow-sm transition-transform`}
-        style={{transform: `translateX(${checked ? sizeClass.checkedThumbOffset : 0}px)`}}
+        style={{transform: `translateX(${checked ? sizeClass.checkedThumbOffset : 0}px)`, willChange: 'transform'}}
       />
     </span>
     {children}

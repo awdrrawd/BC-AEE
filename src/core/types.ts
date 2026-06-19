@@ -231,6 +231,7 @@ export interface ColorPickerState {
   hex: string;
   initialHex: string;
   opacityPct: number;
+  isDefault: boolean;
   left?: number;
   top?: number;
 }

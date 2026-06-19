@@ -42,6 +42,7 @@ let state: AeeState = {
     hex: '#FFFFFF',
     initialHex: '#FFFFFF',
     opacityPct: 100,
+    isDefault: false,
   },
   opacityOverlay: {
     open: false,

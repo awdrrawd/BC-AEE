@@ -3,6 +3,7 @@ import type {AeeState} from '@/core/types';
 import {getLayerOverride} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {setEditProperty} from '@/controllers/uiController';
+import {setRotationDragging} from '@/controllers/dragController';
 import {ROT_CX_PCT, ROT_CY_PCT, ROT_RADIUS} from '@/components/overlays/styles';
 
 export function RotationOverlay({state}: { state: AeeState }) {
@@ -24,11 +25,13 @@ export function RotationOverlay({state}: { state: AeeState }) {
   const startDrag = (event: ReactMouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    setRotationDragging(true);
     setEditProperty('rot', calcAngle(event.clientX, event.clientY));
     const onMove = (ev: MouseEvent) => setEditProperty('rot', calcAngle(ev.clientX, ev.clientY));
     const onUp = () => {
       document.removeEventListener('mousemove', onMove, true);
       document.removeEventListener('mouseup', onUp, true);
+      setRotationDragging(false);
     };
     document.addEventListener('mousemove', onMove, true);
     document.addEventListener('mouseup', onUp, true);

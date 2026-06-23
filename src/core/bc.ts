@@ -105,6 +105,18 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
     item.Property.LayerOverrides[index][key] = value as never;
   });
   refreshCurrentCharacter(false);
+  // While editing a restraint's colour (the ItemColor screen) CharacterRefresh
+  // alone does not rebuild the cached layer canvas, so transform changes such as
+  // scale/skew only appear after saving. Force a canvas reload on the item-color
+  // character to make the update show in real time.
+  if (runtime.itemColorChar) {
+    runtime.itemColorDirty = true;
+    try {
+      CharacterLoadCanvas(runtime.itemColorChar);
+    } catch {
+      // BC canvas refresh failures should not break the UI.
+    }
+  }
 }
 
 export function refreshCurrentCharacter(loadCanvas = false) {

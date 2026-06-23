@@ -27,7 +27,7 @@ import {
   TOOL_PANEL_MIN_HEIGHT,
   TOOL_PANEL_WIDTH,
 } from '@/core/overlay';
-import {hideTouchBlocker, showTouchBlocker} from '@/controllers/dragController';
+import {alignTouchBlocker, hideTouchBlocker, showTouchBlocker} from '@/controllers/dragController';
 
 type AssetPriority = Asset & { DrawingPriority?: number };
 type ToolOverlay = 'parts' | 'opacity' | 'transform';
@@ -560,6 +560,9 @@ export function setCharControlVisible(visible: boolean) {
 export function syncAfterBcRender() {
   syncCurrentContext();
   applyLscgLayersVisibility();
+  // Keep the drag touch-blocker glued to the canvas across resizes/screen layout
+  // changes while a drag-edit mode is active.
+  if (getState().activeDrag) alignTouchBlocker();
 }
 
 export function getPriorityValue(item: Item, layerId: LayerId) {

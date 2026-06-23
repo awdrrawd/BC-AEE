@@ -3,12 +3,13 @@ import {
   ensureLayerOverrides,
   getAssetBaseXY,
   getCanvas,
+  getCanvasRect,
   getCurrentItem,
   getLayerOverride,
   refreshCurrentCharacter,
   setLayerOverride,
 } from '@/core/bc';
-import {getState, mutateState} from '@/core/store';
+import {getState} from '@/core/store';
 import {forceUiUpdate} from '@/core/context';
 
 interface BaseDragState {
@@ -39,14 +40,94 @@ let scaleDragState: ScaleDragState | null = null;
 let skewDragState: SkewDragState | null = null;
 let handlersInstalled = false;
 
+// Transparent overlay aligned to the BC canvas. While a drag-edit mode is active
+// it sits above the canvas (z-index between the canvas and the AEE panels) so the
+// pointer shows the drag cursor; the real click suppression is done by the
+// capture-phase listeners below, because BC listens in the capture phase and a
+// plain overlay would not stop it.
+const DRAG_CURSORS: Record<string, string> = {
+  xy: 'grab',
+  rot: 'crosshair',
+  scale: 'nwse-resize',
+  skew: 'ew-resize',
+};
+
+let touchBlocker: HTMLDivElement | null = null;
+
+function buildTouchBlocker() {
+  if (touchBlocker) return;
+  touchBlocker = document.createElement('div');
+  touchBlocker.style.cssText = 'position:fixed;z-index:5000;pointer-events:none;background:transparent;touch-action:none;cursor:default;';
+  document.body.appendChild(touchBlocker);
+}
+
+export function alignTouchBlocker() {
+  if (!touchBlocker) return;
+  const rect = getCanvasRect();
+  if (!rect) return;
+  touchBlocker.style.left = `${rect.left}px`;
+  touchBlocker.style.top = `${rect.top}px`;
+  touchBlocker.style.width = `${rect.width}px`;
+  touchBlocker.style.height = `${rect.height}px`;
+}
+
+function updateBlockerCursor() {
+  if (!touchBlocker) return;
+  const drag = getState().activeDrag;
+  touchBlocker.style.cursor = (drag && DRAG_CURSORS[drag]) || 'default';
+}
+
 export function showTouchBlocker() {
-  mutateState(() => {
-  });
+  buildTouchBlocker();
+  alignTouchBlocker();
+  if (touchBlocker) touchBlocker.style.display = getState().activeDrag ? 'block' : 'none';
+  updateBlockerCursor();
 }
 
 export function hideTouchBlocker() {
-  mutateState(() => {
-  });
+  if (touchBlocker) touchBlocker.style.display = 'none';
+}
+
+function isAeeEditing() {
+  const state = getState();
+  return !!(state.visible && state.activeDrag);
+}
+
+// True when the event targets our own UI (rendered inside shadow roots) or a BC
+// menu/colour-picker control, which must keep working while a drag mode is on.
+function isOwnUiTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Node)) return false;
+  if (target.getRootNode?.() instanceof ShadowRoot) return true;
+  if (target instanceof HTMLElement) {
+    if (target.closest('.screen-main-container, .screen-main, fieldset[name="color-picker"]')) return true;
+    if (target.closest('[role="menu"], [role="menuitem"], [role="radiogroup"]')) return true;
+  }
+  return false;
+}
+
+function getEventPoint(event: Event): {cx: number; cy: number} | null {
+  const pointer = event as MouseEvent & TouchEvent;
+  if (typeof pointer.clientX === 'number') return {cx: pointer.clientX, cy: pointer.clientY};
+  const touch = pointer.touches?.[0];
+  if (touch) return {cx: touch.clientX, cy: touch.clientY};
+  return null;
+}
+
+// Whether this canvas-body event should be swallowed so it never reaches BC's
+// interaction grid / dialog handlers, which would otherwise interrupt editing.
+function shouldIntercept(event: Event): boolean {
+  if (!isAeeEditing()) return false;
+  if (isOwnUiTarget(event.target)) return false;
+  const point = getEventPoint(event);
+  if (!point) return false;
+  const canvas = getCanvas();
+  const rect = canvas?.getBoundingClientRect();
+  if (!canvas || !rect) return false;
+  const sx = rect.width / (canvas.width || 2000);
+  const sy = rect.height / (canvas.height || 1000);
+  if (point.cx < rect.left + 300 * sx || point.cx > rect.left + 1700 * sx
+    || point.cy < rect.top + 50 * sy || point.cy > rect.top + 950 * sy) return false;
+  return true;
 }
 
 function canStartCanvasDrag(event: MouseEvent | PointerEvent) {
@@ -172,9 +253,15 @@ export function installDragHandlers() {
   handlersInstalled = true;
 
   document.addEventListener('mousedown', event => {
-    const targetRoot = (event.target as HTMLElement | null)?.getRootNode?.();
-    if (targetRoot instanceof ShadowRoot) return;
-    if (startCanvasDrag(event)) event.stopImmediatePropagation();
+    if (isOwnUiTarget(event.target)) return;
+    if (startCanvasDrag(event)) {
+      event.stopImmediatePropagation();
+      return;
+    }
+    // Drag mode is on but the click is not a drag start (e.g. rotation mode, or a
+    // body click that should not begin a transform) — still swallow it so it does
+    // not fall through to BC's interaction grid.
+    if (shouldIntercept(event)) event.stopImmediatePropagation();
   }, true);
 
   document.addEventListener('mousemove', event => {
@@ -191,12 +278,35 @@ export function installDragHandlers() {
   }, true);
 
   document.addEventListener('mouseup', event => {
-    if (!xyDragState && !scaleDragState && !skewDragState) return;
-    xyDragState = null;
-    scaleDragState = null;
-    skewDragState = null;
-    event.stopImmediatePropagation();
+    if (xyDragState || scaleDragState || skewDragState) {
+      xyDragState = null;
+      scaleDragState = null;
+      skewDragState = null;
+      event.stopImmediatePropagation();
+      return;
+    }
+    if (shouldIntercept(event)) {
+      event.stopImmediatePropagation();
+      updateBlockerCursor();
+    }
   }, true);
+
+  // BC also reacts to pointer/touch events in the capture phase, so mirror the
+  // suppression for those to fully block the interaction grid while editing.
+  document.addEventListener('pointerdown', event => {
+    if (shouldIntercept(event)) event.stopImmediatePropagation();
+  }, true);
+
+  document.addEventListener('pointerup', event => {
+    if (shouldIntercept(event)) {
+      event.stopImmediatePropagation();
+      updateBlockerCursor();
+    }
+  }, true);
+
+  document.addEventListener('touchstart', event => {
+    if (shouldIntercept(event)) event.stopImmediatePropagation();
+  }, {capture: true, passive: false});
 }
 
 export function getLayerBaseXYForDisplay(item: Item, layerId: LayerId) {

@@ -1,23 +1,22 @@
 import type {LayerId} from '@/core/types';
-import {getLayerColor, getLayerDisplayName} from '@/core/bc';
+import {getEditableParts, getLayerColor} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {LayerButtonRow} from '@/components/layers/LayerButtonRow';
 
-export function LayerList({item, layers, selectedLayer}: {
+export function LayerList({item, selectedLayer}: {
   item: Item | null;
-  layers: readonly AssetLayer[];
   selectedLayer: LayerId | null
 }) {
   return <div>
     <LayerButtonRow id="all" name={t('layer-list-all-parts-row')} color={getLayerColor(item, 'all')}
                     selected={selectedLayer === 'all'}/>
-    {layers.map((layer, index) =>
+    {getEditableParts(item).map(part =>
       <LayerButtonRow
-        key={`${layer.Name}-${index}`}
-        id={String(index)}
-        name={getLayerDisplayName(layer, index)}
-        color={getLayerColor(item, String(index))}
-        selected={selectedLayer === String(index)}
+        key={part.layerId}
+        id={part.layerId}
+        name={part.name}
+        color={getLayerColor(item, part.layerId)}
+        selected={selectedLayer === part.layerId}
       />
     )}
   </div>;

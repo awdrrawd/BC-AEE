@@ -9,6 +9,7 @@ import {
   getAssetBaseXY,
   getCurrentItem,
   getLayerColor,
+  getLayerGroupMembers,
   getLayerOverride,
   getOpacity,
   refreshCurrentCharacter,
@@ -318,7 +319,7 @@ export function resetEditProperty(ctrl: string) {
   if (!item || idx === null) return;
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
-  const indices = idx === 'all' ? Array.from({length: count}, (_, index) => index) : [parseInt(idx, 10)];
+  const indices = idx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(idx, 10));
 
   if (ctrl === 'x' || ctrl === 'y') {
     const key = ctrl === 'x' ? 'DrawingLeft' : 'DrawingTop';
@@ -401,13 +402,12 @@ export function resetPriority(layerId: LayerId) {
   const layers = item.Asset?.Layer || [];
   if (layerId === 'all') {
     if (item.Property) delete item.Property.OverridePriority;
-  } else {
-    const index = parseInt(layerId, 10);
-    const layerName = layers[index]?.Name;
-    if (layerName && typeof item.Property?.OverridePriority === 'object') {
-      delete item.Property.OverridePriority[layerName];
-      if (Object.keys(item.Property.OverridePriority).length === 0) delete item.Property.OverridePriority;
-    }
+  } else if (typeof item.Property?.OverridePriority === 'object') {
+    getLayerGroupMembers(item, parseInt(layerId, 10)).forEach(index => {
+      const layerName = layers[index]?.Name;
+      if (layerName) delete (item.Property!.OverridePriority as Record<string, number>)[layerName];
+    });
+    if (Object.keys(item.Property.OverridePriority).length === 0) delete item.Property.OverridePriority;
   }
   refreshCurrentCharacter(false);
   forceUiUpdate();
@@ -452,7 +452,7 @@ export function startHoverHighlight(item: Item, layerIdx: LayerId) {
   stopHoverHighlight(false);
   const indices = layerIdx === 'all'
     ? Array.from({length: item.Asset?.Layer?.length || 1}, (_, index) => index)
-    : [parseInt(layerIdx, 10)];
+    : getLayerGroupMembers(item, parseInt(layerIdx, 10));
   runtime.hoverHighlightStartTime = performance.now();
 
   const animate = () => {

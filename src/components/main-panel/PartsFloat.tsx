@@ -18,6 +18,6 @@ export function PartsFloat({state}: { state: AeeState }) {
     className="max-h-64 min-h-20"
     bodyClassName="min-h-0 flex-1 overflow-y-auto p-1.5"
   >
-    <LayerList item={state.item} layers={state.layers} selectedLayer={state.selectedLayer}/>
+    <LayerList item={state.item} selectedLayer={state.selectedLayer}/>
   </FloatingPanel>;
 }

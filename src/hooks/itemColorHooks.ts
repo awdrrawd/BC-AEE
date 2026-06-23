@@ -12,6 +12,8 @@ import {
 } from '@/controllers/uiController';
 
 export function installItemColorHooks() {
+  installLayerDiagnostics();
+
   bcAeeModSdk.hookFunction('ItemColorDraw', 0, (args, next) => {
     if (args[0]) runtime.itemColorChar = args[0];
     if (args[0] && args[1]) runtime.itemColorItem = InventoryGet(args[0], args[1]);
@@ -147,6 +149,44 @@ export function installItemColorHooks() {
     // user only meant to tweak opacity or layers.
     return result;
   });
+}
+
+// Temporary diagnostic: run `likoAeeDumpLayers()` in the console while the item /
+// restraint colour screen is open to print the asset's real layer structure.
+function installLayerDiagnostics() {
+  (window as unknown as Record<string, unknown>).likoAeeDumpLayers = () => {
+    const item = runtime.itemColorItem
+      || (typeof CharacterAppearanceSelection !== 'undefined' && typeof CharacterAppearanceColorPickerGroupName !== 'undefined' && CharacterAppearanceColorPickerGroupName
+        ? InventoryGet(CharacterAppearanceSelection, CharacterAppearanceColorPickerGroupName)
+        : null);
+    if (!item?.Asset?.Layer) {
+      console.warn('[AEE] No coloured item active - open the item/restraint colour screen first.');
+      return;
+    }
+    const layers = item.Asset.Layer;
+    const rows = layers.map((layer, index) => ({
+      i: index,
+      Name: layer.Name ?? '(null)',
+      ColorGroup: layer.ColorGroup ?? '',
+      ColorIndex: layer.ColorIndex,
+      CopyLayerColor: layer.CopyLayerColor ?? '',
+      AllowColorize: layer.AllowColorize,
+      HideColoring: layer.HideColoring,
+      aeeName: getLayerDisplayName(layer, index),
+    }));
+    console.log(`[AEE] Asset: ${item.Asset.Group?.Name}/${item.Asset.Name} (DynamicGroupName=${item.Asset.DynamicGroupName}) - ${layers.length} layers`);
+    console.table(rows);
+    const state = typeof ItemColorState !== 'undefined' ? ItemColorState : null;
+    if (state?.colorGroups) {
+      console.log('[AEE] ItemColorState.colorGroups:');
+      console.table(state.colorGroups.map(group => ({
+        name: group.name ?? '(WholeItem)',
+        layerIndices: group.layers.map(l => layers.indexOf(l)).join(','),
+        layerNames: group.layers.map(l => l.Name ?? '(null)').join(','),
+      })));
+    }
+    return rows;
+  };
 }
 
 function handleItemColorHover() {

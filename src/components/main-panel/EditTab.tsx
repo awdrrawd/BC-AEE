@@ -8,7 +8,7 @@ export function EditTab({state}: { state: AeeState }) {
   return <>
     {state.selectedLayer !== null ? <EditSection state={state} layerId={state.selectedLayer}/> : null}
     <Section title={t('edit-tab-parts-section-title')}>
-      <LayerList item={state.item} layers={state.layers} selectedLayer={state.selectedLayer}/>
+      <LayerList item={state.item} selectedLayer={state.selectedLayer}/>
     </Section>
   </>;
 }

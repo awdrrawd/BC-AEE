@@ -38,6 +38,12 @@ export interface Runtime {
   bgImageEl: HTMLImageElement | null;
   originalCanvasDrawImage: typeof CanvasRenderingContext2D.prototype.drawImage | null;
   inAppearanceRun: boolean;
+  // The exact layer (by object identity) BC is about to draw, captured right
+  // before each BeforeDraw call. Lets us target the correct layer even when an
+  // asset has several layers sharing the same Name (matching by name alone would
+  // always resolve to the first one).
+  currentDrawLayerItem: Item | null;
+  currentDrawLayerIndex: number | null;
 }
 
 export const runtime: Runtime = {
@@ -75,4 +81,6 @@ export const runtime: Runtime = {
   bgImageEl: null,
   originalCanvasDrawImage: null,
   inAppearanceRun: false,
+  currentDrawLayerItem: null,
+  currentDrawLayerIndex: null,
 };

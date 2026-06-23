@@ -16,8 +16,39 @@ function aeeLog(...args: unknown[]) {
 
 const windowFunctions = window as unknown as Record<string, unknown>;
 
+// Resolve which layer index a BeforeDraw call refers to. BC only passes the layer
+// *name* (params.L), so findIndex-by-name would always pick the first layer with
+// that name - breaking per-layer edits on assets that reuse a name across layers
+// (common on modded restraints). When CommonDrawResolveLayerColor captured the
+// exact layer object for this same draw, trust that index instead.
+function resolveDrawLayerIndex(currentAppearance: Item, rawName: string): number {
+  if (runtime.currentDrawLayerItem === currentAppearance
+    && runtime.currentDrawLayerIndex != null
+    && runtime.currentDrawLayerIndex >= 0) {
+    const layer = currentAppearance.Asset?.Layer?.[runtime.currentDrawLayerIndex];
+    if (layer && (layer.Name ?? '') === rawName) return runtime.currentDrawLayerIndex;
+  }
+  return currentAppearance.Asset?.Layer?.findIndex(layer => (layer.Name ?? '') === rawName) ?? -1;
+}
+
 export function installRenderHooks() {
   installWebGlPrototypePatch();
+
+  // Capture the exact layer object BC is about to draw. CommonDrawResolveLayerColor
+  // runs once per layer immediately before its BeforeDraw call, and receives the
+  // real layer object, so indexOf gives us the unambiguous layer index.
+  bcAeeModSdk.hookFunction('CommonDrawResolveLayerColor', 0, (args, next) => {
+    const item = args[1];
+    const layer = args[2];
+    if (item?.Asset?.Layer && layer) {
+      runtime.currentDrawLayerItem = item;
+      runtime.currentDrawLayerIndex = item.Asset.Layer.indexOf(layer);
+    } else {
+      runtime.currentDrawLayerItem = null;
+      runtime.currentDrawLayerIndex = null;
+    }
+    return next(args);
+  });
 
   bcAeeModSdk.hookFunction('GLDrawAppearanceBuild', 1, (args, next) => {
     const character = args[0];
@@ -91,7 +122,7 @@ export function installRenderHooks() {
     if (currentAppearance) {
       let layerName = (params.L ?? '').trim();
       if (layerName[0] === '_') layerName = layerName.slice(1);
-      const layerIdx = currentAppearance.Asset?.Layer?.findIndex(layer => (layer.Name ?? '') === layerName) ?? -1;
+      const layerIdx = resolveDrawLayerIndex(currentAppearance, layerName);
       if (layerIdx >= 0) {
         const layerOverride = currentAppearance.Property?.LayerOverrides?.[layerIdx];
         if (layerOverride) {
@@ -125,7 +156,7 @@ export function installRenderHooks() {
     if (currentAppearance && property) {
       let rawName = (params.L ?? '').trim();
       if (rawName[0] === '_') rawName = rawName.slice(1);
-      const layerIdx = currentAppearance.Asset?.Layer?.findIndex(layer => (layer.Name ?? '') === rawName) ?? -1;
+      const layerIdx = resolveDrawLayerIndex(currentAppearance, rawName);
       if (layerIdx >= 0) {
         const layerOverride = property?.LayerOverrides?.[layerIdx];
         if (layerOverride) {
@@ -140,7 +171,7 @@ export function installRenderHooks() {
     if (currentAppearance) {
       let rawName = (params.L ?? '').trim();
       if (rawName[0] === '_') rawName = rawName.slice(1);
-      const layerIdx = currentAppearance.Asset?.Layer?.findIndex(layer => (layer.Name ?? '') === rawName) ?? -1;
+      const layerIdx = resolveDrawLayerIndex(currentAppearance, rawName);
       if (layerIdx >= 0) {
         if (runtime.hoverFlashData?.item === currentAppearance && runtime.hoverFlashData.overrides.has(layerIdx)) {
           ret.Opacity = runtime.hoverFlashData.overrides.get(layerIdx);

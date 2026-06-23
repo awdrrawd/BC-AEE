@@ -75,7 +75,9 @@ export function ensureOpacityArray(item: Item | null) {
 export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverrideKey, value: AeeLayerOverride[LayerOverrideKey]) {
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
-  const indices = layerIdx === 'all' ? Array.from({length: count}, (_, index) => index) : [parseInt(layerIdx, 10)];
+  // Apply to every layer of the selected part (anchor + its CopyLayerColor
+  // copies/variants) so the visible layer moves even when the base is empty.
+  const indices = layerIdx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(layerIdx, 10));
   if (runtime.itemColorChar) runtime.itemColorDirty = true;
 
   if (key === 'Opacity') {
@@ -237,19 +239,78 @@ export function getLayerDisplayName(layer: AssetLayer | null | undefined, index:
   return layer.Name || `Layer ${index}`;
 }
 
+// Layers that share a base belong to one editable "part". BC links them with
+// CopyLayerColor: a base/anchor layer (no CopyLayerColor) plus copy layers whose
+// CopyLayerColor points at the base's Name (visual halves, style variants, etc).
+// Grouping on `CopyLayerColor || Name` collapses each part to a single key, so a
+// normal independent layer (no copies) is simply its own group.
+function layerGroupKey(layer: AssetLayer | undefined | null): string {
+  if (!layer) return '';
+  return layer.CopyLayerColor || layer.Name || '';
+}
+
+// All layer indices belonging to the same part as the given layer.
+export function getLayerGroupMembers(item: Item | null, layerIndex: number): number[] {
+  const layers = item?.Asset?.Layer ?? [];
+  const key = layerGroupKey(layers[layerIndex]);
+  if (!key) return [layerIndex];
+  const members: number[] = [];
+  layers.forEach((layer, index) => {
+    if (layerGroupKey(layer) === key) members.push(index);
+  });
+  return members.length ? members : [layerIndex];
+}
+
+// One row per editable part: the representative (anchor) layer index and its name.
+// Used by the parts/opacity/layers lists so we no longer show every raw layer
+// (anchor + copies + variants), which produced duplicate and English-only names.
+export function getEditableParts(item: Item | null): {layerId: string; name: string}[] {
+  const layers = item?.Asset?.Layer ?? [];
+  const parts: {layerId: string; name: string}[] = [];
+  const seen = new Set<string>();
+  layers.forEach((layer, index) => {
+    const key = layerGroupKey(layer);
+    if (!key) {
+      parts.push({layerId: String(index), name: getLayerDisplayName(layer, index)});
+      return;
+    }
+    if (seen.has(key)) return;
+    seen.add(key);
+    // Prefer the base layer (Name === key, no CopyLayerColor) as the row so the
+    // colourable layer's resolved name and index represent the part.
+    let repIndex = layers.findIndex(candidate => (candidate.Name ?? '') === key && !candidate.CopyLayerColor);
+    if (repIndex < 0) repIndex = index;
+    parts.push({layerId: String(repIndex), name: getLayerDisplayName(layers[repIndex], repIndex)});
+  });
+  return parts;
+}
+
+// BC stores colours per ColorIndex (item.Color[ColorIndex]), not per layer index.
+// Several layers can share a ColorIndex, and layer index != ColorIndex in general,
+// so colour lookups must go through the layer's ColorIndex.
+function getColorIndicesForPart(item: Item, layerIdx: string): number[] {
+  const layers = item.Asset?.Layer ?? [];
+  const indices = new Set<number>();
+  getLayerGroupMembers(item, parseInt(layerIdx, 10)).forEach(memberIndex => {
+    const colorIndex = layers[memberIndex]?.ColorIndex;
+    indices.add(typeof colorIndex === 'number' ? colorIndex : memberIndex);
+  });
+  return [...indices];
+}
+
 export function getLayerColor(item: Item | null, layerIdx: LayerId): string | null {
   if (!item) return null;
   const colors = item.Property?.Color ?? item.Color;
   if (!colors) return null;
-  const index = layerIdx === 'all' ? 0 : parseInt(layerIdx, 10);
-  if (Array.isArray(colors)) return colors[index] ?? colors[0] ?? null;
-  return typeof colors === 'string' ? colors : null;
+  if (!Array.isArray(colors)) return typeof colors === 'string' ? colors : null;
+  if (layerIdx === 'all') return colors[0] ?? null;
+  const colorIndex = getColorIndicesForPart(item, layerIdx)[0] ?? 0;
+  return colors[colorIndex] ?? colors[0] ?? null;
 }
 
 export function setLayerColor(item: Item | null, layerIdx: LayerId, hexColor: string) {
   if (!item) return;
   const count = item.Asset?.Layer?.length || 1;
-  const index = layerIdx === 'all' ? 'all' : parseInt(layerIdx, 10);
   if (!item.Property) item.Property = {};
   const color = hexColor as BCColor;
 
@@ -262,17 +323,16 @@ export function setLayerColor(item: Item | null, layerIdx: LayerId, hexColor: st
   if (!Array.isArray(item.Property.Color)) item.Property.Color = initColorArray(item.Property.Color ?? item.Color);
   if (!Array.isArray(item.Color)) item.Color = initColorArray(item.Color);
 
-  if (index === 'all') {
-    for (let i = 0; i < count; i++) {
-      item.Property.Color[i] = color;
-      item.Color[i] = color;
-    }
-  } else {
-    while (item.Property.Color.length <= index) item.Property.Color.push('#FFFFFF');
-    while (item.Color.length <= index) item.Color.push('#FFFFFF');
-    item.Property.Color[index] = color;
-    item.Color[index] = color;
-  }
+  const colorIndices = layerIdx === 'all'
+    ? Array.from({length: count}, (_, i) => i)
+    : getColorIndicesForPart(item, layerIdx);
+
+  colorIndices.forEach(colorIndex => {
+    while (item.Property.Color!.length <= colorIndex) (item.Property.Color as BCColor[]).push('#FFFFFF');
+    while ((item.Color as BCColor[]).length <= colorIndex) (item.Color as BCColor[]).push('#FFFFFF');
+    (item.Property.Color as BCColor[])[colorIndex] = color;
+    (item.Color as BCColor[])[colorIndex] = color;
+  });
   refreshCurrentCharacter(false);
 }
 
@@ -304,12 +364,14 @@ export function applyPriority(item: Item, rawIdx: LayerId, value: number) {
   if (rawIdx === 'all') {
     item.Property.OverridePriority = newValue;
   } else {
-    const layerName = layers[parseInt(rawIdx, 10)]?.Name;
-    if (!layerName) return newValue;
+    const members = getLayerGroupMembers(item, parseInt(rawIdx, 10));
     if (typeof item.Property.OverridePriority !== 'object' || item.Property.OverridePriority == null) {
       item.Property.OverridePriority = {};
     }
-    item.Property.OverridePriority[layerName] = newValue;
+    members.forEach(index => {
+      const layerName = layers[index]?.Name;
+      if (layerName) (item.Property.OverridePriority as Record<string, number>)[layerName] = newValue;
+    });
   }
   refreshCurrentCharacter(false);
   return newValue;

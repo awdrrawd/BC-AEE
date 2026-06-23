@@ -99,7 +99,10 @@ export function setRotationDragging(active: boolean) {
 
 function isAeeEditing() {
   const state = getState();
-  return !!(state.visible && state.activeDrag);
+  // Block the interaction grid while a drag-edit mode is active OR while dyeing
+  // (the colour picker is open) - entering the colour screen clears activeDrag, so
+  // without the colourPicker check body clicks would fall through during dyeing.
+  return !!(state.visible && (state.activeDrag || state.colorPicker.open));
 }
 
 const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';

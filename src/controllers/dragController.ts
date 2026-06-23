@@ -88,21 +88,43 @@ export function hideTouchBlocker() {
   if (touchBlocker) touchBlocker.style.display = 'none';
 }
 
+// Set by the rotation overlay while its handle is being dragged. The drag uses
+// document-level mouse listeners, so the click suppression below must let those
+// events through until the drag finishes.
+let rotationDragging = false;
+
+export function setRotationDragging(active: boolean) {
+  rotationDragging = active;
+}
+
 function isAeeEditing() {
   const state = getState();
   return !!(state.visible && state.activeDrag);
 }
 
-// True when the event targets our own UI (rendered inside shadow roots) or a BC
-// menu/colour-picker control, which must keep working while a drag mode is on.
-function isOwnUiTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof Node)) return false;
-  if (target.getRootNode?.() instanceof ShadowRoot) return true;
-  if (target instanceof HTMLElement) {
-    if (target.closest('.screen-main-container, .screen-main, fieldset[name="color-picker"]')) return true;
-    if (target.closest('[role="menu"], [role="menuitem"], [role="radiogroup"]')) return true;
+const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';
+
+// True when the event targets our own UI (rendered inside the AEE shadow root,
+// e.g. the rotation handle) or a BC menu/colour-picker control, which must keep
+// working while a drag mode is on. We use composedPath() rather than event.target
+// because a document-level listener sees the target retargeted to the shadow host
+// (which lives in the light DOM), so getRootNode() would no longer be a ShadowRoot.
+function isOwnUiTarget(event: Event): boolean {
+  const path = event.composedPath?.();
+  if (path && path.length) {
+    for (const node of path) {
+      if (node instanceof ShadowRoot) return true;
+      if (node instanceof HTMLElement) {
+        if (node.dataset?.aeeRoot === 'true') return true;
+        if (node.matches(BC_UI_SELECTOR)) return true;
+      }
+    }
+    return false;
   }
-  return false;
+  // Fallback for environments without composedPath.
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  return !!(target.closest('[data-aee-root]') || target.closest(BC_UI_SELECTOR));
 }
 
 function getEventPoint(event: Event): {cx: number; cy: number} | null {
@@ -117,7 +139,7 @@ function getEventPoint(event: Event): {cx: number; cy: number} | null {
 // interaction grid / dialog handlers, which would otherwise interrupt editing.
 function shouldIntercept(event: Event): boolean {
   if (!isAeeEditing()) return false;
-  if (isOwnUiTarget(event.target)) return false;
+  if (isOwnUiTarget(event)) return false;
   const point = getEventPoint(event);
   if (!point) return false;
   const canvas = getCanvas();
@@ -253,7 +275,7 @@ export function installDragHandlers() {
   handlersInstalled = true;
 
   document.addEventListener('mousedown', event => {
-    if (isOwnUiTarget(event.target)) return;
+    if (isOwnUiTarget(event)) return;
     if (startCanvasDrag(event)) {
       event.stopImmediatePropagation();
       return;
@@ -285,6 +307,8 @@ export function installDragHandlers() {
       event.stopImmediatePropagation();
       return;
     }
+    // Don't swallow the mouseup that ends a rotation-handle drag.
+    if (rotationDragging) return;
     if (shouldIntercept(event)) {
       event.stopImmediatePropagation();
       updateBlockerCursor();
@@ -298,6 +322,7 @@ export function installDragHandlers() {
   }, true);
 
   document.addEventListener('pointerup', event => {
+    if (rotationDragging) return;
     if (shouldIntercept(event)) {
       event.stopImmediatePropagation();
       updateBlockerCursor();

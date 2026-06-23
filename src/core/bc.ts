@@ -157,14 +157,79 @@ export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverr
   return {...layerOverride, Opacity: opacity};
 }
 
+function isUsableLayerLabel(text: string | undefined | null, key: string): text is string {
+  return !!text && !text.startsWith('MISSING') && text !== key;
+}
+
+function assetTextPrefix(asset: Asset): string {
+  return (asset.DynamicGroupName ?? '') + (asset.Name ?? '');
+}
+
+// The friendly name BC shows for a single colour group (e.g. "外側"). Multi-layer
+// groups live in ColorGroups.csv, single-layer groups in LayerNames.csv - exactly
+// as BC's ItemColorDrawColorPickerHeader does.
+function resolveColorGroupLabel(asset: Asset, group: ColorGroup): string {
+  const key = assetTextPrefix(asset) + group.name;
+  const cache = group.layers.length === 1 ? ItemColorLayerNames : ItemColorGroupNames;
+  const text = cache?.get(key);
+  return isUsableLayerLabel(text, key) ? text : (group.name ?? '');
+}
+
+// The friendly per-layer name (LayerNames.csv), falling back to the raw layer name.
+function resolveLayerLabel(asset: Asset, layer: AssetLayer): string {
+  const key = assetTextPrefix(asset) + (layer.Name ?? '');
+  const text = ItemColorLayerNames?.get(key);
+  return isUsableLayerLabel(text, key) ? text : (layer.Name ?? '');
+}
+
+// Read the name straight from BC's live colour-picker state. This is the exact
+// grouping/naming BC used to render the colour list (works for modded assets too,
+// since the mod already populated ItemColorState/TextCache at runtime). AEE lists
+// each layer individually, so for multi-layer groups we keep the group name and
+// append the layer name to stay distinguishable - matching BC's own
+// "<group>: <layer>" convention when paging through a group's layers.
+function getNameFromItemColorState(layer: AssetLayer): string | null {
+  try {
+    const state = typeof ItemColorState !== 'undefined' ? ItemColorState : null;
+    const item = typeof ItemColorItem !== 'undefined' ? ItemColorItem : null;
+    if (!state?.colorGroups || !item?.Asset) return null;
+    const group = state.colorGroups.find(candidate => candidate.name !== null && candidate.layers.includes(layer));
+    if (!group) return null;
+    const groupLabel = resolveColorGroupLabel(item.Asset, group);
+    if (group.layers.length <= 1) return groupLabel || null;
+    const layerLabel = resolveLayerLabel(item.Asset, layer);
+    return layerLabel ? `${groupLabel}: ${layerLabel}` : (groupLabel || null);
+  } catch {
+    return null;
+  }
+}
+
 export function getLayerDisplayName(layer: AssetLayer | null | undefined, index: number | string) {
   if (!layer) return `Layer ${index}`;
+
+  const fromState = getNameFromItemColorState(layer);
+  if (fromState) return fromState;
+
   try {
-    if (ItemColorLayerNames) {
-      const asset = layer.Asset;
-      const key = (asset?.DynamicGroupName ?? '') + (asset?.Name ?? '') + (layer.Name ?? '');
-      const text = ItemColorLayerNames.get(key);
-      if (text && !text.startsWith('MISSING') && text !== key) return text;
+    const asset = layer.Asset;
+    if (asset && (ItemColorLayerNames || ItemColorGroupNames)) {
+      const prefix = assetTextPrefix(asset);
+      // Fallback for when BC's ItemColorState isn't available (e.g. the wardrobe
+      // "Color" mode). Recompute the grouping the same way BC does: group by
+      // ColorGroup (or the layer name), then look up the friendly label.
+      const groupKey = layer.ColorGroup || layer.Name || '';
+      const colorable = (asset.Layer ?? []).filter(l => !l.CopyLayerColor && l.AllowColorize && !l.HideColoring);
+      const groupSize = colorable.filter(l => (l.ColorGroup || l.Name || '') === groupKey).length;
+      const groupCache = groupSize > 1 ? ItemColorGroupNames : ItemColorLayerNames;
+      const fromGroup = groupCache?.get(prefix + groupKey);
+      if (isUsableLayerLabel(fromGroup, prefix + groupKey)) {
+        if (groupSize <= 1) return fromGroup;
+        const layerLabel = resolveLayerLabel(asset, layer);
+        return layerLabel ? `${fromGroup}: ${layerLabel}` : fromGroup;
+      }
+      const layerKey = prefix + (layer.Name ?? '');
+      const fromLayer = ItemColorLayerNames?.get(layerKey);
+      if (isUsableLayerLabel(fromLayer, layerKey)) return fromLayer;
     }
   } catch {
     // Fall back to layer.Name below.

@@ -2,7 +2,7 @@ import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
 import {getState} from '@/core/store';
 import {syncCurrentContext} from '@/core/context';
-import {getCanvasRect, getLayerColor, getLayerDisplayName} from '@/core/bc';
+import {getCanvasRect, getCurrentItem, getEditableParts, getLayerColor, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {observeAppearanceScreenState, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
   closeColorPicker,
@@ -184,6 +184,18 @@ function installLayerDiagnostics() {
         layerIndices: group.layers.map(l => layers.indexOf(l)).join(','),
         layerNames: group.layers.map(l => l.Name ?? '(null)').join(','),
       })));
+    }
+    // What AEE actually shows + how the current selection maps to layers, so we
+    // can see whether part editing/flash targets the right layers at runtime.
+    const aeeState = getState();
+    console.log(`[AEE] AEE rows (selectedLayer=${String(aeeState.selectedLayer)}, getCurrentItem===itemColorItem: ${getCurrentItem() === item}):`);
+    console.table(getEditableParts(item).map(part => ({
+      layerId: part.layerId,
+      name: part.name,
+      groupMembers: getLayerGroupMembers(item, parseInt(part.layerId, 10)).join(','),
+    })));
+    if (aeeState.selectedLayer != null && aeeState.selectedLayer !== 'all') {
+      console.log(`[AEE] selected part '${aeeState.selectedLayer}' -> members: ${getLayerGroupMembers(item, parseInt(aeeState.selectedLayer, 10)).join(',')}`);
     }
     return rows;
   };

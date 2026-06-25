@@ -48,6 +48,14 @@ export function selectLayer(layerId: LayerId) {
   });
 }
 
+// Clear the part selection, returning the edit panel to the parts list.
+export function deselectLayer() {
+  stopHoverHighlight(true);
+  mutateState(draft => {
+    draft.selectedLayer = null;
+  });
+}
+
 export function toggleCollapse() {
   mutateState(draft => {
     draft.collapsed = !draft.collapsed;

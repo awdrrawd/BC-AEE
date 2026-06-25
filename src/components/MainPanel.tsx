@@ -2,8 +2,9 @@ import {type MouseEvent as ReactMouseEvent, useRef} from 'react';
 import type {AeeState} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {getElementOverlayAnchor} from '@/core/overlay';
-import {setTab, togglePartsOpen} from '@/controllers/uiController';
+import {deselectLayer, setTab, togglePartsOpen} from '@/controllers/uiController';
 import {LayersIcon} from '@/components/icons/LayersIcon';
+import {ReturnIcon} from '@/components/icons/ReturnIcon';
 import {EditTab} from '@/components/main-panel/EditTab';
 import {LayersTab} from '@/components/main-panel/LayersTab';
 import {OpacityTab} from '@/components/main-panel/OpacityTab';
@@ -53,7 +54,17 @@ export function MainPanel({state}: { state: AeeState }) {
             )}
           </div>
           <div className="relative flex shrink-0 items-center border-b border-zinc-700 bg-zinc-900 px-2 py-1">
-            <div className="h-8 w-8 shrink-0"/>
+            {state.selectedLayer !== null ? (
+              <button
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-zinc-700 text-zinc-100 transition hover:border-violet-400 hover:text-violet-200"
+                title={t('main-panel-deselect-button-title')}
+                onClick={deselectLayer}
+              >
+                <ReturnIcon/>
+              </button>
+            ) : (
+              <div className="h-8 w-8 shrink-0"/>
+            )}
             <span className="aee-wave-text absolute inset-x-0 text-center text-lg font-bold"
                   style={{pointerEvents: 'none'}}>AEE v{state.version}</span>
             <button

@@ -5,8 +5,9 @@ import {
   getCanvas,
   getCanvasRect,
   getCurrentItem,
+  getLayerGroupMembers,
   getLayerOverride,
-  refreshCurrentCharacter,
+  refreshAfterLayerEdit,
   setLayerOverride,
 } from '@/core/bc';
 import {getState} from '@/core/store';
@@ -226,16 +227,20 @@ function moveXyDrag(event: MouseEvent) {
   const dy = (event.clientY - xyDragState.startY) * sy;
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
+  // Move the whole part (anchor + CopyLayerColor members), matching the other
+  // transforms which go through setLayerOverride's group expansion.
   const indices = xyDragState.layerId === 'all'
     ? Array.from({length: count}, (_, index) => index)
-    : [parseInt(xyDragState.layerId, 10)];
+    : getLayerGroupMembers(item, parseInt(xyDragState.layerId, 10));
   indices.forEach(index => {
     const layerOverride = item.Property.LayerOverrides[index] || {};
     layerOverride.DrawingLeft = {'': Math.round(xyDragState.origX + (xyDragState.flipX ? -dx : dx))};
     layerOverride.DrawingTop = {'': Math.round(xyDragState.origY + (xyDragState.flipY ? -dy : dy))};
     item.Property.LayerOverrides[index] = layerOverride;
   });
-  refreshCurrentCharacter(false);
+  // Use the ItemColor-aware refresh so position re-bakes on the restraint preview
+  // in real time (plain CharacterRefresh does not rebuild the cached canvas).
+  refreshAfterLayerEdit();
   forceUiUpdate();
 }
 
@@ -279,6 +284,10 @@ export function installDragHandlers() {
 
   document.addEventListener('mousedown', event => {
     if (isOwnUiTarget(event)) return;
+    // A fresh mousedown outside our UI means no rotation-handle drag is in
+    // progress; clear any stale flag so it can never permanently disable the
+    // mouseup/pointerup grid suppression below.
+    rotationDragging = false;
     if (startCanvasDrag(event)) {
       event.stopImmediatePropagation();
       return;

@@ -12,6 +12,7 @@ import {
   getLayerGroupMembers,
   getLayerOverride,
   getOpacity,
+  refreshAfterLayerEdit,
   refreshCurrentCharacter,
   setLayerColor,
   setLayerOverride,
@@ -326,7 +327,7 @@ export function resetEditProperty(ctrl: string) {
     indices.forEach(index => {
       if (item.Property?.LayerOverrides?.[index]) delete item.Property.LayerOverrides[index][key];
     });
-    refreshCurrentCharacter(false);
+    refreshAfterLayerEdit();
   } else if (ctrl === 'op') {
     ensureOpacityArray(item);
     indices.forEach(index => {
@@ -381,7 +382,7 @@ export function stepPriority(layerId: LayerId, delta: number) {
     current = typeof override === 'number' ? override : getAssetDrawingPriority(item.Asset);
   } else {
     const index = parseInt(layerId, 10);
-    const layerName = layers[index]?.Name;
+    const layerName = layers[index]?.Name ?? '';
     const override = item.Property?.OverridePriority;
     current = typeof override === 'object' && override?.[layerName] != null ? override[layerName] : (layers[index]?.Priority ?? 0);
   }
@@ -404,12 +405,13 @@ export function resetPriority(layerId: LayerId) {
     if (item.Property) delete item.Property.OverridePriority;
   } else if (typeof item.Property?.OverridePriority === 'object') {
     getLayerGroupMembers(item, parseInt(layerId, 10)).forEach(index => {
-      const layerName = layers[index]?.Name;
-      if (layerName) delete (item.Property!.OverridePriority as Record<string, number>)[layerName];
+      if (!layers[index]) return;
+      const layerName = layers[index].Name ?? '';
+      delete (item.Property!.OverridePriority as Record<string, number>)[layerName];
     });
     if (Object.keys(item.Property.OverridePriority).length === 0) delete item.Property.OverridePriority;
   }
-  refreshCurrentCharacter(false);
+  refreshAfterLayerEdit();
   forceUiUpdate();
 }
 
@@ -463,7 +465,12 @@ export function startHoverHighlight(item: Item, layerIdx: LayerId) {
     indices.forEach(index => overrides.set(index, opacity));
     runtime.hoverFlashData = {item, overrides};
     try {
-      CharacterLoadCanvas?.(CharacterAppearanceSelection || runtime.itemColorChar);
+      // Reload whichever character drives the visible render. In the ItemColor
+      // (restraint) screen the preview is the item-colour character, which may
+      // differ from CharacterAppearanceSelection - reload both so the flash shows.
+      const primary = CharacterAppearanceSelection || runtime.itemColorChar;
+      if (primary) CharacterLoadCanvas?.(primary);
+      if (runtime.itemColorChar && runtime.itemColorChar !== primary) CharacterLoadCanvas?.(runtime.itemColorChar);
     } catch {
       // Ignore transient render errors.
     }
@@ -578,7 +585,7 @@ export function getPriorityValue(item: Item, layerId: LayerId) {
   }
   const index = parseInt(layerId, 10);
   const base = typeof layers[index]?.Priority === 'number' ? layers[index].Priority : 0;
-  const layerName = layers[index]?.Name;
+  const layerName = layers[index]?.Name ?? '';
   const override = item.Property?.OverridePriority;
   const current = typeof override === 'object' && override?.[layerName] != null ? override[layerName] : base;
   return {

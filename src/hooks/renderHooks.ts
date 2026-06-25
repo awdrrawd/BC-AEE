@@ -61,7 +61,7 @@ export function installRenderHooks() {
         assetLayers?.forEach(layer => {
           const newPriority = typeof override === 'number'
             ? override
-            : (typeof override === 'object' && override[layer.Name] != null ? override[layer.Name] : null);
+            : (typeof override === 'object' && override[layer.Name ?? ''] != null ? override[layer.Name ?? ''] : null);
           if (newPriority != null) {
             const writableLayer = layer as WritableAssetLayer;
             savedPriority.push({layer: writableLayer, original: writableLayer.Priority});

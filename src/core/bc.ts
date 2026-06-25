@@ -106,11 +106,16 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
     if (!item.Property.LayerOverrides[index]) item.Property.LayerOverrides[index] = {};
     item.Property.LayerOverrides[index][key] = value as never;
   });
+  refreshAfterLayerEdit();
+}
+
+// Refresh the character after a layer-override edit. In the ItemColor screen
+// CharacterRefresh alone does not rebuild the cached layer canvas, so position
+// (DrawingLeft/Top, applied at bake time) and opacity only update after saving.
+// Force a canvas reload on the item-colour character to make it real time.
+// (Scale/rotation/skew show without this because they apply at GL composite time.)
+export function refreshAfterLayerEdit() {
   refreshCurrentCharacter(false);
-  // While editing a restraint's colour (the ItemColor screen) CharacterRefresh
-  // alone does not rebuild the cached layer canvas, so transform changes such as
-  // scale/skew only appear after saving. Force a canvas reload on the item-color
-  // character to make the update show in real time.
   if (runtime.itemColorChar) {
     runtime.itemColorDirty = true;
     try {
@@ -249,8 +254,36 @@ function layerGroupKey(layer: AssetLayer | undefined | null): string {
   return layer.CopyLayerColor || layer.Name || '';
 }
 
+// Assets where BC's CopyLayerColor links genuinely-distinct objects, so grouping
+// would wrongly merge them. These fall back to the old per-layer listing. Matched
+// by Asset.Name.
+const UNGROUPED_ASSETS = new Set<string>([
+  'WombTattoos', 'BodyWritings', 'FaceScars', 'AnimalNoses', 'FishnetTop',
+  'SleevelessSlimLatexLeotard', 'LongSkirt1', 'AsymmetricSkirt', 'LatexBunnySuit',
+  'LatexCorset1', 'PullDownPanties', 'HeelBinders', 'DropBag', 'Tentacles',
+  'DutyShoes', 'SocialHeels', 'MaryShoes', 'Flippers', 'Beanie', 'UnicornHorn',
+  'DildocornHorn', 'OperaGloves', 'BunnyMask1', 'Kissmark', 'FurCoat', 'FlowerDress',
+]);
+
+// Whether to skip CopyLayerColor grouping and list every layer (the old way).
+// Triggered by the explicit list above, or by the "design picker" pattern: many
+// layers all sharing a single colourable ColorIndex (e.g. body-marking decals),
+// where each copy is a distinct design rather than a visual half/variant.
+function isUngroupedAsset(item: Item | null): boolean {
+  const asset = item?.Asset;
+  if (!asset) return false;
+  if (asset.Name && UNGROUPED_ASSETS.has(asset.Name)) return true;
+  const layers = asset.Layer ?? [];
+  const colorIndices = new Set<number>();
+  layers.forEach(layer => {
+    if (layer.AllowColorize && !layer.HideColoring) colorIndices.add(layer.ColorIndex ?? 0);
+  });
+  return colorIndices.size <= 1 && layers.length > 4;
+}
+
 // All layer indices belonging to the same part as the given layer.
 export function getLayerGroupMembers(item: Item | null, layerIndex: number): number[] {
+  if (isUngroupedAsset(item)) return [layerIndex];
   const layers = item?.Asset?.Layer ?? [];
   const key = layerGroupKey(layers[layerIndex]);
   if (!key) return [layerIndex];
@@ -266,6 +299,9 @@ export function getLayerGroupMembers(item: Item | null, layerIndex: number): num
 // (anchor + copies + variants), which produced duplicate and English-only names.
 export function getEditableParts(item: Item | null): {layerId: string; name: string}[] {
   const layers = item?.Asset?.Layer ?? [];
+  if (isUngroupedAsset(item)) {
+    return layers.map((layer, index) => ({layerId: String(index), name: getLayerDisplayName(layer, index)}));
+  }
   const parts: {layerId: string; name: string}[] = [];
   const seen = new Set<string>();
   layers.forEach((layer, index) => {
@@ -369,10 +405,13 @@ export function applyPriority(item: Item, rawIdx: LayerId, value: number) {
       item.Property.OverridePriority = {};
     }
     members.forEach(index => {
-      const layerName = layers[index]?.Name;
-      if (layerName) (item.Property.OverridePriority as Record<string, number>)[layerName] = newValue;
+      if (!layers[index]) return;
+      // BC keys OverridePriority by `layer.Name ?? ""`, so unnamed layers (e.g. a
+      // single-layer restraint) use the empty-string key - don't skip them.
+      const layerName = layers[index].Name ?? '';
+      (item.Property.OverridePriority as Record<string, number>)[layerName] = newValue;
     });
   }
-  refreshCurrentCharacter(false);
+  refreshAfterLayerEdit();
   return newValue;
 }

@@ -52,6 +52,7 @@
   "settings-replace-bc-color-picker": "Replace BC color picker",
   "settings-hover-layer-highlight": "Hover layer highlight (AEE)",
   "settings-hover-item-highlight": "Hover item highlight (character)",
+  "settings-hover-tryon": "Hover try-on (character, not actually worn)",
   "settings-hide-lscg-layers-panel": "Hide LSCG layers panel",
   "settings-enable-button-replacement": "Enable button replacement (Export/Import)",
   "settings-paste-import": "Ctrl+V paste import (in dressing room)",

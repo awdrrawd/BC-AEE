@@ -52,6 +52,7 @@
   "settings-replace-bc-color-picker": "Заменить выбор цвета BC",
   "settings-hover-layer-highlight": "Подсветка слоя при наведении (AEE)",
   "settings-hover-item-highlight": "Подсветка предмета при наведении (персонаж)",
+  "settings-hover-tryon": "Примерка при наведении (персонаж, не надевается по-настоящему)",
   "settings-hide-lscg-layers-panel": "Скрыть панель слоёв LSCG",
   "settings-enable-button-replacement": "Включить замену кнопок (экспорт/импорт)",
   "settings-paste-import": "Импорт вставкой Ctrl+V (в гардеробной)",

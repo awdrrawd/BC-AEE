@@ -433,6 +433,9 @@ export function setSetting(key: string, value: boolean) {
     } else if (key === 'hoverHighlightChar') {
       draft.hoverHighlightChar = value;
       if (!value) stopHoverCharHighlight();
+    } else if (key === 'hoverTryOn') {
+      draft.hoverTryOn = value;
+      if (!value) stopHoverTryOn();
     } else if (key === 'hideLscgLayers') {
       draft.hideLscgLayers = value;
       applyLscgLayersVisibility(value);
@@ -558,6 +561,69 @@ export function stopHoverCharHighlight() {
   }
   const character = CharacterAppearanceSelection;
   if (character) CharacterLoadCanvas?.(character);
+}
+
+// Temporarily "wear" the hovered Cloth-grid item on the main character so the
+// player can see how it looks, without committing it. Uses CharacterLoadCanvas
+// (local redraw only) so the preview is never synced to other players.
+export function applyHoverTryOn(item: DialogInventoryItem) {
+  const character = CharacterAppearanceSelection;
+  const asset = item?.Asset;
+  if (!character || !asset?.Group?.Name) return;
+  const group = asset.Group.Name;
+  const assetName = asset.Name;
+  if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup === group && runtime.hoverTryOnAsset === assetName) return;
+
+  // Switched to a different group while still previewing: put the old group back first.
+  if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup && runtime.hoverTryOnGroup !== group) {
+    restoreTryOnGroup(character, runtime.hoverTryOnGroup, runtime.hoverTryOnBackup);
+    runtime.hoverTryOnActive = false;
+    runtime.hoverTryOnBackup = null;
+  }
+
+  // Capture the real worn item (by reference, keeping its Property) once per group,
+  // before the first preview swap, so it can be restored exactly.
+  if (!runtime.hoverTryOnActive || runtime.hoverTryOnGroup !== group) {
+    runtime.hoverTryOnBackup = InventoryGet(character, group);
+    runtime.hoverTryOnGroup = group;
+  }
+
+  try {
+    // Force the asset's own default color instead of inheriting the group's
+    // current color. Passing null here would make BC keep the worn item's color
+    // (its color-inheritance-by-group behaviour); passing DefaultColor overrides it.
+    const defaultColor: ItemColor | null = asset.DefaultColor ? [...asset.DefaultColor] : null;
+    CharacterAppearanceSetItem(character, group, asset, defaultColor);
+    runtime.hoverTryOnActive = true;
+    runtime.hoverTryOnAsset = assetName;
+    CharacterLoadCanvas(character);
+  } catch {
+    // Ignore transient render errors.
+  }
+}
+
+export function stopHoverTryOn(redraw = true) {
+  if (!runtime.hoverTryOnActive) return;
+  const character = CharacterAppearanceSelection;
+  if (character && runtime.hoverTryOnGroup) {
+    restoreTryOnGroup(character, runtime.hoverTryOnGroup, runtime.hoverTryOnBackup);
+    if (redraw) {
+      try {
+        CharacterLoadCanvas(character);
+      } catch {
+        // Ignore transient render errors.
+      }
+    }
+  }
+  runtime.hoverTryOnActive = false;
+  runtime.hoverTryOnGroup = null;
+  runtime.hoverTryOnAsset = null;
+  runtime.hoverTryOnBackup = null;
+}
+
+function restoreTryOnGroup(character: Character, group: string, backup: Item | null) {
+  character.Appearance = character.Appearance.filter(appearanceItem => appearanceItem.Asset?.Group?.Name !== group);
+  if (backup) character.Appearance.push(backup);
 }
 
 export function setCharControlVisible(visible: boolean) {

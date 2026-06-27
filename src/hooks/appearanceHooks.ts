@@ -1,9 +1,11 @@
 import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
 import {
+  applyHoverTryOn,
   setCharControlVisible,
   startHoverCharHighlight,
   stopHoverCharHighlight,
+  stopHoverTryOn,
   syncAfterBcRender
 } from '@/controllers/uiController';
 import {getState} from '@/core/store';
@@ -27,6 +29,7 @@ export function installAppearanceHooks() {
     if (transition.leftAppearance) {
       removeBgHook();
       stopHoverCharHighlight();
+      stopHoverTryOn(false);
       closeImportDialog();
     }
 
@@ -36,6 +39,10 @@ export function installAppearanceHooks() {
 
     if (transition.phaseChanged && transition.current.phase !== 'groups') {
       stopHoverCharHighlight();
+    }
+
+    if (transition.phaseChanged && transition.current.phase !== 'cloth') {
+      stopHoverTryOn();
     }
 
     syncAfterBcRender();
@@ -56,6 +63,7 @@ export function installAppearanceHooks() {
     syncAfterBcRender();
 
     handleHoverCharHighlight(isAppearanceGroupsPhase());
+    handleHoverTryOn();
 
     markAppearanceRunStart();
     const result = next(args);
@@ -108,6 +116,8 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('CharacterAppearanceReady', 1, (args, next) => {
+    // Discard any active preview before the appearance is committed on Accept.
+    stopHoverTryOn(false);
     return observeAppearanceScreenState(next(args));
   });
 
@@ -125,6 +135,10 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('AppearanceClick', 0, (args, next) => {
+    // Drop the hover try-on preview before BC handles the click, so its commit
+    // logic (equip a cell / Accept / cancel) always acts on the real worn item
+    // and a preview is never accidentally committed.
+    stopHoverTryOn(false);
     if (isEditingBody()) {
       const mode = CharacterAppearanceMode ?? '';
       if (mode === 'Color' || mode === 'Cloth' || mode === 'Permissions') return next(args);
@@ -195,6 +209,46 @@ function handleHoverCharHighlight(isAppearance: boolean) {
   } else if (runtime.hoverCharGroup !== null) {
     stopHoverCharHighlight();
   }
+}
+
+function handleHoverTryOn() {
+  const state = getState();
+  if (!state.hoverTryOn
+    || CharacterAppearanceMode !== 'Cloth'
+    || !CharacterAppearanceSelection
+    || (typeof CommonIsMobile !== 'undefined' && CommonIsMobile)
+    || typeof DialogInventory === 'undefined'
+    || typeof DialogInventoryOffset === 'undefined'
+    || typeof CharacterAppearanceNumClothPerPage === 'undefined') {
+    stopHoverTryOn();
+    return;
+  }
+  const hovered = findHoveredClothItem();
+  if (!hovered) {
+    stopHoverTryOn();
+    return;
+  }
+  applyHoverTryOn(hovered);
+}
+
+// Mirror BC's Cloth-mode grid layout (Appearance.js): cells are 225x275, laid
+// out from (1250, 125) stepping +250 across and wrapping to a new row (+300)
+// once past x=1800, over the DialogInventory page window.
+function findHoveredClothItem(): DialogInventoryItem | null {
+  let x = 1250;
+  let y = 125;
+  const end = Math.min(DialogInventory.length, DialogInventoryOffset + CharacterAppearanceNumClothPerPage);
+  for (let index = DialogInventoryOffset; index < end; index++) {
+    if (MouseX >= x && MouseX < x + 225 && MouseY >= y && MouseY < y + 275) {
+      return DialogInventory[index];
+    }
+    x += 250;
+    if (x > 1800) {
+      x = 1250;
+      y += 300;
+    }
+  }
+  return null;
 }
 
 function isEditingBody() {

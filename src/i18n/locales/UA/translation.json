@@ -52,6 +52,7 @@
   "settings-replace-bc-color-picker": "Замінити вибір кольору BC",
   "settings-hover-layer-highlight": "Підсвічування шару при наведенні (AEE)",
   "settings-hover-item-highlight": "Підсвічування предмета при наведенні (персонаж)",
+  "settings-hover-tryon": "Приміряння при наведенні (персонаж, без фактичного одягання)",
   "settings-hide-lscg-layers-panel": "Приховати панель шарів LSCG",
   "settings-enable-button-replacement": "Увімкнути заміну кнопок (експорт/імпорт)",
   "settings-paste-import": "Імпорт вставкою Ctrl+V (у гардеробній)",

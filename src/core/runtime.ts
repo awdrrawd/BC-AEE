@@ -27,6 +27,13 @@ export interface Runtime {
   hoverCharAnimFrame: number | null;
   hoverCharTimer: number | null;
   hoverCharStartTime: number | null;
+  // Hover try-on preview (Cloth-mode grid): temporarily wear the hovered item
+  // on the main character without committing it. Backup holds the real worn
+  // item (by reference, preserving its Property) so it can be restored exactly.
+  hoverTryOnActive: boolean;
+  hoverTryOnGroup: string | null;
+  hoverTryOnAsset: string | null;
+  hoverTryOnBackup: Item | null;
   pendingTransform: PendingTransform | null;
   pendingTransformApplied: number;
   mirrorCopyFlags: MirrorCopyFlags | null;
@@ -70,6 +77,10 @@ export const runtime: Runtime = {
   hoverCharAnimFrame: null,
   hoverCharTimer: null,
   hoverCharStartTime: null,
+  hoverTryOnActive: false,
+  hoverTryOnGroup: null,
+  hoverTryOnAsset: null,
+  hoverTryOnBackup: null,
   pendingTransform: null,
   pendingTransformApplied: 0,
   mirrorCopyFlags: null,

@@ -52,6 +52,7 @@
   "settings-replace-bc-color-picker": "BC-Farbwähler ersetzen",
   "settings-hover-layer-highlight": "Ebene bei Hover hervorheben (AEE)",
   "settings-hover-item-highlight": "Item bei Hover hervorheben (Charakter)",
+  "settings-hover-tryon": "Anprobe bei Hover (Charakter, nicht wirklich getragen)",
   "settings-hide-lscg-layers-panel": "LSCG-Ebenenpanel ausblenden",
   "settings-enable-button-replacement": "Button-Ersetzung aktivieren (Export/Import)",
   "settings-paste-import": "Einfügen-Import mit Strg+V (in der Umkleide)",

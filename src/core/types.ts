@@ -21,6 +21,7 @@ export type LayerOverrideKey =
 export type SettingKey =
   | 'hoverHighlight'
   | 'hoverHighlightChar'
+  | 'hoverTryOn'
   | 'hideLscgLayers'
   | 'showCharCtrl'
   | 'enableAeeMenu'
@@ -262,6 +263,7 @@ export interface AeeState {
   partsTop: number;
   hoverHighlight: boolean;
   hoverHighlightChar: boolean;
+  hoverTryOn: boolean;
   hideLscgLayers: boolean;
   showCharCtrl: boolean;
   hideCloseup: boolean;

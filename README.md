@@ -55,6 +55,11 @@ Adjust drawing priority per layer or per item with live preview.
 在 AEE 圖層清單或 BC 外觀清單懸停時，對應衣服在角色身上閃爍，方便確認位置。  
 Hovering over a layer in the AEE list or BC appearance list flashes the corresponding item on the character.
 
+**🪞 懸停試穿 · Hover Try-On**
+
+替換服裝時，游標停在服裝格上即自動套用到角色身上預覽，移開或選別件即還原，不會真的穿上（需在設定開啟）。  
+While replacing clothing, hovering over an item in the selection grid temporarily previews it on the character; moving away or hovering another reverts it, without actually wearing it (toggle in settings).
+
 **📦 外觀匯出/匯入 · Appearance Export/Import**
 
 BCX 相容格式匯出外觀至剪貼板，匯入時可選擇只套用衣服、身體、或拘束具。  

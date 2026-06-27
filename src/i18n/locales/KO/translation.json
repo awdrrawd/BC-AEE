@@ -52,6 +52,7 @@
   "settings-replace-bc-color-picker": "BC 색상 선택기 교체",
   "settings-hover-layer-highlight": "호버 시 레이어 강조 (AEE)",
   "settings-hover-item-highlight": "호버 시 아이템 강조 (캐릭터)",
+  "settings-hover-tryon": "호버 시 입어보기 (캐릭터, 실제로 착용 안 함)",
   "settings-hide-lscg-layers-panel": "LSCG 레이어 패널 숨기기",
   "settings-enable-button-replacement": "버튼 교체 활성화 (내보내기/가져오기)",
   "settings-paste-import": "Ctrl+V 붙여넣기 가져오기 (탈의실 내)",

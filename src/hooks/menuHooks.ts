@@ -40,11 +40,15 @@ export function installMenuHooks() {
       if (button === 'Paste') return 'AEE_Import';
       return button;
     });
-    // When editing another character's appearance there are no Copy/Paste
-    // buttons to replace, so add our buttons. Prepend so they sit on the left
-    // (Import leftmost) rather than at the far right of the menu.
-    if (!AppearanceMenu.includes('AEE_Export')) AppearanceMenu.unshift('AEE_Export');
-    if (!AppearanceMenu.includes('AEE_Import')) AppearanceMenu.unshift('AEE_Import');
+    // Keep a consistent left-to-right order whether editing our own appearance
+    // (BC gives us Copy/Paste to replace, ending up after Wardrobe) or someone
+    // else's (no such buttons): always Wardrobe, then Export, then Import. Pull
+    // our two buttons out and re-place them right after the Wardrobe button so
+    // both cases match.
+    AppearanceMenu = AppearanceMenu.filter((button) => button !== 'AEE_Export' && button !== 'AEE_Import');
+    const wardrobeIndex = AppearanceMenu.findIndex((button) => button === 'Wardrobe' || button === 'WardrobeDisabled');
+    if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'AEE_Export', 'AEE_Import');
+    else AppearanceMenu.unshift('AEE_Export', 'AEE_Import');
     if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
       try {
         TextCache.Text_Appearance = TextCache.Text_Appearance || {};

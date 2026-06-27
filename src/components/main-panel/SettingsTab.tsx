@@ -16,6 +16,8 @@ export function SettingsTab({state}: { state: AeeState }) {
                   value={state.hoverHighlight}/>
       <SettingRow label={t('settings-hover-item-highlight')}
                   settingKey="hoverHighlightChar" value={state.hoverHighlightChar}/>
+      <SettingRow label={t('settings-hover-tryon')}
+                  settingKey="hoverTryOn" value={state.hoverTryOn}/>
       <SettingRow label={t('settings-hide-lscg-layers-panel')} settingKey="hideLscgLayers"
                   value={state.hideLscgLayers}/>
       <SettingRow label={t('settings-enable-button-replacement')}

@@ -256,6 +256,14 @@ export function toggleImageBg() {
 
 let wheelHandlersInstalled = false;
 
+// True when the wheel event passes through the AEE UI (the React app is mounted
+// in an open shadow root whose root element is marked data-aee-root), so events
+// over our panels/overlays can be left to scroll natively.
+function isWheelOverAeeUi(event: WheelEvent): boolean {
+  const path = event.composedPath?.() ?? [];
+  return path.some(node => node instanceof HTMLElement && node.dataset?.aeeRoot === 'true');
+}
+
 export function installViewControlHandlers() {
   if (wheelHandlersInstalled) return;
   wheelHandlersInstalled = true;
@@ -315,6 +323,10 @@ export function installViewControlHandlers() {
     updateAppearanceScreenState();
     if (!state.offset.wheelControl || !isInAppearanceScreen()) return;
     if (spaceDown || wheelButtonDown) return;
+    // The AEE panel is an overlay sitting on top of the (full-screen) canvas, so
+    // a wheel over it still lands inside the canvas rect. Let those scroll the
+    // panel natively instead of zooming the character.
+    if (isWheelOverAeeUi(event)) return;
     const canvas = getCanvas();
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();

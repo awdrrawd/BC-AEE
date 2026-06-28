@@ -60,6 +60,11 @@ Hovering over a layer in the AEE list or BC appearance list flashes the correspo
 替換服裝時，游標停在服裝格上即自動套用到角色身上預覽，移開或選別件即還原，不會真的穿上（需在設定開啟）。  
 While replacing clothing, hovering over an item in the selection grid temporarily previews it on the character; moving away or hovering another reverts it, without actually wearing it (toggle in settings).
 
+**📋 服裝複製/貼上 · Item Copy/Paste**
+
+外觀清單每件衣服旁多一個複製鈕，複製後在「能穿同一件衣服」的欄位顯示貼上鈕，貼上會保留顏色、透明度與所有 AEE 圖層設定；可跨角色（A 複製、B 貼上），上方工具列的清除鈕可解除複製狀態（需在設定開啟）。  
+Each item in the appearance list gets a Copy button; after copying, a Paste button appears on every slot that can wear the same asset, carrying over color, opacity and all AEE layer settings. Works across characters (copy on A, paste on B); a Clear button in the top toolbar drops the copy state (toggle in settings).
+
 **📦 外觀匯出/匯入 · Appearance Export/Import**
 
 BCX 相容格式匯出外觀至剪貼板，匯入時可選擇只套用衣服、身體、或拘束具。  

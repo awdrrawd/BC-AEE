@@ -7,6 +7,6 @@ namespace TextCache {
 // Augment AppearanceMenu to accept the mod's custom menu button identifiers.
 // DialogMenuButtonType is a union type alias and cannot be merged — the
 // workaround is to widen the variable declaration here so our custom
-// strings ("AEE_Export", "AEE_Import") are assignable.
-type DialogMenuButtonTypeOverride = 'AEE_Export' | 'AEE_Import' | DialogMenuButtonType;
+// strings ("AEE_Export", "AEE_Import", "AEE_ClearCopy") are assignable.
+type DialogMenuButtonTypeOverride = 'AEE_Export' | 'AEE_Import' | 'AEE_ClearCopy' | DialogMenuButtonType;
 declare let AppearanceMenu: DialogMenuButtonTypeOverride[];

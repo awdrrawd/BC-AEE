@@ -22,6 +22,7 @@ export type SettingKey =
   | 'hoverHighlight'
   | 'hoverHighlightChar'
   | 'hoverTryOn'
+  | 'enableCopyPaste'
   | 'hideLscgLayers'
   | 'showCharCtrl'
   | 'enableAeeMenu'
@@ -264,6 +265,7 @@ export interface AeeState {
   hoverHighlight: boolean;
   hoverHighlightChar: boolean;
   hoverTryOn: boolean;
+  enableCopyPaste: boolean;
   hideLscgLayers: boolean;
   showCharCtrl: boolean;
   hideCloseup: boolean;

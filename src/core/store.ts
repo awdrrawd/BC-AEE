@@ -20,6 +20,7 @@ let state: AeeState = {
   hoverHighlight: getAeeSetting('hoverHighlight', false),
   hoverHighlightChar: getAeeSetting('hoverHighlightChar', false),
   hoverTryOn: getAeeSetting('hoverTryOn', false),
+  enableCopyPaste: getAeeSetting('enableCopyPaste', false),
   hideLscgLayers: getAeeSetting('hideLscgLayers', false),
   showCharCtrl: getAeeSetting('showCharCtrl', false),
   hideCloseup: getAeeSetting('hideCloseup', false),

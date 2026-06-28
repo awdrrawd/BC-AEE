@@ -1,6 +1,8 @@
 import bcAeeModSdk from '@/modsdk';
 import {getState} from '@/core/store';
 import {exportBcxAppearance, importBcxAppearanceWithCategory, importBcxFromText} from '@/controllers/importExportController';
+import {clearCopyBuffer, isCopyActive} from '@/controllers/copyPasteController';
+import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
 import {t} from '@/i18n/i18n';
 
@@ -32,46 +34,56 @@ export function installMenuHooks() {
 
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
-    if (!getState().enableAeeMenu) return;
     if (typeof CharacterAppearanceMode !== 'undefined' && CharacterAppearanceMode !== '') return;
-    AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
-    AppearanceMenu = AppearanceMenu.map((button) => {
-      if (button === 'Copy') return 'AEE_Export';
-      if (button === 'Paste') return 'AEE_Import';
-      return button;
-    });
-    // Keep a consistent left-to-right order whether editing our own appearance
-    // (BC gives us Copy/Paste to replace, ending up after Wardrobe) or someone
-    // else's (no such buttons): always Wardrobe, then Export, then Import. Pull
-    // our two buttons out and re-place them right after the Wardrobe button so
-    // both cases match.
-    AppearanceMenu = AppearanceMenu.filter((button) => button !== 'AEE_Export' && button !== 'AEE_Import');
-    const wardrobeIndex = AppearanceMenu.findIndex((button) => button === 'Wardrobe' || button === 'WardrobeDisabled');
-    if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'AEE_Export', 'AEE_Import');
-    else AppearanceMenu.unshift('AEE_Export', 'AEE_Import');
-    if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
-      try {
-        TextCache.Text_Appearance = TextCache.Text_Appearance || {};
-        TextCache.Text_Appearance.AEE_Export = t('menu-export-label');
-        TextCache.Text_Appearance.AEE_Import = t('menu-import-label');
-      } catch {
-        // ignore
+    const state = getState();
+    if (state.enableAeeMenu) {
+      AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
+      AppearanceMenu = AppearanceMenu.map((button) => {
+        if (button === 'Copy') return 'AEE_Export';
+        if (button === 'Paste') return 'AEE_Import';
+        return button;
+      });
+      // Keep a consistent left-to-right order whether editing our own appearance
+      // (BC gives us Copy/Paste to replace, ending up after Wardrobe) or someone
+      // else's (no such buttons): always Wardrobe, then Export, then Import. Pull
+      // our two buttons out and re-place them right after the Wardrobe button so
+      // both cases match.
+      AppearanceMenu = AppearanceMenu.filter((button) => button !== 'AEE_Export' && button !== 'AEE_Import');
+      const wardrobeIndex = AppearanceMenu.findIndex((button) => button === 'Wardrobe' || button === 'WardrobeDisabled');
+      if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'AEE_Export', 'AEE_Import');
+      else AppearanceMenu.unshift('AEE_Export', 'AEE_Import');
+      if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
+        try {
+          TextCache.Text_Appearance = TextCache.Text_Appearance || {};
+          TextCache.Text_Appearance.AEE_Export = t('menu-export-label');
+          TextCache.Text_Appearance.AEE_Import = t('menu-import-label');
+        } catch {
+          // ignore
+        }
       }
+    }
+    // Show a Clear button (to drop the copy state) while a copy is active. It is
+    // rebuilt on demand from the copy/paste controller when the state changes.
+    if (state.enableCopyPaste && isCopyActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
+      AppearanceMenu.unshift('AEE_ClearCopy');
     }
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuDraw', 10, (args, next) => {
     next(args);
-    if (!getState().enableAeeMenu) return;
+    const state = getState();
     const menu = AppearanceMenu;
     const x = 2000 - menu.length * 117;
     for (let index = 0; index < menu.length; index++) {
       const buttonX = x + 117 * index;
-      if (menu[index] === 'AEE_Export') {
+      if (state.enableAeeMenu && menu[index] === 'AEE_Export') {
         DrawButton(buttonX, 25, 90, 90, '', 'White', 'Icons/Copy.png', t('menu-export-tooltip'));
       }
-      if (menu[index] === 'AEE_Import') {
+      if (state.enableAeeMenu && menu[index] === 'AEE_Import') {
         DrawButton(buttonX, 25, 90, 90, '', 'White', 'Icons/Paste.png', t('menu-import-tooltip'));
+      }
+      if (menu[index] === 'AEE_ClearCopy') {
+        DrawButton(buttonX, 25, 90, 90, '', 'White', CLEAR_ICON, t('copy-cancel-tooltip'));
       }
     }
   });
@@ -86,6 +98,10 @@ export function installMenuHooks() {
       }
       if (AppearanceMenu[index] === 'AEE_Import') {
         importBcxAppearanceWithCategory(CharacterAppearanceSelection);
+        return;
+      }
+      if (AppearanceMenu[index] === 'AEE_ClearCopy') {
+        clearCopyBuffer();
         return;
       }
     }

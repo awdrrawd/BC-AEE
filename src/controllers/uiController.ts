@@ -20,6 +20,7 @@ import {
 import {runtime} from '@/core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '@/core/context';
 import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
+import {clearCopyBuffer} from '@/controllers/copyPasteController';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
@@ -436,6 +437,9 @@ export function setSetting(key: string, value: boolean) {
     } else if (key === 'hoverTryOn') {
       draft.hoverTryOn = value;
       if (!value) stopHoverTryOn();
+    } else if (key === 'enableCopyPaste') {
+      draft.enableCopyPaste = value;
+      if (!value) clearCopyBuffer();
     } else if (key === 'hideLscgLayers') {
       draft.hideLscgLayers = value;
       applyLscgLayersVisibility(value);

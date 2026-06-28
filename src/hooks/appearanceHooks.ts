@@ -11,6 +11,7 @@ import {
 import {getState} from '@/core/store';
 import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh} from '@/controllers/backgroundController';
 import {closeImportDialog} from '@/controllers/importExportController';
+import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -70,6 +71,7 @@ export function installAppearanceHooks() {
     markAppearanceRunEnd();
     updateAppearanceScreenState();
     drawAboveGridIfNeeded();
+    drawGroupCopyPasteButtons();
     return result;
   });
 
@@ -139,6 +141,9 @@ export function installAppearanceHooks() {
     // logic (equip a cell / Accept / cancel) always acts on the real worn item
     // and a preview is never accidentally committed.
     stopHoverTryOn(false);
+    // Our copy/paste column lives left of BC's row buttons; if it was clicked,
+    // handle it and stop BC from also processing the click.
+    if (handleGroupCopyPasteClick()) return;
     if (isEditingBody()) {
       const mode = CharacterAppearanceMode ?? '';
       if (mode === 'Color' || mode === 'Cloth' || mode === 'Permissions') return next(args);

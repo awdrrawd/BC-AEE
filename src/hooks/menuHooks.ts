@@ -38,29 +38,25 @@ export function installMenuHooks() {
     const state = getState();
     if (state.enableAeeMenu) {
       AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
-      AppearanceMenu = AppearanceMenu.map((button) => {
-        if (button === 'Copy') return 'AEE_Export';
-        if (button === 'Paste') return 'AEE_Import';
-        return button;
-      });
+      // Reuse BC's own 'Copy'/'Paste' button names instead of inventing new
+      // ones. AppearanceMenuDraw resolves an icon straight from the button
+      // name for anything it doesn't recognize, so a made-up name like
+      // 'AEE_Export' makes it fire a doomed GET for Icons/AEE_Export.png
+      // before we ever get a chance to draw over it. 'Copy'/'Paste' are
+      // names BC already knows how to draw (Icons/Copy.png, Icons/Paste.png),
+      // so the icon comes for free and never 404s. We still repaint just the
+      // tooltip for these two in AppearanceMenuDraw below (see there for why
+      // mutating TextCache isn't reliable enough on its own), and repurpose
+      // their click behavior in AppearanceMenuClick.
+      AppearanceMenu = AppearanceMenu.filter((button) => button !== 'Copy' && button !== 'Paste');
       // Keep a consistent left-to-right order whether editing our own appearance
       // (BC gives us Copy/Paste to replace, ending up after Wardrobe) or someone
       // else's (no such buttons): always Wardrobe, then Export, then Import. Pull
       // our two buttons out and re-place them right after the Wardrobe button so
       // both cases match.
-      AppearanceMenu = AppearanceMenu.filter((button) => button !== 'AEE_Export' && button !== 'AEE_Import');
       const wardrobeIndex = AppearanceMenu.findIndex((button) => button === 'Wardrobe' || button === 'WardrobeDisabled');
-      if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'AEE_Export', 'AEE_Import');
-      else AppearanceMenu.unshift('AEE_Export', 'AEE_Import');
-      if (typeof TextGet === 'function' && typeof TextCache !== 'undefined') {
-        try {
-          TextCache.Text_Appearance = TextCache.Text_Appearance || {};
-          TextCache.Text_Appearance.AEE_Export = t('menu-export-label');
-          TextCache.Text_Appearance.AEE_Import = t('menu-import-label');
-        } catch {
-          // ignore
-        }
-      }
+      if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'Copy', 'Paste');
+      else AppearanceMenu.unshift('Copy', 'Paste');
     }
     // Show a Clear button (to drop the copy state) while a copy is active. It is
     // rebuilt on demand from the copy/paste controller when the state changes.
@@ -70,33 +66,65 @@ export function installMenuHooks() {
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuDraw', 10, (args, next) => {
-    next(args);
     const state = getState();
     const menu = AppearanceMenu;
+    const clearCopyIndex = menu.indexOf('AEE_ClearCopy');
+    if (clearCopyIndex < 0) {
+      // Nothing custom left to hide - Copy/Paste are real BC names now, so
+      // let BC draw the whole row itself.
+      next(args);
+    } else {
+      // 'AEE_ClearCopy' has no BC equivalent, so the native draw would try
+      // (and fail) to fetch Icons/AEE_ClearCopy.png. Rather than removing it
+      // from the array - which would shrink AppearanceMenu.length and shift
+      // every other button's x position out of sync with our own layout math
+      // below - swap in a name BC already knows how to draw ('Copy', which
+      // is also almost always already loaded/cached by this point, since it
+      // is the name reused for our own Export button above). BC draws a
+      // real, valid icon in that slot instead of failing, then we
+      // immediately paint over it with the real clear icon.
+      AppearanceMenu = menu.map((button, index) => (index === clearCopyIndex ? 'Copy' : button));
+      try {
+        next(args);
+      } finally {
+        AppearanceMenu = menu;
+      }
+    }
     const x = 2000 - menu.length * 117;
-    for (let index = 0; index < menu.length; index++) {
-      const buttonX = x + 117 * index;
-      if (state.enableAeeMenu && menu[index] === 'AEE_Export') {
-        DrawButton(buttonX, 25, 90, 90, '', 'White', 'Icons/Copy.png', t('menu-export-tooltip'));
-      }
-      if (state.enableAeeMenu && menu[index] === 'AEE_Import') {
-        DrawButton(buttonX, 25, 90, 90, '', 'White', 'Icons/Paste.png', t('menu-import-tooltip'));
-      }
-      if (menu[index] === 'AEE_ClearCopy') {
-        DrawButton(buttonX, 25, 90, 90, '', 'White', CLEAR_ICON, t('copy-cancel-tooltip'));
+    if (clearCopyIndex >= 0) {
+      DrawButton(x + 117 * clearCopyIndex, 25, 90, 90, '', 'White', CLEAR_ICON, t('copy-cancel-tooltip'));
+    }
+    if (state.enableAeeMenu) {
+      // The icon draws fine straight from BC's native pass above (real
+      // files, no 404), but the hover tooltip for a recognized name like
+      // 'Copy'/'Paste' is populated by BC's own text-loading flow, which can
+      // (re)write TextCache.Text_Appearance.Copy/Paste after we do - so
+      // setting it ourselves ahead of time isn't reliable. Passing our text
+      // straight into DrawButton's tooltip argument here always wins,
+      // because it paints the tooltip synchronously as part of this call
+      // rather than depending on whatever BC's cache holds by the time the
+      // hover is rendered.
+      for (let index = 0; index < menu.length; index++) {
+        if (menu[index] === 'Copy') {
+          DrawButton(x + 117 * index, 25, 90, 90, '', 'White', 'Icons/Copy.png', t('menu-export-tooltip'));
+        }
+        if (menu[index] === 'Paste') {
+          DrawButton(x + 117 * index, 25, 90, 90, '', 'White', 'Icons/Paste.png', t('menu-import-tooltip'));
+        }
       }
     }
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuClick', 10, (args, next) => {
+    const state = getState();
     const x = 2000 - AppearanceMenu.length * 117;
     for (let index = 0; index < AppearanceMenu.length; index++) {
       if (!MouseXIn(x + 117 * index, 90)) continue;
-      if (AppearanceMenu[index] === 'AEE_Export') {
+      if (state.enableAeeMenu && AppearanceMenu[index] === 'Copy') {
         exportBcxAppearance(CharacterAppearanceSelection);
         return;
       }
-      if (AppearanceMenu[index] === 'AEE_Import') {
+      if (state.enableAeeMenu && AppearanceMenu[index] === 'Paste') {
         importBcxAppearanceWithCategory(CharacterAppearanceSelection);
         return;
       }

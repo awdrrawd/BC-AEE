@@ -35,6 +35,37 @@ import {alignTouchBlocker, hideTouchBlocker, showTouchBlocker} from '@/controlle
 type AssetPriority = Asset & { DrawingPriority?: number };
 type ToolOverlay = 'parts' | 'opacity' | 'transform';
 
+let eyeDropperWarmed = false;
+
+// Chrome's native EyeDropper does a one-time, fairly expensive setup (spinning
+// up its screen-sampling/magnifier compositor) the very first time .open() is
+// called on a page - that's the "sticks on the first pick, fine afterwards"
+// lag people see. open() only works inside a real user gesture, so we can't
+// warm it up on page load; instead we piggyback on the same click that opens
+// the color picker panel (openColorPicker is always called synchronously
+// from a click handler) to fire a background open() and abort it again in
+// the same tick via AbortSignal. That's enough to force the lazy setup to
+// happen without the eyedropper overlay ever actually becoming visible, so by
+// the time the user clicks the real eyedropper tool button it's already warm.
+function warmupEyeDropper() {
+  if (eyeDropperWarmed) return;
+  if (typeof window === 'undefined' || !window.EyeDropper) return;
+  eyeDropperWarmed = true;
+  try {
+    const controller = new AbortController();
+    void new window.EyeDropper().open({signal: controller.signal}).catch(() => {
+      // Expected: we abort it ourselves right below.
+    });
+    controller.abort();
+  } catch {
+    // Some browsers may throw synchronously if they don't consider this
+    // click a "real enough" gesture. If so, just skip the warmup - the
+    // actual eyedropper button still works exactly as before, only without
+    // the head start.
+    eyeDropperWarmed = false;
+  }
+}
+
 export function setTab(tab: AeeTab) {
   stopHoverHighlight(true);
   mutateState(draft => {
@@ -148,6 +179,7 @@ export function setScaleLock(value?: boolean) {
 }
 
 export function openColorPicker(initialHex: string, onLiveChange: (hex: string, preview?: boolean) => void, bcMode = false, opacityPct = 100, isDefault = false) {
+  warmupEyeDropper();
   runtime.colorPickerLiveChange = onLiveChange;
   runtime.colorPickerInitialHex = initialHex || '#FFFFFF';
   syncCanvasRect();

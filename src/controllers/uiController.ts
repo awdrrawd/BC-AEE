@@ -160,6 +160,7 @@ export function openColorPicker(initialHex: string, onLiveChange: (hex: string, 
     draft.colorPicker.initialHex = initialHex || '#FFFFFF';
     draft.colorPicker.opacityPct = opacityPct;
     draft.colorPicker.isDefault = isDefault;
+    draft.colorPicker.eyedropperActive = false;
   });
 }
 
@@ -172,8 +173,15 @@ export function closeColorPicker(commit = true) {
     draft.colorPicker.open = false;
     draft.colorPicker.bcMode = false;
     draft.colorPicker.collapsed = false;
+    draft.colorPicker.eyedropperActive = false;
   });
   runtime.colorPickerLiveChange = null;
+}
+
+export function setEyedropperActive(active: boolean) {
+  mutateState(draft => {
+    draft.colorPicker.eyedropperActive = active;
+  });
 }
 
 function safeCallLiveChange(hex: string, preview: boolean) {

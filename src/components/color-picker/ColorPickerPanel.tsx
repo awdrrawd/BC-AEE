@@ -6,7 +6,8 @@ import {
   moveColorPicker,
   previewColorPickerValue,
   setColorPickerCollapsed,
-  setColorPickerValue
+  setColorPickerValue,
+  setEyedropperActive
 } from '@/controllers/uiController';
 import {runtime} from '@/core/runtime';
 import {ChevronIcon} from '@/components/icons/ChevronIcon';
@@ -15,6 +16,7 @@ import {EyedropperIcon} from '@/components/icons/EyedropperIcon';
 import {PasteIcon} from '@/components/icons/PasteIcon';
 import {clamp, hexToHsv, hsvaString, hsvToHex, hsvToRgb} from '@/components/color-picker/colorMath';
 import {ColorSwatchButton} from '@/components/color-picker/ColorSwatchButton';
+import {EyedropperOverlay} from '@/components/color-picker/EyedropperOverlay';
 import {HarmonyRuleButton} from '@/components/color-picker/HarmonyRuleButton';
 import {SavedCell} from '@/components/color-picker/SavedCell';
 import {ToolButton} from '@/components/color-picker/ToolButton';
@@ -125,6 +127,25 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const dockRight = rect?.right ?? window.innerWidth;
   const bcDefaultLeft = Math.max(0, dockRight - fw);
   const left = picker.left ?? (picker.bcMode ? bcDefaultLeft : defaultLeft);
+
+  // While sampling, fade the panels (and disable their pointer handling) so the
+  // BC canvas underneath stays visible/readable. The sampler reads MainCanvas
+  // directly, so this is purely cosmetic - the eyedropper layer itself is a
+  // separate sibling that stays fully opaque.
+  const eyedropping = picker.eyedropperActive;
+  const dimStyle = {
+    opacity: eyedropping ? 0.12 : 1,
+    pointerEvents: eyedropping ? ('none' as const) : undefined,
+    transition: 'opacity 0.15s ease',
+  };
+  const eyedropperLayer = eyedropping ? <EyedropperOverlay
+    onPick={picked => {
+      previewOnlyRef.current = false;
+      setHsv(hexToHsv(picked));
+      setEyedropperActive(false);
+    }}
+    onCancel={() => setEyedropperActive(false)}
+  /> : null;
 
   const setHsv = (next: { h: number; s: number; v: number } | ((current: { h: number; s: number; v: number }) => { h: number; s: number; v: number })) => {
     setHsvState(current => {
@@ -384,15 +405,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
                 if (trimmed.length === 9) setAlpha(parseInt(trimmed.slice(7), 16));
               }
             })}><PasteIcon/></ToolButton>
-            <ToolButton title={t('color-picker-tool-eyedropper-title')} onClick={async () => {
-              if (!window.EyeDropper) return;
-              try {
-                const result = await new window.EyeDropper().open();
-                setHsv(hexToHsv(result.sRGBHex));
-              } catch {
-                // The browser reports cancellation as an exception.
-              }
-            }}><EyedropperIcon/></ToolButton>
+            <ToolButton title={t('color-picker-tool-eyedropper-title')}
+                        onClick={() => setEyedropperActive(true)}><EyedropperIcon/></ToolButton>
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1">
             <div
@@ -555,25 +569,31 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   );
 
   if (!picker.bcMode) {
-    return <div className="fixed z-[1000002]" style={{left, top}}>
-      <div className="fixed inset-0" onClick={() => closeColorPicker(false)}/>
-      <div className="relative">{cardEl}</div>
-    </div>;
+    return <>
+      {eyedropperLayer}
+      <div className="fixed z-[1000002]" style={{left, top, ...dimStyle}}>
+        <div className="fixed inset-0" onClick={() => closeColorPicker(false)}/>
+        <div className="relative">{cardEl}</div>
+      </div>
+    </>;
   }
 
-  return <div
-    className={`pointer-events-none fixed z-[1000002] ${collapsed ? 'overflow-hidden' : ''}`}
-    style={{top, left: left - toggleW, width: toggleW + fw, height: collapsed ? fh : 'auto'}}
-  >
+  return <>
+    {eyedropperLayer}
     <div
-      className="flex items-center"
-      style={{transform: collapsed ? `translateX(${fw}px)` : 'translateX(0)', transition: 'transform 0.35s ease'}}
+      className={`pointer-events-none fixed z-[1000002] ${collapsed ? 'overflow-hidden' : ''}`}
+      style={{top, left: left - toggleW, width: toggleW + fw, height: collapsed ? fh : 'auto', ...dimStyle}}
     >
-      <button
-        className="pointer-events-auto flex h-12 w-6 shrink-0 items-center justify-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-950 text-zinc-400 shadow-lg hover:text-violet-300"
-        onClick={() => setColorPickerCollapsed(!picker.collapsed)}
-      ><ChevronIcon direction={collapsed ? 'left' : 'right'}/></button>
-      <div className={collapsed ? 'pointer-events-none' : 'pointer-events-auto'}>{cardEl}</div>
+      <div
+        className="flex items-center"
+        style={{transform: collapsed ? `translateX(${fw}px)` : 'translateX(0)', transition: 'transform 0.35s ease'}}
+      >
+        <button
+          className="pointer-events-auto flex h-12 w-6 shrink-0 items-center justify-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-950 text-zinc-400 shadow-lg hover:text-violet-300"
+          onClick={() => setColorPickerCollapsed(!picker.collapsed)}
+        ><ChevronIcon direction={collapsed ? 'left' : 'right'}/></button>
+        <div className={collapsed ? 'pointer-events-none' : 'pointer-events-auto'}>{cardEl}</div>
+      </div>
     </div>
-  </div>;
+  </>;
 }

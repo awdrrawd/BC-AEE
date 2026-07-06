@@ -234,6 +234,11 @@ export interface ColorPickerState {
   initialHex: string;
   opacityPct: number;
   isDefault: boolean;
+  // Screen-sampling ("eyedropper") mode: read pixels straight off MainCanvas
+  // instead of the browser's native EyeDropper API (which freezes on some
+  // setups). While active, the AEE panels dim so the BC canvas underneath is
+  // visible for sampling.
+  eyedropperActive: boolean;
   left?: number;
   top?: number;
 }

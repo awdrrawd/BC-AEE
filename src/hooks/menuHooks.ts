@@ -1,7 +1,7 @@
 import bcAeeModSdk from '@/modsdk';
 import {getState} from '@/core/store';
 import {exportBcxAppearance, importBcxAppearanceWithCategory, importBcxFromText} from '@/controllers/importExportController';
-import {clearCopyBuffer, isCopyActive} from '@/controllers/copyPasteController';
+import {clearCopyBuffer, drawCopyBufferPreview, isAppearanceOverlayActive, isCopyActive} from '@/controllers/copyPasteController';
 import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
 import {t} from '@/i18n/i18n';
@@ -60,7 +60,7 @@ export function installMenuHooks() {
     }
     // Show a Clear button (to drop the copy state) while a copy is active. It is
     // rebuilt on demand from the copy/paste controller when the state changes.
-    if (state.enableCopyPaste && isCopyActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
+    if (state.enableCopyPaste && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
       AppearanceMenu.unshift('AEE_ClearCopy');
     }
   });
@@ -91,8 +91,15 @@ export function installMenuHooks() {
       }
     }
     const x = 2000 - menu.length * 117;
-    if (clearCopyIndex >= 0) {
-      DrawButton(x + 117 * clearCopyIndex, 25, 90, 90, '', 'White', CLEAR_ICON, t('copy-cancel-tooltip'));
+    if (clearCopyIndex >= 0 && !isAppearanceOverlayActive()) {
+      // Draw the button itself first (border, hover feedback, tooltip) with
+      // no icon of its own, then overlay a same-size thumbnail of whatever
+      // is actually in the copy buffer so it's obvious at a glance what will
+      // be pasted; drawCopyBufferPreview falls back to the plain clear icon
+      // if a preview can't be drawn for some reason.
+      const clearCopyX = x + 117 * clearCopyIndex;
+      DrawButton(clearCopyX, 25, 90, 90, '', 'White', null, t('copy-cancel-tooltip'));
+      drawCopyBufferPreview(clearCopyX, 25, 90, CharacterAppearanceSelection ?? null, CLEAR_ICON);
     }
     if (state.enableAeeMenu) {
       // The icon draws fine straight from BC's native pass above (real
@@ -128,7 +135,7 @@ export function installMenuHooks() {
         importBcxAppearanceWithCategory(CharacterAppearanceSelection);
         return;
       }
-      if (AppearanceMenu[index] === 'AEE_ClearCopy') {
+      if (AppearanceMenu[index] === 'AEE_ClearCopy' && !isAppearanceOverlayActive()) {
         clearCopyBuffer();
         return;
       }

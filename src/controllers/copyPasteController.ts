@@ -13,6 +13,10 @@ interface CopyBuffer {
   assetName: string;
   color: ItemColor | undefined;
   property: ItemProperties | undefined;
+  // Kept alongside assetName so we can render a thumbnail of the copied item
+  // (see drawCopyBufferPreview below) without having to re-resolve it through
+  // AssetGet, which needs a family+group we may no longer have handy.
+  asset: Asset;
 }
 
 type RowButton = 'paste' | 'copy' | null;
@@ -114,6 +118,7 @@ function copyFrom(character: Character, groupName: AssetGroupName) {
     assetName: item.Asset.Name,
     color: cloneValue(item.Color),
     property: cloneValue(item.Property),
+    asset: item.Asset,
   };
   rebuildAppearanceMenu();
 }
@@ -133,6 +138,51 @@ function pasteTo(character: Character, groupName: AssetGroupName) {
   }
 }
 
+// Draws a thumbnail of whatever is currently in the copy buffer into a
+// size x size box at (x, y), so the top-bar cancel-copy button shows what
+// will be pasted instead of a generic icon.
+//
+// Important: this uses BC's own DrawAssetPreview - the same function behind
+// the flat item icons in the wardrobe/selection grids - rather than trying
+// to hand-build an image path ourselves. An earlier attempt built a path
+// from AssetGetPreviewPath + DynamicPreviewImage, which is the *worn*
+// preview image (tall, character-shaped) used elsewhere in BC, not the
+// square icon used in item-picker grids; it also wasn't reliably sized to
+// fill the button. DrawAssetPreview handles both the correct image and its
+// own load-not-ready/missing-image fallback internally.
+export function drawCopyBufferPreview(x: number, y: number, size: number, character: Character | null, fallbackIcon: string): void {
+  const inset = 2;
+  const innerX = x + inset;
+  const innerY = y + inset;
+  const innerSize = size - inset * 2;
+  if (copyBuffer && typeof DrawAssetPreview === 'function') {
+    try {
+      DrawAssetPreview(innerX, innerY, copyBuffer.asset, {
+        Width: innerSize,
+        Height: innerSize,
+        Border: false,
+        Hover: false,
+        // Without this, DrawAssetPreview falls back to the asset's own
+        // Description and reserves a text row for it beneath the image,
+        // which is what was making the icon render smaller than the box.
+        // We just want the plain image, sized to fill the whole button.
+        Description: '',
+        C: character ?? undefined,
+      });
+      return;
+    } catch {
+      // Fall through to the static fallback icon below.
+    }
+  }
+  if (typeof DrawImageResize === 'function') {
+    try {
+      DrawImageResize(fallbackIcon, innerX, innerY, innerSize, innerSize);
+    } catch {
+      // Nothing further we can do - leave whatever the caller already drew.
+    }
+  }
+}
+
 export function isCopyActive(): boolean {
   return copyBuffer !== null;
 }
@@ -147,7 +197,20 @@ function isGroupsList(): boolean {
   return typeof CharacterAppearanceMode !== 'undefined' && CharacterAppearanceMode === ''
     && typeof CharacterAppearanceGroups !== 'undefined'
     && typeof CharacterAppearanceOffset !== 'undefined'
-    && typeof CharacterAppearanceNumGroupPerPage !== 'undefined';
+    && typeof CharacterAppearanceNumGroupPerPage !== 'undefined'
+    && !isAppearanceOverlayActive();
+}
+
+// Layering and the extended-item dialog draw as DOM overlays on top of the
+// same appearance screen without changing CharacterAppearanceMode, so
+// isGroupsList() alone can't tell they're up - our canvas buttons would
+// otherwise keep drawing (and, worse, still accepting clicks) underneath
+// them. Exported so the top-bar clear-copy button (in menuHooks.ts) can
+// apply the same guard.
+export function isAppearanceOverlayActive(): boolean {
+  if (typeof Layering !== 'undefined' && typeof Layering.IsActive === 'function' && Layering.IsActive()) return true;
+  if (typeof DialogFocusItem !== 'undefined' && DialogFocusItem != null) return true;
+  return false;
 }
 
 export function drawGroupCopyPasteButtons() {

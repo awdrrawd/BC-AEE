@@ -14,6 +14,7 @@ import {panelClass, panelTabs} from '@/components/main-panel/styles';
 import {ToggleBar} from '@/components/main-panel/ToggleBar';
 
 export function MainPanel({state}: { state: AeeState }) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const rect = state.canvasRect;
   if (!rect || !state.visible || !state.item) return null;
   const panelWidth = Math.max(200, Math.min(320, rect.width * 0.27));
@@ -22,10 +23,13 @@ export function MainPanel({state}: { state: AeeState }) {
     togglePartsOpen(undefined, getElementOverlayAnchor(event.currentTarget));
   };
 
-  const panelRef = useRef<HTMLDivElement>(null);
-
+  const dimForEyedropper = state.colorPicker.open && state.colorPicker.eyedropperActive;
   return <div className="fixed z-[999998] pointer-events-none"
-              style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}>
+              style={{
+                left: rect.left, top: rect.top, width: rect.width, height: rect.height,
+                opacity: dimForEyedropper ? 0.12 : 1,
+                transition: 'opacity 0.15s ease',
+              }}>
     <div className="pointer-events-none absolute left-0 top-0 h-full overflow-hidden"
          style={{width: panelWidth + toggleWidth}}>
       <div

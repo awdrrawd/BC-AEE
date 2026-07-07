@@ -6,7 +6,9 @@ namespace TextCache {
 
 // Augment AppearanceMenu to accept the mod's custom menu button identifiers.
 // DialogMenuButtonType is a union type alias and cannot be merged — the
-// workaround is to widen the variable declaration here so our custom
-// strings ("AEE_Export", "AEE_Import") are assignable.
-type DialogMenuButtonTypeOverride = 'AEE_Export' | 'AEE_Import' | DialogMenuButtonType;
+// workaround is to widen the variable declaration here so our custom strings
+// ("AEE_ClearCopy", "AEE_PartsFilter") are assignable. Export/Import reuse
+// BC's own 'Copy'/'Paste' identifiers (see hooks/menuHooks.ts) so they don't
+// need an entry here.
+type DialogMenuButtonTypeOverride = 'AEE_ClearCopy' | 'AEE_PartsFilter' | DialogMenuButtonType;
 declare let AppearanceMenu: DialogMenuButtonTypeOverride[];

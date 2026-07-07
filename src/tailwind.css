@@ -1,47 +1,87 @@
 @import "tailwindcss";
 
-/* Version text: purple base with a green+blue wave that sweeps across, then a
-   pure-purple gap before the next pass. Sweep takes the first half of the cycle
-   (~1.5s), the hold is the gap (~1.5s). */
-@keyframes aee-wave {
-  0% { background-position: 200% 0; }
-  50% { background-position: 0% 0; }
-  100% { background-position: 0% 0; }
+/* ==========================================
+   RGB Gaming Glow
+   ========================================== */
+
+@keyframes aee-rgb {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 300% 50%;
+    }
+}
+
+@keyframes aee-breath {
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(1.2);
+    }
 }
 
 .aee-wave-text {
-  background-image: linear-gradient(
-    90deg,
-    #a78bfa 0%,
-    #a78bfa 50%,
-    oklch(85.5% .138 181.071) 62%,
-    #a78bfa 74%,
-    #1234de 86%,
-    #a78bfa 98%,
-    #a78bfa 100%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: aee-wave 3.5s linear infinite;
+
+    /* RGB 流光 */
+    background: linear-gradient(
+        90deg,
+        #c084fc,
+        #f472b6,
+        #60a5fa,
+        #67e8f9,
+        #c084fc
+    );
+
+    background-size: 300% 100%;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+
+    animation:
+        aee-rgb 6s linear infinite,
+        aee-breath 2.5s ease-in-out infinite;
+
+    /* 發光效果 */
+    text-shadow:
+        0 0 2px rgba(255,255,255,.35),
+        0 0 6px rgba(192,132,252,.45),
+        0 0 12px rgba(96,165,250,.35);
 }
+
 
 /* Brighten the muted zinc-400 text used across the AEE UI. */
 [data-aee-root] .text-zinc-400 {
-  color: oklch(0.91 0 0);
+    color: oklch(0.91 0 0);
 }
 
+
 @layer base {
+
     /* Keep the Shadow DOM UI from creating browser text selections during clicks/drags. */
     [data-aee-root],
     [data-aee-root] * {
         @apply select-none;
     }
 
-    [data-aee-root] :where(input:not([type='button']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']), textarea, [contenteditable]:not([contenteditable='false'])),
-    [data-aee-root] :where(input:not([type='button']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']), textarea, [contenteditable]:not([contenteditable='false'])) * {
+    [data-aee-root] :where(
+        input:not([type='button']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']),
+        textarea,
+        [contenteditable]:not([contenteditable='false'])
+    ),
+    [data-aee-root] :where(
+        input:not([type='button']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']),
+        textarea,
+        [contenteditable]:not([contenteditable='false'])
+    ) * {
         @apply select-text;
     }
+
 }

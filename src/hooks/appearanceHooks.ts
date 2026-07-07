@@ -11,6 +11,8 @@ import {
 import {getState} from '@/core/store';
 import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh} from '@/controllers/backgroundController';
 import {closeImportDialog} from '@/controllers/importExportController';
+import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
+import {resetPartsFilterMode, withFilteredGroups} from '@/controllers/partsFilterController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -35,6 +37,7 @@ export function installAppearanceHooks() {
 
     if (transition.enteredAppearance) {
       saveBgAndRefresh();
+      resetPartsFilterMode();
     }
 
     if (transition.phaseChanged && transition.current.phase !== 'groups') {
@@ -62,15 +65,18 @@ export function installAppearanceHooks() {
     if (shouldShowAppearanceViewControl()) setCharControlVisible(true);
     syncAfterBcRender();
 
-    handleHoverCharHighlight(isAppearanceGroupsPhase());
-    handleHoverTryOn();
+    return withFilteredGroups(() => {
+      handleHoverCharHighlight(isAppearanceGroupsPhase());
+      handleHoverTryOn();
 
-    markAppearanceRunStart();
-    const result = next(args);
-    markAppearanceRunEnd();
-    updateAppearanceScreenState();
-    drawAboveGridIfNeeded();
-    return result;
+      markAppearanceRunStart();
+      const result = next(args);
+      markAppearanceRunEnd();
+      updateAppearanceScreenState();
+      drawAboveGridIfNeeded();
+      drawGroupCopyPasteButtons();
+      return result;
+    });
   });
 
   bcAeeModSdk.hookFunction('DrawCharacter', 1, (args, next) => {
@@ -139,12 +145,17 @@ export function installAppearanceHooks() {
     // logic (equip a cell / Accept / cancel) always acts on the real worn item
     // and a preview is never accidentally committed.
     stopHoverTryOn(false);
-    if (isEditingBody()) {
-      const mode = CharacterAppearanceMode ?? '';
-      if (mode === 'Color' || mode === 'Cloth' || mode === 'Permissions') return next(args);
-      if (MouseY > 90) return;
-    }
-    return next(args);
+    return withFilteredGroups(() => {
+      // Our copy/paste column lives left of BC's row buttons; if it was clicked,
+      // handle it and stop BC from also processing the click.
+      if (handleGroupCopyPasteClick()) return;
+      if (isEditingBody()) {
+        const mode = CharacterAppearanceMode ?? '';
+        if (mode === 'Color' || mode === 'Cloth' || mode === 'Permissions') return next(args);
+        if (MouseY > 90) return;
+      }
+      return next(args);
+    });
   });
 
   bcAeeModSdk.hookFunction('CommonClick', 0, (args, next) => {

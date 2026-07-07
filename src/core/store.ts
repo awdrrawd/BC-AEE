@@ -20,6 +20,7 @@ let state: AeeState = {
   hoverHighlight: getAeeSetting('hoverHighlight', false),
   hoverHighlightChar: getAeeSetting('hoverHighlightChar', false),
   hoverTryOn: getAeeSetting('hoverTryOn', false),
+  enableCopyPaste: getAeeSetting('enableCopyPaste', false),
   hideLscgLayers: getAeeSetting('hideLscgLayers', false),
   showCharCtrl: getAeeSetting('showCharCtrl', false),
   hideCloseup: getAeeSetting('hideCloseup', false),
@@ -29,6 +30,9 @@ let state: AeeState = {
   useAeeColorPicker: getAeeSetting('useAeeColorPicker', false),
   pasteImport: getAeeSetting('pasteImport', false),
   bcWheelScroll: getAeeSetting('bcWheelScroll', false),
+  enablePartsFilter: getAeeSetting('enablePartsFilter', false),
+  // Session-only, always starts on 'all' - never persisted or restored.
+  partsFilterMode: 'all',
   item: null,
   group: null,
   mode: null,
@@ -44,6 +48,7 @@ let state: AeeState = {
     initialHex: '#FFFFFF',
     opacityPct: 100,
     isDefault: false,
+    eyedropperActive: false,
   },
   opacityOverlay: {
     open: false,

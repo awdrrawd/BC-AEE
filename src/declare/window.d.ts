@@ -10,7 +10,7 @@ interface EyeDropperResult {
 
 interface EyeDropperConstructor {
   new(): {
-    open(): Promise<EyeDropperResult>;
+    open(options?: { signal?: AbortSignal }): Promise<EyeDropperResult>;
   };
 }
 

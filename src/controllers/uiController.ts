@@ -20,6 +20,7 @@ import {
 import {runtime} from '@/core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '@/core/context';
 import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
+import {clearCopyBuffer} from '@/controllers/copyPasteController';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
@@ -159,6 +160,7 @@ export function openColorPicker(initialHex: string, onLiveChange: (hex: string, 
     draft.colorPicker.initialHex = initialHex || '#FFFFFF';
     draft.colorPicker.opacityPct = opacityPct;
     draft.colorPicker.isDefault = isDefault;
+    draft.colorPicker.eyedropperActive = false;
   });
 }
 
@@ -171,8 +173,15 @@ export function closeColorPicker(commit = true) {
     draft.colorPicker.open = false;
     draft.colorPicker.bcMode = false;
     draft.colorPicker.collapsed = false;
+    draft.colorPicker.eyedropperActive = false;
   });
   runtime.colorPickerLiveChange = null;
+}
+
+export function setEyedropperActive(active: boolean) {
+  mutateState(draft => {
+    draft.colorPicker.eyedropperActive = active;
+  });
 }
 
 function safeCallLiveChange(hex: string, preview: boolean) {
@@ -436,6 +445,9 @@ export function setSetting(key: string, value: boolean) {
     } else if (key === 'hoverTryOn') {
       draft.hoverTryOn = value;
       if (!value) stopHoverTryOn();
+    } else if (key === 'enableCopyPaste') {
+      draft.enableCopyPaste = value;
+      if (!value) clearCopyBuffer();
     } else if (key === 'hideLscgLayers') {
       draft.hideLscgLayers = value;
       applyLscgLayersVisibility(value);
@@ -450,6 +462,8 @@ export function setSetting(key: string, value: boolean) {
       draft.pasteImport = value;
     } else if (key === 'bcWheelScroll') {
       draft.bcWheelScroll = value;
+    } else if (key === 'enablePartsFilter') {
+      draft.enablePartsFilter = value;
     }
   });
 }

@@ -22,12 +22,20 @@ export type SettingKey =
   | 'hoverHighlight'
   | 'hoverHighlightChar'
   | 'hoverTryOn'
+  | 'enableCopyPaste'
   | 'hideLscgLayers'
   | 'showCharCtrl'
   | 'enableAeeMenu'
   | 'useAeeColorPicker'
   | 'pasteImport'
-  | 'bcWheelScroll';
+  | 'bcWheelScroll'
+  | 'enablePartsFilter';
+
+// Which rows the groups list shows while the parts filter is on:
+// 'all' - every group, 'has' - only groups currently wearing an item,
+// 'empty' - only groups with nothing worn ("None"). Always resets to 'all'
+// on entering the appearance screen; it is per-session, not persisted.
+export type PartsFilterMode = 'all' | 'has' | 'empty';
 export type EditControl =
   | 'x'
   | 'y'
@@ -233,6 +241,11 @@ export interface ColorPickerState {
   initialHex: string;
   opacityPct: number;
   isDefault: boolean;
+  // Screen-sampling ("eyedropper") mode: read pixels straight off MainCanvas
+  // instead of the browser's native EyeDropper API (which freezes on some
+  // setups). While active, the AEE panels dim so the BC canvas underneath is
+  // visible for sampling.
+  eyedropperActive: boolean;
   left?: number;
   top?: number;
 }
@@ -264,6 +277,7 @@ export interface AeeState {
   hoverHighlight: boolean;
   hoverHighlightChar: boolean;
   hoverTryOn: boolean;
+  enableCopyPaste: boolean;
   hideLscgLayers: boolean;
   showCharCtrl: boolean;
   hideCloseup: boolean;
@@ -273,6 +287,8 @@ export interface AeeState {
   useAeeColorPicker: boolean;
   pasteImport: boolean;
   bcWheelScroll: boolean;
+  enablePartsFilter: boolean;
+  partsFilterMode: PartsFilterMode;
   item: Item | null;
   group: string | null;
   mode: string | null;

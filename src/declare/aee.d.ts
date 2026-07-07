@@ -4,7 +4,7 @@ namespace TextCache {
   let Text_Appearance: Record<string, string>;
 }
 
-// Augment AppearanceMenu to accept the mod's custom menu button identifiers.
+// Augment AppearanceMenu to accept the mod's custom menu button identifier.
 // DialogMenuButtonType is a union type alias and cannot be merged — the
 // workaround is to widen the variable declaration here so our custom strings
 // ("AEE_ClearCopy", "AEE_PartsFilter") are assignable. Export/Import reuse

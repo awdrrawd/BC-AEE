@@ -21,13 +21,13 @@ const main: {
   }
 };
 
-if (AEE_ALREADY_LOADED) {
+/*if (AEE_ALREADY_LOADED) {
   // Real duplicate-load guard lives here, in the bundle itself, so it
   // catches every path a second copy could get in through (loader, a
   // directly-installed full script, two loaders racing, etc.) - not just
   // the loader's own import call.
   console.warn('🐈‍⬛ [AEE] ⚠️ Already loaded, skipping duplicate import.');
-} else {
+} else {*/
   (async () => {
     main.overlay = document.createElement('div');
     document.body.appendChild(main.overlay);
@@ -44,6 +44,6 @@ if (AEE_ALREADY_LOADED) {
     );
     installAeeHooks();
   })().catch(console.error);
-}
+//}
 
 export default main;

@@ -28,7 +28,14 @@ export type SettingKey =
   | 'enableAeeMenu'
   | 'useAeeColorPicker'
   | 'pasteImport'
-  | 'bcWheelScroll';
+  | 'bcWheelScroll'
+  | 'enablePartsFilter';
+
+// Which rows the groups list shows while the parts filter is on:
+// 'all' - every group, 'has' - only groups currently wearing an item,
+// 'empty' - only groups with nothing worn ("None"). Always resets to 'all'
+// on entering the appearance screen; it is per-session, not persisted.
+export type PartsFilterMode = 'all' | 'has' | 'empty';
 export type EditControl =
   | 'x'
   | 'y'
@@ -280,6 +287,8 @@ export interface AeeState {
   useAeeColorPicker: boolean;
   pasteImport: boolean;
   bcWheelScroll: boolean;
+  enablePartsFilter: boolean;
+  partsFilterMode: PartsFilterMode;
   item: Item | null;
   group: string | null;
   mode: string | null;

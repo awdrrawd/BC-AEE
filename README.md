@@ -3,7 +3,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.8.4-purple.svg)
+![Version](https://img.shields.io/badge/version-0.8.5-purple.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)
 ![BondageClub](https://img.shields.io/badge/BondageClub-Compatible-pink.svg)
 

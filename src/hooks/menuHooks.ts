@@ -4,6 +4,7 @@ import {exportBcxAppearance, importBcxAppearanceWithCategory, importBcxFromText}
 import {clearCopyBuffer, drawCopyBufferPreview, isAppearanceOverlayActive, isCopyActive} from '@/controllers/copyPasteController';
 import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
+import {cyclePartsFilterMode, drawPartsFilterBadge, isPartsFilterAvailable, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
 import {t} from '@/i18n/i18n';
 
 // Don't hijack a paste when the user is pasting into a real text field.
@@ -63,27 +64,34 @@ export function installMenuHooks() {
     if (state.enableCopyPaste && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
       AppearanceMenu.unshift('AEE_ClearCopy');
     }
+    // Body-part filter toggle - only makes sense on the groups list itself
+    // (guaranteed by the mode==='' guard above), never in Wardrobe/Cloth/
+    // Color/Permissions sub-screens.
+    if (isPartsFilterAvailable() && !AppearanceMenu.includes('AEE_PartsFilter')) {
+      AppearanceMenu.unshift('AEE_PartsFilter');
+    }
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuDraw', 10, (args, next) => {
     const state = getState();
     const menu = AppearanceMenu;
     const clearCopyIndex = menu.indexOf('AEE_ClearCopy');
-    if (clearCopyIndex < 0) {
+    const partsFilterIndex = menu.indexOf('AEE_PartsFilter');
+    if (clearCopyIndex < 0 && partsFilterIndex < 0) {
       // Nothing custom left to hide - Copy/Paste are real BC names now, so
       // let BC draw the whole row itself.
       next(args);
     } else {
-      // 'AEE_ClearCopy' has no BC equivalent, so the native draw would try
-      // (and fail) to fetch Icons/AEE_ClearCopy.png. Rather than removing it
-      // from the array - which would shrink AppearanceMenu.length and shift
-      // every other button's x position out of sync with our own layout math
-      // below - swap in a name BC already knows how to draw ('Copy', which
-      // is also almost always already loaded/cached by this point, since it
-      // is the name reused for our own Export button above). BC draws a
-      // real, valid icon in that slot instead of failing, then we
-      // immediately paint over it with the real clear icon.
-      AppearanceMenu = menu.map((button, index) => (index === clearCopyIndex ? 'Copy' : button));
+      // Neither 'AEE_ClearCopy' nor 'AEE_PartsFilter' has a BC equivalent, so
+      // the native draw would try (and fail) to fetch an icon for them.
+      // Rather than removing them from the array - which would shrink
+      // AppearanceMenu.length and shift every other button's x position out
+      // of sync with our own layout math below - swap in a name BC already
+      // knows how to draw ('Copy', which is also almost always already
+      // loaded/cached by this point). BC draws a real, valid icon in that
+      // slot instead of failing, then we immediately paint over it with the
+      // real icon for each.
+      AppearanceMenu = menu.map((button, index) => (index === clearCopyIndex || index === partsFilterIndex ? 'Copy' : button));
       try {
         next(args);
       } finally {
@@ -100,6 +108,11 @@ export function installMenuHooks() {
       const clearCopyX = x + 117 * clearCopyIndex;
       DrawButton(clearCopyX, 25, 90, 90, '', 'White', null, t('copy-cancel-tooltip'));
       drawCopyBufferPreview(clearCopyX, 25, 90, CharacterAppearanceSelection ?? null, CLEAR_ICON);
+    }
+    if (partsFilterIndex >= 0 && !isAppearanceOverlayActive()) {
+      const partsFilterX = x + 117 * partsFilterIndex;
+      DrawButton(partsFilterX, 25, 90, 90, '', 'White', partsFilterIcon(), partsFilterTooltip());
+      drawPartsFilterBadge(partsFilterX, 25);
     }
     if (state.enableAeeMenu) {
       // The icon draws fine straight from BC's native pass above (real
@@ -137,6 +150,10 @@ export function installMenuHooks() {
       }
       if (AppearanceMenu[index] === 'AEE_ClearCopy' && !isAppearanceOverlayActive()) {
         clearCopyBuffer();
+        return;
+      }
+      if (AppearanceMenu[index] === 'AEE_PartsFilter' && !isAppearanceOverlayActive()) {
+        cyclePartsFilterMode();
         return;
       }
     }

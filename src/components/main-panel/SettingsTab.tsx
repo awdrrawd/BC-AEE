@@ -28,6 +28,8 @@ export function SettingsTab({state}: { state: AeeState }) {
                   settingKey="pasteImport" value={state.pasteImport}/>
       <SettingRow label={t('settings-bc-wheel-scroll')}
                   settingKey="bcWheelScroll" value={state.bcWheelScroll}/>
+      <SettingRow label={t('settings-parts-filter')}
+                  settingKey="enablePartsFilter" value={state.enablePartsFilter}/>
     </section>
     <AboutAee/>
   </>;

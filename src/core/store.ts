@@ -30,6 +30,9 @@ let state: AeeState = {
   useAeeColorPicker: getAeeSetting('useAeeColorPicker', false),
   pasteImport: getAeeSetting('pasteImport', false),
   bcWheelScroll: getAeeSetting('bcWheelScroll', false),
+  enablePartsFilter: getAeeSetting('enablePartsFilter', false),
+  // Session-only, always starts on 'all' - never persisted or restored.
+  partsFilterMode: 'all',
   item: null,
   group: null,
   mode: null,

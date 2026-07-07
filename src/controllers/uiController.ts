@@ -462,6 +462,8 @@ export function setSetting(key: string, value: boolean) {
       draft.pasteImport = value;
     } else if (key === 'bcWheelScroll') {
       draft.bcWheelScroll = value;
+    } else if (key === 'enablePartsFilter') {
+      draft.enablePartsFilter = value;
     }
   });
 }

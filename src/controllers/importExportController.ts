@@ -1,5 +1,6 @@
 import {t} from '@/i18n/i18n';
 import {mutateState} from '@/core/store';
+import {showToast} from '@/util/toast';
 import type {AppearanceImportItem, BcxExportItem, ImportCategoryKey, ImportDiff, ImportDiffDialog} from '@/core/types';
 
 export function exportBcxAppearance(character: Character | null | undefined) {
@@ -19,19 +20,19 @@ export function exportBcxAppearance(character: Character | null | undefined) {
     }).filter((entry): entry is BcxExportItem => entry !== null);
 
     if (!bundle.length) {
-      alert(t('export-controller-no-appearance-data-alert'));
+      showToast(t('export-controller-no-appearance-data-alert'));
       return;
     }
 
     const output = LZString.compressToBase64(JSON.stringify(bundle));
     navigator.clipboard.writeText(output).then(() => {
-      ChatRoomSendLocal(t('export-controller-export-success-message', {count: bundle.length}));
+      showToast(t('export-controller-export-success-message', {count: bundle.length}));
     }).catch(() => {
       prompt(t('export-controller-copy-fallback-prompt'), output);
     });
   } catch (error) {
     console.error('[AEE] Export failed:', error);
-    alert(t('export-controller-export-failed-alert', {error: String(error)}));
+    showToast(t('export-controller-export-failed-alert', {error: String(error)}), {duration: 5000});
   }
 }
 
@@ -62,7 +63,7 @@ function promptManualImport(character: Character) {
 export function importBcxFromText(character: Character, rawText: string) {
   const clipboardText = (rawText ?? '').trim();
   if (!clipboardText) {
-    alert(t('import-controller-empty-clipboard-alert'));
+    showToast(t('import-controller-empty-clipboard-alert'));
     return;
   }
 
@@ -90,7 +91,7 @@ export function importBcxFromText(character: Character, rawText: string) {
   if (appearance) {
     const diffs = buildDiffList(character, appearance);
     if (!diffs.length) {
-      alert(t('import-controller-no-diff-alert'));
+      showToast(t('import-controller-no-diff-alert'));
       return;
     }
     const originalAppearance = CharacterAppearanceStringify(character);
@@ -106,7 +107,7 @@ export function importBcxFromText(character: Character, rawText: string) {
   } catch {
     // Show parse error below.
   }
-  alert(t('import-controller-cannot-parse-clipboard-alert'));
+  showToast(t('import-controller-cannot-parse-clipboard-alert'));
 }
 
 // ---------------------------------------------------------------------------
@@ -270,10 +271,10 @@ export function commitImport(dialog: ImportDiffDialog, selectedGroups: ReadonlyS
     applyImportPreview(dialog, selectedGroups);
     const count = dialog.diffs.filter(diff => selectedGroups.has(String(diff.group))).length;
     if (CurrentScreen === 'ChatRoom') ChatRoomCharacterUpdate(dialog.character);
-    ChatRoomSendLocal(t('import-controller-import-success-message', {count}));
+    showToast(t('import-controller-import-success-message', {count}));
   } catch (error) {
     console.error('[AEE] Import failed:', error);
-    alert(t('import-controller-import-failed-alert', {error: String(error)}));
+    showToast(t('import-controller-import-failed-alert', {error: String(error)}), {duration: 5000});
   } finally {
     closeImportDialog();
   }

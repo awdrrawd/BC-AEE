@@ -101,11 +101,17 @@ export function importBcxFromText(character: Character, rawText: string) {
     return;
   }
 
+  // CharacterAppearancePaste doesn't throw for a string it can't use - it just
+  // silently does nothing, so a thrown exception isn't a reliable signal of
+  // failure here. Compare before/after instead: no change means the paste
+  // didn't actually do anything, so surface the same "can't parse" toast
+  // rather than leaving the user without any feedback at all.
+  const beforePaste = CharacterAppearanceStringify(character);
   try {
     CharacterAppearancePaste(character, clipboardText, false);
-    return;
+    if (CharacterAppearanceStringify(character) !== beforePaste) return;
   } catch {
-    // Show parse error below.
+    // Fall through to the parse-error toast below.
   }
   showToast(t('import-controller-cannot-parse-clipboard-alert'));
 }

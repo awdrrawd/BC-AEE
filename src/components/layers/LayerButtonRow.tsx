@@ -1,6 +1,7 @@
 import type {LayerId} from '@/core/types';
 import {selectLayer, startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
 import {getState} from '@/core/store';
+import {settings} from '@/core/settings';
 
 export function LayerButtonRow({id, name, color, selected}: {
   id: LayerId;
@@ -11,18 +12,17 @@ export function LayerButtonRow({id, name, color, selected}: {
   return <button
     className={[
       'mb-1 flex h-9 w-full items-center justify-between gap-2 rounded border px-2 text-left text-sm font-semibold transition',
-      selected ? 'border-violet-400 bg-violet-950/70 text-violet-200' : 'border-zinc-700 bg-zinc-900 text-zinc-100 hover:border-violet-500',
+      selected ? 'border-(--aee-accent) bg-(--aee-accent-16) text-(--aee-accent)' : 'border-zinc-700 bg-zinc-900 text-zinc-100 hover:border-(--aee-accent)',
     ].join(' ')}
     data-select-layer={id}
     data-aee-layer-button="1"
     onClick={() => selectLayer(id)}
     onMouseEnter={() => {
       const state = getState();
-      if (state.hoverHighlight && state.item) startHoverHighlight(state.item, id);
+      if (settings.hoverHighlight.get() && state.item) startHoverHighlight(state.item, id);
     }}
     onMouseLeave={() => {
-      const state = getState();
-      if (state.hoverHighlight) stopHoverHighlight(true);
+      if (settings.hoverHighlight.get()) stopHoverHighlight(true);
     }}
   >
     <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{name}</span>

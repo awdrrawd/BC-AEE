@@ -7,12 +7,12 @@ export function AboutAee() {
     • {t('about-line-experimental')}<br/>
     • {t('about-line-customizable')}<br/>
     • {t('about-line-feedback')} <a
-      href="https://github.com/awdrrawd/BC-AEE"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-violet-400 underline hover:text-violet-300"
-      onClick={e => e.stopPropagation()}>
-      GitHub
-    </a>
+    href="https://github.com/awdrrawd/BC-AEE"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-(--aee-accent) underline hover:text-(--aee-accent)"
+    onClick={e => e.stopPropagation()}>
+    GitHub
+  </a>
   </div>;
 }

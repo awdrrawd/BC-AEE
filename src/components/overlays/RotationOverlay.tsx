@@ -4,7 +4,10 @@ import {getLayerOverride} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {setEditProperty} from '@/controllers/uiController';
 import {setRotationDragging} from '@/controllers/dragController';
-import {ROT_CX_PCT, ROT_CY_PCT, ROT_RADIUS} from '@/components/overlays/styles';
+
+const ROT_CX_PCT = 0.5;
+const ROT_CY_PCT = 0.89;
+const ROT_RADIUS = 60;
 
 export function RotationOverlay({state}: { state: AeeState }) {
   if (!state.rotationOverlayOpen || !state.canvasRect || !state.item || state.selectedLayer === null) return null;
@@ -44,16 +47,16 @@ export function RotationOverlay({state}: { state: AeeState }) {
     height: state.canvasRect.height
   }}>
     <svg className="overflow-visible" width={state.canvasRect.width} height={state.canvasRect.height}>
-      <circle cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.3)" stroke="rgba(139,92,246,0.25)" strokeWidth="1"/>
-      <circle cx={cx} cy={cy} r={ROT_RADIUS} fill="none" stroke="rgba(139,92,246,0.65)" strokeWidth="2"/>
-      <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="rgba(139,92,246,0.8)" strokeWidth="1.5" strokeDasharray="5 3"/>
-      <circle cx={hx} cy={hy} r={9} fill="#8b5cf6" stroke="#fff" strokeWidth="2"/>
+      <circle cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.3)" stroke="var(--aee-accent-35)" strokeWidth="1"/>
+      <circle cx={cx} cy={cy} r={ROT_RADIUS} fill="none" stroke="var(--aee-accent-65)" strokeWidth="2"/>
+      <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="var(--aee-accent)" strokeWidth="1.5" strokeDasharray="5 3"/>
+      <circle cx={hx} cy={hy} r={9} fill="var(--aee-accent)" stroke="#fff" strokeWidth="2"/>
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontFamily="Segoe UI, sans-serif"
             fontSize="14" fontWeight="700">{Math.round(rotation)}°
       </text>
       <text x={cx} y={cy + ROT_RADIUS + 18} textAnchor="middle" fill="rgba(255,255,255,0.45)"
             fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotation-overlay-handle-hint')}</text>
-      <circle cx={cx} cy={cy} r={4} fill="rgba(139,92,246,0.5)"/>
+      <circle cx={cx} cy={cy} r={4} fill="var(--aee-accent-55)"/>
       <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)"
               stroke="transparent" strokeWidth="28" onMouseDown={startDrag}/>
     </svg>

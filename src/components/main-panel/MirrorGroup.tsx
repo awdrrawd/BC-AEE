@@ -12,8 +12,10 @@ export function MirrorGroup({layerOverride}: { layerOverride: AeeLayerOverride &
         <div
           className="mb-1 text-center text-[10px] font-bold uppercase tracking-wide text-zinc-500">{t('mirror-group-mode-title')}</div>
         <div className="flex gap-1">
-          <MirrorButton active={!!layerOverride.FlipX} label={t('mirror-group-mode-horizontal-button')} onClick={() => toggleMirror('FlipX')}/>
-          <MirrorButton active={!!layerOverride.FlipY} label={t('mirror-group-mode-vertical-button')} onClick={() => toggleMirror('FlipY')}/>
+          <MirrorButton active={!!layerOverride.FlipX} label={t('mirror-group-mode-horizontal-button')}
+                        onClick={() => toggleMirror('FlipX')}/>
+          <MirrorButton active={!!layerOverride.FlipY} label={t('mirror-group-mode-vertical-button')}
+                        onClick={() => toggleMirror('FlipY')}/>
         </div>
       </div>
       <div>

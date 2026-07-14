@@ -10,17 +10,17 @@ import {
   setEyedropperActive
 } from '@/controllers/uiController';
 import {runtime} from '@/core/runtime';
-import {ChevronIcon} from '@/components/icons/ChevronIcon';
-import {CopyIcon} from '@/components/icons/CopyIcon';
-import {EyedropperIcon} from '@/components/icons/EyedropperIcon';
-import {PasteIcon} from '@/components/icons/PasteIcon';
-import {clamp, hexToHsv, hsvaString, hsvToHex, hsvToRgb} from '@/components/color-picker/colorMath';
-import {ColorSwatchButton} from '@/components/color-picker/ColorSwatchButton';
+import {hexToHsv, hsvaString, hsvToHex, hsvToRgb} from '@/components/color-picker/colorMath';
+import {clamp} from '@/util/math';
+import {ColorSwatch} from '@/components/ui/Fields';
 import {EyedropperOverlay} from '@/components/color-picker/EyedropperOverlay';
 import {HarmonyRuleButton} from '@/components/color-picker/HarmonyRuleButton';
 import {SavedCell} from '@/components/color-picker/SavedCell';
 import {ToolButton} from '@/components/color-picker/ToolButton';
 import {Track} from '@/components/color-picker/Track';
+import {Button, IconButton} from '@/components/ui/Button';
+import {Panel} from '@/components/ui/Panel';
+import {ChevronLeft, ChevronRight, Clipboard, Copy, Pipette} from 'lucide-react';
 
 const BC_HEADING_GAP = 4;
 const BC_HEADING_VIEWPORT_MARGIN = 8;
@@ -96,9 +96,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const [cardSize, setCardSize] = useState<{ w: number; h: number } | null>(null);
   const previewOnlyRef = useRef(false);
   const lastAppliedColorRef = useRef<{ hex: string; opacityPct: number; preview: boolean } | null>(null);
-  // Don't apply a color just because the picker opened — only when the user
-  // actually changes something. Also remember the initial state so a "Default"
-  // layer keeps showing "Default" until the user picks a real color.
+
+
   const firstRunRef = useRef(true);
   const initialHsvRef = useRef(hsvRef.current);
   const initialAlphaRef = useRef(Math.round(picker.opacityPct / 100 * 255));
@@ -106,7 +105,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
   const alphaPct = Math.round(alpha / 255 * 100);
   const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
-  // Still showing the layer's original "Default" color (user hasn't picked yet).
+
   const isAtDefault = picker.isDefault
     && hsv.h === initialHsvRef.current.h
     && hsv.s === initialHsvRef.current.s
@@ -115,9 +114,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const rect = state.canvasRect;
   const defaultLeft = rect ? rect.left + rect.width * 0.66 : window.innerWidth * 0.6;
   const defaultTop = rect ? rect.top + rect.height * 0.2 : window.innerHeight * 0.2;
-  // Guard against a zero/near-zero canvas rect (e.g. when invoked outside the
-  // appearance screen via another mod's UI): a scale of 0 would render the card
-  // at zoom:0, so it never measures and the bcMode panel collapses to nothing.
+
   const scale = rect && rect.width > 1 ? Math.max(0.45, (rect.width * 0.33) / 500) : 1;
   const top = picker.top ?? defaultTop;
   const toggleW = 24;
@@ -128,10 +125,6 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const bcDefaultLeft = Math.max(0, dockRight - fw);
   const left = picker.left ?? (picker.bcMode ? bcDefaultLeft : defaultLeft);
 
-  // While sampling, fade the panels (and disable their pointer handling) so the
-  // BC canvas underneath stays visible/readable. The sampler reads MainCanvas
-  // directly, so this is purely cosmetic - the eyedropper layer itself is a
-  // separate sibling that stays fully opaque.
   const eyedropping = picker.eyedropperActive;
   const dimStyle = {
     opacity: eyedropping ? 0.12 : 1,
@@ -147,7 +140,11 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     onCancel={() => setEyedropperActive(false)}
   /> : null;
 
-  const setHsv = (next: { h: number; s: number; v: number } | ((current: { h: number; s: number; v: number }) => { h: number; s: number; v: number })) => {
+  const setHsv = (next: { h: number; s: number; v: number } | ((current: { h: number; s: number; v: number }) => {
+    h: number;
+    s: number;
+    v: number
+  })) => {
     setHsvState(current => {
       const value = typeof next === 'function' ? next(current) : next;
       hsvRef.current = value;
@@ -162,8 +159,6 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   useEffect(() => {
     runtime.colorPickerAlpha = alpha;
     if (!picker.open) return;
-    // Opening the picker must not commit a color (would turn "Default" into an
-    // explicit hex). Only subsequent, user-driven changes apply.
     if (firstRunRef.current) {
       firstRunRef.current = false;
       return;
@@ -368,10 +363,9 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
 
   const cardEl = (
     <div ref={cardRef} style={{zoom: scale}}>
-      <div
-        className="flex w-125 flex-col gap-2 rounded-xl border border-zinc-700 bg-zinc-950 p-3 text-sm text-zinc-100 shadow-2xl">
+      <Panel className="w-125 gap-2 p-3 text-sm">
         <div
-          className="cursor-grab select-none text-[11px] font-bold uppercase tracking-[0.12em] text-violet-400 active:cursor-grabbing"
+          className="cursor-grab select-none text-[11px] font-bold uppercase tracking-[0.12em] text-(--aee-accent) active:cursor-grabbing"
           onPointerDown={event => {
             event.preventDefault();
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -397,32 +391,34 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
         <div className="flex items-start gap-2">
           <div className="flex shrink-0 flex-col gap-1.5 pt-1">
             <ToolButton title={t('color-picker-tool-copy-title')}
-                        onClick={() => navigator.clipboard?.writeText(hex + (alpha < 255 ? alpha.toString(16).padStart(2, '0') : ''))}><CopyIcon/></ToolButton>
-            <ToolButton title={t('color-picker-tool-paste-title')} onClick={() => navigator.clipboard?.readText().then(text => {
-              const trimmed = text.trim();
-              if (/^#[0-9a-fA-F]{6,8}$/.test(trimmed)) {
-                setHsv(hexToHsv(trimmed.slice(0, 7)));
-                if (trimmed.length === 9) setAlpha(parseInt(trimmed.slice(7), 16));
-              }
-            })}><PasteIcon/></ToolButton>
+                        onClick={() => navigator.clipboard?.writeText(hex + (alpha < 255 ? alpha.toString(16).padStart(2, '0') : ''))}><Copy className="h-4 w-4"/></ToolButton>
+            <ToolButton title={t('color-picker-tool-paste-title')}
+                        onClick={() => navigator.clipboard?.readText().then(text => {
+                          const trimmed = text.trim();
+                          if (/^#[0-9a-fA-F]{6,8}$/.test(trimmed)) {
+                            setHsv(hexToHsv(trimmed.slice(0, 7)));
+                            if (trimmed.length === 9) setAlpha(parseInt(trimmed.slice(7), 16));
+                          }
+                        })}><Clipboard className="h-4 w-4"/></ToolButton>
             <ToolButton title={t('color-picker-tool-eyedropper-title')}
-                        onClick={() => setEyedropperActive(true)}><EyedropperIcon/></ToolButton>
+                        onClick={() => setEyedropperActive(true)}><Pipette
+                                                                        className="h-4 w-4"/></ToolButton>
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1">
             <div
-              className="relative h-[100px] w-[100px] overflow-hidden rounded-lg border border-zinc-700 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-[length:10px_10px]">
+              className="relative h-25 w-25 overflow-hidden rounded-lg border border-zinc-700 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-size-[10px_10px]">
               <span className="absolute inset-0" style={{background: hsvaString(hsv.h, hsv.s, hsv.v, alpha)}}/>
             </div>
             <div className="font-mono text-[11px] text-zinc-400">{isAtDefault ? 'Default' : hex}</div>
             <div className="flex gap-1">
               <input
-                className="w-[74px] rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-violet-400"
+                className="w-18.5 rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-(--aee-accent)"
                 value={hex} onChange={event => {
                 const value = event.target.value.trim();
                 if (/^#[0-9a-fA-F]{6}$/.test(value)) setHsv(hexToHsv(value));
               }}/>
               <input
-                className="w-[46px] rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-violet-400"
+                className="w-11.5 rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-(--aee-accent)"
                 value={`${alphaPct}%`} onChange={event => {
                 const n = parseInt(event.target.value.replace('%', ''), 10);
                 if (!Number.isNaN(n)) setAlpha(Math.round(clamp(n, 0, 100) / 100 * 255));
@@ -434,7 +430,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
               <span>B</span><span className="w-6 font-mono text-zinc-100">{String(rgb[2]).padStart(3, '0')}</span>
             </div>
           </div>
-          <div className="relative ml-0.5 h-[140px] w-[260px] shrink-0">
+          <div className="relative ml-0.5 h-35 w-65 shrink-0">
             <canvas
               ref={canvasRef}
               className="block h-full w-full cursor-crosshair select-none touch-none rounded-lg border border-zinc-700 [-webkit-user-drag:none]"
@@ -492,7 +488,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
                }} onInput={value => setTrackValue('A', value)}/>
         <div className="h-px bg-zinc-800"/>
         <div className="flex items-center gap-2">
-          <span className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-harmony-section-label')}</span>
+          <span
+            className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-harmony-section-label')}</span>
           <div className="flex flex-1 gap-1 overflow-x-auto">
             {['complementary', 'triadic', 'analogous', 'split', 'tetradic'].map(name =>
               <HarmonyRuleButton key={name} name={name} active={rule === name} onClick={() => setRule(name)}/>
@@ -502,76 +499,68 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
         <div className="flex h-8 gap-1">
           {harmony.map(([h, s, v]) => {
             const sw = hsvToHex(h, s, v);
-            return <ColorSwatchButton key={`${h}-${s}-${v}`} color={sw}
-                                      className="group relative flex-1 rounded border border-zinc-700 hover:border-teal-300"
-                                      label={sw} onClick={() => setHsv({h, s, v})}/>;
+            return <ColorSwatch key={`${h}-${s}-${v}`} color={sw}
+                                className="group relative flex-1 rounded border border-zinc-700 hover:border-teal-300"
+                                label={sw} onClick={() => setHsv({h, s, v})}/>;
           })}
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-12 shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-shades-section-label')}</span>
-          {shades.map(([h, s, v]) => <ColorSwatchButton key={`${h}-${s}-${v}`} color={hsvToHex(h, s, v)}
-                                                        className="h-6 flex-1 rounded border border-zinc-700 hover:border-teal-300"
-                                                        onClick={() => setHsv({h, s, v})}/>)}
+          <span
+            className="w-12 shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-shades-section-label')}</span>
+          {shades.map(([h, s, v]) =>
+            <ColorSwatch key={`${h}-${s}-${v}`} color={hsvToHex(h, s, v)}
+                         className="h-6 flex-1 rounded border border-zinc-700 hover:border-teal-300"
+                         onClick={() => setHsv({h, s, v})}/>
+          )}
         </div>
         <div className="h-px bg-zinc-800"/>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-saved-section-label')}</span>
+          <span
+            className="text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-saved-section-label')}</span>
           <span className="flex-1"/>
-          <button
-            className="rounded-full border border-zinc-700 px-2 py-0.5 text-[11px] text-zinc-400 hover:text-zinc-100"
-            onClick={() => setSaved(items => items.map((item, index) => index === selectedSaved ? {
-              ...hsv,
-              a: alpha
-            } : item))}>{t('color-picker-save-button')}</button>
-          <button
-            className="rounded-full border border-zinc-700 px-2 py-0.5 text-[11px] text-zinc-400 hover:text-zinc-100"
-            onClick={() => setSaved(items => items.map((item, index) => index === selectedSaved ? {
-              h: 0,
-              s: 0,
-              v: 100,
-              a: 255
-            } : item))}>{t('color-picker-clear-button')}</button>
+          <Button className="min-h-0 rounded-full px-2 py-0.5 text-[11px]"
+                  onClick={() => setSaved(items => items.map((item, index) =>
+                    index === selectedSaved ? {...hsv, a: alpha} : item))}>
+            {t('color-picker-save-button')}
+          </Button>
+          <Button className="min-h-0 rounded-full px-2 py-0.5 text-[11px]"
+                  onClick={() => setSaved(items => items.map((item, index) =>
+                    index === selectedSaved ? {h: 0, s: 0, v: 100, a: 255} : item))}>
+            {t('color-picker-clear-button')}
+          </Button>
         </div>
-        <div className="grid grid-cols-9 gap-1">{saved.slice(0, 9).map((item, index) => <SavedCell key={index}
-                                                                                                   item={item}
-                                                                                                   selected={selectedSaved === index}
-                                                                                                   onClick={() => {
-                                                                                                     setSelectedSaved(index);
-                                                                                                     setHsv({
-                                                                                                       h: item.h,
-                                                                                                       s: item.s,
-                                                                                                       v: item.v
-                                                                                                     });
-                                                                                                     setAlpha(item.a);
-                                                                                                   }}/>)}</div>
-        <div className="grid grid-cols-9 gap-1">{saved.slice(9).map((item, index) => <SavedCell key={index + 9}
-                                                                                                item={item}
-                                                                                                selected={selectedSaved === index + 9}
-                                                                                                onClick={() => {
-                                                                                                  setSelectedSaved(index + 9);
-                                                                                                  setHsv({
-                                                                                                    h: item.h,
-                                                                                                    s: item.s,
-                                                                                                    v: item.v
-                                                                                                  });
-                                                                                                  setAlpha(item.a);
-                                                                                                }}/>)}</div>
+        <div className="grid grid-cols-9 gap-1">{saved.slice(0, 9).map((item, index) =>
+          <SavedCell key={index} item={item} selected={selectedSaved === index} onClick={() => {
+            setSelectedSaved(index);
+            setHsv({h: item.h, s: item.s, v: item.v});
+            setAlpha(item.a);
+          }}/>
+        )}</div>
+        <div className="grid grid-cols-9 gap-1">{saved.slice(9).map((item, index) =>
+          <SavedCell key={index + 9} item={item} selected={selectedSaved === index + 9} onClick={() => {
+            setSelectedSaved(index + 9);
+            setHsv({
+              h: item.h,
+              s: item.s,
+              v: item.v
+            });
+            setAlpha(item.a);
+          }}/>
+        )}</div>
         {!picker.bcMode ? <div className="flex gap-2 border-t border-zinc-800 pt-2">
-          <button
-            className="flex-1 rounded-lg border border-violet-500 bg-violet-600 px-3 py-2 text-sm font-bold text-white hover:bg-violet-500"
-            onClick={() => closeColorPicker(true)}>{t('color-picker-confirm-button')}</button>
-          <button
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-bold text-zinc-400 hover:text-zinc-100"
-            onClick={() => closeColorPicker(false)}>{t('color-picker-cancel-button')}</button>
+          <Button className="flex-1 py-2 text-sm font-bold" tone="primary"
+                  onClick={() => closeColorPicker(true)}>{t('color-picker-confirm-button')}</Button>
+          <Button className="flex-1 py-2 text-sm font-bold"
+                  onClick={() => closeColorPicker(false)}>{t('color-picker-cancel-button')}</Button>
         </div> : null}
-      </div>
+      </Panel>
     </div>
   );
 
   if (!picker.bcMode) {
     return <>
       {eyedropperLayer}
-      <div className="fixed z-[1000002]" style={{left, top, ...dimStyle}}>
+      <div className="fixed z-1000002" style={{left, top, ...dimStyle}}>
         <div className="fixed inset-0" onClick={() => closeColorPicker(false)}/>
         <div className="relative">{cardEl}</div>
       </div>
@@ -581,17 +570,18 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   return <>
     {eyedropperLayer}
     <div
-      className={`pointer-events-none fixed z-[1000002] ${collapsed ? 'overflow-hidden' : ''}`}
+      className={`pointer-events-none fixed z-1000002 ${collapsed ? 'overflow-hidden' : ''}`}
       style={{top, left: left - toggleW, width: toggleW + fw, height: collapsed ? fh : 'auto', ...dimStyle}}
     >
       <div
         className="flex items-center"
         style={{transform: collapsed ? `translateX(${fw}px)` : 'translateX(0)', transition: 'transform 0.35s ease'}}
       >
-        <button
-          className="pointer-events-auto flex h-12 w-6 shrink-0 items-center justify-center rounded-l-md border border-r-0 border-zinc-700 bg-zinc-950 text-zinc-400 shadow-lg hover:text-violet-300"
-          onClick={() => setColorPickerCollapsed(!picker.collapsed)}
-        ><ChevronIcon direction={collapsed ? 'left' : 'right'}/></button>
+        <IconButton
+          className="pointer-events-auto h-12 w-6 rounded-l-md rounded-r-none border-r-0"
+          icon={collapsed ? <ChevronLeft className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
+          aria-label={t('color-picker-panel-title')}
+          onClick={() => setColorPickerCollapsed(!picker.collapsed)}/>
         <div className={collapsed ? 'pointer-events-none' : 'pointer-events-auto'}>{cardEl}</div>
       </div>
     </div>

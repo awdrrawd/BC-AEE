@@ -31,10 +31,6 @@ export type SettingKey =
   | 'bcWheelScroll'
   | 'enablePartsFilter';
 
-// Which rows the groups list shows while the parts filter is on:
-// 'all' - every group, 'has' - only groups currently wearing an item,
-// 'empty' - only groups with nothing worn ("None"). Always resets to 'all'
-// on entering the appearance screen; it is per-session, not persisted.
 export type PartsFilterMode = 'all' | 'has' | 'empty';
 export type EditControl =
   | 'x'
@@ -92,28 +88,6 @@ export type WritableAsset = Omit<Writable<Asset>, 'Layer'> & {
   Layer: readonly AssetLayer[];
 };
 
-export interface AppearanceImportItem {
-  Asset?: {
-    Group?: {
-      Name?: AssetGroupName | string;
-    };
-    Name?: string;
-  };
-  Group?: AssetGroupName | string;
-  Name?: string;
-  Color?: BCColor | BCColor[];
-  Property?: ItemProperties;
-  Difficulty?: number;
-}
-
-export interface BcxExportItem {
-  Group: AssetGroupName | string;
-  Name: string;
-  Color?: BCColor | BCColor[];
-  Property?: ItemProperties;
-  Difficulty?: number;
-}
-
 export interface PickerContext {
   item: Item | null;
   indices: number[] | null;
@@ -167,15 +141,13 @@ export interface CanvasRect {
 
 export type ImportCategoryKey = 'clothes' | 'cosplay' | 'body' | 'restraints' | 'other';
 
-// add: empty slot gains an item, remove: filled slot is emptied,
-// modify: item/color/property changes. Drives the git-style row coloring.
 export type ImportChangeType = 'add' | 'remove' | 'modify';
 
 export interface ImportDiff {
-  group: AssetGroupName | string;
+  group: AssetGroupName;
   category: ImportCategoryKey;
   changeType: ImportChangeType;
-  entry: AppearanceImportItem;
+  entry: ItemBundle | null;
   fromText: string;
   toText: string;
 }
@@ -187,16 +159,6 @@ export interface ImportDiffDialog {
 }
 
 export interface BgState {
-  enabled: boolean;
-  color: string;
-  gridEnabled: boolean;
-  gridMode: 'line' | 'checker';
-  gridPx: number;
-  gridColor: string;
-  gridOpacity: number;
-  gridLayer: 'below' | 'above';
-  imageEnabled: boolean;
-  imageUrl: string;
   imageLoaded: boolean;
   settingsOpen: boolean;
   panelLeft?: number;
@@ -206,9 +168,6 @@ export interface BgState {
 export interface OffsetState {
   open: boolean;
   collapsed: boolean;
-  x: number;
-  y: number;
-  scale: number;
   wheelControl: boolean;
   left?: number;
   top?: number;
@@ -226,8 +185,6 @@ export interface CharControlState {
   visible: boolean;
   left?: number;
   top?: number;
-  expandUp: boolean;
-  subLeft: boolean;
   bgSubOpen: boolean;
   hideSubOpen: boolean;
 }
@@ -241,10 +198,6 @@ export interface ColorPickerState {
   initialHex: string;
   opacityPct: number;
   isDefault: boolean;
-  // Screen-sampling ("eyedropper") mode: read pixels straight off MainCanvas
-  // instead of the browser's native EyeDropper API (which freezes on some
-  // setups). While active, the AEE panels dim so the BC canvas underneath is
-  // visible for sampling.
   eyedropperActive: boolean;
   left?: number;
   top?: number;
@@ -274,20 +227,6 @@ export interface AeeState {
   partsOpen: boolean;
   partsLeft: number;
   partsTop: number;
-  hoverHighlight: boolean;
-  hoverHighlightChar: boolean;
-  hoverTryOn: boolean;
-  enableCopyPaste: boolean;
-  hideLscgLayers: boolean;
-  showCharCtrl: boolean;
-  hideCloseup: boolean;
-  hideFullbody: boolean;
-  fullbodyOffsetX: number;
-  enableAeeMenu: boolean;
-  useAeeColorPicker: boolean;
-  pasteImport: boolean;
-  bcWheelScroll: boolean;
-  enablePartsFilter: boolean;
   partsFilterMode: PartsFilterMode;
   item: Item | null;
   group: string | null;
@@ -304,4 +243,40 @@ export interface AeeState {
   pose: PoseState;
   charControl: CharControlState;
   importDialog: ImportDiffDialog | null;
+}
+
+export type WardrobeMode = 'grid' | 'bgPicker' | 'importDialog' | 'settingsDialog';
+export type WardrobeSettingsTab = 'general' | 'appearance';
+export type WardrobeSortMode = 'default' | 'name' | 'favorite' | 'occupied';
+export type WardrobeFilter = string | null;
+
+export interface WardrobeSlotMeta {
+  favorite: boolean;
+  tags: string[];
+}
+
+export interface PendingImport {
+  outfit: ItemBundle[];
+  name?: string;
+  meta?: WardrobeSlotMeta;
+  sourceIndex?: number;
+}
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface AnchoredRect extends Rect {
+  cx: number;
+  cy: number;
+}
+
+export type BackgroundChoiceType = 'color' | 'image' | 'upload' | 'url' | 'custom';
+
+export interface OccupiedSlot {
+  index: number;
+  name: string;
 }

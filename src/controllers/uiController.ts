@@ -1,6 +1,6 @@
 import type {AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '@/core/types';
 import {getState, mutateState} from '@/core/store';
-import {setAeeSetting} from '@/core/settings';
+import {settings} from '@/core/settings';
 import {
   applyPriority,
   clampPriority,
@@ -31,6 +31,7 @@ import {
   TOOL_PANEL_WIDTH,
 } from '@/core/overlay';
 import {alignTouchBlocker, hideTouchBlocker, showTouchBlocker} from '@/controllers/dragController';
+import {clamp} from '@/util/math';
 
 type AssetPriority = Asset & { DrawingPriority?: number };
 type ToolOverlay = 'parts' | 'opacity' | 'transform';
@@ -49,7 +50,6 @@ export function selectLayer(layerId: LayerId) {
   });
 }
 
-// Clear the part selection, returning the edit panel to the parts list.
 export function deselectLayer() {
   stopHoverHighlight(true);
   mutateState(draft => {
@@ -64,8 +64,6 @@ export function toggleCollapse() {
 }
 
 function closeToolOverlays(draft: AeeState, keep: ToolOverlay) {
-  // The parts panel is intentionally exempt: it's used to quickly switch the
-  // edit target, so opening other tool overlays must not close it.
   if (keep !== 'opacity') draft.opacityOverlay.open = false;
   if (keep !== 'transform') draft.transformOverlay.mode = null;
 }
@@ -282,7 +280,7 @@ export function moveOpacityOverlay(left: number, top: number) {
 export function setOpacity(layerId: LayerId, pct: number) {
   const item = getCurrentItem();
   if (!item) return;
-  setLayerOverride(item, layerId, 'Opacity', Math.max(0, Math.min(100, pct)) / 100);
+  setLayerOverride(item, layerId, 'Opacity', clamp(pct, 0, 100) / 100);
   forceUiUpdate();
 }
 
@@ -290,7 +288,7 @@ export function stepOpacity(layerId: LayerId, delta: number) {
   const item = getCurrentItem();
   if (!item) return;
   const current = getLayerOverride(item, layerId);
-  const next = Math.max(0, Math.min(100, Math.round((current.Opacity ?? 1) * 100) + delta));
+  const next = clamp(Math.round((current.Opacity ?? 1) * 100) + delta, 0, 100);
   setOpacity(layerId, next);
 }
 
@@ -306,8 +304,8 @@ export function setEditProperty(ctrl: string, rawValue: number) {
   else if (ctrl === 'rot') setLayerOverride(item, idx, 'Rotation', ((Math.round(rawValue) % 360) + 360) % 360);
   else if (ctrl === 'skx') setLayerOverride(item, idx, 'SkewX', +rawValue.toFixed(1));
   else if (ctrl === 'sky') setLayerOverride(item, idx, 'SkewY', +rawValue.toFixed(1));
-  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', Math.max(0, Math.min(1, +rawValue.toFixed(2))));
-  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', Math.max(0, Math.min(1, +rawValue.toFixed(2))));
+  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', clamp(+rawValue.toFixed(2), 0, 1));
+  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', clamp(+rawValue.toFixed(2), 0, 1));
   forceUiUpdate();
 }
 
@@ -325,8 +323,8 @@ export function stepEditProperty(ctrl: string, delta: number) {
   else if (ctrl === 'rot') setLayerOverride(item, idx, 'Rotation', ((layerOverride.Rotation ?? 0) + delta + 360) % 360);
   else if (ctrl === 'skx') setLayerOverride(item, idx, 'SkewX', +((layerOverride.SkewX ?? 0) + delta).toFixed(1));
   else if (ctrl === 'sky') setLayerOverride(item, idx, 'SkewY', +((layerOverride.SkewY ?? 0) + delta).toFixed(1));
-  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', Math.max(0, Math.min(1, +((layerOverride.MirrorCopyAxisX ?? 0.5) + delta).toFixed(2))));
-  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', Math.max(0, Math.min(1, +((layerOverride.MirrorCopyAxisY ?? 0.5) + delta).toFixed(2))));
+  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', clamp(+((layerOverride.MirrorCopyAxisX ?? 0.5) + delta).toFixed(2), 0, 1));
+  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', clamp(+((layerOverride.MirrorCopyAxisY ?? 0.5) + delta).toFixed(2), 0, 1));
   forceUiUpdate();
 }
 
@@ -432,43 +430,29 @@ export function resetPriority(layerId: LayerId) {
   forceUiUpdate();
 }
 
-export function setSetting(key: string, value: boolean) {
-  setAeeSetting(key, value);
-  if (key === 'showCharCtrl') updateAppearanceScreenState();
-  mutateState(draft => {
-    if (key === 'hoverHighlight') {
-      draft.hoverHighlight = value;
-      if (!value) stopHoverHighlight(true);
-    } else if (key === 'hoverHighlightChar') {
-      draft.hoverHighlightChar = value;
-      if (!value) stopHoverCharHighlight();
-    } else if (key === 'hoverTryOn') {
-      draft.hoverTryOn = value;
-      if (!value) stopHoverTryOn();
-    } else if (key === 'enableCopyPaste') {
-      draft.enableCopyPaste = value;
-      if (!value) clearCopyBuffer();
-    } else if (key === 'hideLscgLayers') {
-      draft.hideLscgLayers = value;
-      applyLscgLayersVisibility(value);
-    } else if (key === 'showCharCtrl') {
-      draft.showCharCtrl = value;
-      draft.charControl.visible = value && isInAppearanceScreen();
-    } else if (key === 'enableAeeMenu') {
-      draft.enableAeeMenu = value;
-    } else if (key === 'useAeeColorPicker') {
-      draft.useAeeColorPicker = value;
-    } else if (key === 'pasteImport') {
-      draft.pasteImport = value;
-    } else if (key === 'bcWheelScroll') {
-      draft.bcWheelScroll = value;
-    } else if (key === 'enablePartsFilter') {
-      draft.enablePartsFilter = value;
-    }
+export function installSettingEffects() {
+  settings.hoverHighlight.onChange(enabled => {
+    if (!enabled) stopHoverHighlight(true);
+  });
+  settings.hoverHighlightChar.onChange(enabled => {
+    if (!enabled) stopHoverCharHighlight();
+  });
+  settings.hoverTryOn.onChange(enabled => {
+    if (!enabled) stopHoverTryOn();
+  });
+  settings.enableCopyPaste.onChange(enabled => {
+    if (!enabled) clearCopyBuffer();
+  });
+  settings.hideLscgLayers.onChange(hidden => applyLscgLayersVisibility(hidden));
+  settings.showCharCtrl.onChange(shown => {
+    updateAppearanceScreenState();
+    mutateState(draft => {
+      draft.charControl.visible = shown && isInAppearanceScreen();
+    });
   });
 }
 
-export function applyLscgLayersVisibility(value = getState().hideLscgLayers) {
+export function applyLscgLayersVisibility(value = settings.hideLscgLayers.get()) {
   const el = document.getElementById('lscg-layers');
   if (!el) return;
   el.style.display = value ? 'none' : '';
@@ -490,9 +474,6 @@ export function startHoverHighlight(item: Item, layerIdx: LayerId) {
     indices.forEach(index => overrides.set(index, opacity));
     runtime.hoverFlashData = {item, overrides};
     try {
-      // Reload whichever character drives the visible render. In the ItemColor
-      // (restraint) screen the preview is the item-colour character, which may
-      // differ from CharacterAppearanceSelection - reload both so the flash shows.
       const primary = CharacterAppearanceSelection || runtime.itemColorChar;
       if (primary) CharacterLoadCanvas?.(primary);
       if (runtime.itemColorChar && runtime.itemColorChar !== primary) CharacterLoadCanvas?.(runtime.itemColorChar);
@@ -577,9 +558,6 @@ export function stopHoverCharHighlight() {
   if (character) CharacterLoadCanvas?.(character);
 }
 
-// Temporarily "wear" the hovered Cloth-grid item on the main character so the
-// player can see how it looks, without committing it. Uses CharacterLoadCanvas
-// (local redraw only) so the preview is never synced to other players.
 export function applyHoverTryOn(item: DialogInventoryItem) {
   const character = CharacterAppearanceSelection;
   const asset = item?.Asset;
@@ -588,24 +566,18 @@ export function applyHoverTryOn(item: DialogInventoryItem) {
   const assetName = asset.Name;
   if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup === group && runtime.hoverTryOnAsset === assetName) return;
 
-  // Switched to a different group while still previewing: put the old group back first.
   if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup && runtime.hoverTryOnGroup !== group) {
     restoreTryOnGroup(character, runtime.hoverTryOnGroup, runtime.hoverTryOnBackup);
     runtime.hoverTryOnActive = false;
     runtime.hoverTryOnBackup = null;
   }
 
-  // Capture the real worn item (by reference, keeping its Property) once per group,
-  // before the first preview swap, so it can be restored exactly.
   if (!runtime.hoverTryOnActive || runtime.hoverTryOnGroup !== group) {
     runtime.hoverTryOnBackup = InventoryGet(character, group);
     runtime.hoverTryOnGroup = group;
   }
 
   try {
-    // Force the asset's own default color instead of inheriting the group's
-    // current color. Passing null here would make BC keep the worn item's color
-    // (its color-inheritance-by-group behaviour); passing DefaultColor overrides it.
     const defaultColor: ItemColor | null = asset.DefaultColor ? [...asset.DefaultColor] : null;
     CharacterAppearanceSetItem(character, group, asset, defaultColor);
     runtime.hoverTryOnActive = true;
@@ -635,8 +607,8 @@ export function stopHoverTryOn(redraw = true) {
   runtime.hoverTryOnBackup = null;
 }
 
-function restoreTryOnGroup(character: Character, group: string, backup: Item | null) {
-  character.Appearance = character.Appearance.filter(appearanceItem => appearanceItem.Asset?.Group?.Name !== group);
+function restoreTryOnGroup(character: Character, group: AssetGroupName, backup: Item | null) {
+  CharacterAppearanceSetItem(character, group, null);
   if (backup) character.Appearance.push(backup);
 }
 
@@ -655,8 +627,6 @@ export function setCharControlVisible(visible: boolean) {
 export function syncAfterBcRender() {
   syncCurrentContext();
   applyLscgLayersVisibility();
-  // Keep the drag touch-blocker glued to the canvas across resizes/screen layout
-  // changes while a drag-edit mode is active.
   if (getState().activeDrag) alignTouchBlocker();
 }
 

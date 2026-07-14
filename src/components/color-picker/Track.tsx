@@ -1,4 +1,5 @@
-import {type PointerEvent as ReactPointerEvent, useEffect, useRef, memo} from 'react';
+import {memo, type PointerEvent as ReactPointerEvent, useEffect, useRef} from 'react';
+import {clamp} from '@/util/math';
 
 export const Track = memo(function Track({label, value, max, bg, overlay, inputValue, onPick, onInput}: {
   label: string;
@@ -16,7 +17,7 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
   const pendingPctRef = useRef<number | null>(null);
   const latestPctRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
-  const pct = Math.max(0, Math.min(1, value / max));
+  const pct = clamp(value / max, 0, 1);
 
   useEffect(() => {
     if (trackInputRef.current && document.activeElement !== trackInputRef.current) {
@@ -59,7 +60,7 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
 
   const pickTrack = (el: HTMLElement, clientX: number) => {
     const r = el.getBoundingClientRect();
-    queuePick(Math.max(0, Math.min(1, (clientX - r.left) / r.width)));
+    queuePick(clamp((clientX - r.left) / r.width, 0, 1));
   };
 
   const startPick = (event: ReactPointerEvent<HTMLElement>) => {
@@ -109,7 +110,7 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
       {overlay ? <div className="absolute inset-0 rounded-full" style={{background: overlay}}/> : null}
       <div
         ref={thumbRef}
-        className="absolute top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
+        className="absolute top-1/2 h-4.5 w-4.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
         style={{
           left: `${pct * 100}%`,
           border: '3px solid #fff',
@@ -120,7 +121,7 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
     </div>
     <input
       ref={trackInputRef}
-      className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-violet-400"
+      className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-(--aee-accent)"
       defaultValue={inputValue}
       onBlur={event => {
         const n = parseInt(event.target.value.replace('%', ''), 10);

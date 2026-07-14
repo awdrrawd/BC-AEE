@@ -16,11 +16,6 @@ function aeeLog(...args: unknown[]) {
 
 const windowFunctions = window as unknown as Record<string, unknown>;
 
-// Resolve which layer index a BeforeDraw call refers to. BC only passes the layer
-// *name* (params.L), so findIndex-by-name would always pick the first layer with
-// that name - breaking per-layer edits on assets that reuse a name across layers
-// (common on modded restraints). When CommonDrawResolveLayerColor captured the
-// exact layer object for this same draw, trust that index instead.
 function resolveDrawLayerIndex(currentAppearance: Item, rawName: string): number {
   if (runtime.currentDrawLayerItem === currentAppearance
     && runtime.currentDrawLayerIndex != null
@@ -34,9 +29,6 @@ function resolveDrawLayerIndex(currentAppearance: Item, rawName: string): number
 export function installRenderHooks() {
   installWebGlPrototypePatch();
 
-  // Capture the exact layer object BC is about to draw. CommonDrawResolveLayerColor
-  // runs once per layer immediately before its BeforeDraw call, and receives the
-  // real layer object, so indexOf gives us the unambiguous layer index.
   bcAeeModSdk.hookFunction('CommonDrawResolveLayerColor', 0, (args, next) => {
     const item = args[1];
     const layer = args[2];
@@ -163,7 +155,7 @@ export function installRenderHooks() {
           const dx = layerOverride.DrawingLeft?.[''];
           const dy = layerOverride.DrawingTop?.[''];
           if (dx != null && ret.X == null) ret.X = dx;
-          if (dy != null && ret.Y == null) ret.Y = dy + (typeof CanvasUpperOverflow !== 'undefined' ? CanvasUpperOverflow : 0);
+          if (dy != null && ret.Y == null) ret.Y = dy + CanvasUpperOverflow;
         }
       }
     }

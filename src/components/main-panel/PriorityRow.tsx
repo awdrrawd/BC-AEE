@@ -13,12 +13,12 @@ export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerI
       </span>
       <div className="flex items-center gap-1">
         <button
-          className="h-5 rounded border border-zinc-700 px-1.5 text-[11px] hover:border-violet-400 hover:bg-violet-600"
+          className="h-5 rounded border border-zinc-700 px-1.5 text-[11px] hover:border-[var(--aee-accent)] hover:bg-[var(--aee-accent-65)]"
           onClick={() => stepPriority(layerId, -1)}>−1
         </button>
         <span className="min-w-8 text-center font-mono text-xs text-teal-300">{priority.current}</span>
         <button
-          className="h-5 rounded border border-zinc-700 px-1.5 text-[11px] hover:border-violet-400 hover:bg-violet-600"
+          className="h-5 rounded border border-zinc-700 px-1.5 text-[11px] hover:border-[var(--aee-accent)] hover:bg-[var(--aee-accent-65)]"
           onClick={() => stepPriority(layerId, 1)}>+1
         </button>
         <button
@@ -30,7 +30,7 @@ export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerI
     <div className="relative flex items-center">
       <RangeInput min={-99} max={99} step={1} value={priority.current} onChange={next => setPriority(layerId, next)}/>
       <span
-        className="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded bg-violet-500/60"/>
+        className="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded bg-[var(--aee-accent-55)]"/>
     </div>
   </div>;
 }

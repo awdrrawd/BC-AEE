@@ -22,6 +22,7 @@ import {
   shouldShowAppearanceViewControl,
   updateAppearanceScreenState,
 } from '@/core/appearanceScreenMachine';
+import {settings} from '@/core/settings';
 
 export function installAppearanceHooks() {
   onAppearanceScreenTransition(transition => {
@@ -52,7 +53,7 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('CharacterAppearanceVisible', 1, (args, next) => {
-    if (!getState().hoverHighlightChar) return next(args);
+    if (!settings.hoverHighlightChar.get()) return next(args);
     const character = args[0];
     const groupName = args[2];
     const isAppearanceChar = CharacterAppearanceSelection === character;
@@ -81,27 +82,26 @@ export function installAppearanceHooks() {
 
   bcAeeModSdk.hookFunction('DrawCharacter', 1, (args, next) => {
     if (!runtime.inAppearanceRun) return next(args);
-    const state = getState();
     const character = args[0];
     const scale = args[3];
     const isTarget = character && character === CharacterAppearanceSelection;
     if (scale === 4) {
       if (!isTarget) return next(args);
-      if (state.hideCloseup) return;
+      if (settings.hideCloseup.get()) return;
       return next(args);
     }
     if (Math.abs(scale - 1) < 0.1 || Math.abs(scale - 0.95) < 0.05) {
       if (!isTarget) return next(args);
-      if (state.hideFullbody) return;
+      if (settings.hideFullbody.get()) return;
       const previewOffset = runtime.offsetPreview;
-      const offsetX = previewOffset?.x ?? state.offset.x;
-      const offsetY = previewOffset?.y ?? state.offset.y;
-      const hasOffset = offsetX !== 0 || offsetY !== 0 || state.offset.scale !== 1;
+      const offsetX = previewOffset?.x ?? settings.charOffsetX.get();
+      const offsetY = previewOffset?.y ?? settings.charOffsetY.get();
+      const hasOffset = offsetX !== 0 || offsetY !== 0 || settings.charScale.get() !== 1;
       if (hasOffset) {
         const nextArgs: (typeof args) = [...args];
         nextArgs[1] = args[1] + offsetX;
         nextArgs[2] = args[2] + offsetY;
-        nextArgs[3] = args[3] * state.offset.scale;
+        nextArgs[3] = args[3] * settings.charScale.get();
         return next(nextArgs);
       }
       return next(args);
@@ -191,12 +191,7 @@ export function installAppearanceHooks() {
 }
 
 function handleHoverCharHighlight(isAppearance: boolean) {
-  const state = getState();
-  if (state.hoverHighlightChar && isAppearance
-    && CharacterAppearanceMode === ''
-    && typeof CharacterAppearanceGroups !== 'undefined'
-    && typeof CharacterAppearanceOffset !== 'undefined'
-    && typeof CharacterAppearanceNumGroupPerPage !== 'undefined') {
+  if (settings.hoverHighlightChar.get() && isAppearance && CharacterAppearanceMode === '') {
     let hoveredGroup: AssetGroupName | null = null;
     const mouseX = MouseX;
     const mouseY = MouseY;
@@ -223,14 +218,11 @@ function handleHoverCharHighlight(isAppearance: boolean) {
 }
 
 function handleHoverTryOn() {
-  const state = getState();
-  if (!state.hoverTryOn
+  if (!settings.hoverTryOn.get()
     || CharacterAppearanceMode !== 'Cloth'
     || !CharacterAppearanceSelection
-    || (typeof CommonIsMobile !== 'undefined' && CommonIsMobile)
-    || typeof DialogInventory === 'undefined'
-    || typeof DialogInventoryOffset === 'undefined'
-    || typeof CharacterAppearanceNumClothPerPage === 'undefined') {
+    || CommonIsMobile
+    || !DialogInventory) {
     stopHoverTryOn();
     return;
   }
@@ -268,8 +260,8 @@ function isEditingBody() {
 }
 
 function isBodyClick() {
-  const mouseX = typeof MouseX !== 'undefined' ? MouseX : 9999;
-  const mouseY = typeof MouseY !== 'undefined' ? MouseY : 9999;
+  const mouseX = MouseX;
+  const mouseY = MouseY;
   if (mouseY < 90) return false;
   const mode = CharacterAppearanceMode ?? '';
   if (mode === 'Color') return false;

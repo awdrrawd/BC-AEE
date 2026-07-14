@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-/* ==========================================
-   RGB Gaming Glow
-   ========================================== */
-
 @keyframes aee-rgb {
     0% {
         background-position: 0% 50%;
@@ -25,9 +21,46 @@
     }
 }
 
-.aee-wave-text {
+@keyframes aee-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
-    /* RGB 流光 */
+@keyframes aee-pop-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes aee-rise-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes aee-spin {
+    to { transform: rotate(1turn); }
+}
+.aee-spinner {
+    border-radius: 50%;
+    border: 4px solid rgba(255, 255, 255, 0.12);
+    border-top-color: var(--aee-accent);
+    animation: aee-spin 720ms linear infinite;
+}
+
+.aee-fade-in { animation: aee-fade-in 180ms ease-out both; }
+.aee-pop-in { animation: aee-pop-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.aee-rise-in { animation: aee-rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.aee-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--aee-accent) rgba(0, 0, 0, 0.55);
+}
+
+.aee-scroll::-webkit-scrollbar { width: 10px; }
+.aee-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.55); }
+.aee-scroll::-webkit-scrollbar-thumb { background: var(--aee-accent-65); border-radius: 4px; }
+.aee-scroll::-webkit-scrollbar-thumb:hover { background: var(--aee-accent); }
+
+.aee-wave-text {
     background: linear-gradient(
         90deg,
         #c084fc,
@@ -49,7 +82,6 @@
         aee-rgb 6s linear infinite,
         aee-breath 2.5s ease-in-out infinite;
 
-    /* 發光效果 */
     text-shadow:
         0 0 2px rgba(255,255,255,.35),
         0 0 6px rgba(192,132,252,.45),
@@ -57,7 +89,6 @@
 }
 
 
-/* Brighten the muted zinc-400 text used across the AEE UI. */
 [data-aee-root] .text-zinc-400 {
     color: oklch(0.91 0 0);
 }
@@ -65,7 +96,6 @@
 
 @layer base {
 
-    /* Keep the Shadow DOM UI from creating browser text selections during clicks/drags. */
     [data-aee-root],
     [data-aee-root] * {
         @apply select-none;

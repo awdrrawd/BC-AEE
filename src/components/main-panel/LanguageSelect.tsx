@@ -1,12 +1,12 @@
-import {SUPPORTED_LANGUAGES, getUiLanguageSetting, setUiLanguage, t} from '@/i18n/i18n';
+import {getUiLanguageSetting, setUiLanguage, SUPPORTED_LANGUAGES, t} from '@/i18n/i18n';
+import {Select} from '@/components/ui/Fields';
 
 export function LanguageSelect() {
   const value = getUiLanguageSetting();
   return <div className="flex items-center justify-between gap-2 border-b border-zinc-800 py-2"
               title={t('settings-language-label')}>
     <span className="text-xs text-zinc-300">{t('settings-language-label')}</span>
-    <select
-      className="rounded border border-zinc-700 bg-zinc-900 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:border-violet-400"
+    <Select
       value={value}
       onChange={event => setUiLanguage(event.target.value)}
     >
@@ -14,6 +14,6 @@ export function LanguageSelect() {
       {SUPPORTED_LANGUAGES.map(lang =>
         <option key={lang.code} value={lang.code}>{lang.label}</option>
       )}
-    </select>
+    </Select>
   </div>;
 }

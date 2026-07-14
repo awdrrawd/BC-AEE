@@ -10,7 +10,7 @@ import {
   setScaleLock,
 } from '@/controllers/uiController';
 import {FloatingPanel} from '@/components/FloatingPanel';
-import {PanelButton} from '@/components/overlays/PanelButton';
+import {Button} from '@/components/ui/Button';
 import {SliderRow} from '@/components/overlays/SliderRow';
 import {getSelectedLayerLabel} from '@/components/overlays/getSelectedLayerLabel';
 
@@ -90,10 +90,11 @@ export function TransformOverlay({state}: { state: AeeState }) {
                  onChange={value => setEditProperty('rot', value)}/> : null}
     {mode === 'scale' ? <>
       <div className="flex items-center justify-between">
-        <span className="text-[11px]" style={{color: 'oklch(0.871 0.006 286.286)'}}>{t('transform-overlay-linked-scale-label')}</span>
-        <PanelButton size="sm" tone={state.scaleLock ? 'active' : 'normal'} onClick={() => setScaleLock()}>
+        <span className="text-[11px]"
+              style={{color: 'oklch(0.871 0.006 286.286)'}}>{t('transform-overlay-linked-scale-label')}</span>
+        <Button className="h-6" selected={state.scaleLock} onClick={() => setScaleLock()}>
           {state.scaleLock ? t('transform-overlay-scale-locked-button') : t('transform-overlay-scale-free-button')}
-        </PanelButton>
+        </Button>
       </div>
       <SliderRow label="X" value={sx} min={0.05} max={Math.max(3, sx + 1)} step={0.01} display={sx.toFixed(2)}
                  onChange={value => setScale('sx', value)}/>
@@ -107,12 +108,12 @@ export function TransformOverlay({state}: { state: AeeState }) {
                  display={`${skewY.toFixed(1)}°`} onChange={value => setEditProperty('sky', value)}/>
     </> : null}
     <div className="mt-1 flex items-center gap-1.5 border-t border-zinc-800 pt-2">
-      <PanelButton className="flex-1" tone={activeDrag ? 'active' : 'normal'} onClick={() => setActiveDrag(mode)}>
+      <Button className="h-7 flex-1" selected={activeDrag} onClick={() => setActiveDrag(mode)}>
         {activeDrag ? t('transform-overlay-canvas-drag-active-button') : t('transform-overlay-canvas-drag-button')}
-      </PanelButton>
-      <PanelButton tone="danger" onClick={resetMode}>
+      </Button>
+      <Button className="h-7" tone="danger" onClick={resetMode}>
         {t('transform-overlay-reset-button')}
-      </PanelButton>
+      </Button>
     </div>
   </FloatingPanel>;
 }

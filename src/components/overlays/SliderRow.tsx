@@ -1,5 +1,5 @@
 import {memo, useEffect, useRef} from 'react';
-import {sliderRangeClass} from '@/components/overlays/styles';
+import {clamp} from '@/util/math';
 
 export const SliderRow = memo(function SliderRow({label, value, min, max, step, display, inputValue, onChange}: {
   label: string;
@@ -11,7 +11,7 @@ export const SliderRow = memo(function SliderRow({label, value, min, max, step, 
   inputValue?: string;
   onChange: (value: number) => void
 }) {
-  const rangeValue = Math.max(min, Math.min(max, value));
+  const rangeValue = clamp(value, min, max);
   const pct = max === min ? 0 : ((rangeValue - min) / (max - min)) * 100;
   const displayValue = inputValue ?? display.replace(/[°%]/g, '');
 
@@ -23,7 +23,7 @@ export const SliderRow = memo(function SliderRow({label, value, min, max, step, 
     }
     if (rangeRef.current && document.activeElement !== rangeRef.current) {
       rangeRef.current.value = String(rangeValue);
-      rangeRef.current.style.background = `linear-gradient(to right, rgba(139,92,246,.95) ${pct}%, rgba(255,255,255,.16) ${pct}%)`;
+      rangeRef.current.style.background = `linear-gradient(to right, var(--aee-accent) ${pct}%, rgba(255,255,255,.16) ${pct}%)`;
     }
   }, [displayValue, rangeValue, pct]);
 
@@ -56,12 +56,12 @@ export const SliderRow = memo(function SliderRow({label, value, min, max, step, 
     <input
       ref={rangeRef}
       type="range"
-      className={sliderRangeClass}
+      className="h-1.5 w-full cursor-pointer appearance-none rounded accent-(--aee-accent)"
       min={min}
       max={max}
       step={step}
       defaultValue={rangeValue}
-      style={{background: `linear-gradient(to right, rgba(139,92,246,.95) ${pct}%, rgba(255,255,255,.16) ${pct}%)`}}
+      style={{background: `linear-gradient(to right, var(--aee-accent) ${pct}%, rgba(255,255,255,.16) ${pct}%)`}}
       onChange={event => onChange(Number(event.target.value))}
       onPointerDown={event => event.stopPropagation()}
     />

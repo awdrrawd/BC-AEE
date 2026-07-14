@@ -1,35 +1,22 @@
 import {t} from '@/i18n/i18n';
 import {mutateState} from '@/core/store';
+import {askText} from '@/core/prompts';
+import {bundleAppearance, bundleItem, decodeBundles, encodeBundle, itemFromBundle, wearBundle} from '@/util/appearanceBundle';
 import {showToast} from '@/util/toast';
-import type {AppearanceImportItem, BcxExportItem, ImportCategoryKey, ImportDiff, ImportDiffDialog} from '@/core/types';
+import type {ImportCategoryKey, ImportDiff, ImportDiffDialog} from '@/core/types';
 
 export function exportBcxAppearance(character: Character | null | undefined) {
   try {
-    const bundle = (character?.Appearance || []).map((item): BcxExportItem | null => {
-      const groupName = item.Asset?.Group?.Name ?? item.Group;
-      const itemName = item.Asset?.Name ?? item.Name;
-      if (!groupName || !itemName) return null;
-      const entry: BcxExportItem = {
-        Group: groupName,
-        Name: itemName,
-      };
-      if (item.Color != null) entry.Color = item.Color;
-      if (item.Property != null) entry.Property = item.Property;
-      if (item.Difficulty != null) entry.Difficulty = item.Difficulty;
-      return entry;
-    }).filter((entry): entry is BcxExportItem => entry !== null);
-
+    const bundle = bundleAppearance(character?.Appearance ?? []);
     if (!bundle.length) {
       showToast(t('export-controller-no-appearance-data-alert'));
       return;
     }
 
-    const output = LZString.compressToBase64(JSON.stringify(bundle));
-    navigator.clipboard.writeText(output).then(() => {
-      showToast(t('export-controller-export-success-message', {count: bundle.length}));
-    }).catch(() => {
-      prompt(t('export-controller-copy-fallback-prompt'), output);
-    });
+    const code = encodeBundle(bundle);
+    navigator.clipboard.writeText(code)
+      .then(() => showToast(t('export-controller-export-success-message', {count: bundle.length})))
+      .catch(() => void askText(t('export-controller-copy-fallback-prompt'), code));
   } catch (error) {
     console.error('[AEE] Export failed:', error);
     showToast(t('export-controller-export-failed-alert', {error: String(error)}), {duration: 5000});
@@ -42,24 +29,21 @@ export async function importBcxAppearanceWithCategory(character: Character) {
     clipboardText = (await navigator.clipboard.readText()).trim();
   } catch (error) {
     console.error('[AEE] Cannot read clipboard:', error);
-    promptManualImport(character);
+    await promptManualImport(character);
     return;
   }
   if (!clipboardText) {
-    promptManualImport(character);
+    await promptManualImport(character);
     return;
   }
   importBcxFromText(character, clipboardText);
 }
 
-function promptManualImport(character: Character) {
-  const text = (prompt(t('import-controller-manual-paste-prompt')) ?? '').trim();
+async function promptManualImport(character: Character) {
+  const text = (await askText(t('import-controller-manual-paste-prompt')) ?? '').trim();
   if (text) importBcxFromText(character, text);
 }
 
-// Shared entry point used by the button, the manual paste box, and the
-// Ctrl+V paste handler: parse the text (BCX/LZString or BC bundle), then either
-// open the diff picker or fall back to BC's native paste.
 export function importBcxFromText(character: Character, rawText: string) {
   const clipboardText = (rawText ?? '').trim();
   if (!clipboardText) {
@@ -67,27 +51,7 @@ export function importBcxFromText(character: Character, rawText: string) {
     return;
   }
 
-  let appearance: AppearanceImportItem[] | null = null;
-  const decoded = LZString.decompressFromBase64(clipboardText);
-  if (decoded) {
-    try {
-      const parsed: unknown = JSON.parse(decoded);
-      if (isAppearanceList(parsed)) appearance = parsed;
-    } catch {
-      // Not LZString JSON; try plain base64 below.
-    }
-  }
-
-  if (!appearance) {
-    try {
-      const fallback = decodeURIComponent(escape(atob(clipboardText)));
-      const parsed: unknown = JSON.parse(fallback);
-      if (isAppearanceList(parsed)) appearance = parsed;
-    } catch {
-      // Try BC native paste below.
-    }
-  }
-
+  const appearance = decodeBundles(clipboardText)?.[0];
   if (appearance) {
     const diffs = buildDiffList(character, appearance);
     if (!diffs.length) {
@@ -101,11 +65,6 @@ export function importBcxFromText(character: Character, rawText: string) {
     return;
   }
 
-  // CharacterAppearancePaste doesn't throw for a string it can't use - it just
-  // silently does nothing, so a thrown exception isn't a reliable signal of
-  // failure here. Compare before/after instead: no change means the paste
-  // didn't actually do anything, so surface the same "can't parse" toast
-  // rather than leaving the user without any feedback at all.
   const beforePaste = CharacterAppearanceStringify(character);
   try {
     CharacterAppearancePaste(character, clipboardText, false);
@@ -116,107 +75,69 @@ export function importBcxFromText(character: Character, rawText: string) {
   showToast(t('import-controller-cannot-parse-clipboard-alert'));
 }
 
-// ---------------------------------------------------------------------------
-// Category classification
-//
-// Mirrors BCX's isCloth/isCosplay/isBody/isBind split using the plain BC
-// AssetGroup fields (Category/AllowNone/Clothing/BodyCosplay). Any group that
-// doesn't match a known shape — including groups registered by other mods —
-// falls into "other" instead of being silently dropped, so modded resources
-// stay importable.
-// ---------------------------------------------------------------------------
-
 const FULL_REPLACE_CATEGORIES: ReadonlySet<ImportCategoryKey> = new Set<ImportCategoryKey>([
   'clothes', 'cosplay', 'body', 'restraints',
 ]);
 
-export function categorizeGroup(groupName: string | undefined): ImportCategoryKey {
-  if (!groupName) return 'other';
-  const group = typeof AssetGroup !== 'undefined'
-    ? AssetGroup.find(entry => entry.Name === groupName)
-    : null;
+export function categorizeGroup(groupName: AssetGroupName): ImportCategoryKey {
+  const group = AssetGroupGet('Female3DCG', groupName);
   if (!group) return 'other';
-  if (group.Category === 'Appearance' && group.AllowNone && group.Clothing && !group.BodyCosplay) return 'clothes';
-  if (group.Category === 'Appearance' && group.AllowNone && group.Clothing && group.BodyCosplay) return 'cosplay';
-  if (group.Category === 'Appearance' && !group.Clothing) return 'body';
-  if (group.Category === 'Item' && !group.BodyCosplay) return 'restraints';
-  return 'other';
+  if (group.Category === 'Item') return group.BodyCosplay ? 'other' : 'restraints';
+  if (group.Category !== 'Appearance') return 'other';
+  if (!group.Clothing) return 'body';
+  if (!group.AllowNone) return 'other';
+  return group.BodyCosplay ? 'cosplay' : 'clothes';
 }
 
-// The group's display name in the current game language (BC retranslates
-// AssetGroup.Description whenever TranslationLanguage changes), falling back to
-// the raw group name for groups the game has no localized name for.
-export function groupDisplayName(groupName: string): string {
-  const group = typeof AssetGroup !== 'undefined' ? AssetGroup.find(entry => entry.Name === groupName) : null;
-  return group?.Description || groupName;
+export function groupDisplayName(groupName: AssetGroupName): string {
+  return AssetGroupGet('Female3DCG', groupName)?.Description || groupName;
 }
 
-function describeAsset(character: Character, groupName: string, assetName: string | null | undefined): string {
-  if (!assetName) return t('import-dialog-empty-slot');
-  const asset = typeof AssetGet === 'function'
-    ? AssetGet(character.AssetFamily, groupName as AssetGroupName, assetName)
-    : null;
-  return asset?.Description ?? assetName;
+function describeItem(item: Item | null): string {
+  if (!item) return t('import-dialog-empty-slot');
+  const craftName = item.Craft?.Name?.trim();
+  return craftName ? `${craftName} (${item.Asset.Description})` : item.Asset.Description;
 }
 
-function valuesEqual(a: unknown, b: unknown): boolean {
-  try {
-    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-  } catch {
-    return a === b;
-  }
-}
-
-// Returns only the slots present in the bundle that would actually change on
-// the character, plus full-replace slots the character currently fills but the
-// bundle leaves out (so importing a skirt-only outfit removes the old pants
-// instead of stacking both).
-export function buildDiffList(character: Character, bundle: AppearanceImportItem[]): ImportDiff[] {
+export function buildDiffList(character: Character, bundle: ItemBundle[]): ImportDiff[] {
   const diffs: ImportDiff[] = [];
-  const appearance = character.Appearance || [];
-  const bundleGroups = new Set<string>();
+  const appearance = character.Appearance;
+  const bundleGroups = new Set<AssetGroupName>();
 
   for (const entry of bundle) {
-    const groupName = entry.Asset?.Group?.Name ?? entry.Group;
-    const itemName = entry.Asset?.Name ?? entry.Name;
-    if (!groupName || !itemName) continue;
+    const incoming = itemFromBundle(character, entry);
+    if (!incoming) continue;
+
+    const groupName = incoming.Asset.Group.Name;
     bundleGroups.add(groupName);
 
-    const current = appearance.find(item => (item.Asset?.Group?.Name ?? item.Group) === groupName);
-    const currentName = current?.Asset?.Name ?? current?.Name ?? null;
-
-    const sameItem = currentName === itemName;
-    const sameColor = valuesEqual(current?.Color ?? null, entry.Color ?? null);
-    const sameProperty = valuesEqual(current?.Property ?? null, entry.Property ?? null);
-    const sameDifficulty = (current?.Difficulty ?? 0) === (entry.Difficulty ?? 0);
-    if (sameItem && sameColor && sameProperty && sameDifficulty) continue;
+    const worn = InventoryGet(character, groupName);
+    const target = bundleItem(incoming);
+    if (worn && JSON.stringify(bundleItem(worn)) === JSON.stringify(target)) continue;
 
     diffs.push({
       group: groupName,
       category: categorizeGroup(groupName),
-      // An empty slot gaining an item is an "add"; replacing/recoloring an
-      // existing item is a "modify".
-      changeType: currentName ? 'modify' : 'add',
-      entry,
-      fromText: describeAsset(character, groupName, currentName),
-      toText: describeAsset(character, groupName, itemName),
+      changeType: worn ? 'modify' : 'add',
+      entry: target,
+      fromText: describeItem(worn),
+      toText: describeItem(incoming),
     });
   }
 
   for (const item of appearance) {
-    const groupName = item.Asset?.Group?.Name ?? item.Group;
-    if (!groupName || bundleGroups.has(groupName)) continue;
-    const group = typeof AssetGroup !== 'undefined' ? AssetGroup.find(entry => entry.Name === groupName) : null;
-    if (!group || !group.AllowNone) continue; // mandatory slots can't be emptied
-    const category = categorizeGroup(groupName);
+    const group = item.Asset.Group;
+    if (bundleGroups.has(group.Name)) continue;
+    if (!group.AllowNone) continue; // a mandatory slot can't be emptied
+    const category = categorizeGroup(group.Name);
     if (!FULL_REPLACE_CATEGORIES.has(category)) continue;
 
     diffs.push({
-      group: groupName,
+      group: group.Name,
       category,
       changeType: 'remove',
-      entry: {Group: groupName, Name: undefined},
-      fromText: describeAsset(character, groupName, item.Asset?.Name ?? item.Name),
+      entry: null, // nothing to wear: this slot is being emptied
+      fromText: describeItem(item),
       toText: t('import-dialog-empty-slot'),
     });
   }
@@ -224,58 +145,22 @@ export function buildDiffList(character: Character, bundle: AppearanceImportItem
   return diffs;
 }
 
-// ---------------------------------------------------------------------------
-// Live preview + apply
-// ---------------------------------------------------------------------------
-
-function applyDiffEntry(character: Character, entry: AppearanceImportItem) {
-  const groupName = entry.Asset?.Group?.Name ?? entry.Group;
-  const itemName = entry.Asset?.Name ?? entry.Name;
-  if (!groupName) return;
-
-  if (!itemName) {
-    if (typeof InventoryRemove === 'function') {
-      try {
-        InventoryRemove(character, groupName as AssetGroupName, false);
-      } catch {
-        // Ignore missing or locked groups while emptying a slot.
-      }
-    }
-    return;
-  }
-
-  if (typeof InventoryWear !== 'function') return;
-  try {
-    InventoryWear(character, itemName, groupName as AssetGroupName, entry.Color ?? 'Default', null, null, null, false);
-    const worn = (typeof InventoryGet === 'function' ? InventoryGet(character, groupName as AssetGroupName) : null)
-      ?? character.Appearance.find(item => (item.Asset?.Group?.Name ?? item.Group) === groupName);
-    if (worn) {
-      if (entry.Property != null) worn.Property = JSON.parse(JSON.stringify(entry.Property));
-      if (entry.Difficulty != null) worn.Difficulty = entry.Difficulty;
-    }
-  } catch (error) {
-    // Items from a mod the importing user doesn't have can't be worn; skip them
-    // rather than aborting the whole import.
-    console.warn('[AEE] InventoryWear failed:', groupName, itemName, error);
-  }
-}
-
-// Re-applies the full selection from the original snapshot every time, so
-// toggling a checkbox off cleanly reverts that slot.
-export function applyImportPreview(dialog: ImportDiffDialog, selectedGroups: ReadonlySet<string>) {
+export function applyImportPreview(dialog: ImportDiffDialog, selectedGroups: ReadonlySet<AssetGroupName>) {
   const {character, diffs, originalAppearance} = dialog;
+
   CharacterAppearanceRestore(character, originalAppearance);
   for (const diff of diffs) {
-    if (!selectedGroups.has(String(diff.group))) continue;
-    applyDiffEntry(character, diff.entry);
+    if (!selectedGroups.has(diff.group)) continue;
+    if (diff.entry) wearBundle(character, diff.entry);
+    else InventoryRemove(character, diff.group, false);
   }
-  if (typeof CharacterRefresh === 'function') CharacterRefresh(character, false);
+  CharacterRefresh(character, false);
 }
 
-export function commitImport(dialog: ImportDiffDialog, selectedGroups: ReadonlySet<string>) {
+export function commitImport(dialog: ImportDiffDialog, selectedGroups: ReadonlySet<AssetGroupName>) {
   try {
     applyImportPreview(dialog, selectedGroups);
-    const count = dialog.diffs.filter(diff => selectedGroups.has(String(diff.group))).length;
+    const count = dialog.diffs.filter(diff => selectedGroups.has(diff.group)).length;
     if (CurrentScreen === 'ChatRoom') ChatRoomCharacterUpdate(dialog.character);
     showToast(t('import-controller-import-success-message', {count}));
   } catch (error) {
@@ -288,7 +173,7 @@ export function commitImport(dialog: ImportDiffDialog, selectedGroups: ReadonlyS
 
 export function cancelImport(dialog: ImportDiffDialog) {
   CharacterAppearanceRestore(dialog.character, dialog.originalAppearance);
-  if (typeof CharacterRefresh === 'function') CharacterRefresh(dialog.character, false);
+  CharacterRefresh(dialog.character, false);
   closeImportDialog();
 }
 
@@ -296,16 +181,4 @@ export function closeImportDialog() {
   mutateState(draft => {
     draft.importDialog = null;
   });
-}
-
-function isAppearanceList(value: unknown): value is AppearanceImportItem[] {
-  return Array.isArray(value) && value.length > 0 && value.every(isAppearanceItemLike);
-}
-
-function isAppearanceItemLike(value: unknown): value is AppearanceImportItem {
-  if (!value || typeof value !== 'object') return false;
-  const item = value as AppearanceImportItem;
-  const groupName = item.Asset?.Group?.Name ?? item.Group;
-  const itemName = item.Asset?.Name ?? item.Name;
-  return Boolean(groupName && itemName);
 }

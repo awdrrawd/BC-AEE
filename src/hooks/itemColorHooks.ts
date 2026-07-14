@@ -10,6 +10,7 @@ import {
   startHoverHighlight,
   stopHoverHighlight
 } from '@/controllers/uiController';
+import {settings} from '@/core/settings';
 
 export function installItemColorHooks() {
   installLayerDiagnostics();
@@ -35,9 +36,9 @@ export function installItemColorHooks() {
   });
 
   bcAeeModSdk.hookFunction('ItemColorOpenPicker', 0, (args, next) => {
-    const item = typeof ItemColorItem !== 'undefined' ? ItemColorItem : runtime.itemColorItem;
-    const indices = typeof ItemColorPickerIndices !== 'undefined' ? [...ItemColorPickerIndices] : null;
-    const pickerLayers = typeof ItemColorPickerLayers !== 'undefined' ? [...ItemColorPickerLayers.values()] : null;
+    const item = ItemColorItem ?? runtime.itemColorItem;
+    const indices = ItemColorPickerIndices ? [...ItemColorPickerIndices] : null;
+    const pickerLayers = ItemColorPickerLayers ? [...ItemColorPickerLayers.values()] : null;
     runtime.pickerContext = {item, indices, pickerLayers};
     return observeAppearanceScreenState(next(args));
   });
@@ -80,12 +81,9 @@ export function installItemColorHooks() {
   });
 
   bcAeeModSdk.hookFunction('ColorPickerInit', 0, async (args, next) => {
-    if (!getState().useAeeColorPicker) return await next(args);
+    if (!settings.useAeeColorPicker.get()) return await next(args);
     if (args[0]?.dispatch === false) return await next(args);
 
-    // Tear down any previously open AEE picker (e.g. the part>color picker the
-    // user left open) so its stale callback can't bridge into the new BC
-    // color-picker DOM, which would make LSCG read a mismatched item.
     closeAeeBcColorPicker();
 
     const result = await next(args);
@@ -95,14 +93,11 @@ export function installItemColorHooks() {
     if (!originalFieldset) return result;
     originalFieldset.style.display = 'none';
 
-    const bcItem = (typeof ItemColorItem !== 'undefined' ? ItemColorItem : null) || runtime.itemColorItem;
+    const bcItem = ItemColorItem ?? runtime.itemColorItem;
     const selectedLayer = getState().selectedLayer ?? 'all';
     const hexInput = main.querySelector('input[name="output"]') as HTMLInputElement | null;
     const domHex6 = hexInput?.value?.match(/^#[0-9a-fA-F]{6}$/) ? hexInput.value
       : hexInput?.value?.match(/^#[0-9a-fA-F]{8}$/) ? hexInput.value.slice(0, 7) : null;
-    // The stored color tells us whether this layer is still on "Default" (vs the
-    // resolved hex BC shows in its output field). Used to render a "Default"
-    // state and avoid committing the resolved hex when the user only opens it.
     const storedColor = bcItem ? getLayerColor(bcItem, selectedLayer) : null;
     const isDefault = !storedColor || storedColor === 'Default';
     const cachedHex = domHex6 || (storedColor && storedColor !== 'Default' ? storedColor : null) || '#FFFFFF';
@@ -143,20 +138,14 @@ export function installItemColorHooks() {
         opInput.dispatchEvent(new Event('change', {bubbles: true}));
       }
     }, true, currentOpacityPct, isDefault);
-    // Do NOT dispatch the initial value here: openColorPicker already populated
-    // the panel's displayed hex/opacity. Dispatching would commit the cached hex
-    // to BC, turning a layer's "Default" color into an explicit one even when the
-    // user only meant to tweak opacity or layers.
     return result;
   });
 }
 
-// Temporary diagnostic: run `likoAeeDumpLayers()` in the console while the item /
-// restraint colour screen is open to print the asset's real layer structure.
 function installLayerDiagnostics() {
   (window as unknown as Record<string, unknown>).likoAeeDumpLayers = () => {
     const item = runtime.itemColorItem
-      || (typeof CharacterAppearanceSelection !== 'undefined' && typeof CharacterAppearanceColorPickerGroupName !== 'undefined' && CharacterAppearanceColorPickerGroupName
+      || (CharacterAppearanceSelection && CharacterAppearanceColorPickerGroupName
         ? InventoryGet(CharacterAppearanceSelection, CharacterAppearanceColorPickerGroupName)
         : null);
     if (!item?.Asset?.Layer) {
@@ -176,7 +165,7 @@ function installLayerDiagnostics() {
     }));
     console.log(`[AEE] Asset: ${item.Asset.Group?.Name}/${item.Asset.Name} (DynamicGroupName=${item.Asset.DynamicGroupName}) - ${layers.length} layers`);
     console.table(rows);
-    const state = typeof ItemColorState !== 'undefined' ? ItemColorState : null;
+    const state = ItemColorState;
     if (state?.colorGroups) {
       console.log('[AEE] ItemColorState.colorGroups:');
       console.table(state.colorGroups.map(group => ({
@@ -185,8 +174,6 @@ function installLayerDiagnostics() {
         layerNames: group.layers.map(l => l.Name ?? '(null)').join(','),
       })));
     }
-    // What AEE actually shows + how the current selection maps to layers, so we
-    // can see whether part editing/flash targets the right layers at runtime.
     const aeeState = getState();
     console.log(`[AEE] AEE rows (selectedLayer=${String(aeeState.selectedLayer)}, getCurrentItem===itemColorItem: ${getCurrentItem() === item}):`);
     console.table(getEditableParts(item).map(part => ({
@@ -203,12 +190,12 @@ function installLayerDiagnostics() {
 
 function handleItemColorHover() {
   const state = getState();
-  if (!state.visible || !(state.hoverHighlight || state.hoverHighlightChar)) return;
+  if (!state.visible || !(settings.hoverHighlight.get() || settings.hoverHighlightChar.get())) return;
   const item = runtime.itemColorItem;
   if (!item) return;
   let foundIdx: string | null = null;
   const rect = getCanvasRect();
-  if (rect && typeof MouseX !== 'undefined' && typeof MouseY !== 'undefined') {
+  if (rect) {
     const canvas = document.getElementById('MainCanvas') as HTMLCanvasElement | null;
     const clientX = rect.left + (MouseX / (canvas?.width || 2000)) * rect.width;
     const clientY = rect.top + (MouseY / (canvas?.height || 1000)) * rect.height;

@@ -4,10 +4,12 @@ import {installItemColorHooks} from '@/hooks/itemColorHooks';
 import {installMenuHooks} from '@/hooks/menuHooks';
 import {installDragHandlers} from '@/controllers/dragController';
 import {initializeViewBackground, installViewControlHandlers} from '@/controllers/viewController';
-import {syncAfterBcRender} from '@/controllers/uiController';
+import {installSettingEffects, syncAfterBcRender} from '@/controllers/uiController';
 import {initBcWheelScroll} from '@/hooks/bcWheelHooks';
+import {installWardrobeHooks} from '@/hooks/wardrobeHooks';
 
 export function installAeeHooks() {
+  installSettingEffects();
   installRenderHooks();
   installAppearanceHooks();
   installItemColorHooks();
@@ -17,4 +19,5 @@ export function installAeeHooks() {
   initializeViewBackground();
   syncAfterBcRender();
   initBcWheelScroll();
+  installWardrobeHooks();
 }

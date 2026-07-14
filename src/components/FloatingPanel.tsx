@@ -1,6 +1,9 @@
 import {type ReactNode, useRef} from 'react';
 import type {CanvasRect} from '@/core/types';
 import {TOOL_PANEL_WIDTH} from '@/core/overlay';
+import {Panel} from '@/components/ui/Panel';
+import {IconButton} from '@/components/ui/Button';
+import {X} from 'lucide-react';
 
 export function FloatingPanel({
                                 canvasRect,
@@ -31,8 +34,8 @@ export function FloatingPanel({
 
   return <div className="fixed z-999996 pointer-events-none"
               style={{left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height}}>
-    <div
-      className={`pointer-events-auto absolute flex flex-col overflow-hidden rounded-lg border border-violet-400/35 bg-zinc-950/95 text-zinc-100 shadow-2xl backdrop-blur ${className}`}
+    <Panel
+      className={`pointer-events-auto absolute ${className}`}
       style={{left, top, width}}
     >
       <div
@@ -59,17 +62,21 @@ export function FloatingPanel({
         }}
       >
         <span
-          className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold uppercase tracking-wide text-violet-200">{title}</span>
+          className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold uppercase text-[var(--aee-accent)]">{title}</span>
         {subtitle ? <span
           className="max-w-24 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] text-zinc-500">{subtitle}</span> : null}
-        <button
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-sm text-zinc-500 hover:bg-red-500/10 hover:text-red-300"
-          onPointerDown={event => event.stopPropagation()} onClick={onClose}>x
-        </button>
+        <IconButton
+          className="h-5 w-5 border-0"
+          tone="danger"
+          icon={<X className="h-3.5 w-3.5"/>}
+          aria-label={title}
+          onPointerDown={event => event.stopPropagation()}
+          onClick={onClose}
+        />
       </div>
       <div className={bodyClassName}>
         {children}
       </div>
-    </div>
+    </Panel>
   </div>;
 }

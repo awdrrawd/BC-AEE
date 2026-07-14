@@ -1,9 +1,12 @@
-import {type ChevronDirection, ChevronIcon} from '@/components/icons/ChevronIcon';
+import {ChevronDown, ChevronLeft, ChevronRight, ChevronUp} from 'lucide-react';
+import {IconButton} from '@/components/ui/Button';
 
-export function DirectionButton({direction, onClick}: { direction: ChevronDirection; onClick: () => void }) {
-  return <button
-    className="flex h-6 w-6 items-center justify-center rounded border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-violet-300"
-    onClick={onClick}>
-    <ChevronIcon direction={direction} size={12}/>
-  </button>;
+type Direction = 'up' | 'down' | 'left' | 'right';
+
+const CHEVRONS = {up: ChevronUp, down: ChevronDown, left: ChevronLeft, right: ChevronRight};
+
+export function DirectionButton({direction, onClick}: { direction: Direction; onClick: () => void }) {
+  const Chevron = CHEVRONS[direction];
+  return <IconButton className="h-6 w-6" icon={<Chevron className="h-3 w-3"/>}
+                     aria-label={direction} onClick={onClick}/>;
 }

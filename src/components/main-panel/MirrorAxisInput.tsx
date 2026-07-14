@@ -15,7 +15,7 @@ export const MirrorAxisInput = memo(function MirrorAxisInput({label, ctrl, value
 
   return <div className="flex min-w-0 flex-1 items-center gap-1">
     <span className="shrink-0">{label}</span>
-    <button className="h-5 w-5 shrink-0 rounded border border-zinc-700 bg-zinc-800 hover:bg-violet-600"
+    <button className="h-5 w-5 shrink-0 rounded border border-zinc-700 bg-zinc-800 hover:bg-[var(--aee-accent-65)]"
             onClick={() => stepEditProperty(ctrl, -0.05)}>-
     </button>
     <input
@@ -23,7 +23,7 @@ export const MirrorAxisInput = memo(function MirrorAxisInput({label, ctrl, value
       className="min-w-0 flex-1 border-b border-zinc-700 bg-transparent text-center font-mono text-[11px] text-teal-300"
       defaultValue={value.toFixed(2)}
       onBlur={event => setEditProperty(ctrl, Number(event.target.value))}/>
-    <button className="h-5 w-5 shrink-0 rounded border border-zinc-700 bg-zinc-800 hover:bg-violet-600"
+    <button className="h-5 w-5 shrink-0 rounded border border-zinc-700 bg-zinc-800 hover:bg-[var(--aee-accent-65)]"
             onClick={() => stepEditProperty(ctrl, 0.05)}>+
     </button>
   </div>;

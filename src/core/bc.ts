@@ -1,10 +1,18 @@
 import type {AeeLayerOverride, CanvasRect, LayerId, LayerOverrideKey, LayerPositionOverride} from '@/core/types';
 import {runtime} from '@/core/runtime';
+import {clamp} from '@/util/math';
 
 export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Pussy', 'Head']);
 
 export function getCanvas(): HTMLCanvasElement | null {
   return (document.getElementById('MainCanvas') as HTMLCanvasElement | null) || document.querySelector('canvas');
+}
+
+export const CANVAS_WIDTH = 2000;
+export const CANVAS_HEIGHT = 1000;
+
+export function canvasScale(rect: CanvasRect | null): number {
+  return rect ? rect.width / CANVAS_WIDTH : 1;
 }
 
 export function getCanvasRect(): CanvasRect | null {
@@ -29,7 +37,7 @@ export function getCurrentItem(): Item | null {
 }
 
 export function getCurrentGroup(): string | null {
-  if (typeof CharacterAppearanceColorPickerGroupName !== 'undefined' && CharacterAppearanceColorPickerGroupName) return CharacterAppearanceColorPickerGroupName;
+  if (CharacterAppearanceColorPickerGroupName) return CharacterAppearanceColorPickerGroupName;
   if (runtime.itemColorItem) return runtime.itemColorItem.Asset?.Group?.Name || null;
   return null;
 }
@@ -39,7 +47,7 @@ export function getCurrentCharacter(): Character | null {
 }
 
 export function getAppearanceMode(): string | null {
-  return typeof CharacterAppearanceMode !== 'undefined' ? CharacterAppearanceMode : null;
+  return CharacterAppearanceMode;
 }
 
 export function isEditableAppearanceContext() {
@@ -75,8 +83,6 @@ export function ensureOpacityArray(item: Item | null) {
 export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverrideKey, value: AeeLayerOverride[LayerOverrideKey]) {
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
-  // Apply to every layer of the selected part (anchor + its CopyLayerColor
-  // copies/variants) so the visible layer moves even when the base is empty.
   const indices = layerIdx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(layerIdx, 10));
   if (runtime.itemColorChar) runtime.itemColorDirty = true;
 
@@ -85,7 +91,7 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
     indices.forEach(index => {
       const layer = item.Asset?.Layer?.[index];
       const rawOpacity = typeof value === 'number' ? value : 1;
-      const clamped = Math.min(Math.max(rawOpacity, layer?.MinOpacity ?? 0), layer?.MaxOpacity ?? 1);
+      const clamped = clamp(rawOpacity, layer?.MinOpacity ?? 0, layer?.MaxOpacity ?? 1);
       if (!item.Property.LayerOverrides[index]) item.Property.LayerOverrides[index] = {};
       item.Property.LayerOverrides[index].Opacity = clamped;
       const opacityArray = item.Property.Opacity;
@@ -109,11 +115,6 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
   refreshAfterLayerEdit();
 }
 
-// Refresh the character after a layer-override edit. In the ItemColor screen
-// CharacterRefresh alone does not rebuild the cached layer canvas, so position
-// (DrawingLeft/Top, applied at bake time) and opacity only update after saving.
-// Force a canvas reload on the item-colour character to make it real time.
-// (Scale/rotation/skew show without this because they apply at GL composite time.)
 export function refreshAfterLayerEdit() {
   refreshCurrentCharacter(false);
   if (runtime.itemColorChar) {
@@ -172,9 +173,6 @@ function assetTextPrefix(asset: Asset): string {
   return (asset.DynamicGroupName ?? '') + (asset.Name ?? '');
 }
 
-// The friendly name BC shows for a single colour group (e.g. "外側"). Multi-layer
-// groups live in ColorGroups.csv, single-layer groups in LayerNames.csv - exactly
-// as BC's ItemColorDrawColorPickerHeader does.
 function resolveColorGroupLabel(asset: Asset, group: ColorGroup): string {
   const key = assetTextPrefix(asset) + group.name;
   const cache = group.layers.length === 1 ? ItemColorLayerNames : ItemColorGroupNames;
@@ -189,16 +187,10 @@ function resolveLayerLabel(asset: Asset, layer: AssetLayer): string {
   return isUsableLayerLabel(text, key) ? text : (layer.Name ?? '');
 }
 
-// Read the name straight from BC's live colour-picker state. This is the exact
-// grouping/naming BC used to render the colour list (works for modded assets too,
-// since the mod already populated ItemColorState/TextCache at runtime). AEE lists
-// each layer individually, so for multi-layer groups we keep the group name and
-// append the layer name to stay distinguishable - matching BC's own
-// "<group>: <layer>" convention when paging through a group's layers.
 function getNameFromItemColorState(layer: AssetLayer): string | null {
   try {
-    const state = typeof ItemColorState !== 'undefined' ? ItemColorState : null;
-    const item = typeof ItemColorItem !== 'undefined' ? ItemColorItem : null;
+    const state = ItemColorState;
+    const item = ItemColorItem;
     if (!state?.colorGroups || !item?.Asset) return null;
     const group = state.colorGroups.find(candidate => candidate.name !== null && candidate.layers.includes(layer));
     if (!group) return null;
@@ -221,9 +213,6 @@ export function getLayerDisplayName(layer: AssetLayer | null | undefined, index:
     const asset = layer.Asset;
     if (asset && (ItemColorLayerNames || ItemColorGroupNames)) {
       const prefix = assetTextPrefix(asset);
-      // Fallback for when BC's ItemColorState isn't available (e.g. the wardrobe
-      // "Color" mode). Recompute the grouping the same way BC does: group by
-      // ColorGroup (or the layer name), then look up the friendly label.
       const groupKey = layer.ColorGroup || layer.Name || '';
       const colorable = (asset.Layer ?? []).filter(l => !l.CopyLayerColor && l.AllowColorize && !l.HideColoring);
       const groupSize = colorable.filter(l => (l.ColorGroup || l.Name || '') === groupKey).length;
@@ -244,19 +233,11 @@ export function getLayerDisplayName(layer: AssetLayer | null | undefined, index:
   return layer.Name || `Layer ${index}`;
 }
 
-// Layers that share a base belong to one editable "part". BC links them with
-// CopyLayerColor: a base/anchor layer (no CopyLayerColor) plus copy layers whose
-// CopyLayerColor points at the base's Name (visual halves, style variants, etc).
-// Grouping on `CopyLayerColor || Name` collapses each part to a single key, so a
-// normal independent layer (no copies) is simply its own group.
 function layerGroupKey(layer: AssetLayer | undefined | null): string {
   if (!layer) return '';
   return layer.CopyLayerColor || layer.Name || '';
 }
 
-// Assets where BC's CopyLayerColor links genuinely-distinct objects, so grouping
-// would wrongly merge them. These fall back to the old per-layer listing. Matched
-// by Asset.Name.
 const UNGROUPED_ASSETS = new Set<string>([
   'WombTattoos', 'BodyWritings', 'FaceScars', 'AnimalNoses', 'FishnetTop',
   'SleevelessSlimLatexLeotard', 'LongSkirt1', 'AsymmetricSkirt', 'LatexBunnySuit',
@@ -265,10 +246,6 @@ const UNGROUPED_ASSETS = new Set<string>([
   'DildocornHorn', 'OperaGloves', 'BunnyMask1', 'Kissmark', 'FurCoat', 'FlowerDress',
 ]);
 
-// Whether to skip CopyLayerColor grouping and list every layer (the old way).
-// Triggered by the explicit list above, or by the "design picker" pattern: many
-// layers all sharing a single colourable ColorIndex (e.g. body-marking decals),
-// where each copy is a distinct design rather than a visual half/variant.
 function isUngroupedAsset(item: Item | null): boolean {
   const asset = item?.Asset;
   if (!asset) return false;
@@ -281,7 +258,6 @@ function isUngroupedAsset(item: Item | null): boolean {
   return colorIndices.size <= 1 && layers.length > 4;
 }
 
-// All layer indices belonging to the same part as the given layer.
 export function getLayerGroupMembers(item: Item | null, layerIndex: number): number[] {
   if (isUngroupedAsset(item)) return [layerIndex];
   const layers = item?.Asset?.Layer ?? [];
@@ -294,9 +270,6 @@ export function getLayerGroupMembers(item: Item | null, layerIndex: number): num
   return members.length ? members : [layerIndex];
 }
 
-// One row per editable part: the representative (anchor) layer index and its name.
-// Used by the parts/opacity/layers lists so we no longer show every raw layer
-// (anchor + copies + variants), which produced duplicate and English-only names.
 export function getEditableParts(item: Item | null): {layerId: string; name: string}[] {
   const layers = item?.Asset?.Layer ?? [];
   if (isUngroupedAsset(item)) {
@@ -312,8 +285,6 @@ export function getEditableParts(item: Item | null): {layerId: string; name: str
     }
     if (seen.has(key)) return;
     seen.add(key);
-    // Prefer the base layer (Name === key, no CopyLayerColor) as the row so the
-    // colourable layer's resolved name and index represent the part.
     let repIndex = layers.findIndex(candidate => (candidate.Name ?? '') === key && !candidate.CopyLayerColor);
     if (repIndex < 0) repIndex = index;
     parts.push({layerId: String(repIndex), name: getLayerDisplayName(layers[repIndex], repIndex)});
@@ -321,9 +292,6 @@ export function getEditableParts(item: Item | null): {layerId: string; name: str
   return parts;
 }
 
-// BC stores colours per ColorIndex (item.Color[ColorIndex]), not per layer index.
-// Several layers can share a ColorIndex, and layer index != ColorIndex in general,
-// so colour lookups must go through the layer's ColorIndex.
 function getColorIndicesForPart(item: Item, layerIdx: string): number[] {
   const layers = item.Asset?.Layer ?? [];
   const indices = new Set<number>();
@@ -390,7 +358,7 @@ export function isGroupLocked() {
 }
 
 export function clampPriority(value: number) {
-  return Math.max(-99, Math.min(99, value));
+  return clamp(value, -99, 99);
 }
 
 export function applyPriority(item: Item, rawIdx: LayerId, value: number) {
@@ -406,8 +374,6 @@ export function applyPriority(item: Item, rawIdx: LayerId, value: number) {
     }
     members.forEach(index => {
       if (!layers[index]) return;
-      // BC keys OverridePriority by `layer.Name ?? ""`, so unnamed layers (e.g. a
-      // single-layer restraint) use the empty-string key - don't skip them.
       const layerName = layers[index].Name ?? '';
       (item.Property.OverridePriority as Record<string, number>)[layerName] = newValue;
     });

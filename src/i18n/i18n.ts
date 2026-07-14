@@ -1,7 +1,7 @@
 import i18next, {type TOptions} from 'i18next';
 import {initReactI18next} from 'react-i18next';
 import {emitAeeStoreChange} from '@/core/store';
-import {getAeeSetting, setAeeSetting} from '@/core/settings';
+import {settings} from '@/core/settings';
 import en from '@/i18n/locales/EN/translation.json';
 import de from '@/i18n/locales/DE/translation.json';
 import fr from '@/i18n/locales/FR/translation.json';
@@ -15,7 +15,6 @@ import ko from '@/i18n/locales/KO/translation.json';
 declare const TranslationLanguage: string | undefined;
 
 const DEFAULT_LANGUAGE = 'EN';
-const LANGUAGE_SETTING_KEY = 'uiLanguage';
 
 const LANGUAGE_MAP: Record<string, string> = {
   EN: 'EN',
@@ -91,7 +90,7 @@ function refreshAppForLanguageChange(): void {
 
 // The user's explicit override ('' / undefined means "follow the game").
 export function getUiLanguageSetting(): string {
-  return getAeeSetting(LANGUAGE_SETTING_KEY, '');
+  return settings.uiLanguage.get();
 }
 
 function resolveInitialLanguage(): string {
@@ -102,7 +101,7 @@ function resolveInitialLanguage(): string {
 // Called by the settings UI. An empty code clears the override and resumes
 // following the game's language.
 export function setUiLanguage(code: string): void {
-  setAeeSetting(LANGUAGE_SETTING_KEY, code);
+  settings.uiLanguage.set(code);
   const next = code ? normalizeLanguage(code) : normalizeLanguage(readBcLanguage());
   lastLanguage = next;
   i18next.changeLanguage(next)

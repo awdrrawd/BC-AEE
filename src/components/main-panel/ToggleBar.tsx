@@ -11,16 +11,8 @@ import {
   togglePartsOpen,
   toggleTransformOverlay,
 } from '@/controllers/uiController';
-import {ChevronIcon} from '@/components/icons/ChevronIcon';
-import {ColorIcon} from '@/components/icons/ColorIcon';
-import {LayersIcon} from '@/components/icons/LayersIcon';
-import {MoveIcon} from '@/components/icons/MoveIcon';
-import {OpacityIcon} from '@/components/icons/OpacityIcon';
-import {ResetIcon} from '@/components/icons/ResetIcon';
-import {RotateIcon} from '@/components/icons/RotateIcon';
-import {ScaleIcon} from '@/components/icons/ScaleIcon';
-import {SkewIcon} from '@/components/icons/SkewIcon';
-import {ToggleIconButton} from '@/components/main-panel/ToggleIconButton';
+import {IconButton} from '@/components/ui/Button';
+import {Blend, ChevronLeft, ChevronRight, Italic, Layers, Move, Palette, RotateCcw, RotateCw, Scaling} from 'lucide-react';
 
 export function ToggleBar({state}: { state: AeeState }) {
   const openTransform = (mode: Exclude<DragMode, null>) => (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -38,28 +30,28 @@ export function ToggleBar({state}: { state: AeeState }) {
   };
 
   return <div
-    className="pointer-events-auto z-1000000 flex flex-col items-center gap-1 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-950 px-0.5 py-1">
+    className="pointer-events-auto z-1000000 flex flex-col items-center gap-1 rounded-r-md border border-l-0 border-(--aee-accent-35) bg-(--aee-panel-bg) px-0.5 py-1">
     {state.collapsed ? <div className="flex flex-col items-center gap-1">
-      <ToggleIconButton active={state.partsOpen} title={t('toggle-bar-parts-button-title')}
-                        onClick={openParts}><LayersIcon/></ToggleIconButton>
-      <ToggleIconButton active={state.transformOverlay.mode === 'xy' || state.activeDrag === 'xy'} title={t('toggle-bar-position-button-title')}
-                        onClick={openTransform('xy')}><MoveIcon/></ToggleIconButton>
-      <ToggleIconButton active={state.transformOverlay.mode === 'rot' || state.activeDrag === 'rot'} title={t('toggle-bar-rotation-button-title')}
-                        onClick={openTransform('rot')}><RotateIcon/></ToggleIconButton>
-      <ToggleIconButton active={state.transformOverlay.mode === 'scale' || state.activeDrag === 'scale'}
-                        title={t('toggle-bar-scale-button-title')} onClick={openTransform('scale')}><ScaleIcon/></ToggleIconButton>
-      <ToggleIconButton active={state.transformOverlay.mode === 'skew' || state.activeDrag === 'skew'} title={t('toggle-bar-skew-button-title')}
-                        onClick={openTransform('skew')}><SkewIcon/></ToggleIconButton>
-      <ToggleIconButton active={state.colorPicker.open && !state.colorPicker.bcMode} title={t('toggle-bar-color-picker-button-title')}
-                        onClick={() => openSelectedLayerColorPicker()}><ColorIcon/></ToggleIconButton>
-      <ToggleIconButton active={state.opacityOverlay.open} title={t('toggle-bar-opacity-button-title')}
-                        onClick={openOpacity}><OpacityIcon/></ToggleIconButton>
-      <ToggleIconButton active={false} title={t('toggle-bar-reset-transforms-button-title')}
-                        onClick={() => resetSelectedTransforms()}><ResetIcon/></ToggleIconButton>
+      <IconButton selected={state.partsOpen} title={t('toggle-bar-parts-button-title')} icon={<Layers className="h-4 w-4"/>}
+                  onClick={openParts}/>
+      <IconButton selected={state.transformOverlay.mode === 'xy' || state.activeDrag === 'xy'}
+                  title={t('toggle-bar-position-button-title')} icon={<Move className="h-4 w-4"/>} onClick={openTransform('xy')}/>
+      <IconButton selected={state.transformOverlay.mode === 'rot' || state.activeDrag === 'rot'}
+                  title={t('toggle-bar-rotation-button-title')} icon={<RotateCw className="h-4 w-4"/>} onClick={openTransform('rot')}/>
+      <IconButton selected={state.transformOverlay.mode === 'scale' || state.activeDrag === 'scale'}
+                  title={t('toggle-bar-scale-button-title')} icon={<Scaling className="h-4 w-4"/>} onClick={openTransform('scale')}/>
+      <IconButton selected={state.transformOverlay.mode === 'skew' || state.activeDrag === 'skew'}
+                  title={t('toggle-bar-skew-button-title')} icon={<Italic className="h-4 w-4"/>} onClick={openTransform('skew')}/>
+      <IconButton selected={state.colorPicker.open && !state.colorPicker.bcMode}
+                  title={t('toggle-bar-color-picker-button-title')} icon={<Palette className="h-4 w-4"/>}
+                  onClick={() => openSelectedLayerColorPicker()}/>
+      <IconButton selected={state.opacityOverlay.open} title={t('toggle-bar-opacity-button-title')}
+                  icon={<Blend className="h-4 w-4"/>} onClick={openOpacity}/>
+      <IconButton title={t('toggle-bar-reset-transforms-button-title')} icon={<RotateCcw className="h-4 w-4"/>}
+                  onClick={() => resetSelectedTransforms()}/>
     </div> : null}
-    <button className="flex h-7 w-5 items-center justify-center text-zinc-400 hover:text-violet-300"
-            onClick={toggleCollapse}>
-      <ChevronIcon direction={state.collapsed ? 'right' : 'left'} size={12}/>
-    </button>
+    <IconButton className="w-5 border-0" tone="ghost" title={t('toggle-bar-parts-button-title')}
+                icon={state.collapsed ? <ChevronRight className="h-3 w-3"/> : <ChevronLeft className="h-3 w-3"/>}
+                onClick={toggleCollapse}/>
   </div>;
 }

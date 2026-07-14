@@ -41,11 +41,6 @@ let scaleDragState: ScaleDragState | null = null;
 let skewDragState: SkewDragState | null = null;
 let handlersInstalled = false;
 
-// Transparent overlay aligned to the BC canvas. While a drag-edit mode is active
-// it sits above the canvas (z-index between the canvas and the AEE panels) so the
-// pointer shows the drag cursor; the real click suppression is done by the
-// capture-phase listeners below, because BC listens in the capture phase and a
-// plain overlay would not stop it.
 const DRAG_CURSORS: Record<string, string> = {
   xy: 'grab',
   rot: 'crosshair',
@@ -89,9 +84,6 @@ export function hideTouchBlocker() {
   if (touchBlocker) touchBlocker.style.display = 'none';
 }
 
-// Set by the rotation overlay while its handle is being dragged. The drag uses
-// document-level mouse listeners, so the click suppression below must let those
-// events through until the drag finishes.
 let rotationDragging = false;
 
 export function setRotationDragging(active: boolean) {
@@ -100,19 +92,11 @@ export function setRotationDragging(active: boolean) {
 
 function isAeeEditing() {
   const state = getState();
-  // Block the interaction grid while a drag-edit mode is active OR while dyeing
-  // (the colour picker is open) - entering the colour screen clears activeDrag, so
-  // without the colourPicker check body clicks would fall through during dyeing.
   return !!(state.visible && (state.activeDrag || state.colorPicker.open));
 }
 
 const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';
 
-// True when the event targets our own UI (rendered inside the AEE shadow root,
-// e.g. the rotation handle) or a BC menu/colour-picker control, which must keep
-// working while a drag mode is on. We use composedPath() rather than event.target
-// because a document-level listener sees the target retargeted to the shadow host
-// (which lives in the light DOM), so getRootNode() would no longer be a ShadowRoot.
 function isOwnUiTarget(event: Event): boolean {
   const path = event.composedPath?.();
   if (path && path.length) {
@@ -139,8 +123,6 @@ function getEventPoint(event: Event): {cx: number; cy: number} | null {
   return null;
 }
 
-// Whether this canvas-body event should be swallowed so it never reaches BC's
-// interaction grid / dialog handlers, which would otherwise interrupt editing.
 function shouldIntercept(event: Event): boolean {
   if (!isAeeEditing()) return false;
   if (isOwnUiTarget(event)) return false;
@@ -227,8 +209,6 @@ function moveXyDrag(event: MouseEvent) {
   const dy = (event.clientY - xyDragState.startY) * sy;
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
-  // Move the whole part (anchor + CopyLayerColor members), matching the other
-  // transforms which go through setLayerOverride's group expansion.
   const indices = xyDragState.layerId === 'all'
     ? Array.from({length: count}, (_, index) => index)
     : getLayerGroupMembers(item, parseInt(xyDragState.layerId, 10));
@@ -238,8 +218,6 @@ function moveXyDrag(event: MouseEvent) {
     layerOverride.DrawingTop = {'': Math.round(xyDragState.origY + (xyDragState.flipY ? -dy : dy))};
     item.Property.LayerOverrides[index] = layerOverride;
   });
-  // Use the ItemColor-aware refresh so position re-bakes on the restraint preview
-  // in real time (plain CharacterRefresh does not rebuild the cached canvas).
   refreshAfterLayerEdit();
   forceUiUpdate();
 }
@@ -284,17 +262,11 @@ export function installDragHandlers() {
 
   document.addEventListener('mousedown', event => {
     if (isOwnUiTarget(event)) return;
-    // A fresh mousedown outside our UI means no rotation-handle drag is in
-    // progress; clear any stale flag so it can never permanently disable the
-    // mouseup/pointerup grid suppression below.
     rotationDragging = false;
     if (startCanvasDrag(event)) {
       event.stopImmediatePropagation();
       return;
     }
-    // Drag mode is on but the click is not a drag start (e.g. rotation mode, or a
-    // body click that should not begin a transform) — still swallow it so it does
-    // not fall through to BC's interaction grid.
     if (shouldIntercept(event)) event.stopImmediatePropagation();
   }, true);
 
@@ -319,7 +291,6 @@ export function installDragHandlers() {
       event.stopImmediatePropagation();
       return;
     }
-    // Don't swallow the mouseup that ends a rotation-handle drag.
     if (rotationDragging) return;
     if (shouldIntercept(event)) {
       event.stopImmediatePropagation();
@@ -327,8 +298,6 @@ export function installDragHandlers() {
     }
   }, true);
 
-  // BC also reacts to pointer/touch events in the capture phase, so mirror the
-  // suppression for those to fully block the interaction grid while editing.
   document.addEventListener('pointerdown', event => {
     if (shouldIntercept(event)) event.stopImmediatePropagation();
   }, true);

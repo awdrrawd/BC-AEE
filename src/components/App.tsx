@@ -6,10 +6,18 @@ import {ImportDialog} from '@/components/ImportDialog';
 import {OpacityOverlay} from '@/components/overlays/OpacityOverlay';
 import {RotationOverlay} from '@/components/overlays/RotationOverlay';
 import {TransformOverlay} from '@/components/overlays/TransformOverlay';
+import {WardrobeScreen} from '@/components/wardrobe/WardrobeScreen';
+import {useWardrobeStore} from '@/core/wardrobeStore';
+import {usePrompt} from '@/core/prompts';
+import {PromptDialog} from '@/components/ui/PromptDialog';
+import {uiThemeVariables} from '@/core/theme';
 
 export function App() {
   const state = useAeeStore();
-  return <>
+  const wardrobe = useWardrobeStore();
+  const prompt = usePrompt();
+  return <div className="contents" style={uiThemeVariables(wardrobe.theme)}>
+    <WardrobeScreen state={wardrobe}/>
     <MainPanel state={state}/>
     <TransformOverlay state={state}/>
     <OpacityOverlay state={state}/>
@@ -17,5 +25,6 @@ export function App() {
     <ColorPicker state={state}/>
     <ViewControls state={state}/>
     <ImportDialog state={state}/>
-  </>;
+    {prompt ? <PromptDialog prompt={prompt} scale={wardrobe.active ? 'stage' : 'panel'}/> : null}
+  </div>;
 }

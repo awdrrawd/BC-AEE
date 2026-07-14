@@ -1,5 +1,5 @@
-import {getState} from '@/core/store';
 import {runtime} from '@/core/runtime';
+import {settings} from '@/core/settings';
 
 export type AppearanceScreenMode = '' | 'Wardrobe' | 'Cloth' | 'Color' | 'Permissions';
 export type ItemColorSubMode = ItemColorMode | null;
@@ -42,13 +42,13 @@ let snapshot: AppearanceScreenSnapshot = readAppearanceScreenSnapshot();
 const listeners = new Set<TransitionListener>();
 
 export function readAppearanceScreenSnapshot(): AppearanceScreenSnapshot {
-  const module = typeof CurrentModule !== 'undefined' ? CurrentModule : '';
-  const screen = typeof CurrentScreen !== 'undefined' ? CurrentScreen : '';
+  const module = CurrentModule;
+  const screen = CurrentScreen;
   const inAppearance = screen === 'Appearance';
   const mode = readAppearanceMode(inAppearance);
   const itemColorMode = readItemColorMode(inAppearance, mode);
-  const hasDialogFocusItem = inAppearance && typeof DialogFocusItem !== 'undefined' && !!DialogFocusItem;
-  const layeringActive = inAppearance && typeof Layering !== 'undefined' && !!Layering?.IsActive?.();
+  const hasDialogFocusItem = inAppearance && !!DialogFocusItem;
+  const layeringActive = inAppearance && Layering.IsActive();
 
   return {
     module,
@@ -59,7 +59,7 @@ export function readAppearanceScreenSnapshot(): AppearanceScreenSnapshot {
     itemColorMode,
     hasDialogFocusItem,
     layeringActive,
-    selection: inAppearance && typeof CharacterAppearanceSelection !== 'undefined' ? CharacterAppearanceSelection ?? null : null,
+    selection: inAppearance ? CharacterAppearanceSelection ?? null : null,
   };
 }
 
@@ -106,7 +106,7 @@ export function isInAppearanceScreen() {
 }
 
 export function shouldShowAppearanceViewControl() {
-  return snapshot.inAppearance && getState().showCharCtrl;
+  return snapshot.inAppearance && settings.showCharCtrl.get();
 }
 
 export function markAppearanceRunStart() {
@@ -118,12 +118,12 @@ export function markAppearanceRunEnd() {
 }
 
 function readAppearanceMode(inAppearance: boolean): AppearanceScreenMode | null {
-  if (!inAppearance || typeof CharacterAppearanceMode === 'undefined') return null;
+  if (!inAppearance) return null;
   return CharacterAppearanceMode ?? '';
 }
 
 function readItemColorMode(inAppearance: boolean, mode: AppearanceScreenMode | null): ItemColorSubMode {
-  if (!inAppearance || mode !== 'Color' || typeof ItemColorCurrentMode === 'undefined') return null;
+  if (!inAppearance || mode !== 'Color') return null;
   return ItemColorCurrentMode ?? null;
 }
 

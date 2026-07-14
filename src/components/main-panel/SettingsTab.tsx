@@ -1,35 +1,31 @@
-import type {AeeState} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {AboutAee} from '@/components/main-panel/AboutAee';
 import {LanguageSelect} from '@/components/main-panel/LanguageSelect';
-import {SettingRow} from '@/components/main-panel/SettingRow';
+import {SettingRow} from '@/components/ui/SettingRow';
+import {settings} from '@/core/settings';
 
-export function SettingsTab({state}: { state: AeeState }) {
+export function SettingsTab() {
   return <>
     <section className="border-b border-zinc-700 px-3 py-2">
       <LanguageSelect/>
-      <SettingRow label={t('settings-appearance-view-control')} settingKey="showCharCtrl"
-                  value={state.showCharCtrl}/>
-      <SettingRow label={t('settings-replace-bc-color-picker')} settingKey="useAeeColorPicker"
-                  value={state.useAeeColorPicker}/>
-      <SettingRow label={t('settings-hover-layer-highlight')} settingKey="hoverHighlight"
-                  value={state.hoverHighlight}/>
+      <SettingRow label={t('settings-appearance-view-control')} setting={settings.showCharCtrl}/>
+      <SettingRow label={t('settings-replace-bc-color-picker')} setting={settings.useAeeColorPicker}/>
+      <SettingRow label={t('settings-hover-layer-highlight')} setting={settings.hoverHighlight}/>
       <SettingRow label={t('settings-hover-item-highlight')}
-                  settingKey="hoverHighlightChar" value={state.hoverHighlightChar}/>
+                  setting={settings.hoverHighlightChar}/>
       <SettingRow label={t('settings-hover-tryon')}
-                  settingKey="hoverTryOn" value={state.hoverTryOn}/>
+                  setting={settings.hoverTryOn}/>
       <SettingRow label={t('settings-enable-copy-paste')}
-                  settingKey="enableCopyPaste" value={state.enableCopyPaste}/>
-      <SettingRow label={t('settings-hide-lscg-layers-panel')} settingKey="hideLscgLayers"
-                  value={state.hideLscgLayers}/>
+                  setting={settings.enableCopyPaste}/>
+      <SettingRow label={t('settings-hide-lscg-layers-panel')} setting={settings.hideLscgLayers}/>
       <SettingRow label={t('settings-enable-button-replacement')}
-                  settingKey="enableAeeMenu" value={state.enableAeeMenu}/>
+                  setting={settings.enableAeeMenu}/>
       <SettingRow label={t('settings-paste-import')}
-                  settingKey="pasteImport" value={state.pasteImport}/>
+                  setting={settings.pasteImport}/>
       <SettingRow label={t('settings-bc-wheel-scroll')}
-                  settingKey="bcWheelScroll" value={state.bcWheelScroll}/>
+                  setting={settings.bcWheelScroll}/>
       <SettingRow label={t('settings-parts-filter')}
-                  settingKey="enablePartsFilter" value={state.enablePartsFilter}/>
+                  setting={settings.enablePartsFilter}/>
     </section>
     <AboutAee/>
   </>;

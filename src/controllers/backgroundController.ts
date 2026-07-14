@@ -1,88 +1,60 @@
 import {getCanvas, getCanvasRect} from '@/core/bc';
-import {getState, mutateState} from '@/core/store';
-import {setAeeSetting} from '@/core/settings';
+import {mutateState} from '@/core/store';
+import {settings} from '@/core/settings';
 import {runtime} from '@/core/runtime';
+import {darken, hexToRgb, rgba} from '@/util/color';
+import {clamp} from '@/util/math';
 import {openColorPicker} from '@/controllers/uiController';
 
 export function setBgEnabled(enabled: boolean) {
-  setAeeSetting('bgEnabled', enabled);
-  mutateState(draft => {
-    draft.bg.enabled = enabled;
-  });
+  settings.bgEnabled.set(enabled);
   saveBgAndRefresh();
 }
 
 export function setBgColor(color: string) {
-  setAeeSetting('bgColor', color);
-  mutateState(draft => {
-    draft.bg.color = color;
-  });
+  settings.bgColor.set(color);
   saveBgAndRefresh();
 }
 
 export function setGridEnabled(enabled: boolean) {
-  setAeeSetting('bgGridEnabled', enabled);
-  mutateState(draft => {
-    draft.bg.gridEnabled = enabled;
-  });
+  settings.bgGridEnabled.set(enabled);
   saveBgAndRefresh();
 }
 
 export function setGridMode(mode: 'line' | 'checker') {
-  setAeeSetting('bgGridMode', mode);
-  mutateState(draft => {
-    draft.bg.gridMode = mode;
-  });
+  settings.bgGridMode.set(mode);
   saveBgAndRefresh();
 }
 
 export function setGridColor(color: string) {
-  setAeeSetting('bgGridColor', color);
-  mutateState(draft => {
-    draft.bg.gridColor = color;
-  });
+  settings.bgGridColor.set(color);
   saveBgAndRefresh();
 }
 
 export function setGridPx(px: number) {
-  const clamped = Math.max(5, Math.min(200, px || 25));
-  setAeeSetting('bgGridPx', clamped);
-  mutateState(draft => {
-    draft.bg.gridPx = clamped;
-  });
+  settings.bgGridPx.set(clamp(px || 25, 5, 200));
   saveBgAndRefresh();
 }
 
 export function setGridOpacity(opacity: number) {
-  const clamped = Math.max(0, Math.min(1, opacity));
-  setAeeSetting('bgGridOpacity', clamped);
-  mutateState(draft => {
-    draft.bg.gridOpacity = clamped;
-  });
+  settings.bgGridOpacity.set(clamp(opacity, 0, 1));
   saveBgAndRefresh();
 }
 
 export function setGridLayer(layer: 'below' | 'above') {
-  setAeeSetting('bgGridLayer', layer);
-  mutateState(draft => {
-    draft.bg.gridLayer = layer;
-  });
+  settings.bgGridLayer.set(layer);
   saveBgAndRefresh();
 }
 
 export function setBgImageEnabled(enabled: boolean) {
-  setAeeSetting('bgImgEnabled', enabled);
-  mutateState(draft => {
-    draft.bg.imageEnabled = enabled;
-  });
-  if (enabled && getState().bg.imageUrl && !runtime.bgImageEl) loadBgImage(getState().bg.imageUrl);
+  settings.bgImgEnabled.set(enabled);
+  if (enabled && settings.bgImgUrl.get() && !runtime.bgImageEl) loadBgImage(settings.bgImgUrl.get());
   saveBgAndRefresh();
 }
 
 export function setBgImageUrl(url: string) {
-  setAeeSetting('bgImgUrl', url);
+  settings.bgImgUrl.set(url);
   mutateState(draft => {
-    draft.bg.imageUrl = url;
     draft.bg.imageLoaded = false;
   });
   if (url) loadBgImage(url);
@@ -106,8 +78,7 @@ export function moveBgSettings(left: number, top: number) {
 }
 
 export function openBgColorPicker(kind: 'solid' | 'grid') {
-  const state = getState();
-  const initial = kind === 'solid' ? state.bg.color : state.bg.gridColor;
+  const initial = kind === 'solid' ? settings.bgColor.get() : settings.bgGridColor.get();
   openColorPicker(initial, hex => {
     if (kind === 'solid') setBgColor(hex);
     else setGridColor(hex);
@@ -115,8 +86,7 @@ export function openBgColorPicker(kind: 'solid' | 'grid') {
 }
 
 export function saveBgAndRefresh() {
-  const state = getState();
-  const needHook = state.bg.enabled || state.bg.gridEnabled || (state.bg.imageEnabled && runtime.bgImageEl?.complete);
+  const needHook = settings.bgEnabled.get() || settings.bgGridEnabled.get() || (settings.bgImgEnabled.get() && runtime.bgImageEl?.complete);
   if (needHook) applyBgHook();
   else removeBgHook();
   try {
@@ -149,29 +119,20 @@ export function loadBgImage(url: string) {
   img.src = url;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16),
-  } : {r: 128, g: 128, b: 128};
-}
-
 export function drawBgGrid(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, forceLayer?: 'below' | 'above') {
-  const state = getState().bg;
-  if (!state.gridEnabled) return;
-  const layer = forceLayer || state.gridLayer;
+  if (!settings.bgGridEnabled.get()) return;
+  const layer = forceLayer || settings.bgGridLayer.get();
   if (!layer) return;
   ctx.save();
-  const rgb = hexToRgb(state.gridColor || '#ffffff');
-  const opacity = state.gridOpacity;
-  const color = `rgba(${rgb.r},${rgb.g},${rgb.b},${opacity})`;
-  const color2 = `rgba(${rgb.r},${rgb.g},${rgb.b},${Math.min(1, opacity + 0.15)})`;
-  const px = state.gridPx || 25;
+  const rgb = hexToRgb(settings.bgGridColor.get() || '#ffffff');
+  const opacity = settings.bgGridOpacity.get();
+  // Every fourth line is drawn a little stronger, so the grid reads at a glance.
+  const color = rgba(rgb, opacity);
+  const color2 = rgba(rgb, Math.min(1, opacity + 0.15));
+  const px = settings.bgGridPx.get() || 25;
   const bigPx = px * 4;
 
-  if (state.gridMode === 'line') {
+  if (settings.bgGridMode.get() === 'line') {
     ctx.lineWidth = 1;
     ctx.strokeStyle = color;
     for (let x = 0; x < canvas.width; x += px) {
@@ -204,9 +165,7 @@ export function drawBgGrid(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElem
     for (let x = 0; x < canvas.width; x += px) {
       for (let y = 0; y < canvas.height; y += px) {
         const even = (Math.floor(x / px) + Math.floor(y / px)) % 2 === 0;
-        ctx.fillStyle = even
-          ? `rgba(${rgb.r},${rgb.g},${rgb.b},${opacity})`
-          : `rgba(${Math.max(0, rgb.r - 60)},${Math.max(0, rgb.g - 60)},${Math.max(0, rgb.b - 60)},${opacity})`;
+        ctx.fillStyle = even ? color : rgba(darken(rgb, 60), opacity);
         ctx.fillRect(x, y, px, px);
       }
     }
@@ -221,25 +180,26 @@ export function applyBgHook() {
 
   CanvasRenderingContext2D.prototype.drawImage = function (img: CanvasImageSource, ...rest: unknown[]) {
     const drawOriginal = () => Reflect.apply(originalDrawImage, this, [img, ...rest]);
-    const state = getState().bg;
     if ('src' in img && typeof img.src === 'string' && img.src.includes('Backgrounds/Dressing') && CurrentScreen === 'Appearance') {
       const canvas = this.canvas;
       if (canvas?.width > 0 && canvas?.height > 0) {
         this.save();
-        const hasBg = state.enabled || (state.imageEnabled && runtime.bgImageEl?.complete);
-        if (!hasBg && !state.gridEnabled) {
+        const solid = settings.bgEnabled.get();
+        const image = settings.bgImgEnabled.get() && runtime.bgImageEl?.complete;
+        const hasBg = solid || image;
+        if (!hasBg && !settings.bgGridEnabled.get()) {
           this.restore();
           return drawOriginal();
         }
-        if (state.enabled) {
-          this.fillStyle = state.color;
+        if (solid) {
+          this.fillStyle = settings.bgColor.get();
           this.fillRect(0, 0, canvas.width, canvas.height);
         }
-        if (state.imageEnabled && runtime.bgImageEl?.complete) {
-          originalDrawImage.call(this, runtime.bgImageEl, 0, 0, runtime.bgImageEl.width, runtime.bgImageEl.height, 0, 0, canvas.width, canvas.height);
+        if (image) {
+          originalDrawImage.call(this, runtime.bgImageEl!, 0, 0, runtime.bgImageEl!.width, runtime.bgImageEl!.height, 0, 0, canvas.width, canvas.height);
         }
         if (!hasBg) drawOriginal();
-        if (state.gridLayer === 'below') drawBgGrid(this, canvas, 'below');
+        if (settings.bgGridLayer.get() === 'below') drawBgGrid(this, canvas, 'below');
         this.restore();
         return;
       }
@@ -255,8 +215,7 @@ export function removeBgHook() {
 }
 
 export function drawAboveGridIfNeeded() {
-  const state = getState().bg;
-  if (!state.gridEnabled || state.gridLayer !== 'above' || CurrentScreen !== 'Appearance') return;
+  if (!settings.bgGridEnabled.get() || settings.bgGridLayer.get() !== 'above' || CurrentScreen !== 'Appearance') return;
   const canvas = getCanvas();
   const ctx = canvas?.getContext('2d');
   if (canvas && ctx) drawBgGrid(ctx, canvas, 'above');

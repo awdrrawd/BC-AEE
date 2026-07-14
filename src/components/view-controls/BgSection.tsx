@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {Switch} from '@/components/Switch';
+import {Switch} from '@/components/ui/Switch';
 
 export function BgSection({title, enabled, onChange, children}: {
   title: string;

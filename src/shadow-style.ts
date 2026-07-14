@@ -1,6 +1,12 @@
 let root: ShadowRoot | null = null;
 const pending: string[] = [];
 
+const PROPERTY_FALLBACK_GATE = /@layer\s+properties\s*\{\s*@supports\s+[^{]+/;
+
+function enablePropertyFallback(css: string) {
+  return css.replace(PROPERTY_FALLBACK_GATE, '@layer properties{@supports (--tw:0)');
+}
+
 function inject(target: ShadowRoot, css: string) {
   const style = document.createElement('style');
   style.textContent = css;
@@ -13,9 +19,11 @@ export function setShadowRoot(shadowRoot: ShadowRoot) {
 }
 
 export function injectShadowCss(css: string) {
+  const prepared = enablePropertyFallback(css);
+
   if (root) {
-    inject(root, css);
+    inject(root, prepared);
   } else {
-    pending.push(css);
+    pending.push(prepared);
   }
 }

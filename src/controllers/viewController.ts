@@ -1,6 +1,7 @@
 import {getCanvas, getCanvasRect} from '@/core/bc';
+import {clamp} from '@/util/math';
 import {getState, mutateState} from '@/core/store';
-import {setAeeSetting} from '@/core/settings';
+import {settings} from '@/core/settings';
 import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
   loadBgImage,
@@ -45,19 +46,24 @@ export function toggleCharControlOpen() {
   });
 }
 
-export function moveCharControl(left: number, top: number) {
+export function moveCharControl(left: number, top: number, persist = true) {
   const rect = getCanvasRect();
   let nextLeft = left;
   let nextTop = top;
   if (rect) {
-    nextLeft = Math.max(0, Math.min(rect.width - CTRL_BTN_SIZE, left));
-    nextTop = Math.max(0, Math.min(rect.height - CTRL_BTN_SIZE, top));
+    nextLeft = clamp(left, 0, rect.width - CTRL_BTN_SIZE);
+    nextTop = clamp(top, 0, rect.height - CTRL_BTN_SIZE);
   }
-  setAeeSetting('charCtrlPos', {left: nextLeft, top: nextTop});
+  settings.charCtrlPos.set({left: nextLeft, top: nextTop}, persist);
   mutateState(draft => {
     draft.charControl.left = nextLeft;
     draft.charControl.top = nextTop;
   });
+}
+
+export function commitCharControlPos() {
+  const {left, top} = getState().charControl;
+  if (left != null && top != null) settings.charCtrlPos.set({left, top});
 }
 
 export function alignCharControl() {
@@ -75,17 +81,11 @@ export function alignCharControl() {
 }
 
 export function toggleExpandDirection() {
-  mutateState(draft => {
-    draft.charControl.expandUp = !draft.charControl.expandUp;
-    setAeeSetting('ctrlExpandUp', draft.charControl.expandUp);
-  });
+  settings.ctrlExpandUp.toggle();
 }
 
 export function toggleSubDirection() {
-  mutateState(draft => {
-    draft.charControl.subLeft = !draft.charControl.subLeft;
-    setAeeSetting('ctrlSubLeft', draft.charControl.subLeft);
-  });
+  settings.ctrlSubLeft.toggle();
 }
 
 export function toggleBgSubOpen() {
@@ -114,48 +114,28 @@ export function moveOffsetPanel(left: number, top: number) {
 }
 
 export function setOffsetX(x: number) {
-  const clamped = clampOffsetX(x);
-  setAeeSetting('charOffsetX', clamped);
-  mutateState(draft => {
-    draft.offset.x = clamped;
-  });
+  settings.charOffsetX.set(clampOffsetX(x));
 }
 
 export function setOffsetY(y: number) {
-  const clamped = clampOffsetY(y);
-  setAeeSetting('charOffsetY', clamped);
-  mutateState(draft => {
-    draft.offset.y = clamped;
-  });
+  settings.charOffsetY.set(clampOffsetY(y));
 }
 
 export function setOffsetXY(x: number, y: number, persist = true) {
-  const clampedX = clampOffsetX(x);
-  const clampedY = clampOffsetY(y);
-  if (persist) {
-    setAeeSetting('charOffsetX', clampedX);
-    setAeeSetting('charOffsetY', clampedY);
-  }
-  mutateState(draft => {
-    draft.offset.x = clampedX;
-    draft.offset.y = clampedY;
-  });
+  settings.charOffsetX.set(clampOffsetX(x), persist);
+  settings.charOffsetY.set(clampOffsetY(y), persist);
 }
 
 export function setCharScale(scale: number) {
-  const clamped = Math.max(0.1, Math.min(5, scale));
-  setAeeSetting('charScale', clamped);
-  mutateState(draft => {
-    draft.offset.scale = clamped;
-  });
+  settings.charScale.set(clamp(scale, 0.1, 5));
 }
 
 function clampOffsetX(x: number) {
-  return Math.max(-700, Math.min(800, x));
+  return clamp(x, -700, 800);
 }
 
 function clampOffsetY(y: number) {
-  return Math.max(-2000, Math.min(2000, y));
+  return clamp(y, -2000, 2000);
 }
 
 export function resetOffset(kind: 'x' | 'y' | 'scale' | 'all') {
@@ -225,40 +205,30 @@ export function applyPose(index: number) {
 }
 
 export function toggleHide(kind: 'fullbody' | 'closeup') {
-  mutateState(draft => {
-    if (kind === 'fullbody') {
-      draft.hideFullbody = !draft.hideFullbody;
-      setAeeSetting('hideFullbody', draft.hideFullbody);
-    } else {
-      draft.hideCloseup = !draft.hideCloseup;
-      setAeeSetting('hideCloseup', draft.hideCloseup);
-    }
-  });
+  if (kind === 'fullbody') settings.hideFullbody.toggle();
+  else settings.hideCloseup.toggle();
 }
 
 export function toggleSolidBg() {
-  setBgEnabled(!getState().bg.enabled);
+  setBgEnabled(!settings.bgEnabled.get());
 }
 
 export function toggleGridBg() {
-  setGridEnabled(!getState().bg.gridEnabled);
+  setGridEnabled(!settings.bgGridEnabled.get());
 }
 
 export function toggleImageBg() {
   const state = getState();
-  if (!state.bg.imageUrl) {
+  if (!settings.bgImgUrl.get()) {
     openBgSettings(true);
     return;
   }
-  if (!state.bg.imageLoaded) loadBgImage(state.bg.imageUrl);
-  setBgImageEnabled(!state.bg.imageEnabled);
+  if (!state.bg.imageLoaded) loadBgImage(settings.bgImgUrl.get());
+  setBgImageEnabled(!settings.bgImgEnabled.get());
 }
 
 let wheelHandlersInstalled = false;
 
-// True when the wheel event passes through the AEE UI (the React app is mounted
-// in an open shadow root whose root element is marked data-aee-root), so events
-// over our panels/overlays can be left to scroll natively.
 function isWheelOverAeeUi(event: WheelEvent): boolean {
   const path = event.composedPath?.() ?? [];
   return path.some(node => node instanceof HTMLElement && node.dataset?.aeeRoot === 'true');
@@ -279,11 +249,11 @@ export function installViewControlHandlers() {
       event.preventDefault();
     }
     if (event.ctrlKey && (event.code === 'Equal' || event.code === 'NumpadAdd')) {
-      setCharScale(state.offset.scale + 0.05);
+      setCharScale(settings.charScale.get() + 0.05);
       event.preventDefault();
     }
     if (event.ctrlKey && (event.code === 'Minus' || event.code === 'NumpadSubtract')) {
-      setCharScale(state.offset.scale - 0.05);
+      setCharScale(settings.charScale.get() - 0.05);
       event.preventDefault();
     }
   }, true);
@@ -314,8 +284,8 @@ export function installViewControlHandlers() {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const scale = (canvas.width || 2000) / rect.width;
-    setOffsetX(state.offset.x + Math.round(event.movementX * scale));
-    setOffsetY(state.offset.y + Math.round(event.movementY * scale));
+    setOffsetX(settings.charOffsetX.get() + Math.round(event.movementX * scale));
+    setOffsetY(settings.charOffsetY.get() + Math.round(event.movementY * scale));
   }, true);
 
   document.addEventListener('wheel', event => {
@@ -323,9 +293,6 @@ export function installViewControlHandlers() {
     updateAppearanceScreenState();
     if (!state.offset.wheelControl || !isInAppearanceScreen()) return;
     if (spaceDown || wheelButtonDown) return;
-    // The AEE panel is an overlay sitting on top of the (full-screen) canvas, so
-    // a wheel over it still lands inside the canvas rect. Let those scroll the
-    // panel natively instead of zooming the character.
     if (isWheelOverAeeUi(event)) return;
     const canvas = getCanvas();
     if (!canvas) return;
@@ -333,8 +300,8 @@ export function installViewControlHandlers() {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return;
     event.preventDefault();
 
-    const oldScale = state.offset.scale;
-    const nextScale = Math.max(0.1, Math.min(5, +(oldScale + (event.deltaY > 0 ? -0.05 : 0.05)).toFixed(2)));
+    const oldScale = settings.charScale.get();
+    const nextScale = clamp(+(oldScale + (event.deltaY > 0 ? -0.05 : 0.05)).toFixed(2), 0.1, 5);
     if (nextScale === oldScale) return;
     const cw = canvas.width || 2000;
     const ch = canvas.height || 1000;
@@ -343,14 +310,13 @@ export function installViewControlHandlers() {
     const pivotX = mouseCanvasX - 500;
     const pivotY = mouseCanvasY;
     const ratio = nextScale / oldScale;
-    setOffsetX(Math.round(pivotX + (state.offset.x - pivotX) * ratio));
-    setOffsetY(Math.round(pivotY + (state.offset.y - pivotY) * ratio));
+    setOffsetX(Math.round(pivotX + (settings.charOffsetX.get() - pivotX) * ratio));
+    setOffsetY(Math.round(pivotY + (settings.charOffsetY.get() - pivotY) * ratio));
     setCharScale(nextScale);
   }, {passive: false});
 }
 
 export function initializeViewBackground() {
-  const state = getState();
-  if (state.bg.imageEnabled && state.bg.imageUrl) loadBgImage(state.bg.imageUrl);
-  if (state.bg.enabled || state.bg.gridEnabled) saveBgAndRefresh();
+  if (settings.bgImgEnabled.get() && settings.bgImgUrl.get()) loadBgImage(settings.bgImgUrl.get());
+  if (settings.bgEnabled.get() || settings.bgGridEnabled.get()) saveBgAndRefresh();
 }

@@ -1,4 +1,5 @@
 import type {CanvasRect} from '@/core/types';
+import {clamp} from '@/util/math';
 
 export interface OverlayAnchor {
   left: number;
@@ -30,7 +31,7 @@ export function getAnchoredPanelPosition(canvasRect: CanvasRect, anchor: Overlay
 
 export function clampPanelPosition(left: number, top: number, canvasRect: CanvasRect, panelWidth = TOOL_PANEL_WIDTH, panelMinHeight = TOOL_PANEL_MIN_HEIGHT) {
   return {
-    left: Math.max(OVERLAY_MARGIN, Math.min(left, canvasRect.width - panelWidth - OVERLAY_MARGIN)),
-    top: Math.max(OVERLAY_MARGIN, Math.min(top, canvasRect.height - panelMinHeight)),
+    left: clamp(left, OVERLAY_MARGIN, canvasRect.width - panelWidth - OVERLAY_MARGIN),
+    top: clamp(top, OVERLAY_MARGIN, canvasRect.height - panelMinHeight),
   };
 }

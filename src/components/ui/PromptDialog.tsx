@@ -4,7 +4,6 @@ import {type AeePrompt, settlePrompt} from '@/core/prompts';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
 import {TextInput} from '@/components/ui/Fields';
-import {ListEditor} from '@/components/ui/ListEditor';
 
 type PromptScale = 'stage' | 'panel';
 
@@ -25,13 +24,11 @@ const SIZES: Record<PromptScale, { dialog: string; message: string; input: strin
 
 export function PromptDialog({prompt, scale}: { prompt: AeePrompt; scale: PromptScale }) {
   const [value, setValue] = useState(prompt.kind === 'text' ? prompt.defaultValue : '');
-  const [items, setItems] = useState(prompt.kind === 'list' ? prompt.values : []);
   const inputRef = useRef<HTMLInputElement>(null);
   const size = SIZES[scale];
   const density = scale === 'stage' ? 'stage' : 'compact';
 
   useEffect(() => {
-    if (prompt.kind === 'list') setItems(prompt.values);
     if (prompt.kind !== 'text') return;
     setValue(prompt.defaultValue);
     inputRef.current?.focus();
@@ -39,11 +36,7 @@ export function PromptDialog({prompt, scale}: { prompt: AeePrompt; scale: Prompt
   }, [prompt]);
 
   const cancel = () => settlePrompt(prompt, prompt.kind === 'confirm' ? false : null);
-  const accept = () => {
-    if (prompt.kind === 'text') settlePrompt(prompt, value);
-    else if (prompt.kind === 'list') settlePrompt(prompt, items);
-    else settlePrompt(prompt, true);
-  };
+  const accept = () => settlePrompt(prompt, prompt.kind === 'text' ? value : true);
 
   return <Dialog onDismiss={cancel} className={size.dialog}>
     <p className={`whitespace-pre-line text-[#f0eee4] ${size.message}`}>{prompt.message}</p>
@@ -60,15 +53,6 @@ export function PromptDialog({prompt, scale}: { prompt: AeePrompt; scale: Prompt
         if (event.key === 'Escape') cancel();
       }}
       className={size.input}
-    /> : null}
-
-    {prompt.kind === 'list' ? <ListEditor
-      density={density}
-      values={items}
-      suggestions={prompt.suggestions}
-      placeholder={prompt.placeholder}
-      onChange={setItems}
-      onCancel={cancel}
     /> : null}
 
     <div className="flex justify-end gap-3">

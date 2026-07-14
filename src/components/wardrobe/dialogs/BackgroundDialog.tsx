@@ -3,7 +3,6 @@ import {t} from '@/i18n/i18n';
 import {showToast} from '@/util/toast';
 import {CUSTOM_BG_PATH, writeCustomBackground} from '@/core/wardrobeStorage';
 import {backgroundDisplayName} from '@/util/wardrobeBackground';
-import {closeDialog} from '@/controllers/wardrobeController';
 import {askText} from '@/core/prompts';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
@@ -16,7 +15,7 @@ import {
 } from '@/components/wardrobe/dialogs/backgroundChoices';
 import {settings, useSetting} from '@/core/settings';
 
-export function BackgroundDialog() {
+export function BackgroundDialog({onClose}: { onClose: () => void }) {
   const current = useSetting(settings.wardrobeBgImage);
   const apply = (path: string) => settings.wardrobeBgImage.set(path);
 
@@ -28,7 +27,7 @@ export function BackgroundDialog() {
         return;
       }
       apply(CUSTOM_BG_PATH);
-      closeDialog();
+      onClose();
     });
     reader.addEventListener('error', () => showToast(t('wardrobe-toast-import-failed')));
     reader.readAsDataURL(file);
@@ -48,10 +47,10 @@ export function BackgroundDialog() {
     } else {
       return;
     }
-    closeDialog();
+    onClose();
   };
 
-  return <Dialog onDismiss={closeDialog} className="w-150 p-6">
+  return <Dialog onDismiss={onClose} className="w-150 p-6">
     <header className="mb-4 flex flex-col items-center gap-1">
       <h1 className="text-[28px] text-[#f0eee4]">{t('wardrobe-bg-pick-title')}</h1>
       <p className="text-[20px] text-white/70">{t('wardrobe-bg-current')}{backgroundDisplayName()}</p>
@@ -75,7 +74,7 @@ export function BackgroundDialog() {
 
     <Button density="stage"
             className="mt-5 h-9 w-30"
-            onClick={closeDialog}
+            onClick={onClose}
             icon={<ChevronLeft className="h-4 w-4"/>}
     >{t('wardrobe-back')}</Button>
   </Dialog>;

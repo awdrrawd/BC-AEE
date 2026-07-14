@@ -2,9 +2,9 @@ import {SquarePen, Star} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 
 import {setFilter} from '@/controllers/wardrobeController';
-import {knownTags} from '@/controllers/outfitsController';
-import {askList} from '@/core/prompts';
+import {openDialog} from '@/core/dialogs';
 import {Button} from '@/components/ui/Button';
+import {CategoryDialog} from '@/components/wardrobe/dialogs/CategoryDialog';
 import type {WardrobeFilter} from '@/core/types';
 import {settings, useSetting} from '@/core/settings';
 
@@ -14,16 +14,6 @@ export function FilterBar({activeFilter}: { activeFilter: WardrobeFilter }) {
   const categories = enabled ? all : [];
 
   const select = (value: WardrobeFilter) => setFilter(activeFilter === value ? null : value);
-
-  const renameCategories = async () => {
-    const input = await askList(t('wardrobe-prompt-edit-categories'), settings.wardrobeCategories.get(), {
-      suggestions: knownTags(),
-      placeholder: t('wardrobe-category-placeholder'),
-    });
-    if (input == null) return;
-    settings.wardrobeCategories.set(input);
-    if (activeFilter && activeFilter !== 'favorite' && !input.includes(activeFilter)) setFilter(null);
-  };
 
   return <div className="flex h-full min-w-0 flex-1 items-center gap-1.5">
     <Button density="stage"
@@ -48,7 +38,7 @@ export function FilterBar({activeFilter}: { activeFilter: WardrobeFilter }) {
 
     <Button density="stage"
             className="h-full w-10 shrink-0"
-            onClick={() => void renameCategories()}
+            onClick={() => openDialog(close => <CategoryDialog onClose={close}/>)}
             icon={<SquarePen className="h-5 w-5"/>}
             aria-label={t('wardrobe-prompt-edit-categories')}
     />

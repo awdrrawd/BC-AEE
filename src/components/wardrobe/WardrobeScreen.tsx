@@ -10,11 +10,12 @@ import {OutfitGrid} from '@/components/wardrobe/OutfitGrid';
 import {Pager} from '@/components/wardrobe/Pager';
 import {ManagePanel} from '@/components/wardrobe/ManagePanel';
 import {PreviewPanel} from '@/components/wardrobe/PreviewPanel';
-import {SettingsDialog} from '@/components/wardrobe/dialogs/SettingsDialog';
-import {BackgroundDialog} from '@/components/wardrobe/dialogs/BackgroundDialog';
-import {ImportDialog} from '@/components/wardrobe/dialogs/ImportDialog';
+import {DialogHost} from '@/components/ui/DialogHost';
+import {PromptDialog} from '@/components/ui/PromptDialog';
+import {usePrompt} from '@/core/prompts';
 
 export function WardrobeScreen({state}: { state: WardrobeState }) {
+  const prompt = usePrompt();
   const slots = useMemo(
     () => filterSlots(state.search, state.activeFilter, state.sortMode),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -44,9 +45,7 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
       <PreviewPanel state={state}/>
     </div>
 
-    {state.mode === 'settingsDialog' ? <SettingsDialog state={state}/> : null}
-    {state.mode === 'bgPicker' ? <BackgroundDialog/> : null}
-    {state.mode === 'importDialog' ? <ImportDialog state={state}/> : null}
-
+    <DialogHost/>
+    {prompt ? <PromptDialog prompt={prompt} scale="stage"/> : null}
   </WardrobeStage>;
 }

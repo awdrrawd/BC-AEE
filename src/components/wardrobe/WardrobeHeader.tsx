@@ -1,8 +1,9 @@
 import {LogOut, Settings} from 'lucide-react';
 import {t} from '@/i18n/i18n';
-import {openDialog} from '@/controllers/wardrobeController';
+import {openDialog} from '@/core/dialogs';
 import {wardrobeExit} from '@/hooks/wardrobeHooks';
 import {Button} from '@/components/ui/Button';
+import {SettingsDialog} from '@/components/wardrobe/dialogs/SettingsDialog';
 
 export function WardrobeHeader() {
   return <header
@@ -10,7 +11,7 @@ export function WardrobeHeader() {
   >
     <Button density="stage"
             className="h-10 w-10"
-            onClick={() => openDialog('settingsDialog')}
+            onClick={() => openDialog(close => <SettingsDialog onClose={close}/>)}
             icon={<Settings className="h-5 w-5"/>}
             aria-label={t('wardrobe-settings')}
     />

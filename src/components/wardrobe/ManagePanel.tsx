@@ -9,9 +9,10 @@ import {
   stageImportFromFile,
   tryOnOutfit,
 } from '@/controllers/outfitsController';
-import {openDialog} from '@/controllers/wardrobeController';
+import {openDialog} from '@/core/dialogs';
 import {askText} from '@/core/prompts';
 import type {WardrobeState} from '@/core/wardrobeStore';
+import {ImportDialog} from '@/components/wardrobe/dialogs/ImportDialog';
 import {OutfitNameField} from '@/components/wardrobe/OutfitNameField';
 import {TagRow} from '@/components/wardrobe/TagRow';
 import {TransferRow} from '@/components/wardrobe/TransferRow';
@@ -29,7 +30,7 @@ export function ManagePanel({state}: { state: WardrobeState }) {
   };
 
   const importFromFile = async (file: File) => {
-    if (await stageImportFromFile(file)) openDialog('importDialog');
+    if (await stageImportFromFile(file)) openDialog(close => <ImportDialog onClose={close}/>);
   };
 
   return <Panel

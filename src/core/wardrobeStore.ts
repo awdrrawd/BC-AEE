@@ -2,15 +2,13 @@ import type {CanvasRect} from '@/core/types';
 import type {UiTheme} from '@/core/theme';
 import {readUiTheme} from '@/core/theme';
 import {createExternalStore} from '@/core/externalStore';
-import type {PendingImport, WardrobeFilter, WardrobeMode, WardrobeSettingsTab, WardrobeSortMode} from '@/core/types';
+import type {PendingImport, WardrobeFilter, WardrobeSortMode} from '@/core/types';
 
 export const DEFAULT_RETURN_SCREEN: [string, string] = ['Character', 'Appearance'];
 
 export interface WardrobeState {
   active: boolean;
   canvasRect: CanvasRect | null;
-  mode: WardrobeMode;
-  settingsTab: WardrobeSettingsTab;
   theme: UiTheme;
   search: string;
   activeFilter: WardrobeFilter;
@@ -34,8 +32,6 @@ export interface WardrobeState {
 const initialState: WardrobeState = {
   active: false,
   canvasRect: null,
-  mode: 'grid',
-  settingsTab: 'general',
   theme: readUiTheme(),
   search: '',
   activeFilter: null,

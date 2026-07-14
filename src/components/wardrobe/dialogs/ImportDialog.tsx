@@ -2,9 +2,9 @@ import {Check, Clipboard, Folder, LogOut, Save, Upload} from 'lucide-react';
 import {useMemo} from 'react';
 import {t} from '@/i18n/i18n';
 import {applyPendingImports, exportWardrobeToFile, stageImport, stageImportFromFile} from '@/controllers/outfitsController';
-import {closeDialog, toggleAllImportSelection, toggleImportSelection} from '@/controllers/wardrobeController';
+import {toggleAllImportSelection, toggleImportSelection} from '@/controllers/wardrobeController';
 import {askText} from '@/core/prompts';
-import type {WardrobeState} from '@/core/wardrobeStore';
+import {useWardrobeStore} from '@/core/wardrobeStore';
 import {ImportColumn} from '@/components/wardrobe/dialogs/ImportColumn';
 import {ImportPendingRow} from '@/components/wardrobe/dialogs/ImportPendingRow';
 import {ImportSlotRow} from '@/components/wardrobe/dialogs/ImportSlotRow';
@@ -12,7 +12,8 @@ import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
 import {FileInput} from '@/components/ui/Fields';
 
-export function ImportDialog({state}: { state: WardrobeState }) {
+export function ImportDialog({onClose}: { onClose: () => void }) {
+  const state = useWardrobeStore();
   const slots = useMemo(
     () => Array.from({length: WardrobeSize}, (_, index) => index),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -27,10 +28,10 @@ export function ImportDialog({state}: { state: WardrobeState }) {
 
   const confirm = () => {
     applyPendingImports();
-    closeDialog();
+    onClose();
   };
 
-  return <Dialog onDismiss={closeDialog} className="h-240 w-490 p-6">
+  return <Dialog onDismiss={onClose} className="h-240 w-490 p-6">
     <header className="mb-4 flex shrink-0 items-center justify-between">
       <Button density="stage"
               className="h-15"
@@ -40,7 +41,7 @@ export function ImportDialog({state}: { state: WardrobeState }) {
       <h1 className="text-[28px] text-[#f0eee4]">{t('wardrobe-import-title')}</h1>
       <Button density="stage"
               className="h-15 w-22.5"
-              onClick={closeDialog}
+              onClick={onClose}
               icon={<LogOut className="h-6 w-6"/>}
               aria-label={t('wardrobe-cancel')}
       />

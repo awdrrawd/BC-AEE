@@ -245,7 +245,6 @@ export interface AeeState {
   importDialog: ImportDiffDialog | null;
 }
 
-export type WardrobeMode = 'grid' | 'bgPicker' | 'importDialog' | 'settingsDialog';
 export type WardrobeSettingsTab = 'general' | 'appearance';
 export type WardrobeSortMode = 'default' | 'name' | 'favorite' | 'occupied';
 export type WardrobeFilter = string | null;

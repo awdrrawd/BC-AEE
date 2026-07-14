@@ -1,10 +1,11 @@
 import {getUiLanguageSetting, setUiLanguage, SUPPORTED_LANGUAGES, t} from '@/i18n/i18n';
 import {type BooleanSetting, settings} from '@/core/settings';
 import {backgroundDisplayName} from '@/util/wardrobeBackground';
-import {openDialog} from '@/controllers/wardrobeController';
+import {openDialog} from '@/core/dialogs';
 import {SettingRow} from '@/components/ui/SettingRow';
 import {Button} from '@/components/ui/Button';
 import {Select} from '@/components/ui/Fields';
+import {BackgroundDialog} from '@/components/wardrobe/dialogs/BackgroundDialog';
 
 const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
   {labelKey: 'wardrobe-setting-96-slots', setting: settings.wardrobeExtended},
@@ -39,7 +40,7 @@ export function GeneralTab() {
 
     <Button
       density="stage"
-      onClick={() => openDialog('bgPicker')}
+      onClick={() => openDialog(close => <BackgroundDialog onClose={close}/>)}
       className="h-14 justify-start text-left text-[24px]"
     >
       {t('wardrobe-bg-image')}: {backgroundDisplayName()}

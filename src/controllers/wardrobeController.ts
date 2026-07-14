@@ -2,14 +2,10 @@ import {THEME_PRESETS, type UiStyle, type UiTheme, writeUiTheme} from '@/core/th
 import {reloadWardrobeData} from '@/core/wardrobeStorage';
 import {PER_PAGE, slotName, swapOutfits} from '@/controllers/outfitsController';
 import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
-import type {
-  WardrobeFilter,
-  WardrobeMode,
-  WardrobeSettingsTab,
-  WardrobeSortMode,
-} from '@/core/types';
+import type {WardrobeFilter, WardrobeSortMode} from '@/core/types';
 import {clamp} from '@/util/math';
 import {dismissPrompt} from '@/core/prompts';
+import {closeAllDialogs} from '@/core/dialogs';
 import {settings} from '@/core/settings';
 
 export const ZOOM_PCT_MIN = 100;
@@ -46,8 +42,6 @@ export function setUiStyle(uiStyle: UiStyle) {
 
 export function resetWardrobeScreen(target: Character) {
   setWardrobeState({
-    mode: 'grid',
-    settingsTab: 'general',
     activeFilter: null,
     sortMode: 'default',
     offset: 0,
@@ -63,19 +57,14 @@ export function resetWardrobeScreen(target: Character) {
     importSelected: new Set<number>(),
     importTargets: new Map<number, number>(),
   });
+  closeAllDialogs();
   dismissPrompt();
 }
 
-export function openDialog(mode: WardrobeMode) {
-  setWardrobeState({mode});
-}
-
-export function closeDialog() {
-  setWardrobeState({mode: 'grid'});
-}
-
-export function setSettingsTab(settingsTab: WardrobeSettingsTab) {
-  setWardrobeState({settingsTab});
+export function saveWardrobeCategories(categories: string[]) {
+  settings.wardrobeCategories.set(categories);
+  const {activeFilter} = getWardrobeState();
+  if (activeFilter && activeFilter !== 'favorite' && !categories.includes(activeFilter)) setFilter(null);
 }
 
 export function setSearch(search: string) {

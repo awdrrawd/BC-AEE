@@ -25,6 +25,8 @@ export function App() {
     <ColorPicker state={state}/>
     <ViewControls state={state}/>
     <ImportDialog state={state}/>
-    {prompt ? <PromptDialog prompt={prompt} scale={wardrobe.active ? 'stage' : 'panel'}/> : null}
+    {prompt && !wardrobe.active
+      ? <div className="fixed inset-0 z-1000005"><PromptDialog prompt={prompt} scale="panel"/></div>
+      : null}
   </div>;
 }

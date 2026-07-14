@@ -15,17 +15,8 @@ export interface ConfirmPrompt {
   resolve: (value: boolean) => void;
 }
 
-export interface ListPrompt {
-  kind: 'list';
-  message: string;
-  values: string[];
-  suggestions: string[];
-  placeholder?: string;
-  resolve: (value: string[] | null) => void;
-}
-
-export type AeePrompt = TextPrompt | ConfirmPrompt | ListPrompt;
-export type PromptResult = string | string[] | boolean | null;
+export type AeePrompt = TextPrompt | ConfirmPrompt;
+export type PromptResult = string | boolean | null;
 
 const store = createExternalStore<{ prompt: AeePrompt | null }>({prompt: null});
 
@@ -45,37 +36,10 @@ export function askConfirm(message: string, danger = false): Promise<boolean> {
   });
 }
 
-export function askList(message: string, values: string[], options: {
-  suggestions?: string[];
-  placeholder?: string;
-} = {}): Promise<string[] | null> {
-  return new Promise(resolve => {
-    store.patchState({
-      prompt: {
-        kind: 'list',
-        message,
-        values,
-        suggestions: options.suggestions ?? [],
-        placeholder: options.placeholder,
-        resolve,
-      },
-    });
-  });
-}
-
 export function settlePrompt(prompt: AeePrompt, value: PromptResult) {
   store.patchState({prompt: null});
-  switch (prompt.kind) {
-    case 'text':
-      prompt.resolve(typeof value === 'string' ? value : null);
-      break;
-    case 'list':
-      prompt.resolve(Array.isArray(value) ? value : null);
-      break;
-    default:
-      prompt.resolve(value === true);
-      break;
-  }
+  if (prompt.kind === 'text') prompt.resolve(typeof value === 'string' ? value : null);
+  else prompt.resolve(value === true);
 }
 
 export function dismissPrompt() {

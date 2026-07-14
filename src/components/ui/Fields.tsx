@@ -66,7 +66,7 @@ export function FileInput({accept, onSelect, ariaLabel, className, children}: {
   className?: string;
   children: ReactNode;
 }) {
-  return <label className={cn('relative cursor-pointer', className)}>
+  return <label className={cn('relative cursor-pointer transition hover:brightness-110', className)}>
     <input
       type="file"
       accept={accept}
@@ -76,7 +76,7 @@ export function FileInput({accept, onSelect, ariaLabel, className, children}: {
         event.currentTarget.value = '';
         if (file) onSelect(file);
       }}
-      className="absolute inset-0 cursor-pointer opacity-0"
+      className="absolute inset-0 z-10 cursor-pointer opacity-0"
     />
     {children}
   </label>;

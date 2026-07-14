@@ -7,6 +7,7 @@ import {getTargetCharacter} from '@/core/wardrobeStore';
 const RESOLUTION = 0.5;
 const PICTURE_WIDTH = CHARACTER_WIDTH * RESOLUTION;
 const PICTURE_HEIGHT = CHARACTER_HEIGHT * RESOLUTION;
+const LOAD_TIMEOUT = 15_000;
 
 let previewSerial = 0;
 
@@ -18,14 +19,18 @@ interface Props {
 }
 
 interface State {
-  drawn: boolean;
+  painted: boolean;
   loading: boolean;
 }
 
-interface Drawn {
+interface Snapshot {
   outfit: readonly ItemBundle[] | null;
   pose: string;
   body: string;
+}
+
+function sameSnapshot(a: Snapshot | null, b: Snapshot): boolean {
+  return !!a && a.outfit === b.outfit && a.pose === b.pose && a.body === b.body;
 }
 
 function isBodyGroup(group: AssetGroup): boolean {
@@ -44,19 +49,65 @@ function bodySignature(character: Character): string {
     .join('|');
 }
 
-function nextFrame(): Promise<void> {
-  return new Promise(resolve => requestAnimationFrame(() => resolve()));
+function requiredImages(character: Character): string[] {
+  const urls: string[] = [];
+  const masks = (options?: {readonly TextureAlphaMask?: readonly TextureAlphaMask[]}) => {
+    for (const mask of options?.TextureAlphaMask ?? []) urls.push(mask.Url);
+  };
+  const image = (src: string, _x: number, _y: number, options?: DrawOptions) => {
+    urls.push(src);
+    masks(options);
+  };
+  const canvas = (
+    _img: HTMLImageElement | HTMLCanvasElement,
+    _x: number,
+    _y: number,
+    _alphaMasks?: RectTuple[],
+    maskLayers?: TextureAlphaMask[],
+  ) => masks({TextureAlphaMask: maskLayers});
+  const ignore = () => { /* nothing to collect from a clear */ };
+
+  CommonDrawAppearanceBuild(character, {
+    clearRect: ignore,
+    clearRectBlink: ignore,
+    drawImage: image,
+    drawImageBlink: image,
+    drawImageColorize: image,
+    drawImageColorizeBlink: image,
+    drawCanvas: canvas,
+    drawCanvasBlink: canvas,
+  });
+  return urls;
 }
 
-function imagesPending(): boolean {
-  for (const image of DrawCacheImage.values()) {
-    if (!image.complete) return true;
+function pendingImages(character: Character): HTMLImageElement[] {
+  const pending = new Set<HTMLImageElement>();
+  for (const url of requiredImages(character)) {
+    const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
+    if (image && !image.complete) pending.add(image);
   }
-  return false;
+  return [...pending];
+}
+
+function whenSettled(images: readonly HTMLImageElement[], timeout: number): Promise<void> {
+  return new Promise(resolve => {
+    let remaining = images.length;
+    const timer = window.setTimeout(resolve, timeout);
+    const settled = () => {
+      if (--remaining > 0) return;
+      window.clearTimeout(timer);
+      resolve();
+    };
+
+    for (const image of images) {
+      image.addEventListener('load', settled, {once: true});
+      image.addEventListener('error', settled, {once: true});
+    }
+  });
 }
 
 export class CharacterPreview extends Component<Props, State> {
-  state: State = {drawn: false, loading: false};
+  state: State = {painted: false, loading: false};
 
   private readonly canvasRef = createRef<HTMLCanvasElement>();
   private observer: IntersectionObserver | null = null;
@@ -64,7 +115,8 @@ export class CharacterPreview extends Component<Props, State> {
 
   private character: Character | null = null;
   private token = 0;
-  private drawn: Drawn | null = null;
+  private drawn: Snapshot | null = null;
+  private drawing: Snapshot | null = null;
 
   componentDidMount() {
     const canvas = this.canvasRef.current;
@@ -93,7 +145,7 @@ export class CharacterPreview extends Component<Props, State> {
   }
 
   render() {
-    const spinning = this.visible && this.state.loading && !this.state.drawn;
+    const spinning = this.visible && this.state.loading && !this.state.painted;
 
     return <div className={cn('relative', this.props.className)}>
       <canvas
@@ -113,24 +165,25 @@ export class CharacterPreview extends Component<Props, State> {
     if (!this.visible) return;
 
     const wearer = this.props.wearer ?? getTargetCharacter();
+    const pose = this.props.pose ?? [];
     const outfit = this.props.appearance?.length ? this.props.appearance : null;
-    const wanted: Drawn = {
+    const wanted: Snapshot = {
       outfit,
-      pose: (this.props.pose ?? []).join(','),
+      pose: pose.join(','),
       body: `${wearer.AssetFamily}|${bodySignature(wearer)}`,
     };
 
-    const drawn = this.drawn;
-    if (drawn && drawn.outfit === wanted.outfit && drawn.pose === wanted.pose && drawn.body === wanted.body) return;
+    if (sameSnapshot(this.drawn, wanted) || sameSnapshot(this.drawing, wanted)) return;
 
-    this.drawn = wanted;
-    void this.draw(wearer, outfit, this.props.pose ?? []);
+    this.drawing = wanted;
+    void this.draw(wearer, outfit, pose, wanted);
   }
 
   private async draw(
     wearer: Character,
     outfit: readonly ItemBundle[] | null,
     pose: readonly AssetPoseName[],
+    wanted: Snapshot,
   ) {
     const token = ++this.token;
     this.release();
@@ -146,43 +199,42 @@ export class CharacterPreview extends Component<Props, State> {
       if (outfit) for (const entry of outfit) wearBundle(character, entry);
 
       CharacterRefresh(character, false, false);
+      for (const name of pose) PoseSetActive(character, name, true);
 
-      if (pose.length > 0) {
-        for (const name of pose) PoseSetActive(character, name, true);
-        CharacterLoadCanvas(character);
-      }
-
-      await this.settle(character, token);
-      if (token !== this.token) return;
+      const complete = await this.load(character, token);
+      if (token !== this.token) return; // a newer draw (or an unmount) took over
 
       this.paint(character);
-      this.setState({drawn: true, loading: false});
+      this.drawn = complete ? wanted : null;
+      if (!complete) console.warn('🐈‍⬛ [AEE] An outfit preview timed out while loading its art');
     } catch (error) {
       console.warn('🐈‍⬛ [AEE] Failed to render an outfit preview', error);
-      if (token === this.token) this.setState({loading: false});
+      if (token !== this.token) return;
+      this.drawn = null;
     } finally {
       if (this.character === character) this.release();
       else discard(character);
+
+      if (token === this.token) {
+        this.drawing = null;
+        this.setState(state => ({painted: state.painted || this.drawn !== null, loading: false}));
+      }
     }
   }
 
-  private async settle(character: Character, token: number) {
-    const deadline = performance.now() + 10_000;
+  private async load(character: Character, token: number): Promise<boolean> {
+    const deadline = performance.now() + LOAD_TIMEOUT;
 
-    let quiet = 0;
-    while (quiet < 2) {
-      if (token !== this.token || performance.now() > deadline) return;
-      await nextFrame();
-      if (token !== this.token) return;
+    for (;;) {
+      CharacterLoadCanvas(character); // also requests every image the layers need
+      const pending = pendingImages(character);
+      if (pending.length === 0) return true;
 
-      if (character.MustDraw) {
-        CharacterLoadCanvas(character);
-        quiet = 0;
-      } else if (imagesPending()) {
-        quiet = 0;
-      } else {
-        quiet++;
-      }
+      const left = deadline - performance.now();
+      if (left <= 0) return false;
+
+      await whenSettled(pending, left);
+      if (token !== this.token) return false;
     }
   }
 

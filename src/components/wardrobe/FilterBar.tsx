@@ -2,7 +2,8 @@ import {SquarePen, Star} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 
 import {setFilter} from '@/controllers/wardrobeController';
-import {askText} from '@/core/prompts';
+import {knownTags} from '@/controllers/outfitsController';
+import {askList} from '@/core/prompts';
 import {Button} from '@/components/ui/Button';
 import type {WardrobeFilter} from '@/core/types';
 import {settings, useSetting} from '@/core/settings';
@@ -15,9 +16,13 @@ export function FilterBar({activeFilter}: { activeFilter: WardrobeFilter }) {
   const select = (value: WardrobeFilter) => setFilter(activeFilter === value ? null : value);
 
   const renameCategories = async () => {
-    const input = await askText(t('wardrobe-prompt-edit-categories'), settings.wardrobeCategories.get().join(', '));
+    const input = await askList(t('wardrobe-prompt-edit-categories'), settings.wardrobeCategories.get(), {
+      suggestions: knownTags(),
+      placeholder: t('wardrobe-category-placeholder'),
+    });
     if (input == null) return;
-    settings.wardrobeCategories.set(input.split(',').map(name => name.trim()).filter(Boolean));
+    settings.wardrobeCategories.set(input);
+    if (activeFilter && activeFilter !== 'favorite' && !input.includes(activeFilter)) setFilter(null);
   };
 
   return <div className="flex h-full min-w-0 flex-1 items-center gap-1.5">

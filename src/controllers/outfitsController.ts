@@ -218,6 +218,14 @@ export function setSlotTags(index: number, tags: string[]) {
   bumpWardrobeData();
 }
 
+export function knownTags(): string[] {
+  const tags = new Set<string>(settings.wardrobeCategories.get());
+  for (let index = 0; index < WardrobeSize; index++) {
+    for (const tag of getSlotMeta(index).tags) tags.add(tag);
+  }
+  return [...tags];
+}
+
 export function exportOutfitToClipboard(index: number) {
   const bundle = Player.Wardrobe?.[index];
   if (!bundle?.length) return;

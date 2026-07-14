@@ -1,8 +1,8 @@
 import {Tag} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import {getSlotMeta} from '@/core/wardrobeStorage';
-import {setSlotTags} from '@/controllers/outfitsController';
-import {askText} from '@/core/prompts';
+import {knownTags, setSlotTags} from '@/controllers/outfitsController';
+import {askList} from '@/core/prompts';
 import {Button} from '@/components/ui/Button';
 
 export function TagRow({selection}: { selection: number }) {
@@ -10,9 +10,12 @@ export function TagRow({selection}: { selection: number }) {
   const tags = hasSelection ? getSlotMeta(selection).tags : [];
 
   const edit = async () => {
-    const input = await askText(t('wardrobe-prompt-tags'), tags.join(', '));
+    const input = await askList(t('wardrobe-prompt-tags'), tags, {
+      suggestions: knownTags(),
+      placeholder: t('wardrobe-tag-placeholder'),
+    });
     if (input == null) return;
-    setSlotTags(selection, input.split(',').map(tag => tag.trim()).filter(Boolean));
+    setSlotTags(selection, input);
   };
 
   return <div className="flex items-center justify-between gap-2">

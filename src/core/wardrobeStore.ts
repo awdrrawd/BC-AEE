@@ -2,7 +2,7 @@ import type {CanvasRect} from '@/core/types';
 import type {UiTheme} from '@/core/theme';
 import {readUiTheme} from '@/core/theme';
 import {createExternalStore} from '@/core/externalStore';
-import type {PendingImport, WardrobeFilter, WardrobeSortMode} from '@/core/types';
+import type {WardrobeFilter, WardrobeSortMode} from '@/core/types';
 
 export const DEFAULT_RETURN_SCREEN: [string, string] = ['Character', 'Appearance'];
 
@@ -23,9 +23,6 @@ export interface WardrobeState {
   panY: number;
   target: Character | null;
   returnScreen: [string, string];
-  importBuffer: PendingImport[];
-  importSelected: Set<number>;
-  importTargets: Map<number, number>;
   dataVersion: number;
 }
 
@@ -46,9 +43,6 @@ const initialState: WardrobeState = {
   panY: 0,
   target: null,
   returnScreen: DEFAULT_RETURN_SCREEN,
-  importBuffer: [],
-  importSelected: new Set<number>(),
-  importTargets: new Map<number, number>(),
   dataVersion: 0,
 };
 

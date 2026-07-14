@@ -62,6 +62,7 @@
   "settings-paste-import": "Ctrl+V로 의류 가져오기 (탈의실 내)",
   "settings-bc-wheel-scroll": "휠로 그룹 넘기기",
   "settings-parts-filter": "레이어 필터 (전체/활성/비활성)",
+  "settings-enable-wardrobe": "향상된 옷장",
   "parts-filter-tooltip-all": "모든 레이어 표시 중 - 클릭하면 착용 중인 것만 표시",
   "parts-filter-tooltip-has": "착용 중인 레이어만 표시 중 - 클릭하면 미착용만 표시",
   "parts-filter-tooltip-empty": "미착용 레이어만 표시 중 - 클릭하면 전체 표시",

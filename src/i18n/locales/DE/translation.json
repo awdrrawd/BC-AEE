@@ -62,6 +62,7 @@
   "settings-paste-import": "Kleidung mit Strg+V importieren (in der Umkleide)",
   "settings-bc-wheel-scroll": "Mausrad zum Blättern durch Gruppen",
   "settings-parts-filter": "Teile-Filter (Alle/Aktiviert/Deaktiviert)",
+  "settings-enable-wardrobe": "Erweiterter Kleiderschrank",
   "parts-filter-tooltip-all": "Zeigt alle Teile an – klicken, um nur getragene Teile anzuzeigen",
   "parts-filter-tooltip-has": "Zeigt nur getragene Teile an – klicken, um nur nicht getragene Teile anzuzeigen",
   "parts-filter-tooltip-empty": "Zeigt nur nicht getragene Teile an – klicken, um alle Teile anzuzeigen",

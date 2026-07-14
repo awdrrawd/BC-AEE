@@ -267,7 +267,7 @@ export function exportWardrobeToFile() {
   showToast(t('wardrobe-toast-file-exported', {n: slots.length}));
 }
 
-export async function stageImportFromFile(file: File): Promise<boolean> {
+export async function readImportFile(file: File): Promise<PendingImport[] | null> {
   let outfits: PendingImport[] | null = null;
   try {
     outfits = parseWardrobeFile(await file.text());
@@ -277,64 +277,37 @@ export async function stageImportFromFile(file: File): Promise<boolean> {
 
   if (!outfits?.length) {
     showToast(t('wardrobe-toast-file-import-failed'));
-    return false;
+    return null;
   }
 
-  stagePendingImports(outfits, true);
   showToast(t('wardrobe-toast-file-loaded', {n: outfits.length}));
-  return true;
+  return outfits;
 }
 
-export function stageImport(code: string) {
+export function readImportCode(code: string): PendingImport[] | null {
   const outfits = decodeBundles(code);
-  if (!outfits) {
+  if (!outfits?.length) {
     showToast(t('wardrobe-toast-import-failed'));
-    return;
+    return null;
   }
-  stagePendingImports(outfits.map(outfit => ({outfit})), false);
+  return outfits.map(outfit => ({outfit}));
 }
 
-function stagePendingImports(outfits: PendingImport[], selectAll: boolean) {
-  const targets = new Map<number, number>();
-  const taken = new Set<number>();
-  let cursor = 0;
-
-  outfits.forEach((pending, index) => {
-    const source = pending.sourceIndex;
-    if (source != null && source < WardrobeSize && !taken.has(source)) {
-      targets.set(index, source);
-      taken.add(source);
-      return;
-    }
-    while (cursor < WardrobeSize && (taken.has(cursor) || isSlotOccupied(cursor))) cursor++;
-    targets.set(index, cursor < WardrobeSize ? cursor : -1);
-    if (cursor < WardrobeSize) taken.add(cursor++);
-  });
-
-  const selected = selectAll
-    ? new Set(outfits.map((_, index) => index).filter(index => (targets.get(index) ?? -1) >= 0))
-    : new Set<number>();
-
-  setWardrobeState({importBuffer: outfits, importTargets: targets, importSelected: selected});
-}
-
-export function applyPendingImports() {
-  const {importBuffer, importSelected, importTargets} = getWardrobeState();
-  if (!Player.Wardrobe) return;
+export function applyImports(plan: readonly { pending: PendingImport; target: number }[]): number {
+  if (!Player.Wardrobe) return 0;
 
   const changed: number[] = [];
-  importSelected.forEach(bufferIndex => {
-    const target = importTargets.get(bufferIndex);
-    const pending = importBuffer[bufferIndex];
-    if (target == null || target < 0 || target >= WardrobeSize || !pending) return;
-
+  for (const {pending, target} of plan) {
+    if (target < 0 || target >= WardrobeSize) continue;
     Player.Wardrobe[target] = pending.outfit;
     if (pending.name) Player.WardrobeCharacterNames[target] = pending.name.slice(0, 40);
     if (pending.meta) setSlotMeta(target, pending.meta);
     changed.push(target);
-  });
-  if (!changed.length) return;
+  }
+  if (!changed.length) return 0;
+
   persistWardrobeChanges(changed);
   bumpWardrobeData();
   showToast(t('wardrobe-toast-import-count', {n: changed.length}));
+  return changed.length;
 }

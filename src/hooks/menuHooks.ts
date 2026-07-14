@@ -90,7 +90,7 @@ export function installMenuHooks() {
     const x = 2000 - AppearanceMenu.length * 117;
     for (let index = 0; index < AppearanceMenu.length; index++) {
       if (!MouseXIn(x + 117 * index, 90)) continue;
-      if (AppearanceMenu[index] === 'Wardrobe') {
+      if (settings.enableWardrobe.get() && AppearanceMenu[index] === 'Wardrobe') {
         enterWardrobeScreen();
         return;
       }

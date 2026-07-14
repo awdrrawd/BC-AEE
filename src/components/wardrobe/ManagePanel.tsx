@@ -5,8 +5,8 @@ import {
   exportOutfitToClipboard,
   exportWardrobeToFile,
   importOutfitFromCode,
+  readImportFile,
   saveOutfit,
-  stageImportFromFile,
   tryOnOutfit,
 } from '@/controllers/outfitsController';
 import {openDialog} from '@/core/dialogs';
@@ -30,7 +30,8 @@ export function ManagePanel({state}: { state: WardrobeState }) {
   };
 
   const importFromFile = async (file: File) => {
-    if (await stageImportFromFile(file)) openDialog(close => <ImportDialog onClose={close}/>);
+    const outfits = await readImportFile(file);
+    if (outfits) openDialog(close => <ImportDialog initial={outfits} onClose={close}/>);
   };
 
   return <Panel

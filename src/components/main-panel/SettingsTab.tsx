@@ -26,6 +26,8 @@ export function SettingsTab() {
                   setting={settings.bcWheelScroll}/>
       <SettingRow label={t('settings-parts-filter')}
                   setting={settings.enablePartsFilter}/>
+      <SettingRow label={t('settings-enable-wardrobe')}
+                  setting={settings.enableWardrobe}/>
     </section>
     <AboutAee/>
   </>;

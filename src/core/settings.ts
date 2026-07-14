@@ -100,6 +100,7 @@ export const settings = {
   pasteImport: bool('pasteImport', false),
   bcWheelScroll: bool('bcWheelScroll', false),
   enablePartsFilter: bool('enablePartsFilter', false),
+  enableWardrobe: bool('enableWardrobe', false),
 
   showCharCtrl: bool('showCharCtrl', false),
   hideCloseup: bool('hideCloseup', false),

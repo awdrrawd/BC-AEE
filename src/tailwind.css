@@ -46,9 +46,9 @@
     animation: aee-spin 720ms linear infinite;
 }
 
-.aee-fade-in { animation: aee-fade-in 180ms ease-out both; }
-.aee-pop-in { animation: aee-pop-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.aee-rise-in { animation: aee-rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.aee-fade-in { animation: aee-fade-in 180ms ease-out backwards; }
+.aee-pop-in { animation: aee-pop-in 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.aee-rise-in { animation: aee-rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 .aee-scroll {
     scrollbar-width: thin;

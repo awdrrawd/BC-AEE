@@ -53,9 +53,6 @@ export function resetWardrobeScreen(target: Character) {
     panX: 0,
     panY: 0,
     target,
-    importBuffer: [],
-    importSelected: new Set<number>(),
-    importTargets: new Map<number, number>(),
   });
   closeAllDialogs();
   dismissPrompt();
@@ -127,22 +124,4 @@ export function setPan(panX: number, panY: number) {
 
 export function resetZoom() {
   setWardrobeState({zoomPct: ZOOM_PCT_MIN, panX: 0, panY: 0});
-}
-
-export function toggleAllImportSelection() {
-  const {importBuffer, importTargets, importSelected} = getWardrobeState();
-  const selectable = importBuffer
-    .map((_, index) => index)
-    .filter(index => (importTargets.get(index) ?? -1) >= 0);
-
-  const allSelected = selectable.length > 0 && selectable.every(index => importSelected.has(index));
-  setWardrobeState({importSelected: new Set(allSelected ? [] : selectable)});
-}
-
-export function toggleImportSelection(index: number) {
-  if ((getWardrobeState().importTargets.get(index) ?? -1) < 0) return;
-  const selected = new Set(getWardrobeState().importSelected);
-  if (selected.has(index)) selected.delete(index);
-  else selected.add(index);
-  setWardrobeState({importSelected: selected});
 }

@@ -5,17 +5,10 @@ import pageCssPlugin from './vite-plugin-page-css'
 import packageJson from './package.json' with { type: 'json' }
 import {fileURLToPath, URL} from "node:url";
 
-// Chrome's Private Network Access (PNA) check blocks a public HTTPS page
-// (Bondage Club) from fetching our local dev bundle at localhost unless the
-// local server explicitly opts in via this response header. Without it you
-// get "Permission was denied for this request to access the loopback
-// address space" and the dynamic import() of main.js fails outright.
-// This must run before Vite's own cors/static middlewares so the header is
-// already set by the time the (possibly early-terminating, e.g. OPTIONS
-// preflight) response is sent.
 function privateNetworkAccessPlugin() {
   const addHeader = (_req: unknown, res: { setHeader: (name: string, value: string) => void }, next: () => void) => {
     res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    res.setHeader('Access-Control-Expose-Headers', 'ETag, Last-Modified');
     next();
   };
   return {

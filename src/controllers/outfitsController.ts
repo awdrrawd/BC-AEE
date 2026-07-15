@@ -102,25 +102,26 @@ function sanitise(entry: ItemBundle): ItemBundle {
   return {...entry, Property: property};
 }
 
-function isAccessible(character: Character, group: AssetGroup): boolean {
-  const worn = InventoryGet(character, group.Name);
-  if (worn && InventoryItemHasEffect(worn, 'Lock', true)) return false;
-  return WardrobeGroupAccessible(character, group);
-}
-
 function applyOutfit(character: Character, bundle: ItemBundle[]) {
   const wear = new Map<AssetGroupName, ItemBundle>();
   for (const entry of bundle) {
     const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
-    if (!asset || categorise(asset.Group) === 'other' || !isAccessible(character, asset.Group)) continue;
+    if (!asset || categorise(asset.Group) === 'other') continue;
     wear.set(entry.Group, entry);
   }
 
+  const replaceBody = bundle.some(entry => {
+    const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
+    return !!asset && categorise(asset.Group) === 'body';
+  });
+
   character.Appearance = character.Appearance.filter(item => {
     const group = item.Asset.Group;
-    // Restraints and body the outfit doesn't mention stay on: only clothing is a full replace.
-    if (categorise(group) !== 'cloth' || wear.has(group.Name)) return true;
-    return !isAccessible(character, group);
+    if (wear.has(group.Name)) return true; // outfit provides it → re-applied below
+    const category = categorise(group);
+    // Clothing is always a full replace; body too, but only when the outfit brought its own.
+    // Restraints/items — and a bodyless outfit's body/hair — stay on.
+    return category !== 'cloth' && !(replaceBody && category === 'body');
   });
 
   wear.forEach(entry => wearBundle(character, entry));

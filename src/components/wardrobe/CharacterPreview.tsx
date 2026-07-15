@@ -52,6 +52,13 @@ function isBodyGroup(group: AssetGroup): boolean {
   return group.Category === 'Appearance' && !group.Clothing;
 }
 
+function outfitHasBody(family: IAssetFamily, outfit: readonly ItemBundle[] | null): boolean {
+  return !!outfit?.some(entry => {
+    const group = AssetGroupGet(family, entry.Group);
+    return !!group && isBodyGroup(group);
+  });
+}
+
 function bodySignature(character: Character): string {
   return character.Appearance
     .filter(item => isBodyGroup(item.Asset.Group))
@@ -165,8 +172,10 @@ export class CharacterPreview extends Component<Props, State> {
 
     try {
       character.Appearance = [];
-      const body = bundleAppearance(wearer.Appearance.filter(item => isBodyGroup(item.Asset.Group)));
-      for (const entry of body) wearBundle(character, entry);
+      if (!outfitHasBody(wearer.AssetFamily, outfit)) {
+        const body = bundleAppearance(wearer.Appearance.filter(item => isBodyGroup(item.Asset.Group)));
+        for (const entry of body) wearBundle(character, entry);
+      }
       if (outfit) for (const entry of outfit) wearBundle(character, entry);
 
       const before = cachedImageKeys();

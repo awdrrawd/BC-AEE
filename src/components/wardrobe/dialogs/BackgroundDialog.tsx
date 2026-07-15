@@ -34,7 +34,6 @@ export function BackgroundDialog({onClose}: { onClose: () => void }) {
         return;
       }
       apply(CUSTOM_BG_PATH);
-      onClose();
     });
     reader.addEventListener('error', () => showToast(t('wardrobe-toast-import-failed')));
     reader.readAsDataURL(file);
@@ -51,10 +50,7 @@ export function BackgroundDialog({onClose}: { onClose: () => void }) {
       apply(path.trim());
     } else if (choice.path) {
       apply(choice.path);
-    } else {
-      return;
     }
-    onClose();
   };
 
   return <Dialog onDismiss={onClose} className="w-150 p-6" backdropClassName="bg-black/25">

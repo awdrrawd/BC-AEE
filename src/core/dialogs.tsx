@@ -26,3 +26,13 @@ export function closeDialog(id: number) {
 export function closeAllDialogs() {
   if (store.getState().dialogs.length) store.patchState({dialogs: []});
 }
+
+const backdropStore = createExternalStore<{ previewing: boolean }>({previewing: false});
+
+export function useBackdropPreview(): boolean {
+  return backdropStore.useStore().previewing;
+}
+
+export function setBackdropPreview(previewing: boolean) {
+  backdropStore.patchState({previewing});
+}

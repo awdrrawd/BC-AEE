@@ -26,8 +26,7 @@ export function backgroundUrl(path: string): string | null {
   return path;
 }
 
-export function backgroundStyle(): CSSProperties {
-  const path = settings.wardrobeBgImage.get();
+export function backgroundStyle(path: string = settings.wardrobeBgImage.get()): CSSProperties {
   if (isColorBackground(path)) {
     return {backgroundColor: backgroundColorValue(path)};
   }

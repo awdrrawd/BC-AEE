@@ -7,6 +7,7 @@ import {GeneralTab} from '@/components/wardrobe/dialogs/GeneralTab';
 import {AppearanceTab} from '@/components/wardrobe/dialogs/AppearanceTab';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
+import {useBackdropPreview} from '@/core/dialogs';
 
 const TABS: Array<{ id: WardrobeSettingsTab; labelKey: string }> = [
   {id: 'general', labelKey: 'wardrobe-settings-general'},
@@ -16,8 +17,9 @@ const TABS: Array<{ id: WardrobeSettingsTab; labelKey: string }> = [
 export function SettingsDialog({onClose}: { onClose: () => void }) {
   const [tab, setTab] = useState<WardrobeSettingsTab>('general');
   const {theme} = useWardrobeStore();
+  const previewing = useBackdropPreview();
 
-  return <Dialog onDismiss={onClose} className="h-[720px] w-[900px] p-10">
+  return <Dialog onDismiss={onClose} className="h-[720px] w-[900px] p-10" hidden={previewing}>
     <header className="mb-4 flex shrink-0 items-center justify-between">
       <h1 className="text-[40px] text-[#f0eee4]">{t('wardrobe-settings')}</h1>
       <Button density="stage"

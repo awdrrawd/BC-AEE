@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {ChevronLeft} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import {showToast} from '@/util/toast';
@@ -14,10 +15,16 @@ import {
   isChoiceSelected,
 } from '@/components/wardrobe/dialogs/backgroundChoices';
 import {settings, useSetting} from '@/core/settings';
+import {setBackdropPreview} from '@/core/dialogs';
 
 export function BackgroundDialog({onClose}: { onClose: () => void }) {
   const current = useSetting(settings.wardrobeBgImage);
   const apply = (path: string) => settings.wardrobeBgImage.set(path);
+
+  useEffect(() => {
+    setBackdropPreview(true);
+    return () => setBackdropPreview(false);
+  }, []);
 
   const upload = (file: File) => {
     const reader = new FileReader();
@@ -50,7 +57,7 @@ export function BackgroundDialog({onClose}: { onClose: () => void }) {
     onClose();
   };
 
-  return <Dialog onDismiss={onClose} className="w-150 p-6">
+  return <Dialog onDismiss={onClose} className="w-150 p-6" backdropClassName="bg-black/25">
     <header className="mb-4 flex flex-col items-center gap-1">
       <h1 className="text-[28px] text-[#f0eee4]">{t('wardrobe-bg-pick-title')}</h1>
       <p className="text-[20px] text-white/70">{t('wardrobe-bg-current')}{backgroundDisplayName()}</p>

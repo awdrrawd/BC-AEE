@@ -11,6 +11,21 @@ const LOAD_TIMEOUT = 15_000;
 
 let previewSerial = 0;
 
+function cachedImageKeys(): Set<string> {
+  const keys = new Set<string>();
+  for (const key of GLDrawImageCache.keys()) keys.add(key);
+  for (const key of DrawCacheImage.keys()) keys.add(key);
+  return keys;
+}
+
+function allComplete(urls: readonly string[]): boolean {
+  for (const url of urls) {
+    const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
+    if (image && image.complete === false) return false;
+  }
+  return true;
+}
+
 interface Props {
   appearance: readonly ItemBundle[] | null | undefined;
   pose?: readonly AssetPoseName[] | null;
@@ -49,64 +64,19 @@ function bodySignature(character: Character): string {
     .join('|');
 }
 
-function requiredImages(character: Character): string[] {
-  const urls: string[] = [];
-  const masks = (options?: {readonly TextureAlphaMask?: readonly TextureAlphaMask[]}) => {
-    for (const mask of options?.TextureAlphaMask ?? []) urls.push(mask.Url);
-  };
-  const image = (src: string, _x: number, _y: number, options?: DrawOptions) => {
-    urls.push(src);
-    masks(options);
-  };
-  const canvas = (
-    _img: HTMLImageElement | HTMLCanvasElement,
-    _x: number,
-    _y: number,
-    _alphaMasks?: RectTuple[],
-    maskLayers?: TextureAlphaMask[],
-  ) => masks({TextureAlphaMask: maskLayers});
-  const ignore = () => { /* nothing to collect from a clear */ };
-
-  CommonDrawAppearanceBuild(character, {
-    clearRect: ignore,
-    clearRectBlink: ignore,
-    drawImage: image,
-    drawImageBlink: image,
-    drawImageColorize: image,
-    drawImageColorizeBlink: image,
-    drawCanvas: canvas,
-    drawCanvasBlink: canvas,
-  });
-  return urls;
-}
-
-function pendingImages(character: Character): HTMLImageElement[] {
-  const pending = new Set<HTMLImageElement>();
-  for (const url of requiredImages(character)) {
-    const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
-    if (image && !image.complete) pending.add(image);
-  }
-  return [...pending];
-}
-
-function whenSettled(images: readonly HTMLImageElement[], timeout: number): Promise<void> {
-  return new Promise(resolve => {
-    let remaining = images.length;
-    const timer = window.setTimeout(resolve, timeout);
-    const settled = () => {
-      if (--remaining > 0) return;
-      window.clearTimeout(timer);
-      resolve();
-    };
-
-    for (const image of images) {
-      image.addEventListener('load', settled, {once: true});
-      image.addEventListener('error', settled, {once: true});
-    }
-  });
-}
-
 export class CharacterPreview extends Component<Props, State> {
+  private static readonly live = new Set<CharacterPreview>();
+  private static frame = 0;
+
+  private static schedule() {
+    if (CharacterPreview.frame) return;
+    const tick = () => {
+      for (const preview of CharacterPreview.live) preview.refresh();
+      CharacterPreview.frame = CharacterPreview.live.size ? requestAnimationFrame(tick) : 0;
+    };
+    CharacterPreview.frame = requestAnimationFrame(tick);
+  }
+
   state: State = {painted: false, loading: false};
 
   private readonly canvasRef = createRef<HTMLCanvasElement>();
@@ -114,9 +84,9 @@ export class CharacterPreview extends Component<Props, State> {
   private visible = false;
 
   private character: Character | null = null;
-  private token = 0;
-  private drawn: Snapshot | null = null;
-  private drawing: Snapshot | null = null;
+  private built: Snapshot | null = null;
+  private builtAt = 0;
+  private awaiting: string[] = [];
 
   componentDidMount() {
     const canvas = this.canvasRef.current;
@@ -126,6 +96,8 @@ export class CharacterPreview extends Component<Props, State> {
       entries => {
         if (!entries.some(entry => entry.isIntersecting)) return;
         this.visible = true;
+        CharacterPreview.live.add(this);
+        CharacterPreview.schedule();
         this.sync();
       },
       {rootMargin: '200px'},
@@ -140,7 +112,7 @@ export class CharacterPreview extends Component<Props, State> {
   componentWillUnmount() {
     this.observer?.disconnect();
     this.observer = null;
-    this.token++;
+    CharacterPreview.live.delete(this);
     this.release();
   }
 
@@ -173,21 +145,20 @@ export class CharacterPreview extends Component<Props, State> {
       body: `${wearer.AssetFamily}|${bodySignature(wearer)}`,
     };
 
-    if (sameSnapshot(this.drawn, wanted) || sameSnapshot(this.drawing, wanted)) return;
+    if (sameSnapshot(this.built, wanted)) return;
 
-    this.drawing = wanted;
-    void this.draw(wearer, outfit, pose, wanted);
+    this.built = wanted;
+    this.setState({loading: true, painted: false});
+    this.build(wearer, outfit, pose);
   }
 
-  private async draw(
+  private build(
     wearer: Character,
     outfit: readonly ItemBundle[] | null,
     pose: readonly AssetPoseName[],
-    wanted: Snapshot,
   ) {
-    const token = ++this.token;
     this.release();
-    this.setState({loading: true});
+    this.builtAt = performance.now();
 
     const character = CharacterLoadSimple(`AeeWardrobePreview-${++previewSerial}`);
     this.character = character;
@@ -198,43 +169,34 @@ export class CharacterPreview extends Component<Props, State> {
       for (const entry of body) wearBundle(character, entry);
       if (outfit) for (const entry of outfit) wearBundle(character, entry);
 
+      const before = cachedImageKeys();
       CharacterRefresh(character, false, false);
       for (const name of pose) PoseSetActive(character, name, true);
-
-      const complete = await this.load(character, token);
-      if (token !== this.token) return; // a newer draw (or an unmount) took over
-
+      CharacterLoadCanvas(character);
       this.paint(character);
-      this.drawn = complete ? wanted : null;
-      if (!complete) console.warn('🐈‍⬛ [AEE] An outfit preview timed out while loading its art');
+      this.awaiting = [...cachedImageKeys()].filter(key => !before.has(key));
     } catch (error) {
       console.warn('🐈‍⬛ [AEE] Failed to render an outfit preview', error);
-      if (token !== this.token) return;
-      this.drawn = null;
-    } finally {
-      if (this.character === character) this.release();
-      else discard(character);
-
-      if (token === this.token) {
-        this.drawing = null;
-        this.setState(state => ({painted: state.painted || this.drawn !== null, loading: false}));
-      }
+      this.release();
     }
   }
 
-  private async load(character: Character, token: number): Promise<boolean> {
-    const deadline = performance.now() + LOAD_TIMEOUT;
+  private refresh() {
+    const character = this.character;
+    if (!character || !this.visible) return;
 
-    for (;;) {
-      CharacterLoadCanvas(character); // also requests every image the layers need
-      const pending = pendingImages(character);
-      if (pending.length === 0) return true;
+    if (character.MustDraw) {
+      try {
+        CharacterLoadCanvas(character); // absorb art that just finished loading
+        this.paint(character);
+      } catch {
+        return; // GL state briefly unusable — try again next frame
+      }
+    }
 
-      const left = deadline - performance.now();
-      if (left <= 0) return false;
-
-      await whenSettled(pending, left);
-      if (token !== this.token) return false;
+    const settled = allComplete(this.awaiting) || performance.now() - this.builtAt > LOAD_TIMEOUT;
+    if (this.state.loading && !character.MustDraw && settled) {
+      this.setState({loading: false, painted: true});
     }
   }
 

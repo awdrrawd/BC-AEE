@@ -1,5 +1,6 @@
 import {useEffect, useMemo} from 'react';
-import {filterSlots, pageCount, perPage} from '@/controllers/outfitsController';
+import cn from '@/util/cn';
+import {filterSlots, isOutfitListCollapsed, pageCount, perPage} from '@/controllers/outfitsController';
 import {goToPage} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {settings, useSetting} from '@/core/settings';
@@ -18,6 +19,10 @@ import {usePrompt} from '@/core/prompts';
 export function WardrobeScreen({state}: { state: WardrobeState }) {
   const prompt = usePrompt();
   const layout = useSetting(settings.wardrobePanelLayout);
+  // Subscribe to both so the grid re-lays-out when either the feature or the collapse state flips.
+  useSetting(settings.wardrobeCollapseEnabled);
+  useSetting(settings.wardrobeListCollapsed);
+  const listCollapsed = isOutfitListCollapsed();
   const slots = useMemo(
     () => filterSlots(state.search, state.activeFilter, state.sortMode),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -34,11 +39,22 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
   const renderPanel = (id: string) => {
     switch (id) {
       case 'list':
-        return <OutfitListPanel key="list" state={state}/>;
+        // Kept mounted and slid shut so collapsing/expanding animates instead of snapping.
+        return <div
+          key="list"
+          className={cn(
+            'aee-list-slide flex min-h-0 shrink-0 overflow-hidden',
+            listCollapsed ? 'w-0 -mr-5 opacity-0' : 'w-80 opacity-100',
+          )}
+          aria-hidden={listCollapsed}
+        >
+          <OutfitListPanel state={state}/>
+        </div>;
       case 'grid':
         return <div key="grid" className="flex min-w-0 min-h-0 flex-1 flex-col gap-2.5">
           <Toolbar state={state} layout={layout}/>
-          <OutfitGrid state={state} slots={slots}/>
+          {/* Re-keyed on collapse so the grid replays its stretch as it resizes to 6↔8 cards. */}
+          <OutfitGrid key={`grid-${listCollapsed}`} state={state} slots={slots}/>
           <Pager state={state} slots={slots}/>
         </div>;
       case 'manage':

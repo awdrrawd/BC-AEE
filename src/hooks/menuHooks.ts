@@ -41,11 +41,13 @@ export function installMenuHooks() {
       if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'Copy', 'Paste');
       else AppearanceMenu.unshift('Copy', 'Paste');
     }
-    if (settings.enableCopyPaste.get() && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
-      AppearanceMenu.unshift('AEE_ClearCopy');
-    }
+    // Unshift parts-filter first so copy (AEE_ClearCopy) ends up ahead of it:
+    // final leading order is 複製 → 部位 → 衣櫃 → 匯出 → 匯入.
     if (isPartsFilterAvailable() && !AppearanceMenu.includes('AEE_PartsFilter')) {
       AppearanceMenu.unshift('AEE_PartsFilter');
+    }
+    if (settings.enableCopyPaste.get() && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
+      AppearanceMenu.unshift('AEE_ClearCopy');
     }
   });
 

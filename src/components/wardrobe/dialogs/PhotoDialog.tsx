@@ -7,8 +7,14 @@ import {bundleAppearance, wearBundle} from '@/util/appearanceBundle';
 import {CHARACTER_HEIGHT, CHARACTER_WIDTH, drawCharacterTo} from '@/util/characterCanvas';
 import {getTargetCharacter} from '@/core/wardrobeStore';
 import {downloadBlob} from '@/core/wardrobeFile';
-import {backgroundUrl} from '@/util/wardrobeBackground';
+import {
+  backgroundColorValue,
+  backgroundDisplayName,
+  backgroundUrl,
+  isColorBackground,
+} from '@/util/wardrobeBackground';
 import {BACKGROUND_CHOICES, backgroundChoiceLabel} from '@/components/wardrobe/dialogs/backgroundChoices';
+import {settings} from '@/core/settings';
 import {Button} from '@/components/ui/Button';
 import {ColorInput, Select} from '@/components/ui/Fields';
 import {Dialog} from '@/components/ui/Dialog';
@@ -21,6 +27,25 @@ const IMAGE_CHOICES = BACKGROUND_CHOICES.filter(choice => choice.type === 'image
 
 let photoSerial = 0;
 
+interface BgOption {
+  value: string;
+  label: string;
+}
+
+// The photo starts from the current wardrobe background, then follows whatever the user picks here.
+function initialPhotoBackground() {
+  const current = settings.wardrobeBgImage.get();
+  const options: BgOption[] = IMAGE_CHOICES.map(choice => ({value: choice.path!, label: backgroundChoiceLabel(choice)}));
+  if (isColorBackground(current)) {
+    return {mode: 'color' as BgMode, color: backgroundColorValue(current), path: options[0]?.value ?? '', options};
+  }
+  // An image/url/uploaded background — expose it as the selected option so it renders straight away.
+  if (!options.some(option => option.value === current)) {
+    options.unshift({value: current, label: backgroundDisplayName()});
+  }
+  return {mode: 'image' as BgMode, color: '#ffffff', path: current, options};
+}
+
 function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, w: number, h: number) {
   const scale = Math.max(w / image.width, h / image.height);
   const dw = image.width * scale;
@@ -29,9 +54,10 @@ function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, w: nu
 }
 
 export function PhotoDialog({onClose}: { onClose: () => void }) {
-  const [bgMode, setBgMode] = useState<BgMode>('color');
-  const [bgColor, setBgColor] = useState('#ffffff');
-  const [bgPath, setBgPath] = useState(IMAGE_CHOICES[0]?.path ?? '');
+  const [initial] = useState(initialPhotoBackground);
+  const [bgMode, setBgMode] = useState<BgMode>(initial.mode);
+  const [bgColor, setBgColor] = useState(initial.color);
+  const [bgPath, setBgPath] = useState(initial.path);
   const [busy, setBusy] = useState(false);
 
   const charRef = useRef<Character | null>(null);
@@ -215,8 +241,8 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
 
           {bgMode === 'image' ? <Select density="stage" className="w-full" value={bgPath}
                                         onChange={event => setBgPath(event.currentTarget.value)}>
-            {IMAGE_CHOICES.map(choice => <option key={choice.label} value={choice.path}>
-              {backgroundChoiceLabel(choice)}
+            {initial.options.map(option => <option key={option.value} value={option.value}>
+              {option.label}
             </option>)}
           </Select> : null}
         </section>

@@ -17,6 +17,8 @@ export interface WardrobeState {
   offset: number;
   selection: number;
   name: string;
+  /** The manage panel is in metadata-edit mode (rename + retag the selected outfit). */
+  editing: boolean;
   reorderMode: boolean;
   reorderFirst: number;
   zoomPct: number;
@@ -26,6 +28,10 @@ export interface WardrobeState {
   returnScreen: [string, string];
   dataVersion: number;
   source: WardrobeSourceId;
+  /** Serialized appearance captured on entry, so try-ons can be reverted. */
+  entryAppearance: string | null;
+  /** A try-on has changed the worn appearance since entry. */
+  triedOn: boolean;
 }
 
 const initialState: WardrobeState = {
@@ -38,6 +44,7 @@ const initialState: WardrobeState = {
   offset: 0,
   selection: -1,
   name: '',
+  editing: false,
   reorderMode: false,
   reorderFirst: -1,
   zoomPct: 100,
@@ -47,6 +54,8 @@ const initialState: WardrobeState = {
   returnScreen: DEFAULT_RETURN_SCREEN,
   dataVersion: 0,
   source: settings.wardrobeSource.get(),
+  entryAppearance: null,
+  triedOn: false,
 };
 
 const store = createExternalStore(initialState);

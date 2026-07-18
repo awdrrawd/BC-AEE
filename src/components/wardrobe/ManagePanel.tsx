@@ -5,17 +5,19 @@ import {
   exportOutfitToClipboard,
   exportWardrobeToFile,
   exportWornToClipboard,
-  importCodeToWorn,
   importOutfitFromCode,
   readImportFile,
   saveOutfit,
   tryOnOutfit,
 } from '@/controllers/outfitsController';
+import {importBcxAppearanceWithCategory} from '@/controllers/importExportController';
 import {clearSelection} from '@/controllers/wardrobeController';
 import {openDialog} from '@/core/dialogs';
-import {askText} from '@/core/prompts';
-import type {WardrobeState} from '@/core/wardrobeStore';
+import {askConfirm} from '@/core/prompts';
+import {showToast} from '@/util/toast';
+import {getTargetCharacter, type WardrobeState} from '@/core/wardrobeStore';
 import {ImportDialog} from '@/components/wardrobe/dialogs/ImportDialog';
+import {OutfitEditForm} from '@/components/wardrobe/OutfitEditForm';
 import {OutfitNameField} from '@/components/wardrobe/OutfitNameField';
 import {TagRow} from '@/components/wardrobe/TagRow';
 import {TransferRow} from '@/components/wardrobe/TransferRow';
@@ -26,18 +28,40 @@ import {settings} from '@/core/settings';
 
 export function ManagePanel({state}: { state: WardrobeState }) {
   const hasSelection = state.selection >= 0;
+  const editing = hasSelection && state.editing;
+
+  const save = async () => {
+    if (settings.wardrobeConfirmSave.get() && !(await askConfirm(t('wardrobe-confirm-save')))) return;
+    saveOutfit(state.selection, state.name);
+  };
 
   const importFromClipboard = async () => {
-    const code = await askText(t('wardrobe-prompt-paste-code'));
-    if (!code?.trim()) return;
-    if (hasSelection) importOutfitFromCode(state.selection, code.trim());
-    else importCodeToWorn(code.trim());
+    // With a slot selected: import the clipboard code straight into that slot (no prompt).
+    if (hasSelection) {
+      let code = '';
+      try {
+        code = (await navigator.clipboard.readText()).trim();
+      } catch (error) {
+        console.warn('🐈‍⬛ [AEE] Failed to read the clipboard', error);
+      }
+      if (code) importOutfitFromCode(state.selection, code);
+      else showToast(t('wardrobe-toast-import-failed'));
+      return;
+    }
+    // No slot selected: dress the previewed character, showing the BCX-style diff panel.
+    void importBcxAppearanceWithCategory(getTargetCharacter());
   };
 
   const importFromFile = async (file: File) => {
     const outfits = await readImportFile(file);
     if (outfits) openDialog(close => <ImportDialog initial={outfits} onClose={close}/>);
   };
+
+  if (editing) {
+    return <Panel soft className="aee-rise-in w-82.5 shrink-0 gap-3 p-4" style={{animationDelay: '120ms'}}>
+      <OutfitEditForm key={state.selection} slot={state.selection}/>
+    </Panel>;
+  }
 
   return <Panel
     soft
@@ -57,7 +81,7 @@ export function ManagePanel({state}: { state: WardrobeState }) {
     <Button density="stage"
             className="h-10 shrink-0 self-end px-6"
             disabled={!hasSelection}
-            onClick={() => saveOutfit(state.selection, state.name)}
+            onClick={() => void save()}
             icon={<Save className="h-5 w-5"/>}
     >{t('wardrobe-save')}</Button>
 

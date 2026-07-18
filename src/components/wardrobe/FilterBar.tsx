@@ -2,6 +2,7 @@ import {SquarePen, Star} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 
 import {setFilter} from '@/controllers/wardrobeController';
+import {tagIcon} from '@/controllers/outfitsController';
 import {openDialog} from '@/core/dialogs';
 import {Button} from '@/components/ui/Button';
 import {CategoryDialog} from '@/components/wardrobe/dialogs/CategoryDialog';
@@ -29,12 +30,15 @@ export function FilterBar({activeFilter}: { activeFilter: WardrobeFilter }) {
             icon={<Star fill="currentColor" className="h-5 w-5"/>}
     >{t('wardrobe-filter-favorite')}</Button>
 
-    {categories.map(name => <Button density="stage"
-                                    key={name}
-                                    className="h-full min-w-0 flex-1"
-                                    selected={activeFilter === name}
-                                    onClick={() => select(name)}
-    >{name}</Button>)}
+    {categories.map(name => {
+      const icon = tagIcon(name);
+      return <Button density="stage"
+                     key={name}
+                     className="h-full min-w-0 flex-1"
+                     selected={activeFilter === name}
+                     onClick={() => select(name)}
+      >{icon ? `${icon} ${name}` : name}</Button>;
+    })}
 
     <Button density="stage"
             className="h-full w-10 shrink-0"

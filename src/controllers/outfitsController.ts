@@ -18,9 +18,17 @@ const BASE_GRID_COLS = 3;
 // Side panels that can be hidden; each hidden one widens the grid by one column.
 const HIDEABLE_SIDE_PANELS = ['list', 'manage', 'preview'];
 
+/** True when the outfit list is collapsed away — it then frees a grid column, like hiding the panel. */
+export function isOutfitListCollapsed(): boolean {
+  return settings.wardrobeCollapseEnabled.get()
+    && settings.wardrobeListCollapsed.get()
+    && settings.wardrobePanelLayout.get().includes('list');
+}
+
 export function gridColumns(): number {
   const layout = settings.wardrobePanelLayout.get();
-  const hidden = HIDEABLE_SIDE_PANELS.filter(id => !layout.includes(id)).length;
+  let hidden = HIDEABLE_SIDE_PANELS.filter(id => !layout.includes(id)).length;
+  if (isOutfitListCollapsed()) hidden += 1;
   return BASE_GRID_COLS + hidden;
 }
 
@@ -49,15 +57,20 @@ export function filterSlots(search: string, filter: WardrobeFilter, sort: Wardro
     indices = indices.filter(index => getSlotMeta(source.id, index).tags.includes(filter));
   }
 
+  // Every sort but "default" surfaces occupied slots first — otherwise the ~200 empty
+  // slots dominate the front pages and the sort looks like it did nothing ("stuck on slot order").
+  const occupiedFirst = (a: number, b: number) => Number(isSlotOccupied(b)) - Number(isSlotOccupied(a));
   switch (sort) {
     case 'name':
-      indices.sort((a, b) => slotName(a).localeCompare(slotName(b)));
+      indices.sort((a, b) => occupiedFirst(a, b) || slotName(a).localeCompare(slotName(b)));
       break;
     case 'favorite':
-      indices.sort((a, b) => Number(getSlotMeta(source.id, b).favorite) - Number(getSlotMeta(source.id, a).favorite));
+      indices.sort((a, b) =>
+        (Number(getSlotMeta(source.id, b).favorite) - Number(getSlotMeta(source.id, a).favorite))
+        || occupiedFirst(a, b));
       break;
     case 'occupied':
-      indices.sort((a, b) => Number(isSlotOccupied(b)) - Number(isSlotOccupied(a)));
+      indices.sort(occupiedFirst);
       break;
     default:
       break;
@@ -69,11 +82,18 @@ export function pageCount(slots: number[]): number {
   return Math.max(1, Math.ceil(slots.length / perPage()));
 }
 
-export function getOccupiedSlots(): OccupiedSlot[] {
+export function getOccupiedSlots(sort: WardrobeSortMode = 'default'): OccupiedSlot[] {
   const source = activeWardrobeSource();
   const slots: OccupiedSlot[] = [];
   for (let index = 0; index < source.size(); index++) {
     if (isSlotOccupied(index)) slots.push({index, name: slotName(index) || `Slot ${index + 1}`});
+  }
+  // Mirror the grid's sort so the list order visibly follows the chosen mode ("occupied" is a no-op here).
+  if (sort === 'name') {
+    slots.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sort === 'favorite') {
+    slots.sort((a, b) =>
+      Number(getSlotMeta(source.id, b.index).favorite) - Number(getSlotMeta(source.id, a.index).favorite));
   }
   return slots;
 }
@@ -86,18 +106,30 @@ function categorise(group: AssetGroup): SlotCategory {
   return group.Clothing ? 'cloth' : 'body';
 }
 
-function shouldSave(group: AssetGroup): boolean {
-  switch (categorise(group)) {
-    case 'cloth': return true;
-    case 'body': return settings.wardrobeIncludeBody.get();
-    case 'item': return settings.wardrobeIncludeItems.get();
-    default: return false;
-  }
+function isSelfCharacter(character: Character): boolean {
+  return character === Player || (typeof character.IsPlayer === 'function' && character.IsPlayer());
 }
 
 function buildOutfitBundle(character: Character): ItemBundle[] {
-  const saved = character.Appearance.filter(item => shouldSave(item.Asset.Group));
-  return bundleAppearance(saved).map(sanitise);
+  const includeBody = settings.wardrobeIncludeBody.get();
+  const includeItems = settings.wardrobeIncludeItems.get();
+
+  // Clothing always comes from the dressed character; items too when "include items" is on.
+  const worn = character.Appearance.filter(item => {
+    const category = categorise(item.Asset.Group);
+    if (category === 'cloth') return true;
+    if (category === 'item') return includeItems;
+    return false;
+  });
+
+  // A saved outfit always carries a body. Whose body:
+  //  • dressing yourself → your own body (regardless of the toggle);
+  //  • dressing someone else with "include body" on → their body;
+  //  • dressing someone else with "include body" off → your (the player's) body.
+  const bodyDonor = (isSelfCharacter(character) || includeBody) ? character : Player;
+  const body = bodyDonor.Appearance.filter(item => categorise(item.Asset.Group) === 'body');
+
+  return bundleAppearance([...worn, ...body]).map(sanitise);
 }
 
 function sanitise(entry: ItemBundle): ItemBundle {
@@ -116,14 +148,23 @@ function sanitise(entry: ItemBundle): ItemBundle {
 }
 
 function applyOutfit(character: Character, bundle: ItemBundle[]) {
+  // The two toggles gate try-on live: body swaps only with "include body", the outfit's
+  // items are worn only with "include items" (the wearer's own body/items stay otherwise).
+  const includeBody = settings.wardrobeIncludeBody.get();
+  const includeItems = settings.wardrobeIncludeItems.get();
+
   const wear = new Map<AssetGroupName, ItemBundle>();
   for (const entry of bundle) {
     const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
-    if (!asset || categorise(asset.Group) === 'other') continue;
+    if (!asset) continue;
+    const category = categorise(asset.Group);
+    if (category === 'other') continue;
+    if (category === 'body' && !includeBody) continue;
+    if (category === 'item' && !includeItems) continue;
     wear.set(entry.Group, entry);
   }
 
-  const replaceBody = bundle.some(entry => {
+  const replaceBody = includeBody && bundle.some(entry => {
     const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
     return !!asset && categorise(asset.Group) === 'body';
   });
@@ -132,9 +173,10 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
     const group = item.Asset.Group;
     if (wear.has(group.Name)) return true; // outfit provides it → re-applied below
     const category = categorise(group);
-    // Clothing is always a full replace; body too, but only when the outfit brought its own.
-    // Restraints/items — and a bodyless outfit's body/hair — stay on.
-    return category !== 'cloth' && !(replaceBody && category === 'body');
+    if (category === 'cloth') return false;                 // clothing is always a full replace
+    if (replaceBody && category === 'body') return false;   // body swapped only with "include body"
+    if (category === 'item' && !includeItems) return false; // "include items" off ⇒ end up with no items
+    return true;                                            // the wearer's own body/hair (and kept items) stay
   });
 
   wear.forEach(entry => wearBundle(character, entry));
@@ -168,8 +210,14 @@ export function saveOutfit(index: number, name: string) {
   const resolved = name.trim().slice(0, 40) || slotName(index).trim() || (character.Name || Player.Name || '').trim();
 
   try {
+    const bundle = buildOutfitBundle(character);
+    if (!bundle.length) {
+      // Nothing to store (no clothes/body) — surface it instead of silently clearing the slot.
+      showToast(t('wardrobe-toast-save-failed'));
+      return;
+    }
     const snapshots = snapshotSlots(source, [index]);
-    source.writeSlot(index, buildOutfitBundle(character), resolved);
+    source.writeSlot(index, bundle, resolved);
     if (!commitWardrobeChanges(source, snapshots)) return;
   } catch (error) {
     console.error('🐈‍⬛ [AEE] ❌ Failed to save the outfit', error);
@@ -177,6 +225,21 @@ export function saveOutfit(index: number, name: string) {
     return;
   }
 
+  bumpWardrobeData();
+  showToast(t('wardrobe-toast-saved'));
+}
+
+/** Metadata-only save from the edit panel: replaces just the outfit's name and tags. */
+export function saveOutfitMeta(index: number, name: string, tags: string[]) {
+  const source = activeWardrobeSource();
+  if (index < 0 || index >= source.size() || !isSlotOccupied(index)) return;
+
+  const resolved = name.trim().slice(0, 40) || slotName(index);
+  const snapshots = snapshotSlots(source, [index]);
+  source.writeSlot(index, source.outfitAt(index), resolved);
+  if (!commitWardrobeChanges(source, snapshots)) return;
+
+  setSlotMeta(source.id, index, {tags});
   bumpWardrobeData();
   showToast(t('wardrobe-toast-saved'));
 }
@@ -194,6 +257,7 @@ export function tryOnOutfit(index: number) {
   }
 
   CharacterRefresh(character, false);
+  if (!getWardrobeState().triedOn) setWardrobeState({triedOn: true});
   bumpWardrobeData();
 }
 
@@ -244,6 +308,21 @@ export function knownTags(): string[] {
   return [...tags];
 }
 
+/** The emoji icon configured for a category/tag name, or '' when none is set. */
+export function tagIcon(name: string): string {
+  return settings.wardrobeCategoryIcons.get()[name] ?? '';
+}
+
+/** Distinct icons for a slot's tags, in tag order, skipping tags without an icon. */
+export function slotTagIcons(index: number): string[] {
+  const icons: string[] = [];
+  for (const tag of getSlotMeta(activeWardrobeSource().id, index).tags) {
+    const icon = tagIcon(tag);
+    if (icon && !icons.includes(icon)) icons.push(icon);
+  }
+  return icons;
+}
+
 export function exportOutfitToClipboard(index: number) {
   const bundle = activeWardrobeSource().outfitAt(index);
   if (!bundle.length) return;
@@ -288,6 +367,7 @@ export function importCodeToWorn(code: string) {
     return;
   }
   CharacterRefresh(character, false);
+  if (!getWardrobeState().triedOn) setWardrobeState({triedOn: true});
   bumpWardrobeData();
   showToast(t('wardrobe-toast-imported'));
 }

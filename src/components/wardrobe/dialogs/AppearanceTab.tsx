@@ -3,7 +3,10 @@ import {t} from '@/i18n/i18n';
 import {THEME_PRESETS, UI_STYLE_LABEL_KEYS, UI_STYLES, type UiTheme} from '@/core/theme';
 import {
   clearCustomBase,
+  resetOpacity,
   selectThemePreset,
+  setBaseOpacity,
+  setCardOpacity,
   setCustomAccent,
   setCustomBase,
   setUiStyle,
@@ -11,6 +14,7 @@ import {
 import {ThemePresetCard} from '@/components/wardrobe/dialogs/ThemePresetCard';
 import {ColorInput, TextInput} from '@/components/ui/Fields';
 import {Button} from '@/components/ui/Button';
+import {RangeInput} from '@/components/main-panel/RangeInput';
 
 const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const EMPTY_SWATCH = '#181820';
@@ -65,6 +69,27 @@ function ColorField({value, fallback, ariaLabel, placeholder, onChange, onClear}
   </div>;
 }
 
+function OpacityRow({label, value, onChange}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return <div className="flex items-center gap-4">
+    <span className="w-28 shrink-0 text-[22px] text-[#f0eee4]">{label}</span>
+    <RangeInput
+      className="h-2 flex-1 cursor-pointer appearance-none rounded bg-white/15 accent-(--aee-accent)"
+      min={0}
+      max={1}
+      step={0.01}
+      value={value}
+      onChange={onChange}
+    />
+    <span className="w-16 shrink-0 text-right font-mono text-[20px] text-(--aee-accent)">
+      {Math.round(value * 100)}%
+    </span>
+  </div>;
+}
+
 export function AppearanceTab({theme}: { theme: UiTheme }) {
   return <div className="flex flex-col gap-5">
     <section className="flex flex-col gap-3">
@@ -100,6 +125,17 @@ export function AppearanceTab({theme}: { theme: UiTheme }) {
         onChange={setCustomBase}
         onClear={clearCustomBase}
       />
+    </section>
+
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[26px] text-white">{t('wardrobe-opacity')}</h3>
+        <Button density="stage" className="h-11 px-4" onClick={resetOpacity}>
+          {t('wardrobe-custom-base-reset')}
+        </Button>
+      </div>
+      <OpacityRow label={t('wardrobe-opacity-card')} value={theme.cardOpacity} onChange={setCardOpacity}/>
+      <OpacityRow label={t('wardrobe-opacity-base')} value={theme.baseOpacity} onChange={setBaseOpacity}/>
     </section>
 
     <section className="flex flex-col gap-3">

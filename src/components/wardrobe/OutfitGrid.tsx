@@ -1,6 +1,6 @@
 import type {WheelEvent} from 'react';
 import {gridColumns, GRID_ROWS, pageCount, perPage} from '@/controllers/outfitsController';
-import {goToPage, markOrSwap, selectSlot} from '@/controllers/wardrobeController';
+import {goToPage, markOrSwap, selectSlot, startEditingOutfit} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {OutfitCard} from '@/components/wardrobe/OutfitCard';
 
@@ -14,10 +14,9 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
   };
 
   return <div
-    className="aee-rise-in grid min-h-0 flex-1 gap-2.5"
+    className="aee-grid-stretch grid min-h-0 flex-1 gap-2.5"
     onWheel={onWheel}
     style={{
-      animationDelay: '60ms',
       gridTemplateColumns: `repeat(${gridColumns()}, minmax(0, 1fr))`,
       gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))`,
     }}
@@ -28,6 +27,7 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
       selected={slotIndex === state.selection}
       markedForSwap={state.reorderMode && slotIndex === state.reorderFirst}
       onSelect={() => (state.reorderMode ? markOrSwap(slotIndex) : selectSlot(slotIndex))}
+      onRename={state.reorderMode ? undefined : () => startEditingOutfit(slotIndex)}
     />)}
   </div>;
 }

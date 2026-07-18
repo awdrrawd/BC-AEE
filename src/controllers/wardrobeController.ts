@@ -1,7 +1,14 @@
-import {THEME_PRESETS, type UiStyle, type UiTheme, writeUiTheme} from '@/core/theme';
+import {
+  DEFAULT_BASE_OPACITY,
+  DEFAULT_CARD_OPACITY,
+  THEME_PRESETS,
+  type UiStyle,
+  type UiTheme,
+  writeUiTheme,
+} from '@/core/theme';
 import {reloadWardrobeData} from '@/core/wardrobeStorage';
-import {perPage, slotName, swapOutfits} from '@/controllers/outfitsController';
-import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
+import {isSlotOccupied, perPage, slotName, swapOutfits} from '@/controllers/outfitsController';
+import {bumpWardrobeData, getTargetCharacter, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 import type {WardrobeFilter, WardrobeSortMode, WardrobeSourceId} from '@/core/types';
 import {clamp} from '@/util/math';
 import {dismissPrompt} from '@/core/prompts';
@@ -28,7 +35,9 @@ function applyTheme(theme: UiTheme) {
 
 export function selectThemePreset(presetId: string) {
   const preset = THEME_PRESETS.find(candidate => candidate.id === presetId);
-  if (preset) applyTheme({preset: preset.id, accent: preset.accent, uiStyle: preset.uiStyle, base: ''});
+  const {theme} = getWardrobeState();
+  // Keep the user's opacity choices when switching presets — they're a separate control.
+  if (preset) applyTheme({...theme, preset: preset.id, accent: preset.accent, uiStyle: preset.uiStyle, base: ''});
 }
 
 export function setCustomAccent(accent: string) {
@@ -47,22 +56,76 @@ export function clearCustomBase() {
   applyTheme({...getWardrobeState().theme, base: ''});
 }
 
+export function setBaseOpacity(baseOpacity: number) {
+  applyTheme({...getWardrobeState().theme, baseOpacity});
+}
+
+export function setCardOpacity(cardOpacity: number) {
+  applyTheme({...getWardrobeState().theme, cardOpacity});
+}
+
+export function resetOpacity() {
+  applyTheme({...getWardrobeState().theme, baseOpacity: DEFAULT_BASE_OPACITY, cardOpacity: DEFAULT_CARD_OPACITY});
+}
+
+/** Double-click entry point: select the slot and, if it holds an outfit, open metadata edit mode. */
+export function startEditingOutfit(index: number) {
+  setWardrobeState({selection: index, name: nameForSlot(index), editing: isSlotOccupied(index)});
+}
+
+export function stopEditingOutfit() {
+  setWardrobeState({editing: false});
+}
+
+function snapshotAppearance(character: Character): string | null {
+  try {
+    return CharacterAppearanceStringify(character);
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to snapshot the entry appearance', error);
+    return null;
+  }
+}
+
 export function resetWardrobeScreen(target: Character) {
   setWardrobeState({
     activeFilter: null,
     sortMode: 'default',
     offset: 0,
     selection: -1,
-    name: '',
+    name: String(target?.Name || Player?.Name || '').trim(),
+    editing: false,
     reorderMode: false,
     reorderFirst: -1,
     zoomPct: 100,
     panX: 0,
     panY: 0,
     target,
+    entryAppearance: snapshotAppearance(target),
+    triedOn: false,
   });
   closeAllDialogs();
   dismissPrompt();
+}
+
+/** Marks that a try-on changed the worn look, so the revert control can appear. */
+export function markTriedOn() {
+  if (!getWardrobeState().triedOn) setWardrobeState({triedOn: true});
+}
+
+/** Restores the character to exactly how it looked when the wardrobe was opened. */
+export function revertTryOn() {
+  const {entryAppearance, target} = getWardrobeState();
+  if (!entryAppearance) return;
+  const character = target ?? Player;
+  try {
+    CharacterAppearanceRestore(character, entryAppearance);
+    CharacterRefresh(character, false);
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to revert the try-on', error);
+    return;
+  }
+  setWardrobeState({triedOn: false});
+  bumpWardrobeData();
 }
 
 export function saveWardrobeCategories(categories: string[]) {
@@ -78,7 +141,7 @@ export function setSearch(search: string) {
 export function setWardrobeSource(source: WardrobeSourceId) {
   if (source === getWardrobeState().source) return;
   settings.wardrobeSource.set(source);
-  setWardrobeState({source, selection: -1, name: '', offset: 0, reorderMode: false, reorderFirst: -1});
+  setWardrobeState({source, selection: -1, name: targetCharacterName(), editing: false, offset: 0, reorderMode: false, reorderFirst: -1});
   bumpWardrobeData();
 }
 
@@ -94,12 +157,23 @@ export function goToPage(page: number, pageCount: number) {
   setWardrobeState({offset: clamp(page, 0, pageCount - 1) * perPage()});
 }
 
+/** The dressed character's name, used as the default outfit name for empty/unselected slots. */
+export function targetCharacterName(): string {
+  const character = getTargetCharacter();
+  return String(character?.Name || Player?.Name || '').trim();
+}
+
+/** A slot's saved name, falling back to the character's name so empty slots pre-fill sensibly. */
+function nameForSlot(index: number): string {
+  return slotName(index) || targetCharacterName();
+}
+
 export function selectSlot(index: number) {
-  setWardrobeState({selection: index, name: slotName(index)});
+  setWardrobeState({selection: index, name: nameForSlot(index), editing: false});
 }
 
 export function clearSelection() {
-  setWardrobeState({selection: -1, name: ''});
+  setWardrobeState({selection: -1, name: targetCharacterName(), editing: false});
 }
 
 export const DEFAULT_PANEL_LAYOUT = ['list', 'grid', 'manage', 'preview'];
@@ -148,7 +222,8 @@ export function jumpToSlot(index: number, positionInList: number) {
     search: '',
     activeFilter: null,
     selection: index,
-    name: slotName(index),
+    name: nameForSlot(index),
+    editing: false,
     offset: positionInList >= 0 ? Math.floor(positionInList / perPage()) * perPage() : 0,
   });
 }

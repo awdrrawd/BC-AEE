@@ -3,9 +3,11 @@ import {showToast} from '@/util/toast';
 import {CUSTOM_BG_PATH, writeCustomBackground} from '@/core/wardrobeStorage';
 import {backgroundDisplayName} from '@/util/wardrobeBackground';
 import {askText} from '@/core/prompts';
+import {openDialog} from '@/core/dialogs';
 import {settings, useSetting} from '@/core/settings';
 import {BackgroundCard} from '@/components/wardrobe/dialogs/BackgroundCard';
 import {BackgroundChoiceTrigger} from '@/components/wardrobe/dialogs/BackgroundChoiceTrigger';
+import {GameBackgroundDialog} from '@/components/wardrobe/dialogs/GameBackgroundDialog';
 import {
   BACKGROUND_CHOICES,
   type BackgroundChoice,
@@ -35,9 +37,14 @@ export function BackgroundTab() {
       if (!url?.trim()) return;
       apply(url.trim());
     } else if (choice.type === 'custom') {
-      const path = await askText(t('wardrobe-prompt-bg-path'), current);
-      if (!path?.trim()) return;
-      apply(path.trim());
+      openDialog(close => <GameBackgroundDialog
+        current={current}
+        onSelect={path => {
+          apply(path);
+          close();
+        }}
+        onClose={close}
+      />);
     } else if (choice.path) {
       apply(choice.path);
     }

@@ -4,11 +4,14 @@ import {SettingRow} from '@/components/ui/SettingRow';
 import {Select} from '@/components/ui/Fields';
 
 const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
+  {labelKey: 'wardrobe-setting-confirm-save', setting: settings.wardrobeConfirmSave},
   {labelKey: 'wardrobe-setting-96-slots', setting: settings.wardrobeExtended},
   {labelKey: 'wardrobe-setting-shared', setting: settings.wardrobeShared},
   {labelKey: 'wardrobe-setting-categories', setting: settings.wardrobeCategoriesEnabled},
   {labelKey: 'wardrobe-setting-zoom', setting: settings.wardrobeZoom},
+  {labelKey: 'wardrobe-setting-cancel-tryon', setting: settings.wardrobeCancelTryOn},
   {labelKey: 'wardrobe-setting-photo', setting: settings.wardrobePhoto},
+  {labelKey: 'wardrobe-setting-collapse-list', setting: settings.wardrobeCollapseEnabled},
 ];
 
 const ROW_CLASS = 'flex h-[50px] shrink-0 items-center rounded-lg border border-white/8 bg-black/35 px-4';

@@ -9,11 +9,13 @@ export function OutfitCard({
                              selected,
                              markedForSwap,
                              onSelect,
+                             onRename,
                            }: {
   slotIndex: number;
   selected: boolean;
   markedForSwap: boolean;
   onSelect: () => void;
+  onRename?: () => void;
 }) {
   const source = activeWardrobeSource();
   const meta = getSlotMeta(source.id, slotIndex);
@@ -23,12 +25,13 @@ export function OutfitCard({
     role="button"
     tabIndex={0}
     onClick={onSelect}
+    onDoubleClick={onRename}
     onKeyDown={event => {
       if (event.key === 'Enter' || event.key === ' ') onSelect();
     }}
     className={cn(
       'group relative cursor-pointer overflow-hidden rounded-xl border transition',
-      isSlotOccupied(slotIndex) ? 'bg-[rgba(16,16,24,0.5)]' : 'bg-white/3',
+      isSlotOccupied(slotIndex) ? 'bg-(--aee-card-bg)' : 'bg-white/3',
       !selected && !markedForSwap && 'border-white/6 hover:border-white/15 hover:bg-white/4',
     )}
     style={selected

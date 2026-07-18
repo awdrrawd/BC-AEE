@@ -9,7 +9,15 @@ export interface UiTheme {
   accent: string;
   uiStyle: UiStyle;
   base: string;
+  baseOpacity: number;
+  cardOpacity: number;
 }
+
+// The base-opacity slider is the actual opacity of the translucent side panels (list/manage/preview).
+export const DEFAULT_BASE_OPACITY = 0.5;
+export const DEFAULT_CARD_OPACITY = 0.5;
+// Solid dialogs never drop below this, so settings/menus stay readable regardless of the slider.
+const DIALOG_MIN_OPACITY = 0.96;
 
 export interface UiThemePreset {
   id: string;
@@ -49,6 +57,8 @@ export function readUiTheme(): UiTheme {
     accent: settings.themeAccent.get() || DEFAULT_THEME.accent,
     uiStyle: settings.themeUiStyle.get() || DEFAULT_THEME.uiStyle,
     base: settings.themeBase.get(),
+    baseOpacity: settings.themeBaseOpacity.get(),
+    cardOpacity: settings.themeCardOpacity.get(),
   };
 }
 
@@ -57,6 +67,8 @@ export function writeUiTheme(theme: UiTheme) {
   settings.themeAccent.set(theme.accent);
   settings.themeUiStyle.set(theme.uiStyle);
   settings.themeBase.set(theme.base);
+  settings.themeBaseOpacity.set(theme.baseOpacity);
+  settings.themeCardOpacity.set(theme.cardOpacity);
 }
 
 export function uiAccent(theme: UiTheme): string {
@@ -67,7 +79,10 @@ const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 export function uiThemeVariables(theme: UiTheme): CSSProperties {
   const accent = uiAccent(theme);
-  const base = HEX_COLOR.test(theme.base) ? theme.base : null;
+  const baseHex = HEX_COLOR.test(theme.base) ? theme.base : styleBaseHex(theme.uiStyle);
+  // baseOpacity is the visible opacity of the translucent side panels; dialogs stay solid.
+  const baseOpacity = clampOpacity(theme.baseOpacity, DEFAULT_BASE_OPACITY);
+  const cardOpacity = clampOpacity(theme.cardOpacity, DEFAULT_CARD_OPACITY);
   return {
     '--aee-accent': accent,
     '--aee-accent-08': hexToRgba(accent, 0.08),
@@ -82,30 +97,26 @@ export function uiThemeVariables(theme: UiTheme): CSSProperties {
     '--aee-control-bg': 'rgba(39,39,52,0.78)',
     '--aee-control-hover': 'rgba(63,63,78,0.92)',
     '--aee-field-bg': 'rgba(18,18,26,0.86)',
-    '--aee-panel-bg': base ? hexToRgba(base, 0.96) : panelBackground(theme.uiStyle),
-    '--aee-panel-bg-soft': base ? hexToRgba(base, 0.5) : panelBackgroundSoft(theme.uiStyle),
+    '--aee-panel-bg': hexToRgba(baseHex, Math.max(baseOpacity, DIALOG_MIN_OPACITY)),
+    '--aee-panel-bg-soft': hexToRgba(baseHex, baseOpacity),
     '--aee-panel-border': panelBorder(theme.uiStyle, accent),
     '--aee-panel-radius': '8px',
     '--aee-panel-shadow': panelShadow(theme.uiStyle, accent),
+    '--aee-card-bg': `rgba(16,16,24,${cardOpacity})`,
   } as CSSProperties;
 }
 
-function panelBackground(uiStyle: UiStyle): string {
-  switch (uiStyle) {
-    case 'neon': return 'rgba(9,9,16,0.94)';
-    case 'court': return 'rgba(24,20,16,0.96)';
-    case 'dressing': return 'rgba(30,25,22,0.96)';
-    default: return 'rgba(9,9,11,0.96)';
-  }
+function clampOpacity(value: number, fallback: number): number {
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 }
 
-// Half-opacity panel fill so the wardrobe background shows through the list and manage panels.
-function panelBackgroundSoft(uiStyle: UiStyle): string {
+// Solid RGB base per UI style; the alpha comes from the base-opacity control.
+function styleBaseHex(uiStyle: UiStyle): string {
   switch (uiStyle) {
-    case 'neon': return 'rgba(9,9,16,0.5)';
-    case 'court': return 'rgba(24,20,16,0.5)';
-    case 'dressing': return 'rgba(30,25,22,0.5)';
-    default: return 'rgba(9,9,11,0.5)';
+    case 'neon': return '#090910';
+    case 'court': return '#181410';
+    case 'dressing': return '#1e1916';
+    default: return '#09090b';
   }
 }
 

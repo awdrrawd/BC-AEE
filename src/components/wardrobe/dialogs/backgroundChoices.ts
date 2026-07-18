@@ -13,10 +13,9 @@ export const BACKGROUND_CHOICES: BackgroundChoice[] = [
   {label: 'wardrobe-bg-solid', type: 'color'},
   {label: 'wardrobe-bg-private', type: 'image', path: 'Backgrounds/Private.jpg'},
   {label: 'Sheet', type: 'image', path: 'Backgrounds/Sheet.jpg'},
-  {label: 'Dungeon', type: 'image', path: 'Backgrounds/Dungeon.jpg'},
   {label: 'wardrobe-bg-upload', type: 'upload'},
   {label: 'wardrobe-bg-url', type: 'url'},
-  {label: 'wardrobe-bg-custom-path', type: 'custom'},
+  {label: 'wardrobe-bg-game', type: 'custom'},
 ];
 
 export function isChoiceSelected(choice: BackgroundChoice, current: string): boolean {

@@ -86,7 +86,6 @@ export function PanelLayoutTab() {
         const panel = meta(id);
         const isHidden = !layout.includes(id);
         const isFirst = mode === 'move' && first === id;
-        const locked = id === 'grid';
         return <button
           key={id}
           type="button"
@@ -106,8 +105,7 @@ export function PanelLayoutTab() {
             {panel.letter}
           </span>
           <span className="text-[19px] leading-tight text-[#f0eee4]">{t(panel.labelKey)}</span>
-          {isHidden ? <span className="text-[16px] text-white/40">{t('wardrobe-panel-hidden')}</span>
-            : locked ? <span className="text-[16px] text-white/35">{t('wardrobe-panel-required')}</span> : null}
+          {isHidden ? <span className="text-[16px] text-white/40">{t('wardrobe-panel-hidden')}</span> : null}
         </button>;
       })}
     </div>

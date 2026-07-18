@@ -40,11 +40,12 @@ function normalise(entry: string): string {
   return entry.trim().slice(0, MAX_ENTRY_LENGTH);
 }
 
-export function ListEditor({values, suggestions, placeholder, density = 'compact', onChange, onCancel}: {
+export function ListEditor({values, suggestions, placeholder, density = 'compact', autoFocus = true, onChange, onCancel}: {
   values: string[];
   suggestions?: string[];
   placeholder?: string;
   density?: ListDensity;
+  autoFocus?: boolean;
   onChange: (values: string[]) => void;
   onCancel?: () => void;
 }) {
@@ -119,7 +120,7 @@ export function ListEditor({values, suggestions, placeholder, density = 'compact
         density={density}
         type="text"
         value={draft}
-        autoFocus
+        autoFocus={autoFocus}
         placeholder={placeholder ?? t('wardrobe-list-placeholder')}
         onChange={event => setDraft(event.currentTarget.value)}
         onKeyDown={keyDown}

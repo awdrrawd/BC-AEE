@@ -1,7 +1,7 @@
 import type {ReactNode} from 'react';
 import type {CanvasRect} from '@/core/types';
 import {CANVAS_HEIGHT, CANVAS_WIDTH} from '@/core/bc';
-import {backgroundStyle} from '@/util/wardrobeBackground';
+import {backgroundStyle, isColorBackground} from '@/util/wardrobeBackground';
 import {settings, useSetting} from '@/core/settings';
 import {useBackdropPreview} from '@/core/dialogs';
 
@@ -14,6 +14,8 @@ export function WardrobeStage({
 }) {
   const bgPath = useSetting(settings.wardrobeBgImage);
   const previewing = useBackdropPreview();
+  // A solid colour the user chose stays true — only image backgrounds get the readability vignette.
+  const dimmed = !previewing && !isColorBackground(bgPath);
   return <div
     className="fixed z-[999998] overflow-hidden"
     style={{left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height}}
@@ -28,8 +30,8 @@ export function WardrobeStage({
       }}
     >
       <div
-        className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${previewing ? 'bg-black/0' : 'bg-black/18'}`}
-        style={{backgroundImage: previewing ? undefined : 'radial-gradient(ellipse at center, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0.55) 100%)'}}
+        className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${dimmed ? 'bg-black/18' : 'bg-black/0'}`}
+        style={{backgroundImage: dimmed ? 'radial-gradient(ellipse at center, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0.55) 100%)' : undefined}}
         aria-hidden="true"
       />
       {children}

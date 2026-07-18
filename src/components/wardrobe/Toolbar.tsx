@@ -1,14 +1,18 @@
 import {ArrowRightLeft, X} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import {setWardrobeSource, toggleReorderMode} from '@/controllers/wardrobeController';
+import {isOutfitListCollapsed} from '@/controllers/outfitsController';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {FilterBar} from '@/components/wardrobe/FilterBar';
 import {SortDropdown} from '@/components/wardrobe/SortDropdown';
 import {Button} from '@/components/ui/Button';
+import {settings, useSetting} from '@/core/settings';
 
 export function Toolbar({state, layout}: { state: WardrobeState; layout: string[] }) {
-  // When the outfit-list panel (A) is hidden, its local/online switch moves here.
-  const showSourceToggle = !layout.includes('list');
+  useSetting(settings.wardrobeCollapseEnabled);
+  useSetting(settings.wardrobeListCollapsed);
+  // When the outfit-list panel (A) is hidden or collapsed, its local/online switch moves here.
+  const showSourceToggle = !layout.includes('list') || isOutfitListCollapsed();
 
   return <div
     className="aee-rise-in flex h-11 shrink-0 items-center gap-2.5"

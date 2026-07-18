@@ -2,8 +2,8 @@ import {Trash2} from 'lucide-react';
 import {useMemo} from 'react';
 import {t} from '@/i18n/i18n';
 
-import {deleteOutfit, filterSlots, getOccupiedSlots, isSlotOccupied} from '@/controllers/outfitsController';
-import {jumpToSlot, setWardrobeSource} from '@/controllers/wardrobeController';
+import {deleteOutfit, filterSlots, getOccupiedSlots, isSlotOccupied, slotTagIcons} from '@/controllers/outfitsController';
+import {jumpToSlot, setWardrobeSource, startEditingOutfit} from '@/controllers/wardrobeController';
 import {askConfirm} from '@/core/prompts';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {SearchField} from '@/components/wardrobe/SearchField';
@@ -11,7 +11,12 @@ import {Button} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
 
 export function OutfitListPanel({state}: { state: WardrobeState }) {
-  const slots = useMemo(getOccupiedSlots, [state.dataVersion]);
+  const slots = useMemo(
+    () => getOccupiedSlots(state.sortMode),
+    // dataVersion re-reads the occupied slots after any wardrobe change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.dataVersion, state.sortMode],
+  );
   const canDelete = state.selection >= 0 && isSlotOccupied(state.selection);
 
   const remove = async () => {
@@ -24,15 +29,22 @@ export function OutfitListPanel({state}: { state: WardrobeState }) {
     <div className="aee-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto rounded-xl bg-black/20 p-1.5">
       {slots.length === 0
         ? <p className="mt-4 text-center text-[22px] text-zinc-500">{t('wardrobe-no-saved-outfits')}</p>
-        : slots.map(slot => <Button density="stage"
-                                    key={slot.index}
-                                    selected={state.selection === slot.index}
-                                    onClick={() => jumpToSlot(slot.index, filterSlots('', null, state.sortMode).indexOf(slot.index))}
-                                    className="h-8.5 shrink-0 justify-start text-left"
-        >
-          <span className="tabular-nums text-white/50">#{slot.index + 1}</span>
-          <span className="ml-2 truncate">{slot.name}</span>
-        </Button>)}
+        : slots.map(slot => {
+          const icons = slotTagIcons(slot.index);
+          return <Button density="stage"
+                         key={slot.index}
+                         selected={state.selection === slot.index}
+                         onClick={() => jumpToSlot(slot.index, filterSlots('', null, state.sortMode).indexOf(slot.index))}
+                         onDoubleClick={() => startEditingOutfit(slot.index)}
+                         className="h-8.5 shrink-0 justify-start text-left"
+          >
+            <span className="inline-block shrink-0 text-right tabular-nums text-white/50" style={{minWidth: '3ch'}}>
+              {slot.index + 1}
+            </span>
+            <span className="ml-2 truncate">{slot.name}</span>
+            {icons.length ? <span className="ml-auto shrink-0 pl-1">{icons.join('')}</span> : null}
+          </Button>;
+        })}
     </div>
 
     <Button density="stage"

@@ -1,25 +1,39 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {X} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import {useWardrobeStore} from '@/core/wardrobeStore';
 import type {WardrobeSettingsTab} from '@/core/types';
 import {GeneralTab} from '@/components/wardrobe/dialogs/GeneralTab';
+import {BackgroundTab} from '@/components/wardrobe/dialogs/BackgroundTab';
 import {AppearanceTab} from '@/components/wardrobe/dialogs/AppearanceTab';
+import {PanelLayoutTab} from '@/components/wardrobe/dialogs/PanelLayoutTab';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
-import {useBackdropPreview} from '@/core/dialogs';
+import {setBackdropPreview} from '@/core/dialogs';
 
 const TABS: Array<{ id: WardrobeSettingsTab; labelKey: string }> = [
   {id: 'general', labelKey: 'wardrobe-settings-general'},
+  {id: 'background', labelKey: 'wardrobe-settings-background'},
   {id: 'appearance', labelKey: 'wardrobe-settings-appearance'},
+  {id: 'panels', labelKey: 'wardrobe-settings-panels'},
 ];
 
 export function SettingsDialog({onClose}: { onClose: () => void }) {
   const [tab, setTab] = useState<WardrobeSettingsTab>('general');
   const {theme} = useWardrobeStore();
-  const previewing = useBackdropPreview();
 
-  return <Dialog onDismiss={onClose} className="h-[720px] w-[900px] p-10" hidden={previewing}>
+  // On the background tab, lift the stage dimming so the picked background is actually visible.
+  const previewBackground = tab === 'background';
+  useEffect(() => {
+    setBackdropPreview(previewBackground);
+    return () => setBackdropPreview(false);
+  }, [previewBackground]);
+
+  return <Dialog
+    onDismiss={onClose}
+    className="h-[720px] w-[900px] p-10"
+    backdropClassName={previewBackground ? 'bg-black/25' : 'bg-black/90'}
+  >
     <header className="mb-4 flex shrink-0 items-center justify-between">
       <h1 className="text-[40px] text-[#f0eee4]">{t('wardrobe-settings')}</h1>
       <Button density="stage"
@@ -42,7 +56,10 @@ export function SettingsDialog({onClose}: { onClose: () => void }) {
     <div className="h-px shrink-0 bg-gradient-to-r from-transparent via-[var(--aee-accent-35)] to-transparent"/>
 
     <div className="aee-scroll mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
-      {tab === 'general' ? <GeneralTab/> : <AppearanceTab theme={theme}/>}
+      {tab === 'general' ? <GeneralTab/>
+        : tab === 'background' ? <BackgroundTab/>
+          : tab === 'panels' ? <PanelLayoutTab/>
+            : <AppearanceTab theme={theme}/>}
     </div>
   </Dialog>;
 }

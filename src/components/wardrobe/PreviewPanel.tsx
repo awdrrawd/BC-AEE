@@ -15,7 +15,7 @@ export function PreviewPanel({state}: { state: WardrobeState }) {
   const canPan = zoomEnabled && state.zoomPct > ZOOM_PCT_MIN;
   const drag = useRef<Drag | null>(null);
 
-  return <Panel className="aee-rise-in w-115 shrink-0" style={{animationDelay: '180ms'}}>
+  return <Panel soft className="aee-rise-in w-115 shrink-0" style={{animationDelay: '180ms'}}>
     <div
       className={canPan ? 'flex-1 cursor-grab overflow-hidden active:cursor-grabbing' : 'flex-1 overflow-hidden'}
       onPointerDown={event => {

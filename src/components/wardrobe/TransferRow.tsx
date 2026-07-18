@@ -1,5 +1,6 @@
 import {Download, Upload} from 'lucide-react';
 import {t} from '@/i18n/i18n';
+import cn from '@/util/cn';
 import {Button} from '@/components/ui/Button';
 import {FileInput} from '@/components/ui/Fields';
 
@@ -12,6 +13,7 @@ export function TransferRow({
                               onImportFile,
                               accept = 'application/json,.json',
                               disabled = false,
+                              className,
                             }: {
   label: string;
   exportLabel?: string;
@@ -21,6 +23,7 @@ export function TransferRow({
   onImportFile?: (file: File) => void;
   accept?: string;
   disabled?: boolean;
+  className?: string;
 }) {
   const importText = importLabel ?? t('wardrobe-import');
 
@@ -33,7 +36,7 @@ export function TransferRow({
                                icon={<Download className="h-5 w-5"/>}
   >{importText}</Button>;
 
-  return <div className="flex flex-col gap-1.5">
+  return <div className={cn('flex flex-col gap-1.5', className)}>
     <span className="text-center text-[22px] text-white">{label}</span>
     <div className="flex gap-2">
       <Button density="stage"

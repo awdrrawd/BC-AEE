@@ -1,12 +1,9 @@
-import {useEffect} from 'react';
-import {ChevronLeft} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import {showToast} from '@/util/toast';
 import {CUSTOM_BG_PATH, writeCustomBackground} from '@/core/wardrobeStorage';
 import {backgroundDisplayName} from '@/util/wardrobeBackground';
 import {askText} from '@/core/prompts';
-import {Button} from '@/components/ui/Button';
-import {Dialog} from '@/components/ui/Dialog';
+import {settings, useSetting} from '@/core/settings';
 import {BackgroundCard} from '@/components/wardrobe/dialogs/BackgroundCard';
 import {BackgroundChoiceTrigger} from '@/components/wardrobe/dialogs/BackgroundChoiceTrigger';
 import {
@@ -14,17 +11,10 @@ import {
   type BackgroundChoice,
   isChoiceSelected,
 } from '@/components/wardrobe/dialogs/backgroundChoices';
-import {settings, useSetting} from '@/core/settings';
-import {setBackdropPreview} from '@/core/dialogs';
 
-export function BackgroundDialog({onClose}: { onClose: () => void }) {
+export function BackgroundTab() {
   const current = useSetting(settings.wardrobeBgImage);
   const apply = (path: string) => settings.wardrobeBgImage.set(path);
-
-  useEffect(() => {
-    setBackdropPreview(true);
-    return () => setBackdropPreview(false);
-  }, []);
 
   const upload = (file: File) => {
     const reader = new FileReader();
@@ -53,13 +43,10 @@ export function BackgroundDialog({onClose}: { onClose: () => void }) {
     }
   };
 
-  return <Dialog onDismiss={onClose} className="w-150 p-6" backdropClassName="bg-black/25">
-    <header className="mb-4 flex flex-col items-center gap-1">
-      <h1 className="text-[28px] text-[#f0eee4]">{t('wardrobe-bg-pick-title')}</h1>
-      <p className="text-[20px] text-white/70">{t('wardrobe-bg-current')}{backgroundDisplayName()}</p>
-    </header>
+  return <div className="flex flex-col gap-4">
+    <p className="text-[22px] text-white/70">{t('wardrobe-bg-current')}{backgroundDisplayName()}</p>
 
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-3 gap-3">
       {BACKGROUND_CHOICES.map(choice => <BackgroundCard
         key={choice.label}
         choice={choice}
@@ -74,11 +61,5 @@ export function BackgroundDialog({onClose}: { onClose: () => void }) {
         />
       </BackgroundCard>)}
     </div>
-
-    <Button density="stage"
-            className="mt-5 h-9 w-30"
-            onClick={onClose}
-            icon={<ChevronLeft className="h-4 w-4"/>}
-    >{t('wardrobe-back')}</Button>
-  </Dialog>;
+  </div>;
 }

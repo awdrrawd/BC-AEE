@@ -18,7 +18,7 @@ export function OutfitListPanel({state}: { state: WardrobeState }) {
     if (await askConfirm(t('wardrobe-confirm-delete'), true)) deleteOutfit(state.selection);
   };
 
-  return <Panel className="aee-rise-in w-80 shrink-0 gap-2.5 p-2.5">
+  return <Panel soft className="aee-rise-in w-80 shrink-0 gap-2.5 p-2.5">
     <SearchField value={state.search}/>
 
     <div className="aee-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto rounded-xl bg-black/20 p-1.5">

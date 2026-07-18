@@ -13,9 +13,20 @@ import {bumpWardrobeData, getTargetCharacter, getWardrobeState, setWardrobeState
 import type {OccupiedSlot, PendingImport, WardrobeFilter, WardrobeSortMode} from '@/core/types';
 import {settings} from '@/core/settings';
 
-export const GRID_COLS = 3;
 export const GRID_ROWS = 2;
-export const PER_PAGE = GRID_COLS * GRID_ROWS;
+const BASE_GRID_COLS = 3;
+// Side panels that can be hidden; each hidden one widens the grid by one column.
+const HIDEABLE_SIDE_PANELS = ['list', 'manage', 'preview'];
+
+export function gridColumns(): number {
+  const layout = settings.wardrobePanelLayout.get();
+  const hidden = HIDEABLE_SIDE_PANELS.filter(id => !layout.includes(id)).length;
+  return BASE_GRID_COLS + hidden;
+}
+
+export function perPage(): number {
+  return gridColumns() * GRID_ROWS;
+}
 
 export function slotName(index: number): string {
   return activeWardrobeSource().nameAt(index);
@@ -55,7 +66,7 @@ export function filterSlots(search: string, filter: WardrobeFilter, sort: Wardro
 }
 
 export function pageCount(slots: number[]): number {
-  return Math.max(1, Math.ceil(slots.length / PER_PAGE));
+  return Math.max(1, Math.ceil(slots.length / perPage()));
 }
 
 export function getOccupiedSlots(): OccupiedSlot[] {
@@ -243,6 +254,42 @@ export function exportOutfitToClipboard(index: number) {
       console.warn('🐈‍⬛ [AEE] Failed to write the outfit code to the clipboard', error);
       showToast(t('wardrobe-toast-export-failed'));
     });
+}
+
+/** Copies the target character's currently worn outfit to the clipboard (no slot involved). */
+export function exportWornToClipboard() {
+  const bundle = buildOutfitBundle(getTargetCharacter());
+  if (!bundle.length) {
+    showToast(t('wardrobe-toast-export-failed'));
+    return;
+  }
+
+  navigator.clipboard.writeText(encodeBundle(bundle))
+    .then(() => showToast(t('wardrobe-toast-exported')))
+    .catch(error => {
+      console.warn('🐈‍⬛ [AEE] Failed to write the worn outfit code to the clipboard', error);
+      showToast(t('wardrobe-toast-export-failed'));
+    });
+}
+
+/** Applies a pasted outfit code directly onto the target character. */
+export function importCodeToWorn(code: string) {
+  const bundle = decodeBundles(code)?.[0];
+  if (!bundle) {
+    showToast(t('wardrobe-toast-import-failed'));
+    return;
+  }
+  const character = getTargetCharacter();
+  try {
+    applyOutfit(character, bundle);
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to wear the imported outfit', error);
+    showToast(t('wardrobe-toast-import-failed'));
+    return;
+  }
+  CharacterRefresh(character, false);
+  bumpWardrobeData();
+  showToast(t('wardrobe-toast-imported'));
 }
 
 export function importOutfitFromCode(index: number, code: string) {

@@ -8,6 +8,7 @@ export interface UiTheme {
   preset: string;
   accent: string;
   uiStyle: UiStyle;
+  base: string;
 }
 
 export interface UiThemePreset {
@@ -17,7 +18,7 @@ export interface UiThemePreset {
   uiStyle: UiStyle;
 }
 
-export const UI_STYLES: UiStyle[] = ['elegant', 'minimal', 'neon', 'court', 'dressing'];
+export const UI_STYLES: UiStyle[] = ['minimal', 'elegant', 'neon', 'court', 'dressing'];
 
 export const UI_STYLE_LABEL_KEYS: Record<UiStyle, string> = {
   elegant: 'wardrobe-ui-style-elegant',
@@ -32,7 +33,8 @@ export const THEME_PRESETS: UiThemePreset[] = [
   {id: 'sapphire', name: 'wardrobe-theme-sapphire', accent: '#5b9bd5', uiStyle: 'minimal'},
   {id: 'emerald', name: 'wardrobe-theme-emerald', accent: '#4ade80', uiStyle: 'minimal'},
   {id: 'rose', name: 'wardrobe-theme-rose', accent: '#f472b6', uiStyle: 'elegant'},
-  {id: 'amethyst', name: 'wardrobe-theme-amethyst', accent: '#a78bfa', uiStyle: 'neon'},
+  {id: 'amethyst', name: 'wardrobe-theme-amethyst', accent: '#a78bfa', uiStyle: 'elegant'},
+  {id: 'iris', name: 'wardrobe-theme-iris', accent: '#7648fe', uiStyle: 'neon'},
   {id: 'crimson', name: 'wardrobe-theme-crimson', accent: '#ef4444', uiStyle: 'elegant'},
   {id: 'cyan', name: 'wardrobe-theme-cyan', accent: '#22d3ee', uiStyle: 'neon'},
   {id: 'royal', name: 'wardrobe-theme-royal', accent: '#c9a227', uiStyle: 'court'},
@@ -46,6 +48,7 @@ export function readUiTheme(): UiTheme {
     preset: settings.themePreset.get() || DEFAULT_THEME.id,
     accent: settings.themeAccent.get() || DEFAULT_THEME.accent,
     uiStyle: settings.themeUiStyle.get() || DEFAULT_THEME.uiStyle,
+    base: settings.themeBase.get(),
   };
 }
 
@@ -53,16 +56,18 @@ export function writeUiTheme(theme: UiTheme) {
   settings.themePreset.set(theme.preset);
   settings.themeAccent.set(theme.accent);
   settings.themeUiStyle.set(theme.uiStyle);
+  settings.themeBase.set(theme.base);
 }
 
 export function uiAccent(theme: UiTheme): string {
-  if (theme.uiStyle === 'dressing') return '#d4a574';
-  if (theme.uiStyle === 'court') return '#c9a227';
   return theme.accent;
 }
 
+const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
 export function uiThemeVariables(theme: UiTheme): CSSProperties {
   const accent = uiAccent(theme);
+  const base = HEX_COLOR.test(theme.base) ? theme.base : null;
   return {
     '--aee-accent': accent,
     '--aee-accent-08': hexToRgba(accent, 0.08),
@@ -77,7 +82,8 @@ export function uiThemeVariables(theme: UiTheme): CSSProperties {
     '--aee-control-bg': 'rgba(39,39,52,0.78)',
     '--aee-control-hover': 'rgba(63,63,78,0.92)',
     '--aee-field-bg': 'rgba(18,18,26,0.86)',
-    '--aee-panel-bg': panelBackground(theme.uiStyle),
+    '--aee-panel-bg': base ? hexToRgba(base, 0.96) : panelBackground(theme.uiStyle),
+    '--aee-panel-bg-soft': base ? hexToRgba(base, 0.5) : panelBackgroundSoft(theme.uiStyle),
     '--aee-panel-border': panelBorder(theme.uiStyle, accent),
     '--aee-panel-radius': '8px',
     '--aee-panel-shadow': panelShadow(theme.uiStyle, accent),
@@ -90,6 +96,16 @@ function panelBackground(uiStyle: UiStyle): string {
     case 'court': return 'rgba(24,20,16,0.96)';
     case 'dressing': return 'rgba(30,25,22,0.96)';
     default: return 'rgba(9,9,11,0.96)';
+  }
+}
+
+// Half-opacity panel fill so the wardrobe background shows through the list and manage panels.
+function panelBackgroundSoft(uiStyle: UiStyle): string {
+  switch (uiStyle) {
+    case 'neon': return 'rgba(9,9,16,0.5)';
+    case 'court': return 'rgba(24,20,16,0.5)';
+    case 'dressing': return 'rgba(30,25,22,0.5)';
+    default: return 'rgba(9,9,11,0.5)';
   }
 }
 

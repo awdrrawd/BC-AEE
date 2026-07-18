@@ -28,7 +28,7 @@ export function OutfitCard({
     }}
     className={cn(
       'group relative cursor-pointer overflow-hidden rounded-xl border transition',
-      isSlotOccupied(slotIndex) ? 'bg-[rgba(16,16,24,0.55)]' : 'bg-white/3',
+      isSlotOccupied(slotIndex) ? 'bg-[rgba(16,16,24,0.5)]' : 'bg-white/3',
       !selected && !markedForSwap && 'border-white/6 hover:border-white/15 hover:bg-white/4',
     )}
     style={selected

@@ -64,8 +64,8 @@ export function wardrobeFileName(): string {
   return `aee-wardrobe-${player}-${date}.json`;
 }
 
-export function downloadJson(fileName: string, json: string) {
-  const url = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+export function downloadBlob(fileName: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
@@ -73,6 +73,10 @@ export function downloadJson(fileName: string, json: string) {
   anchor.click();
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+export function downloadJson(fileName: string, json: string) {
+  downloadBlob(fileName, new Blob([json], {type: 'application/json'}));
 }
 
 export function parseWardrobeFile(text: string): PendingImport[] | null {

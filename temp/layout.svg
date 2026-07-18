@@ -1,0 +1,6 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+	<style>
+		.s0 { opacity: .98;fill: #000000 } 
+	</style>
+	<path id="Path 0" fill-rule="evenodd" class="s0" d="m2 3l1-1h7l1 10-1 1-8-1zm2 8h5v-7h-5zm18-3l-8 1-1-1 1-6h7l1 1zm-7-1h5v-3h-5zm-1 15l-1-10 8-1 1 1v9h-1v1zm1-2h5v-7h-5zm6 2l1-1v1zm-19-6l8-1 1 6-1 1h-7v-1h-1zm2 4h5v-3h-5zm-2 2h1l-1-1z"/>
+</svg>

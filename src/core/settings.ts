@@ -136,9 +136,12 @@ export const settings = {
   wardrobeCategories: value<string[]>('wardrobeCategories', ['Category 1', 'Category 2', 'Category 3']),
   wardrobeBgImage: value('wardrobeBgImage', 'Backgrounds/Private.jpg'),
   wardrobeSlotMeta: value<Record<string, WardrobeSlotMeta>>('wardrobeSlotMeta', {}),
+  wardrobePanelLayout: value<string[]>('wardrobePanelLayout', ['list', 'grid', 'manage', 'preview']),
+  wardrobePhoto: bool('wardrobePhoto', false),
 
   uiLanguage: value('uiLanguage', ''),
   themePreset: value('wardrobeThemePreset', ''),
   themeAccent: value('wardrobeThemeAccent', ''),
   themeUiStyle: value<UiStyle | ''>('wardrobeThemeUiStyle', ''),
+  themeBase: value('wardrobeThemeBase', ''),
 };

@@ -1,14 +1,17 @@
-import {Save, Shirt} from 'lucide-react';
+import {Save, Shirt, SquareX} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 
 import {
   exportOutfitToClipboard,
   exportWardrobeToFile,
+  exportWornToClipboard,
+  importCodeToWorn,
   importOutfitFromCode,
   readImportFile,
   saveOutfit,
   tryOnOutfit,
 } from '@/controllers/outfitsController';
+import {clearSelection} from '@/controllers/wardrobeController';
 import {openDialog} from '@/core/dialogs';
 import {askText} from '@/core/prompts';
 import type {WardrobeState} from '@/core/wardrobeStore';
@@ -26,7 +29,9 @@ export function ManagePanel({state}: { state: WardrobeState }) {
 
   const importFromClipboard = async () => {
     const code = await askText(t('wardrobe-prompt-paste-code'));
-    if (code?.trim()) importOutfitFromCode(state.selection, code.trim());
+    if (!code?.trim()) return;
+    if (hasSelection) importOutfitFromCode(state.selection, code.trim());
+    else importCodeToWorn(code.trim());
   };
 
   const importFromFile = async (file: File) => {
@@ -35,6 +40,7 @@ export function ManagePanel({state}: { state: WardrobeState }) {
   };
 
   return <Panel
+    soft
     className="aee-rise-in w-82.5 shrink-0 gap-3 p-4"
     style={{animationDelay: '120ms'}}
   >
@@ -55,10 +61,24 @@ export function ManagePanel({state}: { state: WardrobeState }) {
             icon={<Save className="h-5 w-5"/>}
     >{t('wardrobe-save')}</Button>
 
+    <Button density="stage"
+            className="h-[50px] shrink-0"
+            disabled={!hasSelection}
+            onClick={() => tryOnOutfit(state.selection)}
+            icon={<Shirt className="h-6 w-6"/>}
+    >{t('wardrobe-try-on')}</Button>
+
+    <Button density="stage"
+            className="h-[50px] shrink-0"
+            disabled={!hasSelection}
+            onClick={clearSelection}
+            icon={<SquareX className="h-6 w-6"/>}
+    >{t('wardrobe-deselect')}</Button>
+
     <TransferRow
-      label={t('wardrobe-clipboard-save')}
-      disabled={!hasSelection}
-      onExport={() => exportOutfitToClipboard(state.selection)}
+      className="mt-[50px]"
+      label={hasSelection ? t('wardrobe-clipboard-save') : t('wardrobe-clipboard-save-worn')}
+      onExport={() => (hasSelection ? exportOutfitToClipboard(state.selection) : exportWornToClipboard())}
       onImport={() => void importFromClipboard()}
     />
 
@@ -67,12 +87,5 @@ export function ManagePanel({state}: { state: WardrobeState }) {
       onExport={exportWardrobeToFile}
       onImportFile={file => void importFromFile(file)}
     />
-
-    <Button density="stage"
-            className="mt-auto h-[50px] shrink-0"
-            disabled={!hasSelection}
-            onClick={() => tryOnOutfit(state.selection)}
-            icon={<Shirt className="h-6 w-6"/>}
-    >{t('wardrobe-try-on')}</Button>
   </Panel>;
 }

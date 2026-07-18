@@ -1,6 +1,6 @@
 import {THEME_PRESETS, type UiStyle, type UiTheme, writeUiTheme} from '@/core/theme';
 import {reloadWardrobeData} from '@/core/wardrobeStorage';
-import {PER_PAGE, slotName, swapOutfits} from '@/controllers/outfitsController';
+import {perPage, slotName, swapOutfits} from '@/controllers/outfitsController';
 import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 import type {WardrobeFilter, WardrobeSortMode, WardrobeSourceId} from '@/core/types';
 import {clamp} from '@/util/math';
@@ -28,7 +28,7 @@ function applyTheme(theme: UiTheme) {
 
 export function selectThemePreset(presetId: string) {
   const preset = THEME_PRESETS.find(candidate => candidate.id === presetId);
-  if (preset) applyTheme({preset: preset.id, accent: preset.accent, uiStyle: preset.uiStyle});
+  if (preset) applyTheme({preset: preset.id, accent: preset.accent, uiStyle: preset.uiStyle, base: ''});
 }
 
 export function setCustomAccent(accent: string) {
@@ -37,6 +37,14 @@ export function setCustomAccent(accent: string) {
 
 export function setUiStyle(uiStyle: UiStyle) {
   applyTheme({...getWardrobeState().theme, uiStyle});
+}
+
+export function setCustomBase(base: string) {
+  applyTheme({...getWardrobeState().theme, base});
+}
+
+export function clearCustomBase() {
+  applyTheme({...getWardrobeState().theme, base: ''});
 }
 
 export function resetWardrobeScreen(target: Character) {
@@ -83,11 +91,52 @@ export function setSortMode(sortMode: WardrobeSortMode) {
 }
 
 export function goToPage(page: number, pageCount: number) {
-  setWardrobeState({offset: clamp(page, 0, pageCount - 1) * PER_PAGE});
+  setWardrobeState({offset: clamp(page, 0, pageCount - 1) * perPage()});
 }
 
 export function selectSlot(index: number) {
   setWardrobeState({selection: index, name: slotName(index)});
+}
+
+export function clearSelection() {
+  setWardrobeState({selection: -1, name: ''});
+}
+
+export const DEFAULT_PANEL_LAYOUT = ['list', 'grid', 'manage', 'preview'];
+
+export function resetPanelLayout() {
+  settings.wardrobePanelLayout.set([...DEFAULT_PANEL_LAYOUT]);
+}
+
+export function swapPanels(a: string, b: string) {
+  if (a === b) return;
+  const layout = [...settings.wardrobePanelLayout.get()];
+  const ia = layout.indexOf(a);
+  const ib = layout.indexOf(b);
+  if (ia < 0 || ib < 0) return;
+  [layout[ia], layout[ib]] = [layout[ib], layout[ia]];
+  settings.wardrobePanelLayout.set(layout);
+}
+
+export function togglePanel(id: string) {
+  if (id === 'grid') return; // the outfit grid is mandatory
+  const layout = settings.wardrobePanelLayout.get();
+  if (layout.includes(id)) {
+    settings.wardrobePanelLayout.set(layout.filter(entry => entry !== id));
+    return;
+  }
+  // Re-insert a hidden panel at its natural position relative to the visible ones.
+  const target = DEFAULT_PANEL_LAYOUT.indexOf(id);
+  let insertAt = layout.length;
+  for (let index = 0; index < layout.length; index++) {
+    if (DEFAULT_PANEL_LAYOUT.indexOf(layout[index]) > target) {
+      insertAt = index;
+      break;
+    }
+  }
+  const next = [...layout];
+  next.splice(insertAt, 0, id);
+  settings.wardrobePanelLayout.set(next);
 }
 
 export function setName(name: string) {
@@ -100,7 +149,7 @@ export function jumpToSlot(index: number, positionInList: number) {
     activeFilter: null,
     selection: index,
     name: slotName(index),
-    offset: positionInList >= 0 ? Math.floor(positionInList / PER_PAGE) * PER_PAGE : 0,
+    offset: positionInList >= 0 ? Math.floor(positionInList / perPage()) * perPage() : 0,
   });
 }
 

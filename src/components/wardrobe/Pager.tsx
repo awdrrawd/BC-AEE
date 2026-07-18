@@ -1,6 +1,6 @@
 import {useLayoutEffect, useRef, useState} from 'react';
 import {ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight} from 'lucide-react';
-import {isSlotOccupied, pageCount, PER_PAGE} from '@/controllers/outfitsController';
+import {isSlotOccupied, pageCount, perPage} from '@/controllers/outfitsController';
 import {goToPage} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {Button} from '@/components/ui/Button';
@@ -10,7 +10,8 @@ const PILL_GAP = 6;
 
 export function Pager({state, slots}: { state: WardrobeState; slots: number[] }) {
   const pages = pageCount(slots);
-  const current = Math.floor(state.offset / PER_PAGE);
+  const size = perPage();
+  const current = Math.floor(state.offset / size);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const [trackWidth, setTrackWidth] = useState(0);
@@ -30,7 +31,7 @@ export function Pager({state, slots}: { state: WardrobeState; slots: number[] })
   const visible = Array.from({length: count}, (_, index) => start + index);
 
   const hasOutfits = (page: number) => slots
-    .slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
+    .slice(page * size, page * size + size)
     .some(isSlotOccupied);
 
   const square = {width: PILL_SIZE, height: PILL_SIZE};

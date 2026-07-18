@@ -1,7 +1,6 @@
 import bcAeeModSdk from '@/modsdk';
 import {getCanvasRect} from '@/core/bc';
-import {settings} from '@/core/settings';
-import {backupOnlineWardrobe, onlineWardrobeSize, reloadWardrobeData} from '@/core/wardrobeStorage';
+import {reloadWardrobeData} from '@/core/wardrobeStorage';
 import {installWardrobeSettingEffects, resetWardrobeScreen} from '@/controllers/wardrobeController';
 import {bumpWardrobeData, DEFAULT_RETURN_SCREEN, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 
@@ -75,17 +74,6 @@ export function installWardrobeHooks() {
   bcAeeModSdk.hookFunction('TextLoad', 1, (args, next) => {
     if (!isOnWardrobeScreen()) return next(args);
     return {loadedPromise: Promise.resolve()} as unknown as TextCache;
-  });
-
-  bcAeeModSdk.hookFunction('CharacterCompressWardrobe', 0, (args, next) => {
-    const wardrobe = args[0];
-    if (!Array.isArray(wardrobe)) return next(args);
-
-    const onlineSize = onlineWardrobeSize();
-    const hasLocalTail = wardrobe === Player.Wardrobe || wardrobe.length > onlineSize;
-    const onlineWardrobe = hasLocalTail ? wardrobe.slice(0, onlineSize) : wardrobe;
-    if (settings.wardrobeCacheOnline.get()) backupOnlineWardrobe(onlineWardrobe);
-    return onlineWardrobe === wardrobe ? next(args) : next([onlineWardrobe]);
   });
 
   window.Liko = window.Liko ?? {};

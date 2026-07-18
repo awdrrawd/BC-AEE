@@ -9,8 +9,6 @@ import {BackgroundDialog} from '@/components/wardrobe/dialogs/BackgroundDialog';
 
 const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
   {labelKey: 'wardrobe-setting-96-slots', setting: settings.wardrobeExtended},
-  {labelKey: 'wardrobe-setting-local-288', setting: settings.wardrobeLocal},
-  {labelKey: 'wardrobe-setting-cache-local', setting: settings.wardrobeCacheOnline},
   {labelKey: 'wardrobe-setting-shared', setting: settings.wardrobeShared},
   {labelKey: 'wardrobe-setting-categories', setting: settings.wardrobeCategoriesEnabled},
   {labelKey: 'wardrobe-setting-zoom', setting: settings.wardrobeZoom},

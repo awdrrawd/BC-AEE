@@ -2,7 +2,8 @@ import type {CanvasRect} from '@/core/types';
 import type {UiTheme} from '@/core/theme';
 import {readUiTheme} from '@/core/theme';
 import {createExternalStore} from '@/core/externalStore';
-import type {WardrobeFilter, WardrobeSortMode} from '@/core/types';
+import {settings} from '@/core/settings';
+import type {WardrobeFilter, WardrobeSortMode, WardrobeSourceId} from '@/core/types';
 
 export const DEFAULT_RETURN_SCREEN: [string, string] = ['Character', 'Appearance'];
 
@@ -24,6 +25,7 @@ export interface WardrobeState {
   target: Character | null;
   returnScreen: [string, string];
   dataVersion: number;
+  source: WardrobeSourceId;
 }
 
 const initialState: WardrobeState = {
@@ -44,6 +46,7 @@ const initialState: WardrobeState = {
   target: null,
   returnScreen: DEFAULT_RETURN_SCREEN,
   dataVersion: 0,
+  source: settings.wardrobeSource.get(),
 };
 
 const store = createExternalStore(initialState);

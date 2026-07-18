@@ -248,6 +248,7 @@ export interface AeeState {
 export type WardrobeSettingsTab = 'general' | 'appearance';
 export type WardrobeSortMode = 'default' | 'name' | 'favorite' | 'occupied';
 export type WardrobeFilter = string | null;
+export type WardrobeSourceId = 'online' | 'local';
 
 export interface WardrobeSlotMeta {
   favorite: boolean;

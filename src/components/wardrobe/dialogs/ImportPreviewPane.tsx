@@ -1,5 +1,6 @@
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
+import {activeWardrobeSource} from '@/core/wardrobeStorage';
 import type {ImportEntry} from '@/components/wardrobe/dialogs/importPlan';
 import {entryStatus, outfitLabel, slotLabel} from '@/components/wardrobe/dialogs/importPlan';
 import {CharacterPreview} from '@/components/wardrobe/CharacterPreview';
@@ -16,7 +17,7 @@ export function ImportPreviewPane({entry, index}: { entry: ImportEntry | null; i
             <PreviewCard
               title={t('wardrobe-import-before')}
               subtitle={entry.target < 0 ? t('wardrobe-import-no-target') : slotLabel(entry.target)}
-              appearance={entry.target >= 0 ? Player.Wardrobe?.[entry.target] : null}
+              appearance={entry.target >= 0 ? activeWardrobeSource().outfitAt(entry.target) : null}
             />
             <PreviewCard
               title={t('wardrobe-import-after')}

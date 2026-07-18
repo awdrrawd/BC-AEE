@@ -1,6 +1,6 @@
 import {useSyncExternalStore} from 'react';
 import type {UiStyle} from '@/core/theme';
-import type {WardrobeSlotMeta} from '@/core/types';
+import type {WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
 
 const STORAGE_KEY = 'liko-aee-settings';
 
@@ -126,9 +126,9 @@ export const settings = {
   bgImgUrl: value('bgImgUrl', ''),
 
   wardrobeExtended: bool('wardrobeExtended', true),
-  wardrobeLocal: bool('wardrobeLocal', false),
-  wardrobeCacheOnline: bool('wardrobeCacheOnlineLocally', false),
   wardrobeShared: bool('wardrobeSharedAcrossAccounts', false),
+  wardrobeSource: value<WardrobeSourceId>('wardrobeSource', 'online'),
+  wardrobeMetaMigrated: bool('wardrobeMetaMigrated', false),
   wardrobeCategoriesEnabled: bool('wardrobeCategoriesEnabled', false),
   wardrobeZoom: bool('wardrobeZoomEnabled', false),
   wardrobeIncludeBody: bool('wardrobeIncludeBody', true),

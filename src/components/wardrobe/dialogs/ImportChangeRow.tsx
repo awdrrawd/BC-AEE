@@ -1,5 +1,6 @@
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
+import {activeWardrobeSource} from '@/core/wardrobeStorage';
 import {slotName} from '@/controllers/outfitsController';
 import type {ImportEntry, ImportStatus} from '@/components/wardrobe/dialogs/importPlan';
 import {entryStatus, outfitLabel, slotLabel} from '@/components/wardrobe/dialogs/importPlan';
@@ -73,7 +74,7 @@ export function ImportChangeRow({entry, index, focused, onFocus, onToggle, onRet
         onChange={event => onRetarget(Number(event.currentTarget.value))}
       >
         <option value={-1}>{t('wardrobe-import-no-target')}</option>
-        {Array.from({length: WardrobeSize}, (_, slot) => <option key={slot} value={slot}>{slotLabel(slot)}</option>)}
+        {Array.from({length: activeWardrobeSource().size()}, (_, slot) => <option key={slot} value={slot}>{slotLabel(slot)}</option>)}
       </Select>
     </span>
   </div>;

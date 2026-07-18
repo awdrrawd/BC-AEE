@@ -1,6 +1,6 @@
 import {Star} from 'lucide-react';
 import cn from '@/util/cn';
-import {getSlotMeta} from '@/core/wardrobeStorage';
+import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
 import {isSlotOccupied, slotName, toggleFavorite} from '@/controllers/outfitsController';
 import {CharacterPreview} from '@/components/wardrobe/CharacterPreview';
 
@@ -15,7 +15,8 @@ export function OutfitCard({
   markedForSwap: boolean;
   onSelect: () => void;
 }) {
-  const meta = getSlotMeta(slotIndex);
+  const source = activeWardrobeSource();
+  const meta = getSlotMeta(source.id, slotIndex);
   const name = slotName(slotIndex);
 
   return <div
@@ -37,7 +38,7 @@ export function OutfitCard({
         : undefined}
   >
     <CharacterPreview
-      appearance={Player.Wardrobe?.[slotIndex]}
+      appearance={source.outfitAt(slotIndex)}
       className="pointer-events-none h-full w-full"
     />
 

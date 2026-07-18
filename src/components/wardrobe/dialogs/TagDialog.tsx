@@ -1,13 +1,13 @@
 import {useState} from 'react';
 import {t} from '@/i18n/i18n';
 import {knownTags, setSlotTags} from '@/controllers/outfitsController';
-import {getSlotMeta} from '@/core/wardrobeStorage';
+import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
 import {ListEditor} from '@/components/ui/ListEditor';
 
 export function TagDialog({slot, onClose}: { slot: number; onClose: () => void }) {
-  const [tags, setTags] = useState(() => getSlotMeta(slot).tags);
+  const [tags, setTags] = useState(() => getSlotMeta(activeWardrobeSource().id, slot).tags);
 
   const confirm = () => {
     setSlotTags(slot, tags);

@@ -1,6 +1,6 @@
 import type {PendingImport, WardrobeSlotMeta} from '@/core/types';
 import {decodeBundles} from '@/util/appearanceBundle';
-import {getSlotMeta} from '@/core/wardrobeStorage';
+import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
 
 const FILE_FORMAT = 'aee-wardrobe';
 const FILE_VERSION = 1;
@@ -31,14 +31,15 @@ function isOutfit(value: unknown): value is ItemBundle[] {
 }
 
 export function collectWardrobeSlots(): WardrobeFileSlot[] {
+  const source = activeWardrobeSource();
   const slots: WardrobeFileSlot[] = [];
-  for (let index = 0; index < WardrobeSize; index++) {
-    const outfit = Player.Wardrobe?.[index];
-    if (!outfit?.length) continue;
-    const meta = getSlotMeta(index);
+  for (let index = 0; index < source.size(); index++) {
+    const outfit = source.outfitAt(index);
+    if (!outfit.length) continue;
+    const meta = getSlotMeta(source.id, index);
     slots.push({
       index,
-      name: Player.WardrobeCharacterNames?.[index] ?? '',
+      name: source.nameAt(index),
       favorite: meta.favorite,
       tags: meta.tags,
       outfit,

@@ -1,13 +1,13 @@
 import {Tag} from 'lucide-react';
 import {t} from '@/i18n/i18n';
-import {getSlotMeta} from '@/core/wardrobeStorage';
+import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
 import {openDialog} from '@/core/dialogs';
 import {Button} from '@/components/ui/Button';
 import {TagDialog} from '@/components/wardrobe/dialogs/TagDialog';
 
 export function TagRow({selection}: { selection: number }) {
   const hasSelection = selection >= 0;
-  const tags = hasSelection ? getSlotMeta(selection).tags : [];
+  const tags = hasSelection ? getSlotMeta(activeWardrobeSource().id, selection).tags : [];
 
   return <div className="flex items-center justify-between gap-2">
     <span className="truncate text-[24px] text-white">{t('wardrobe-tag')}</span>

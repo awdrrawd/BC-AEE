@@ -2,7 +2,7 @@ import {THEME_PRESETS, type UiStyle, type UiTheme, writeUiTheme} from '@/core/th
 import {reloadWardrobeData} from '@/core/wardrobeStorage';
 import {PER_PAGE, slotName, swapOutfits} from '@/controllers/outfitsController';
 import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
-import type {WardrobeFilter, WardrobeSortMode} from '@/core/types';
+import type {WardrobeFilter, WardrobeSortMode, WardrobeSourceId} from '@/core/types';
 import {clamp} from '@/util/math';
 import {dismissPrompt} from '@/core/prompts';
 import {closeAllDialogs} from '@/core/dialogs';
@@ -15,7 +15,6 @@ export const ZOOM_PCT_STEP = 10;
 export function installWardrobeSettingEffects() {
   const resizesWardrobe = [
     settings.wardrobeExtended,
-    settings.wardrobeLocal,
     settings.wardrobeShared,
   ];
   resizesWardrobe.forEach(setting => setting.onChange(() => reloadWardrobeData()));
@@ -66,6 +65,13 @@ export function saveWardrobeCategories(categories: string[]) {
 
 export function setSearch(search: string) {
   setWardrobeState({search, offset: 0});
+}
+
+export function setWardrobeSource(source: WardrobeSourceId) {
+  if (source === getWardrobeState().source) return;
+  settings.wardrobeSource.set(source);
+  setWardrobeState({source, selection: -1, name: '', offset: 0, reorderMode: false, reorderFirst: -1});
+  bumpWardrobeData();
 }
 
 export function setFilter(activeFilter: WardrobeFilter) {

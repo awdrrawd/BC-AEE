@@ -3,18 +3,16 @@ import {useMemo} from 'react';
 import {t} from '@/i18n/i18n';
 
 import {deleteOutfit, filterSlots, getOccupiedSlots, isSlotOccupied} from '@/controllers/outfitsController';
-import {jumpToSlot} from '@/controllers/wardrobeController';
+import {jumpToSlot, setWardrobeSource} from '@/controllers/wardrobeController';
 import {askConfirm} from '@/core/prompts';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {SearchField} from '@/components/wardrobe/SearchField';
 import {Button} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
-import {settings, useSetting} from '@/core/settings';
 
 export function OutfitListPanel({state}: { state: WardrobeState }) {
   const slots = useMemo(getOccupiedSlots, [state.dataVersion]);
   const canDelete = state.selection >= 0 && isSlotOccupied(state.selection);
-  const onlineOnly = !useSetting(settings.wardrobeCacheOnline);
 
   const remove = async () => {
     if (await askConfirm(t('wardrobe-confirm-delete'), true)) deleteOutfit(state.selection);
@@ -47,13 +45,13 @@ export function OutfitListPanel({state}: { state: WardrobeState }) {
     <div className="flex h-12.5 shrink-0 gap-2.5">
       <Button density="stage"
               className="flex-1"
-              selected={onlineOnly}
-              onClick={() => settings.wardrobeCacheOnline.set(false)}
+              selected={state.source === 'online'}
+              onClick={() => setWardrobeSource('online')}
       >{t('wardrobe-online')}</Button>
       <Button density="stage"
               className="flex-1"
-              selected={!onlineOnly}
-              onClick={() => settings.wardrobeCacheOnline.set(true)}
+              selected={state.source === 'local'}
+              onClick={() => setWardrobeSource('local')}
       >{t('wardrobe-local')}</Button>
     </div>
   </Panel>;

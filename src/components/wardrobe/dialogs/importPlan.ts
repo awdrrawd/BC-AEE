@@ -1,5 +1,6 @@
 import {t} from '@/i18n/i18n';
 import type {PendingImport} from '@/core/types';
+import {activeWardrobeSource} from '@/core/wardrobeStorage';
 import {isSlotOccupied, slotName} from '@/controllers/outfitsController';
 
 export type ImportStatus = 'add' | 'replace' | 'skip';
@@ -14,6 +15,7 @@ export interface ImportEntry {
 let serial = 0;
 
 export function planImports(outfits: readonly PendingImport[]): ImportEntry[] {
+  const size = activeWardrobeSource().size();
   const taken = new Set<number>();
   let cursor = 0;
 
@@ -21,11 +23,11 @@ export function planImports(outfits: readonly PendingImport[]): ImportEntry[] {
     const source = pending.sourceIndex;
     let target = -1;
 
-    if (source != null && source >= 0 && source < WardrobeSize && !taken.has(source)) {
+    if (source != null && source >= 0 && source < size && !taken.has(source)) {
       target = source;
     } else {
-      while (cursor < WardrobeSize && (taken.has(cursor) || isSlotOccupied(cursor))) cursor++;
-      if (cursor < WardrobeSize) target = cursor;
+      while (cursor < size && (taken.has(cursor) || isSlotOccupied(cursor))) cursor++;
+      if (cursor < size) target = cursor;
     }
 
     if (target >= 0) taken.add(target);

@@ -33,15 +33,16 @@ export const FONT_BASE_URL = 'https://raw.githubusercontent.com/awdrrawd/BC-AEE/
  * Keep `id` stable once shared: it's what other players' OnlineSharedSettings reference.
  */
 export const CUSTOM_FONTS: readonly CustomFontDef[] = [
+  {id: 'tegaki-851', name: '851手書き雑フォント', file: '851-tegaki.ttf', size: 28588168},
+  {id: 'soukou-mincho', name: '装甲明朝', file: 'SoukouMincho.ttf', size: 9815820},
+  {id: 'checkpoint-cp', name: 'チェックポイント', file: 'Checkpoint-Font-CP-Font.ttf', size: 3686904},
   {id: 'gloria-hallelujah', name: 'Gloria Hallelujah', file: 'Gloria-Hallelujah.ttf', size: 59812},
   {id: 'averia-serif-libre', name: 'Averia Serif Libre', file: 'Averia-Serif-Libre.ttf', size: 112472},
   {id: 'bitcount-ink', name: 'Bitcount Prop Single Ink', file: 'Bitcount-Prop-Single-Ink.ttf', size: 513192},
   {id: 'free-serif', name: 'FreeSerif', file: 'FreeSerif.otf', size: 647288},
-  {id: 'checkpoint-cp', name: 'チェックポイント (CP Font)', file: 'Checkpoint-Font-CP-Font.ttf', size: 3686904},
   {id: 'muzai-pixel', name: 'MuzaiPixel', file: 'MuzaiPixel.ttf', size: 4025404},
   {id: 'dela-gothic-one', name: 'Dela Gothic One', file: 'Dela-Gothic-One.ttf', size: 5469244},
-  {id: 'soukou-mincho', name: '装甲明朝 (SoukouMincho)', file: 'SoukouMincho.ttf', size: 9815820},
-  {id: 'tegaki-851', name: '851手書き雑フォント', file: '851-tegaki.ttf', size: 28588168},
+  {id: 'checkpoint-cp', name: 'Star Jedi', file: 'Star-Jedi.ttf', size: 25656},
 ];
 
 /** Always-available families; browsers fall back silently when the OS lacks one. */

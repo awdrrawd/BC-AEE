@@ -5,7 +5,7 @@ import {
   findCustomFont,
   findSystemFont,
 } from '@/core/fonts';
-import {ensureCustomFontLoaded, isCustomFontReady, setFontErrorListener, setFontReadyListener} from '@/core/fontStore';
+import {clearAllFonts, ensureCustomFontLoaded, isCustomFontReady, setFontErrorListener, subscribeFonts} from '@/core/fontStore';
 import {t} from '@/i18n/i18n';
 import {showToast} from '@/util/toast';
 
@@ -13,20 +13,37 @@ import {showToast} from '@/util/toast';
 const SHARED_FONT_KEY = 'AEEItemFont';
 
 export function initItemFonts() {
-  // When a font finishes downloading, redraw so items pick it up instead of the fallback.
-  setFontReadyListener(refreshTextCharacters);
+  // When a font finishes loading (or the cache is cleared), redraw so items pick up the change.
+  subscribeFonts(refreshTextCharacters);
   setFontErrorListener((id, reason) => {
     const name = findCustomFont(id)?.name ?? id;
     showToast(t('settings-item-font-load-failed', {name, reason}), {color: '#f87171'});
   });
   // Toggling "show others' fonts" re-renders items so the change is visible immediately.
   settings.loadOthersFont.onChange(refreshTextCharacters);
-  preloadOwnFont();
+  // Defer the initial (possibly large) font decode so it doesn't compete with BC's own start-up.
+  whenIdle(preloadOwnFont);
+}
+
+function whenIdle(task: () => void) {
+  const ric = (window as unknown as {requestIdleCallback?: (cb: () => void) => void}).requestIdleCallback;
+  if (typeof ric === 'function') ric(task);
+  else setTimeout(task, 0);
 }
 
 function preloadOwnFont() {
   const def = findCustomFont(currentOwnFontId());
   if (def) ensureCustomFontLoaded(def);
+}
+
+/**
+ * Clears every preloaded custom font (memory + IndexedDB), then reloads just the currently
+ * selected one so the user's own items keep rendering. Frees the space taken by fonts the
+ * user has tried but no longer uses.
+ */
+export async function clearPreloadedFonts() {
+  await clearAllFonts();
+  preloadOwnFont();
 }
 
 export function currentOwnFontId(): string {
@@ -73,9 +90,10 @@ export function itemFontFamilyFor(character: Character | null | undefined): stri
 }
 
 function fontIdForCharacter(character: Character | null | undefined): string {
-  if (character && character === Player) return currentOwnFontId();
-  // Others' fonts are only applied when the viewer opts in.
-  if (!settings.loadOthersFont.get()) return DEFAULT_FONT_ID;
+  const own = currentOwnFontId();
+  if (character && character === Player) return own;
+  // Off: draw everyone's items in the viewer's own font. On: honour each wearer's shared choice.
+  if (!settings.loadOthersFont.get()) return own;
   const shared = character?.OnlineSharedSettings as unknown as Record<string, unknown> | undefined;
   const id = shared?.[SHARED_FONT_KEY];
   return typeof id === 'string' ? id : DEFAULT_FONT_ID;

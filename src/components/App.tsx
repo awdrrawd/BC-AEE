@@ -10,6 +10,7 @@ import {WardrobeScreen} from '@/components/wardrobe/WardrobeScreen';
 import {useWardrobeStore} from '@/core/wardrobeStore';
 import {usePrompt} from '@/core/prompts';
 import {PromptDialog} from '@/components/ui/PromptDialog';
+import {ItemFontPanelHost} from '@/components/main-panel/ItemFontPanel';
 import {uiThemeVariables} from '@/core/theme';
 
 export function App() {
@@ -25,6 +26,7 @@ export function App() {
     <ColorPicker state={state}/>
     <ViewControls state={state}/>
     <ImportDialog state={state}/>
+    <ItemFontPanelHost canvasRect={state.canvasRect}/>
     {prompt && !wardrobe.active
       ? <div className="fixed inset-0 z-1000005"><PromptDialog prompt={prompt} scale="panel"/></div>
       : null}

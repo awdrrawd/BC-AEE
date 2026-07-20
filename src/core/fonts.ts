@@ -38,11 +38,10 @@ export const CUSTOM_FONTS: readonly CustomFontDef[] = [
   {id: 'checkpoint-cp', name: 'チェックポイント', file: 'Checkpoint-Font-CP-Font.ttf', size: 3686904},
   {id: 'gloria-hallelujah', name: 'Gloria Hallelujah', file: 'Gloria-Hallelujah.ttf', size: 59812},
   {id: 'averia-serif-libre', name: 'Averia Serif Libre', file: 'Averia-Serif-Libre.ttf', size: 112472},
-  {id: 'bitcount-ink', name: 'Bitcount Prop Single Ink', file: 'Bitcount-Prop-Single-Ink.ttf', size: 513192},
   {id: 'free-serif', name: 'FreeSerif', file: 'FreeSerif.otf', size: 647288},
   {id: 'muzai-pixel', name: 'MuzaiPixel', file: 'MuzaiPixel.ttf', size: 4025404},
   {id: 'dela-gothic-one', name: 'Dela Gothic One', file: 'Dela-Gothic-One.ttf', size: 5469244},
-  {id: 'checkpoint-cp', name: 'Star Jedi', file: 'Star-Jedi.ttf', size: 25656},
+  {id: 'star-jedi', name: 'Star Jedi', file: 'Star-Jedi.ttf', size: 25456},
 ];
 
 /** Always-available families; browsers fall back silently when the OS lacks one. */
@@ -61,7 +60,7 @@ export const SYSTEM_FONTS: readonly SystemFontDef[] = [
 /** Sentinel id meaning "no override — use Bondage Club's default font". */
 export const DEFAULT_FONT_ID = 'default';
 
-const CUSTOM_FONT_FAMILY_PREFIX = 'AEE-';
+export const CUSTOM_FONT_FAMILY_PREFIX = 'AEE-';
 
 export function customFontFamily(id: string): string {
   return CUSTOM_FONT_FAMILY_PREFIX + id;

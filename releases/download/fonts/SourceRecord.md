@@ -194,38 +194,6 @@ PostScript:MuzaiPixel
 
 
 
-\*\*Bitcount-Prop-Single-Ink
-
-字體名字:Bitcount Prop Single Ink.ttf
-
-發布時間:2026-02-24
-
-字體分類:免費可商用字體
-
-字體格式:.ttf
-
-字體大小:0.49Mb
-
-字型名稱:Bitcount Prop Single Ink
-
-字型樣式:Regular
-
-字型識別碼:1.002;TPTR;BitcountPropSingleInk-Regular
-
-字型全名:Bitcount Prop Single Ink Regular
-
-字型版本:Version 1.002
-
-字重類型:400
-
-PostScript:BitcountPropSingleInk-Regular
-
-字符數量:1991
-
-版權資訊:Copyright 2024 The Bitcount Project Authors (https://github.com/petrvanblokland/TYPETR-Bitcount)
-
-
-
 \*\*Gloria-Hallelujah
 
 字體名字:Gloria Hallelujah.ttf
@@ -300,7 +268,7 @@ PostScript:FreeSerifBoldItalic
 
 字體格式:.ttf
 
-字體大小:0.02Mb
+字體大小:0.02Mb（post 表已重建為 3.0 以通過瀏覽器 OpenType Sanitizer）
 
 字型名稱:Star Jedi
 

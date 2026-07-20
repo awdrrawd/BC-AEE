@@ -290,3 +290,33 @@ PostScript:FreeSerifBoldItalic
 
 
 
+\*\*Star-Jedi
+
+字體名字:Star Jedi.ttf
+
+發布時間:2026-02-26
+
+字體分類:免費可商用字體
+
+字體格式:.ttf
+
+字體大小:0.02Mb
+
+字型名稱:Star Jedi
+
+字型樣式:Regular
+
+字型識別碼:Softy:StarJedi
+
+字型全名:Star Jedi
+
+字型版本:2.16
+
+字重類型:400
+
+PostScript:StarJedi
+
+字符數量:176
+
+版權資訊:1998 by Boba Fonts - Davide Canavero - canavero@pianeta.net
+

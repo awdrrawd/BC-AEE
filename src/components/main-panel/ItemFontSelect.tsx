@@ -1,7 +1,7 @@
 import {t} from '@/i18n/i18n';
 import {Select} from '@/components/ui/Fields';
 import {useSetting, settings} from '@/core/settings';
-import {CUSTOM_FONTS, DEFAULT_FONT_ID, SYSTEM_FONTS} from '@/core/fonts';
+import {CUSTOM_FONTS, DEFAULT_FONT_ID, formatFontSize, SYSTEM_FONTS} from '@/core/fonts';
 import {selectItemFont} from '@/controllers/fontController';
 
 export function ItemFontSelect() {
@@ -15,7 +15,9 @@ export function ItemFontSelect() {
         {SYSTEM_FONTS.map(font => <option key={font.id} value={font.id}>{font.name}</option>)}
       </optgroup>
       {CUSTOM_FONTS.length > 0 && <optgroup label={t('settings-item-font-custom-group')}>
-        {CUSTOM_FONTS.map(font => <option key={font.id} value={font.id}>{font.name}</option>)}
+        {CUSTOM_FONTS.map(font => <option key={font.id} value={font.id}>
+          {font.size ? `${font.name} (${formatFontSize(font.size)})` : font.name}
+        </option>)}
       </optgroup>}
     </Select>
   </div>;

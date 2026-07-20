@@ -179,6 +179,7 @@
   "import-controller-cannot-parse-clipboard-alert": "[AEE] Cannot parse clipboard content (please export with AEE/BCX first)",
   "import-controller-no-matching-items-alert": "[AEE] No matching items",
   "import-controller-no-diff-alert": "[AEE] No slots differ — nothing to import",
+  "import-confirm-overwrite": "Overwrite the current outfit with the pasted appearance?",
   "import-controller-import-success-message": "[AEE] Imported {count} items",
   "import-controller-import-failed-alert": "[AEE] Import failed: {error}",
   "wardrobe-title": "Wardrobe",

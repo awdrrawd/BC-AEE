@@ -179,6 +179,7 @@
   "import-controller-cannot-parse-clipboard-alert": "[AEE] 無法解析剪貼板內容（請先用 AEE/BCX 匯出）",
   "import-controller-no-matching-items-alert": "[AEE] 沒有符合的物件",
   "import-controller-no-diff-alert": "[AEE] 沒有部位有差異，無需匯入",
+  "import-confirm-overwrite": "要用剪貼簿的外觀覆蓋目前的服裝嗎？",
   "import-controller-import-success-message": "[AEE] 已匯入 {count} 個物件",
   "import-controller-import-failed-alert": "[AEE] 匯入失敗：{error}",
   "wardrobe-title": "更衣室",

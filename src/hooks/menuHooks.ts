@@ -28,7 +28,7 @@ export function installMenuHooks() {
     const text = event.clipboardData?.getData('text')?.trim();
     if (!text) return;
     event.preventDefault();
-    importBcxFromText(character, text);
+    void importBcxFromText(character, text);
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {

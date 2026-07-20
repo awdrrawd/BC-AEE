@@ -1,9 +1,16 @@
 import {t} from '@/i18n/i18n';
 import {mutateState} from '@/core/store';
-import {askText} from '@/core/prompts';
+import {askConfirm, askText} from '@/core/prompts';
 import {bundleAppearance, bundleItem, decodeBundles, encodeBundle, itemFromBundle, wearBundle} from '@/util/appearanceBundle';
 import {showToast} from '@/util/toast';
+import {settings} from '@/core/settings';
 import type {ImportCategoryKey, ImportDiff, ImportDiffDialog} from '@/core/types';
+
+/** Overwrite guard for paste-import: asks before replacing the worn outfit when confirm-save is on. */
+async function confirmOverwrite(): Promise<boolean> {
+  if (!settings.wardrobeConfirmSave.get()) return true;
+  return askConfirm(t('import-confirm-overwrite'));
+}
 
 export function exportBcxAppearance(character: Character | null | undefined) {
   try {
@@ -36,15 +43,15 @@ export async function importBcxAppearanceWithCategory(character: Character) {
     await promptManualImport(character);
     return;
   }
-  importBcxFromText(character, clipboardText);
+  await importBcxFromText(character, clipboardText);
 }
 
 async function promptManualImport(character: Character) {
   const text = (await askText(t('import-controller-manual-paste-prompt')) ?? '').trim();
-  if (text) importBcxFromText(character, text);
+  if (text) await importBcxFromText(character, text);
 }
 
-export function importBcxFromText(character: Character, rawText: string) {
+export async function importBcxFromText(character: Character, rawText: string) {
   const clipboardText = (rawText ?? '').trim();
   if (!clipboardText) {
     showToast(t('import-controller-empty-clipboard-alert'));
@@ -58,6 +65,7 @@ export function importBcxFromText(character: Character, rawText: string) {
       showToast(t('import-controller-no-diff-alert'));
       return;
     }
+    if (!(await confirmOverwrite())) return;
     const originalAppearance = CharacterAppearanceStringify(character);
     mutateState(draft => {
       draft.importDialog = {character, diffs, originalAppearance};
@@ -65,6 +73,7 @@ export function importBcxFromText(character: Character, rawText: string) {
     return;
   }
 
+  if (!(await confirmOverwrite())) return;
   const beforePaste = CharacterAppearanceStringify(character);
   try {
     CharacterAppearancePaste(character, clipboardText, false);

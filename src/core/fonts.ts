@@ -8,6 +8,8 @@ export interface CustomFontDef {
   name: string;
   /** File name appended to FONT_BASE_URL, or a full https URL. */
   file: string;
+  /** Approximate file size in bytes, shown in the picker so users know the download cost. */
+  size?: number;
 }
 
 export interface SystemFontDef {
@@ -25,10 +27,21 @@ export interface SystemFontDef {
  */
 export const FONT_BASE_URL = 'https://raw.githubusercontent.com/awdrrawd/BC-AEE/main/releases/download/fonts/';
 
-/** Fonts downloaded on demand and cached in IndexedDB. Add entries here as you host more. */
+/**
+ * Fonts downloaded on demand and cached in IndexedDB. Add entries here as you host more.
+ * `.otf` and `.ttf` both work — the loader reads the raw bytes, so the extension doesn't matter.
+ * Keep `id` stable once shared: it's what other players' OnlineSharedSettings reference.
+ */
 export const CUSTOM_FONTS: readonly CustomFontDef[] = [
-  {id: 'soukou-mincho', name: '装甲明朝 (SoukouMincho)', file: 'SoukouMincho.ttf'},
-  {id: 'tegaki-851', name: '851手書き雑フォント', file: '851-tegaki.ttf'},
+  {id: 'gloria-hallelujah', name: 'Gloria Hallelujah', file: 'Gloria-Hallelujah.ttf', size: 59812},
+  {id: 'averia-serif-libre', name: 'Averia Serif Libre', file: 'Averia-Serif-Libre.ttf', size: 112472},
+  {id: 'bitcount-ink', name: 'Bitcount Prop Single Ink', file: 'Bitcount-Prop-Single-Ink.ttf', size: 513192},
+  {id: 'free-serif', name: 'FreeSerif', file: 'FreeSerif.otf', size: 647288},
+  {id: 'checkpoint-cp', name: 'チェックポイント (CP Font)', file: 'Checkpoint-Font-CP-Font.ttf', size: 3686904},
+  {id: 'muzai-pixel', name: 'MuzaiPixel', file: 'MuzaiPixel.ttf', size: 4025404},
+  {id: 'dela-gothic-one', name: 'Dela Gothic One', file: 'Dela-Gothic-One.ttf', size: 5469244},
+  {id: 'soukou-mincho', name: '装甲明朝 (SoukouMincho)', file: 'SoukouMincho.ttf', size: 9815820},
+  {id: 'tegaki-851', name: '851手書き雑フォント', file: '851-tegaki.ttf', size: 28588168},
 ];
 
 /** Always-available families; browsers fall back silently when the OS lacks one. */
@@ -55,6 +68,14 @@ export function customFontFamily(id: string): string {
 
 export function customFontUrl(def: CustomFontDef): string {
   return /^https?:\/\//.test(def.file) ? def.file : FONT_BASE_URL + def.file;
+}
+
+/** Human-readable file size for the picker, e.g. "9.4 MB" / "58 KB". */
+export function formatFontSize(bytes: number | undefined): string {
+  if (!bytes) return '';
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
 export function findCustomFont(id: string): CustomFontDef | undefined {

@@ -129,6 +129,7 @@ export const settings = {
   wardrobeShared: bool('wardrobeSharedAcrossAccounts', false),
   wardrobeSource: value<WardrobeSourceId>('wardrobeSource', 'online'),
   wardrobeMetaMigrated: bool('wardrobeMetaMigrated', false),
+  wardrobeFbcMigrated: bool('wardrobeFbcMigrated', false),
   wardrobeCategoriesEnabled: bool('wardrobeCategoriesEnabled', false),
   wardrobeZoom: bool('wardrobeZoomEnabled', false),
   wardrobeCancelTryOn: bool('wardrobeCancelTryOn', false),

@@ -1,23 +1,41 @@
 import {settings} from '@/core/settings';
 import type {WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
-import {getWardrobeState} from '@/core/wardrobeStore';
+import {bumpWardrobeData, getWardrobeState} from '@/core/wardrobeStore';
+import {type LocalWardrobeRecord, readLocalWardrobeRecord, writeLocalWardrobeRecord} from '@/core/wardrobeDb';
 
 const DEFAULT_WARDROBE_SIZE = 24;
 const EXPANDED_WARDROBE_SIZE = 96;
-const EXTRA_ONLINE_SIZE = 96;
 const LOCAL_WARDROBE_SIZE = 288;
 
 const CUSTOM_BG_KEY = 'liko-aee-wardrobe-bg';
 const LOCAL_WARDROBE_PREFIX = 'liko-aee-wardrobe-local:';
 const LEGACY_ONLINE_BACKUP_PREFIX = 'liko-aee-wardrobe-backup:';
 
-const EXTENSION_WARDROBE_KEY = 'LIKO_AEE_WARDROBE';
-const EXTENSION_SIZE_BUDGET = 150_000;
+// Shared expanded-wardrobe key: WCE and LCE both store their 24→96 extension here (LZString+JSON),
+// so pointing AEE at the same key makes all three read/write one 96-slot online wardrobe.
+const FBC_WARDROBE_KEY = 'FBCWardrobe';
+// AEE's own pre-split extension key, kept only to migrate legacy data into FBCWardrobe.
+const LEGACY_EXTENSION_WARDROBE_KEY = 'LIKO_AEE_WARDROBE';
 
 export const CUSTOM_BG_PATH = 'custom';
 
+function extensionSettings(): Record<string, unknown> | undefined {
+  return Player?.ExtensionSettings as Record<string, unknown> | undefined;
+}
+
+/** True when a shared extended wardrobe (WCE/LCE, or a prior AEE session) already exists. */
+function externalExtendedActive(): boolean {
+  const raw = extensionSettings()?.[FBC_WARDROBE_KEY];
+  return typeof raw === 'string' && raw.length > 0;
+}
+
+/**
+ * The online wardrobe is a single 96-slot wardrobe (slots 24–96 shared via FBCWardrobe).
+ * It expands to 96 when the user enables it *or* when WCE/LCE already did — matching whatever
+ * those mods show, rather than stacking a second 96-slot segment on top (the old 96+96 bug).
+ */
 export function onlineWardrobeSize(): number {
-  return settings.wardrobeExtended.get() ? EXPANDED_WARDROBE_SIZE : DEFAULT_WARDROBE_SIZE;
+  return settings.wardrobeExtended.get() || externalExtendedActive() ? EXPANDED_WARDROBE_SIZE : DEFAULT_WARDROBE_SIZE;
 }
 
 function accountScope(): string {
@@ -54,9 +72,12 @@ function swapSlots(source: WardrobeSource, a: number, b: number) {
 }
 
 // ---------------------------------------------------------------------------
-// Online wardrobe: Player.Wardrobe base segment + ExtensionSettings extra segment.
+// Online wardrobe: one 96-slot wardrobe living entirely in Player.Wardrobe.
+// Slots 0–24 sync to the server (base BC wardrobe); slots 24–96 are the shared
+// expansion persisted to Player.ExtensionSettings.FBCWardrobe (WCE/LCE format).
 // ---------------------------------------------------------------------------
 
+/** Legacy AEE extension payload (pre-split), read only during migration. */
 interface StoredExtensionWardrobe {
   v: 1;
   /** Compressed via CharacterCompressWardrobe. */
@@ -64,93 +85,79 @@ interface StoredExtensionWardrobe {
   n: string[];
 }
 
-const extraOutfits: ItemBundle[][] = [];
-const extraNames: string[] = [];
-
-function extraOffset(index: number): number | null {
-  const offset = index - onlineWardrobeSize();
-  return offset >= 0 && offset < EXTRA_ONLINE_SIZE ? offset : null;
+/** Serializes the extended slots (24–96) into the shared FBCWardrobe extension setting. */
+function writeFbcWardrobe(): boolean {
+  if (!Player.Wardrobe) return false;
+  const extended = Player.Wardrobe
+    .slice(DEFAULT_WARDROBE_SIZE, EXPANDED_WARDROBE_SIZE)
+    .map(outfit => (Array.isArray(outfit) ? outfit : []));
+  try {
+    Player.ExtensionSettings ??= {};
+    (Player.ExtensionSettings as Record<string, unknown>)[FBC_WARDROBE_KEY] =
+      LZString.compressToUTF16(JSON.stringify(extended));
+    ServerPlayerExtensionSettingsSync(FBC_WARDROBE_KEY);
+    return true;
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to store the extended wardrobe', error);
+    return false;
+  }
 }
 
-function readExtensionWardrobe() {
-  extraOutfits.length = 0;
-  extraNames.length = 0;
+/** Loads the shared FBCWardrobe expansion into Player.Wardrobe[24..96], filling only empty slots. */
+function loadFbcWardrobe() {
+  const raw = extensionSettings()?.[FBC_WARDROBE_KEY];
+  if (typeof raw !== 'string' || !raw || !Player.Wardrobe) return;
 
-  const raw = Player?.ExtensionSettings?.[EXTENSION_WARDROBE_KEY] as Partial<StoredExtensionWardrobe> | null;
-  let outfits: ItemBundle[][] = [];
-  if (typeof raw?.w === 'string' && raw.w) {
-    try {
-      outfits = CharacterDecompressWardrobe(raw.w);
-    } catch (error) {
-      console.warn('🐈‍⬛ [AEE] Failed to decompress the extension wardrobe', error);
-    }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(LZString.decompressFromUTF16(raw) || 'null');
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to decompress the extended wardrobe', error);
+    return;
   }
-  const names = Array.isArray(raw?.n) ? raw.n : [];
+  if (!Array.isArray(parsed)) return;
 
-  for (let offset = 0; offset < EXTRA_ONLINE_SIZE; offset++) {
-    const outfit = outfits[offset];
-    extraOutfits.push(Array.isArray(outfit) && outfit.every(isBundleEntry) ? outfit : []);
-    const name = names[offset];
-    extraNames.push(typeof name === 'string' ? name : '');
+  for (let index = DEFAULT_WARDROBE_SIZE; index < EXPANDED_WARDROBE_SIZE; index++) {
+    const existing = Player.Wardrobe[index];
+    if (existing && existing.length > 0) continue; // WCE/LCE may have loaded it already — don't clobber
+    const outfit = parsed[index - DEFAULT_WARDROBE_SIZE];
+    if (Array.isArray(outfit) && outfit.every(isBundleEntry)) Player.Wardrobe[index] = outfit;
   }
 }
 
 function persistOnline(indices: readonly number[]): boolean {
-  const baseSize = onlineWardrobeSize();
-  const needsBase = indices.some(index => index < baseSize);
-  const needsExtra = indices.some(index => index >= baseSize);
+  if (!Player.Wardrobe) return false;
+  const needsExtended = indices.some(index => index >= DEFAULT_WARDROBE_SIZE);
 
-  let payload: StoredExtensionWardrobe | null = null;
-  if (needsExtra) {
-    payload = {v: 1, w: CharacterCompressWardrobe(extraOutfits), n: [...extraNames]};
-    try {
-      const candidate = {...(Player.ExtensionSettings ?? {}), [EXTENSION_WARDROBE_KEY]: payload};
-      if (JSON.stringify(candidate).length > EXTENSION_SIZE_BUDGET) return false;
-    } catch {
-      // Another mod's data failed to serialize — don't block saving over it.
-    }
-  }
+  // Extended slots (24–96) go to the shared FBCWardrobe extension.
+  if (needsExtended && !writeFbcWardrobe()) return false;
 
-  if (needsBase && Player.Wardrobe) {
-    ServerAccountUpdate.QueueData({
-      Wardrobe: CharacterCompressWardrobe(Player.Wardrobe.slice(0, baseSize)),
-      WardrobeCharacterNames: Player.WardrobeCharacterNames.slice(0, baseSize),
-    });
-  }
-  if (payload) {
-    Player.ExtensionSettings ??= {};
-    Player.ExtensionSettings[EXTENSION_WARDROBE_KEY] = payload;
-    ServerPlayerExtensionSettingsSync(EXTENSION_WARDROBE_KEY);
-  }
+  // Base slots (0–24) plus names for the whole visible range sync to the server.
+  // With WCE/LCE loaded, CharacterCompressWardrobe is hooked to route the tail into FBCWardrobe;
+  // slicing to the base size here keeps that path a no-op and avoids a double write.
+  ServerAccountUpdate.QueueData({
+    Wardrobe: CharacterCompressWardrobe(Player.Wardrobe.slice(0, DEFAULT_WARDROBE_SIZE)),
+    WardrobeCharacterNames: (Player.WardrobeCharacterNames ?? []).slice(0, onlineWardrobeSize()),
+  });
   return true;
 }
 
 const onlineSource: WardrobeSource = {
   id: 'online',
-  size: () => onlineWardrobeSize() + EXTRA_ONLINE_SIZE,
-  outfitAt(index) {
-    const offset = extraOffset(index);
-    return offset != null ? extraOutfits[offset] ?? [] : Player.Wardrobe?.[index] ?? [];
-  },
-  nameAt(index) {
-    const offset = extraOffset(index);
-    return offset != null ? extraNames[offset] ?? '' : Player.WardrobeCharacterNames?.[index] ?? '';
-  },
+  size: () => onlineWardrobeSize(),
+  outfitAt: index => Player.Wardrobe?.[index] ?? [],
+  nameAt: index => Player.WardrobeCharacterNames?.[index] ?? '',
   writeSlot(index, outfit, name) {
-    const offset = extraOffset(index);
-    if (offset != null) {
-      extraOutfits[offset] = outfit;
-      extraNames[offset] = name;
-    } else if (Player.Wardrobe) {
-      Player.Wardrobe[index] = outfit;
-      Player.WardrobeCharacterNames[index] = name;
-    }
+    if (index < 0 || index >= EXPANDED_WARDROBE_SIZE || !Player.Wardrobe) return;
+    Player.Wardrobe[index] = outfit;
+    Player.WardrobeCharacterNames ??= [];
+    Player.WardrobeCharacterNames[index] = name;
   },
   swap(a, b) {
     swapSlots(this, a, b);
   },
   persist: persistOnline,
-  reload: readExtensionWardrobe,
+  reload: loadFbcWardrobe,
 };
 
 interface StoredLocalWardrobe {
@@ -159,14 +166,19 @@ interface StoredLocalWardrobe {
   names: unknown[];
 }
 
-const localOutfits: ItemBundle[][] = [];
-const localNames: string[] = [];
+// In-memory cache: the WardrobeSource API is synchronous, so reads come from here while
+// IndexedDB is read/written asynchronously behind it.
+const localOutfits: ItemBundle[][] = Array.from({length: LOCAL_WARDROBE_SIZE}, () => []);
+const localNames: string[] = Array.from({length: LOCAL_WARDROBE_SIZE}, () => '');
+// Guards against a slow load for an old scope overwriting the cache after the scope changed.
+let localLoadToken = 0;
 
 function localWardrobeKey(): string {
   return LOCAL_WARDROBE_PREFIX + storageScope();
 }
 
-function readRawLocalWardrobe(): StoredLocalWardrobe | null {
+/** Legacy localStorage payload, kept only to migrate old data into IndexedDB. */
+function readLegacyLocalWardrobe(): StoredLocalWardrobe | null {
   try {
     const parsed = JSON.parse(localStorage.getItem(localWardrobeKey()) || 'null') as StoredLocalWardrobe | null;
     return parsed && Array.isArray(parsed.outfits) && Array.isArray(parsed.names) ? parsed : null;
@@ -175,31 +187,63 @@ function readRawLocalWardrobe(): StoredLocalWardrobe | null {
   }
 }
 
-function persistLocal(): boolean {
-  try {
-    const payload = {version: 2 as const, outfits: localOutfits, names: localNames};
-    localStorage.setItem(localWardrobeKey(), JSON.stringify(payload));
-    return true;
-  } catch (error) {
-    console.warn('🐈‍⬛ [AEE] Failed to store the local wardrobe', error);
-    return false;
+function fillLocalArrays(outfits: readonly unknown[], names: readonly unknown[]) {
+  for (let index = 0; index < LOCAL_WARDROBE_SIZE; index++) {
+    const outfit = outfits[index];
+    localOutfits[index] = Array.isArray(outfit) && outfit.every(isBundleEntry) ? (outfit as ItemBundle[]) : [];
+    const name = names[index];
+    localNames[index] = typeof name === 'string' ? name : '';
   }
 }
 
-function reloadLocalWardrobe() {
-  const stored = readRawLocalWardrobe();
-  localOutfits.length = 0;
-  localNames.length = 0;
+function persistLocal(): boolean {
+  const record: LocalWardrobeRecord = {
+    scope: storageScope(),
+    outfits: localOutfits.map(outfit => outfit ?? []),
+    names: [...localNames],
+  };
+  // Fire-and-forget: IndexedDB has ample quota, so we optimistically report success and
+  // only surface a problem in the console if the write later fails.
+  writeLocalWardrobeRecord(record).catch(error => {
+    console.warn('🐈‍⬛ [AEE] Failed to store the local wardrobe', error);
+  });
+  return true;
+}
 
-  for (let index = 0; index < LOCAL_WARDROBE_SIZE; index++) {
-    const outfit = stored?.outfits[index];
-    localOutfits.push(Array.isArray(outfit) && outfit.every(isBundleEntry) ? outfit : []);
-    const name = stored?.names[index];
-    localNames.push(typeof name === 'string' ? name : '');
+function reloadLocalWardrobe() {
+  void loadLocalWardrobe();
+}
+
+async function loadLocalWardrobe() {
+  const scope = storageScope();
+  const token = ++localLoadToken;
+
+  let record: LocalWardrobeRecord | null = null;
+  try {
+    record = await readLocalWardrobeRecord(scope);
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to read the local wardrobe', error);
   }
 
-  // v1 was the Player.Wardrobe tail layout; slot order is unchanged, so just re-save as v2.
-  if (stored?.version === 1) persistLocal();
+  // One-time migration: pull any pre-IndexedDB localStorage data across, then drop it.
+  if (!record) {
+    const legacy = readLegacyLocalWardrobe();
+    if (legacy) {
+      record = {scope, outfits: legacy.outfits as ItemBundle[][], names: legacy.names as string[]};
+      try {
+        await writeLocalWardrobeRecord(record);
+        localStorage.removeItem(localWardrobeKey());
+      } catch (error) {
+        console.warn('🐈‍⬛ [AEE] Failed to migrate the local wardrobe to IndexedDB', error);
+      }
+    }
+  }
+
+  // A newer load (e.g. after a scope switch) already superseded this one.
+  if (token !== localLoadToken) return;
+
+  fillLocalArrays(record?.outfits ?? [], record?.names ?? []);
+  bumpWardrobeData();
 }
 
 const localSource: WardrobeSource = {
@@ -239,11 +283,65 @@ export function reloadWardrobeData() {
       // localStorage can be unavailable in private or embedded contexts.
     }
   }
-  WardrobeSize = onlineWardrobeSize();
+  // Never shrink below what WCE/LCE (or the game) already set — that would truncate their
+  // in-memory expansion. AEE's own display size comes from onlineSource.size(), not this global.
+  WardrobeSize = Math.max(typeof WardrobeSize === 'number' ? WardrobeSize : 0, onlineWardrobeSize());
   WardrobeFixLength();
   WardrobeLoadCharacterNames();
   onlineSource.reload();
+  migrateLegacyExtensionWardrobe();
   localSource.reload();
+}
+
+/**
+ * One-time move of AEE's old separate extension wardrobe (LIKO_AEE_WARDROBE, the segment that
+ * used to stack on top as slots 96+) into empty slots of the shared 96-slot wardrobe, so users
+ * don't lose those outfits when the extra segment is dropped. Best-effort: anything that doesn't
+ * fit stays untouched in the old key as a backup.
+ */
+function migrateLegacyExtensionWardrobe() {
+  if (settings.wardrobeFbcMigrated.get()) return;
+  settings.wardrobeFbcMigrated.set(true);
+
+  const raw = extensionSettings()?.[LEGACY_EXTENSION_WARDROBE_KEY] as Partial<StoredExtensionWardrobe> | undefined;
+  if (!raw || typeof raw.w !== 'string' || !raw.w || !Player.Wardrobe) return;
+
+  let legacy: ItemBundle[][] = [];
+  try {
+    legacy = CharacterDecompressWardrobe(raw.w);
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to read the legacy extended wardrobe for migration', error);
+    return;
+  }
+  const legacyNames = Array.isArray(raw.n) ? raw.n : [];
+
+  let cursor = DEFAULT_WARDROBE_SIZE;
+  let moved = false;
+  let overflow = false;
+  for (let offset = 0; offset < legacy.length; offset++) {
+    const outfit = legacy[offset];
+    if (!Array.isArray(outfit) || outfit.length === 0 || !outfit.every(isBundleEntry)) continue;
+    while (cursor < EXPANDED_WARDROBE_SIZE && (Player.Wardrobe[cursor]?.length ?? 0) > 0) cursor++;
+    if (cursor >= EXPANDED_WARDROBE_SIZE) {
+      overflow = true;
+      break;
+    }
+    Player.Wardrobe[cursor] = outfit;
+    Player.WardrobeCharacterNames ??= [];
+    Player.WardrobeCharacterNames[cursor] = typeof legacyNames[offset] === 'string' ? legacyNames[offset] : '';
+    cursor++;
+    moved = true;
+  }
+
+  if (overflow) {
+    console.warn('🐈‍⬛ [AEE] Some legacy extended-wardrobe outfits did not fit into 96 slots; kept in the old key as backup');
+  }
+  if (moved) {
+    writeFbcWardrobe();
+    ServerAccountUpdate.QueueData({
+      WardrobeCharacterNames: (Player.WardrobeCharacterNames ?? []).slice(0, EXPANDED_WARDROBE_SIZE),
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -251,13 +349,9 @@ export function reloadWardrobeData() {
 // ---------------------------------------------------------------------------
 
 function slotMetaKey(source: WardrobeSourceId, index: number): string {
-  // Online slots key by segment offset (`b` = Player.Wardrobe base, `e` = ExtensionSettings extra)
-  // so toggling the 24/96 base size doesn't reattach meta to the wrong outfit.
-  if (source === 'online') {
-    const baseSize = onlineWardrobeSize();
-    const suffix = index < baseSize ? `b${index}` : `e${index - baseSize}`;
-    return `online:${accountScope()}:${suffix}`;
-  }
+  // Online outfits live at fixed Player.Wardrobe indices now, so meta keys by absolute index.
+  // The `b` prefix is retained so existing keys (from the previous 96-slot base) still match.
+  if (source === 'online') return `online:${accountScope()}:b${index}`;
   return `local:${storageScope()}:${index}`;
 }
 

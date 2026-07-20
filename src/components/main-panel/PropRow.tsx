@@ -1,6 +1,7 @@
 import {memo, useEffect, useRef} from 'react';
 import {resetEditProperty, setEditProperty, stepEditProperty} from '@/controllers/uiController';
 import {resetButtonClass, stepButtonClass} from '@/components/main-panel/styles';
+import {HoldButton} from '@/components/ui/HoldButton';
 
 export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   label: string;
@@ -35,8 +36,8 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
       />
     </div>
     <div className="flex gap-0.5">
-      {deltas.map(delta => <button key={delta} className={stepButtonClass}
-                                   onClick={() => stepEditProperty(ctrl, delta)}>{delta > 0 ? '+' : ''}{delta}</button>)}
+      {deltas.map(delta => <HoldButton key={delta} className={stepButtonClass}
+                                       onTrigger={() => stepEditProperty(ctrl, delta)}>{delta > 0 ? '+' : ''}{delta}</HoldButton>)}
       <button className={resetButtonClass} onClick={() => resetEditProperty(ctrl)}>↺</button>
     </div>
   </div>;

@@ -42,6 +42,9 @@ export const CUSTOM_FONTS: readonly CustomFontDef[] = [
   {id: 'muzai-pixel', name: 'MuzaiPixel', file: 'MuzaiPixel.ttf', size: 4025404},
   {id: 'dela-gothic-one', name: 'Dela Gothic One', file: 'Dela-Gothic-One.ttf', size: 5469244},
   {id: 'star-jedi', name: 'Star Jedi', file: 'Star-Jedi.ttf', size: 25456},
+  {id: '851chikara-yowaku', name: '851チカラヨワク', file: '851CHIKARA-YOWAKU.ttf', size: 1645216},
+  {id: 'melete-light', name: 'Melete Light', file: 'Melete-Light.otf', size: 6664},
+  {id: 'super-malibu', name: 'Super Malibu', file: 'Super-Malibu.ttf', size: 179120},
 ];
 
 /** Always-available families; browsers fall back silently when the OS lacks one. */

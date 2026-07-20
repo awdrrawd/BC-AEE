@@ -288,3 +288,99 @@ PostScript:StarJedi
 
 版權資訊:1998 by Boba Fonts - Davide Canavero - canavero@pianeta.net
 
+
+
+\*\*Super-Malibu
+
+字體名字:Super Malibu.ttf
+
+發布時間:2026-02-26
+
+字體分類:免費可商用字體
+
+字體格式:.ttf
+
+字體大小:0.17Mb
+
+字型名稱:Super Malibu
+
+字型樣式:Regular
+
+字型識別碼:Version 1.00;May 6, 2025;;SuperMalibu;2025;FL842
+
+字型全名:Super Malibu
+
+字型版本:Version 1.00;May 6, 2025
+
+字重類型:400
+
+PostScript:SuperMalibu
+
+字符數量:439
+
+版權資訊:Super Malibu
+
+
+
+\*\*Melete-Light
+
+字體名字:Melete Light.otf
+
+發布時間:2025-12-26
+
+字體分類:免費可商用字體
+
+字體格式:.otf
+
+字體大小:0.01Mb
+
+字型名稱:Melete Light
+
+字型樣式:Regular
+
+字型識別碼:0.200;UKWN;Melete-Light
+
+字型全名:Melete Light
+
+字型版本:Version 0.200;FEAKit 1.0
+
+字重類型:300
+
+PostScript:Melete-Light
+
+字符數量:101
+
+版權資訊:©2022 DOT COLON.
+
+
+
+\*\*851CHIKARA-YOWAKU
+
+字體名字:チカラヨワク851CHIKARA-YOWAKU.ttf
+
+發布時間:2021-09-04
+
+字體分類:免費可商用字體
+
+字體格式:.ttf
+
+字體大小:1.57Mb
+
+字型名稱:851チカラヨワク
+
+字型樣式:Regular
+
+字型識別碼:851チカラヨワク
+
+字型全名:851チカラヨワク
+
+字型版本:Version 0.02
+
+字重類型:400
+
+PostScript:851CHIKARA-YOWAKU
+
+字符數量:15563
+
+版權資訊:8:51:22 pm
+

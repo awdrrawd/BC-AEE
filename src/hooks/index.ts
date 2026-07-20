@@ -7,6 +7,8 @@ import {initializeViewBackground, installViewControlHandlers} from '@/controller
 import {installSettingEffects, syncAfterBcRender} from '@/controllers/uiController';
 import {initBcWheelScroll} from '@/hooks/bcWheelHooks';
 import {installWardrobeHooks} from '@/hooks/wardrobeHooks';
+import {installFontHooks} from '@/hooks/fontHooks';
+import {initItemFonts} from '@/controllers/fontController';
 
 export function installAeeHooks() {
   installSettingEffects();
@@ -20,4 +22,6 @@ export function installAeeHooks() {
   syncAfterBcRender();
   initBcWheelScroll();
   installWardrobeHooks();
+  installFontHooks();
+  initItemFonts();
 }

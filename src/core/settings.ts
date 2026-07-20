@@ -101,6 +101,10 @@ export const settings = {
   bcWheelScroll: bool('bcWheelScroll', false),
   enablePartsFilter: bool('enablePartsFilter', false),
   enableWardrobe: bool('enableWardrobe', false),
+  // Item (TextItem) font: 'default' = no override, otherwise a fonts.ts font id.
+  itemFont: value('itemFont', 'default'),
+  // Apply other players' shared item-font choices (needs the font locally). Off by default.
+  loadOthersFont: bool('loadOthersFont', false),
 
   showCharCtrl: bool('showCharCtrl', false),
   hideCloseup: bool('hideCloseup', false),

@@ -58,7 +58,6 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
 
   const onPointerDown = (event: PointerEvent) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-    containerRef.current?.setPointerCapture(event.pointerId);
     start.current = {x: event.clientX, y: event.clientY};
     dragging.current = true;
     moved.current = false;
@@ -73,6 +72,9 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
     if (!moved.current) {
       if (Math.abs(dx) < DRAG_SLOP || Math.abs(dx) <= Math.abs(dy)) return;
       moved.current = true;
+      // Capture only once it's a real drag — capturing on pointerdown would retarget the
+      // follow-up click to this container and stop a plain tap from selecting a card.
+      containerRef.current?.setPointerCapture(event.pointerId);
     }
     // Don't let the track rubber-band past the first/last page.
     const max = current > 0 ? width : 0;
@@ -97,7 +99,9 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
       pending.current = 0;
       paint(0, true);
     }
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    if (containerRef.current?.hasPointerCapture(event.pointerId)) {
+      containerRef.current.releasePointerCapture(event.pointerId);
+    }
   };
 
   const onTransitionEnd = () => {

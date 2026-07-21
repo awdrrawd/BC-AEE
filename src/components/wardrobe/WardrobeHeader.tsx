@@ -23,17 +23,17 @@ export function WardrobeHeader() {
   >
     <div className="flex items-center gap-2.5">
       {collapseEnabled ? <Button density="stage"
-              className="h-10 w-10"
+              className="h-11 w-15"
               disabled={!canCollapse}
               selected={canCollapse && collapsed}
               onClick={() => settings.wardrobeListCollapsed.toggle()}
-              icon={<LayoutIcon className="h-5 w-5"/>}
+              icon={<LayoutIcon className="h-9 w-9"/>}
               aria-label={t('wardrobe-toggle-list')}
       /> : null}
       <Button density="stage"
-              className="h-10 w-10"
+              className="h-11 w-15"
               onClick={() => openDialog(close => <SettingsDialog onClose={close}/>)}
-              icon={<Settings className="h-5 w-5"/>}
+              icon={<Settings className="h-9 w-9"/>}
               aria-label={t('wardrobe-settings')}
       />
     </div>
@@ -44,16 +44,16 @@ export function WardrobeHeader() {
 
     <div className="flex items-center gap-2.5">
       {photoEnabled ? <Button density="stage"
-                              className="h-10 w-10"
+                              className="h-11 w-15"
                               onClick={() => openDialog(close => <PhotoDialog onClose={close}/>)}
-                              icon={<Camera className="h-5 w-5"/>}
+                              icon={<Camera className="h-9 w-9"/>}
                               aria-label={t('wardrobe-camera')}
       /> : null}
 
       <Button density="stage"
-              className="h-10 w-15"
+              className="h-11 w-15"
               onClick={wardrobeExit}
-              icon={<LogOut className="h-5 w-5"/>}
+              icon={<LogOut className="h-9 w-9"/>}
               aria-label={t('wardrobe-back')}
       />
     </div>

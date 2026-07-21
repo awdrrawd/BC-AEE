@@ -197,6 +197,7 @@
   "wardrobe-edit-name": "Name",
   "wardrobe-setting-confirm-save": "Confirm before saving an outfit",
   "wardrobe-confirm-save": "Save the worn outfit into the selected slot?",
+  "wardrobe-confirm-import-slot": "Overwrite the selected slot with the clipboard outfit?",
   "wardrobe-settings": "Settings",
   "wardrobe-settings-general": "General",
   "wardrobe-settings-appearance": "Appearance",

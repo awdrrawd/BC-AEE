@@ -188,6 +188,7 @@
   "wardrobe-edit-name": "名称",
   "wardrobe-setting-confirm-save": "保存服装时再次确认",
   "wardrobe-confirm-save": "确定要将当前穿着的服装保存到选取的格子吗？",
+  "wardrobe-confirm-import-slot": "确定要用剪贴板的服装覆盖选取的格子吗？",
   "wardrobe-settings": "设置",
   "wardrobe-settings-general": "通用设置",
   "wardrobe-settings-appearance": "外观设置",

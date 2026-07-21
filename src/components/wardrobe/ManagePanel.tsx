@@ -43,8 +43,10 @@ export function ManagePanel({state}: { state: WardrobeState }) {
   };
 
   const importFromClipboard = async () => {
-    // With a slot selected: import the clipboard code straight into that slot (no prompt).
+    // With a slot selected: import the clipboard code straight into that slot.
+    // This overwrites a saved outfit, so it honours the "confirm before saving" guard.
     if (hasSelection) {
+      if (settings.wardrobeConfirmSave.get() && !(await askConfirm(t('wardrobe-confirm-import-slot')))) return;
       let code = '';
       try {
         code = (await navigator.clipboard.readText()).trim();

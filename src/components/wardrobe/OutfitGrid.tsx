@@ -1,4 +1,4 @@
-import {type PointerEvent, type WheelEvent, useLayoutEffect, useRef, useState} from 'react';
+import {type PointerEvent, type WheelEvent, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {gridColumns, gridRows, pageCount, perPage} from '@/controllers/outfitsController';
 import {goToPage, markOrSwap, selectSlot, startEditingOutfit} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';
@@ -39,6 +39,17 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  // React registers touch listeners as passive, so preventDefault from the pointer handlers is
+  // ignored and the browser still runs pull-to-refresh / overscroll-back on a vertical swipe.
+  // A native, non-passive touchmove listener cancels that gesture — the grid never scrolls itself.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const block = (event: TouchEvent) => event.preventDefault();
+    el.addEventListener('touchmove', block, {passive: false});
+    return () => el.removeEventListener('touchmove', block);
   }, []);
 
   // Imperatively drive the track so dragging never re-renders (and redraws) the card canvases.
@@ -145,7 +156,7 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
   return <div
     ref={containerRef}
     className="relative min-h-0 flex-1 overflow-hidden"
-    style={{touchAction: 'none'}}
+    style={{touchAction: 'none', overscrollBehavior: 'contain'}}
     onWheel={onWheel}
     onPointerDown={onPointerDown}
     onPointerMove={onPointerMove}

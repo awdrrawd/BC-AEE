@@ -3,6 +3,7 @@ import cn from '@/util/cn';
 import {filterSlots, isOutfitListCollapsed, pageCount, perPage} from '@/controllers/outfitsController';
 import {goToPage} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';
+import {useViewport} from '@/core/orientation';
 import {settings, useSetting} from '@/core/settings';
 import {WardrobeStage} from '@/components/wardrobe/WardrobeStage';
 import {WardrobeHeader} from '@/components/wardrobe/WardrobeHeader';
@@ -18,6 +19,7 @@ import {usePrompt} from '@/core/prompts';
 
 export function WardrobeScreen({state}: { state: WardrobeState }) {
   const prompt = usePrompt();
+  const {portrait} = useViewport();
   const layout = useSetting(settings.wardrobePanelLayout);
   // Subscribe to both so the grid re-lays-out when either the feature or the collapse state flips.
   useSetting(settings.wardrobeCollapseEnabled);
@@ -32,7 +34,7 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
   const pages = pageCount(slots);
   useEffect(() => {
     if (state.offset >= pages * perPage()) goToPage(0, pages);
-  }, [pages, state.offset, layout]);
+  }, [pages, state.offset, layout, portrait]);
 
   if (!state.active || !state.canvasRect) return null;
 
@@ -66,13 +68,26 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
     }
   };
 
+  // Portrait: fixed DC/B arrangement — character + manage share the top half, the outfit grid
+  // (人物卡) fills the bottom half, and the outfit list (A) is hidden. The saved panel layout only
+  // drives the landscape row.
+  const body = portrait
+    ? <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-3">
+        <div className="flex min-h-0 flex-1 gap-3">
+          {renderPanel('preview')}
+          {renderPanel('manage')}
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col">
+          {renderPanel('grid')}
+        </div>
+      </div>
+    : <div className="flex min-h-0 flex-1 gap-5 px-10 pt-3 pb-6">
+        {layout.map(renderPanel)}
+      </div>;
+
   return <WardrobeStage canvasRect={state.canvasRect}>
     <WardrobeHeader/>
-
-    <div className="flex min-h-0 flex-1 gap-5 px-10 pt-3 pb-6">
-      {layout.map(renderPanel)}
-    </div>
-
+    {body}
     <DialogHost/>
     {prompt ? <PromptDialog prompt={prompt} scale="stage"/> : null}
   </WardrobeStage>;

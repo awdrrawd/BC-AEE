@@ -5,14 +5,17 @@ import {isOutfitListCollapsed} from '@/controllers/outfitsController';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {FilterBar} from '@/components/wardrobe/FilterBar';
 import {SortDropdown} from '@/components/wardrobe/SortDropdown';
+import {useStage} from '@/components/wardrobe/stageContext';
 import {Button} from '@/components/ui/Button';
 import {settings, useSetting} from '@/core/settings';
 
 export function Toolbar({state, layout}: { state: WardrobeState; layout: string[] }) {
   useSetting(settings.wardrobeCollapseEnabled);
   useSetting(settings.wardrobeListCollapsed);
-  // When the outfit-list panel (A) is hidden or collapsed, its local/online switch moves here.
-  const showSourceToggle = !layout.includes('list') || isOutfitListCollapsed();
+  const {portrait} = useStage();
+  // When the outfit-list panel (A) is hidden or collapsed — or always in portrait, where the list is
+  // never shown — its local/online switch moves here to the left of the toolbar.
+  const showSourceToggle = portrait || !layout.includes('list') || isOutfitListCollapsed();
 
   return <div
     className="aee-rise-in flex h-11 shrink-0 items-center gap-2.5"

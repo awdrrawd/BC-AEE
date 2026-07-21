@@ -12,6 +12,7 @@ const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
   {labelKey: 'wardrobe-setting-cancel-tryon', setting: settings.wardrobeCancelTryOn},
   {labelKey: 'wardrobe-setting-photo', setting: settings.wardrobePhoto},
   {labelKey: 'wardrobe-setting-collapse-list', setting: settings.wardrobeCollapseEnabled},
+  {labelKey: 'wardrobe-setting-portrait', setting: settings.wardrobePortrait},
 ];
 
 const ROW_CLASS = 'flex h-[50px] shrink-0 items-center rounded-lg border border-white/8 bg-black/35 px-4';

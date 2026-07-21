@@ -1,33 +1,156 @@
-import type {WheelEvent} from 'react';
-import {gridColumns, GRID_ROWS, pageCount, perPage} from '@/controllers/outfitsController';
+import {type PointerEvent, type WheelEvent, useLayoutEffect, useRef, useState} from 'react';
+import {gridColumns, gridRows, pageCount, perPage} from '@/controllers/outfitsController';
 import {goToPage, markOrSwap, selectSlot, startEditingOutfit} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';
+import {clamp} from '@/util/math';
 import {OutfitCard} from '@/components/wardrobe/OutfitCard';
+
+const SLIDE_MS = 220;
+// Fraction of the grid width a drag must pass to commit to the next/previous page.
+const COMMIT_FRACTION = 1 / 3;
+// Horizontal travel (screen px) beyond which a press counts as a drag, not a card tap.
+const DRAG_SLOP = 6;
 
 export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number[] }) {
   const size = perPage();
-  const page = slots.slice(state.offset, state.offset + size);
+  const pages = pageCount(slots);
+  const current = Math.floor(state.offset / size);
 
-  const onWheel = (event: WheelEvent) => {
-    const current = Math.floor(state.offset / size);
-    goToPage(current + (event.deltaY > 0 ? 1 : -1), pageCount(slots));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  const start = useRef<{x: number; y: number} | null>(null);
+  const dragging = useRef(false);
+  const moved = useRef(false);
+  const dragX = useRef(0);
+  // Direction to apply once the slide animation ends: -1 prev, +1 next, 0 snap-back.
+  const pending = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setWidth(el.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Imperatively drive the track so dragging never re-renders (and redraws) the card canvases.
+  // Base position is the current page centred; `dragX` slides the neighbours into view.
+  const paint = (offsetX: number, animate: boolean) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.style.transition = animate ? `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)` : 'none';
+    el.style.transform = `translateX(${-current * width + offsetX}px)`;
+  };
+
+  // Re-anchor whenever the page or width changes (page commits land here after the slide).
+  useLayoutEffect(() => {
+    if (dragging.current) return;
+    dragX.current = 0;
+    paint(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, width]);
+
+  const onWheel = (event: WheelEvent) => goToPage(current + (event.deltaY > 0 ? 1 : -1), pages);
+
+  const onPointerDown = (event: PointerEvent) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    containerRef.current?.setPointerCapture(event.pointerId);
+    start.current = {x: event.clientX, y: event.clientY};
+    dragging.current = true;
+    moved.current = false;
+    dragX.current = 0;
+  };
+
+  const onPointerMove = (event: PointerEvent) => {
+    const from = start.current;
+    if (!from) return;
+    const dx = event.clientX - from.x;
+    const dy = event.clientY - from.y;
+    if (!moved.current) {
+      if (Math.abs(dx) < DRAG_SLOP || Math.abs(dx) <= Math.abs(dy)) return;
+      moved.current = true;
+    }
+    // Don't let the track rubber-band past the first/last page.
+    const max = current > 0 ? width : 0;
+    const min = current < pages - 1 ? -width : 0;
+    dragX.current = clamp(dx, min, max);
+    paint(dragX.current, false);
+  };
+
+  const endDrag = (event: PointerEvent) => {
+    if (!start.current) return;
+    start.current = null;
+    dragging.current = false;
+    const d = dragX.current;
+    const threshold = width * COMMIT_FRACTION;
+    if (d >= threshold && current > 0) {
+      pending.current = -1;
+      paint(width, true);
+    } else if (d <= -threshold && current < pages - 1) {
+      pending.current = 1;
+      paint(-width, true);
+    } else {
+      pending.current = 0;
+      paint(0, true);
+    }
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  };
+
+  const onTransitionEnd = () => {
+    const direction = pending.current;
+    pending.current = null;
+    if (direction === 1 || direction === -1) {
+      // The end-of-slide transform already equals the new page's anchor, so the commit is seamless.
+      goToPage(current + direction, pages);
+    }
+  };
+
+  const gridStyle = {
+    gridTemplateColumns: `repeat(${gridColumns()}, minmax(0, 1fr))`,
+    gridTemplateRows: `repeat(${gridRows()}, minmax(0, 1fr))`,
+  };
+
+  const renderPage = (pageIndex: number) => {
+    if (pageIndex < 0 || pageIndex >= pages) return null;
+    const cards = slots.slice(pageIndex * size, pageIndex * size + size);
+    return <div
+      key={pageIndex}
+      className="absolute top-0 bottom-0 grid gap-2.5"
+      style={{left: pageIndex * width, width, ...gridStyle}}
+    >
+      {cards.map(slotIndex => <OutfitCard
+        key={slotIndex}
+        slotIndex={slotIndex}
+        selected={slotIndex === state.selection}
+        markedForSwap={state.reorderMode && slotIndex === state.reorderFirst}
+        onSelect={() => (state.reorderMode ? markOrSwap(slotIndex) : selectSlot(slotIndex))}
+        onRename={state.reorderMode ? undefined : () => startEditingOutfit(slotIndex)}
+      />)}
+    </div>;
   };
 
   return <div
-    className="aee-grid-stretch grid min-h-0 flex-1 gap-2.5"
+    ref={containerRef}
+    className="relative min-h-0 flex-1 overflow-hidden"
+    style={{touchAction: 'pan-y'}}
     onWheel={onWheel}
-    style={{
-      gridTemplateColumns: `repeat(${gridColumns()}, minmax(0, 1fr))`,
-      gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))`,
+    onPointerDown={onPointerDown}
+    onPointerMove={onPointerMove}
+    onPointerUp={endDrag}
+    onPointerCancel={endDrag}
+    onClickCapture={event => {
+      if (!moved.current) return;
+      moved.current = false;
+      event.preventDefault();
+      event.stopPropagation();
     }}
   >
-    {page.map(slotIndex => <OutfitCard
-      key={slotIndex}
-      slotIndex={slotIndex}
-      selected={slotIndex === state.selection}
-      markedForSwap={state.reorderMode && slotIndex === state.reorderFirst}
-      onSelect={() => (state.reorderMode ? markOrSwap(slotIndex) : selectSlot(slotIndex))}
-      onRename={state.reorderMode ? undefined : () => startEditingOutfit(slotIndex)}
-    />)}
+    <div ref={trackRef} className="absolute inset-0" onTransitionEnd={onTransitionEnd}>
+      {[current - 1, current, current + 1].map(renderPage)}
+    </div>
   </div>;
 }

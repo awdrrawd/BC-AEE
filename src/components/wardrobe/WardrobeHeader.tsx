@@ -3,6 +3,7 @@ import {t} from '@/i18n/i18n';
 import {openDialog} from '@/core/dialogs';
 import {settings, useSetting} from '@/core/settings';
 import {wardrobeExit} from '@/hooks/wardrobeHooks';
+import {useStage} from '@/components/wardrobe/stageContext';
 import {Button} from '@/components/ui/Button';
 import {SettingsDialog} from '@/components/wardrobe/dialogs/SettingsDialog';
 import {PhotoDialog} from '@/components/wardrobe/dialogs/PhotoDialog';
@@ -13,8 +14,9 @@ export function WardrobeHeader() {
   const layout = useSetting(settings.wardrobePanelLayout);
   const collapseEnabled = useSetting(settings.wardrobeCollapseEnabled);
   const collapsed = useSetting(settings.wardrobeListCollapsed);
-  // Collapsing/expanding only makes sense while the outfit-list panel exists.
-  const canCollapse = layout.includes('list');
+  const {portrait} = useStage();
+  // Collapsing/expanding only makes sense while the outfit-list panel exists (never in portrait).
+  const canCollapse = layout.includes('list') && !portrait;
 
   return <header
     className="relative flex h-17.5 shrink-0 items-center justify-between border-b border-white/6 bg-black/25 px-10"

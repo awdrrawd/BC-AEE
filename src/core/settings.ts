@@ -149,6 +149,8 @@ export const settings = {
   // Whether the header's collapse button is shown (general setting); the button toggles the state below.
   wardrobeCollapseEnabled: bool('wardrobeCollapseEnabled', false),
   wardrobeListCollapsed: bool('wardrobeListCollapsed', false),
+  // Reflow the wardrobe into the vertical DC/B layout when the viewport is taller than wide.
+  wardrobePortrait: bool('wardrobePortrait', true),
 
   uiLanguage: value('uiLanguage', ''),
   themePreset: value('wardrobeThemePreset', ''),

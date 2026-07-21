@@ -11,10 +11,14 @@ import {
 } from '@/core/wardrobeFile';
 import {bumpWardrobeData, getTargetCharacter, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 import type {OccupiedSlot, PendingImport, WardrobeFilter, WardrobeSortMode} from '@/core/types';
+import {isPortraitActive} from '@/core/orientation';
 import {settings} from '@/core/settings';
 
-export const GRID_ROWS = 2;
 const BASE_GRID_COLS = 3;
+// In portrait the grid owns the bottom half on its own: a fixed 3×2 (人物卡) page.
+const PORTRAIT_GRID_COLS = 3;
+const PORTRAIT_GRID_ROWS = 2;
+const LANDSCAPE_GRID_ROWS = 2;
 // Side panels that can be hidden; each hidden one widens the grid by one column.
 const HIDEABLE_SIDE_PANELS = ['list', 'manage', 'preview'];
 
@@ -26,14 +30,19 @@ export function isOutfitListCollapsed(): boolean {
 }
 
 export function gridColumns(): number {
+  if (isPortraitActive()) return PORTRAIT_GRID_COLS;
   const layout = settings.wardrobePanelLayout.get();
   let hidden = HIDEABLE_SIDE_PANELS.filter(id => !layout.includes(id)).length;
   if (isOutfitListCollapsed()) hidden += 1;
   return BASE_GRID_COLS + hidden;
 }
 
+export function gridRows(): number {
+  return isPortraitActive() ? PORTRAIT_GRID_ROWS : LANDSCAPE_GRID_ROWS;
+}
+
 export function perPage(): number {
-  return gridColumns() * GRID_ROWS;
+  return gridColumns() * gridRows();
 }
 
 export function slotName(index: number): string {

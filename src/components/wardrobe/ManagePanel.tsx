@@ -1,5 +1,6 @@
 import {Save, Shirt, SquareX} from 'lucide-react';
 import {t} from '@/i18n/i18n';
+import cn from '@/util/cn';
 
 import {
   exportOutfitToClipboard,
@@ -21,14 +22,20 @@ import {OutfitEditForm} from '@/components/wardrobe/OutfitEditForm';
 import {OutfitNameField} from '@/components/wardrobe/OutfitNameField';
 import {TagRow} from '@/components/wardrobe/TagRow';
 import {TransferRow} from '@/components/wardrobe/TransferRow';
+import {useStage} from '@/components/wardrobe/stageContext';
 import {Button} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
 import {SettingRow} from '@/components/ui/SettingRow';
 import {settings} from '@/core/settings';
 
 export function ManagePanel({state}: { state: WardrobeState }) {
+  const {portrait} = useStage();
   const hasSelection = state.selection >= 0;
   const editing = hasSelection && state.editing;
+  // Fixed width beside the grid in landscape; shares the top half and may scroll in portrait.
+  // overflowY is set inline so it beats Panel's base `overflow-hidden` class.
+  const widthClass = portrait ? 'min-w-0 flex-1' : 'w-82.5 shrink-0';
+  const panelStyle = {animationDelay: '120ms', ...(portrait ? {overflowY: 'auto' as const} : {})};
 
   const save = async () => {
     if (settings.wardrobeConfirmSave.get() && !(await askConfirm(t('wardrobe-confirm-save')))) return;
@@ -58,15 +65,15 @@ export function ManagePanel({state}: { state: WardrobeState }) {
   };
 
   if (editing) {
-    return <Panel soft className="aee-rise-in w-82.5 shrink-0 gap-3 p-4" style={{animationDelay: '120ms'}}>
+    return <Panel soft className={cn('aee-rise-in gap-3 p-4', widthClass)} style={panelStyle}>
       <OutfitEditForm key={state.selection} slot={state.selection}/>
     </Panel>;
   }
 
   return <Panel
     soft
-    className="aee-rise-in w-82.5 shrink-0 gap-3 p-4"
-    style={{animationDelay: '120ms'}}
+    className={cn('aee-rise-in gap-3 p-4', widthClass)}
+    style={panelStyle}
   >
     <h2 className="shrink-0 text-center text-[28px] text-[#f0eee4]">{t('wardrobe-outfit-manage')}</h2>
 

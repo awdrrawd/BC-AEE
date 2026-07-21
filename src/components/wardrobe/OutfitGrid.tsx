@@ -31,6 +31,17 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
   // Direction to apply once the slide animation ends: -1 prev, +1 next, 0 snap-back.
   const pending = useRef<number | null>(null);
 
+  // Which neighbour page is also mounted right now: -1 prev, +1 next, 0 none. Kept minimal so mobile
+  // never holds more than two pages of (canvas-heavy) previews at once — three resident pages plus
+  // rapid paging blows past mobile canvas-memory limits and reloads the tab.
+  const [neighbor, setNeighbor] = useState(0);
+  const neighborRef = useRef(0);
+  const setNeighborDir = (dir: number) => {
+    if (neighborRef.current === dir) return;
+    neighborRef.current = dir;
+    setNeighbor(dir);
+  };
+
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -96,6 +107,9 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
     const max = current > 0 ? height : 0;
     const min = current < pages - 1 ? -height : 0;
     dragY.current = clamp(travel, min, max);
+    // Mount only the neighbour actually being revealed (drag down → prev above, up → next below).
+    if (dragY.current > 0) setNeighborDir(-1);
+    else if (dragY.current < 0) setNeighborDir(1);
     paint(dragY.current, false);
   };
 
@@ -123,6 +137,10 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
   const onTransitionEnd = () => {
     const direction = pending.current;
     pending.current = null;
+    // Drop the neighbour first (same batch as the commit) so the landed page is the only one left
+    // mounted — the committed page was already the neighbour, so it persists without a rebuild.
+    neighborRef.current = 0;
+    setNeighbor(0);
     if (direction === 1 || direction === -1) {
       // The end-of-slide transform already equals the new page's anchor, so the commit is seamless.
       goToPage(current + direction, pages);
@@ -170,7 +188,9 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
     }}
   >
     <div ref={trackRef} className="absolute inset-0" onTransitionEnd={onTransitionEnd}>
-      {[current - 1, current, current + 1].map(renderPage)}
+      {(neighbor === -1 ? [current - 1, current]
+        : neighbor === 1 ? [current, current + 1]
+          : [current]).map(renderPage)}
     </div>
   </div>;
 }

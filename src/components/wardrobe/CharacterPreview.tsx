@@ -103,8 +103,6 @@ export class CharacterPreview extends Component<Props, State> {
       entries => {
         if (!entries.some(entry => entry.isIntersecting)) return;
         this.visible = true;
-        CharacterPreview.live.add(this);
-        CharacterPreview.schedule();
         this.sync();
       },
       {rootMargin: '200px'},
@@ -119,8 +117,10 @@ export class CharacterPreview extends Component<Props, State> {
   componentWillUnmount() {
     this.observer?.disconnect();
     this.observer = null;
+    this.visible = false;
     CharacterPreview.live.delete(this);
     this.release();
+    releaseCanvas(this.canvasRef.current);
   }
 
   render() {
@@ -166,6 +166,8 @@ export class CharacterPreview extends Component<Props, State> {
   ) {
     this.release();
     this.builtAt = performance.now();
+    CharacterPreview.live.add(this);
+    CharacterPreview.schedule();
 
     const character = CharacterLoadSimple(`AeeWardrobePreview-${++previewSerial}`);
     this.character = character;
@@ -186,7 +188,10 @@ export class CharacterPreview extends Component<Props, State> {
       this.awaiting = [...cachedImageKeys()].filter(key => !before.has(key));
     } catch (error) {
       console.warn('🐈‍⬛ [AEE] Failed to render an outfit preview', error);
+      this.awaiting = [];
       this.release();
+      CharacterPreview.live.delete(this);
+      this.setState({loading: false, painted: false});
     }
   }
 
@@ -205,6 +210,10 @@ export class CharacterPreview extends Component<Props, State> {
 
     const settled = allComplete(this.awaiting) || performance.now() - this.builtAt > LOAD_TIMEOUT;
     if (this.state.loading && !character.MustDraw && settled) {
+      this.paint(character);
+      this.awaiting = [];
+      this.release();
+      CharacterPreview.live.delete(this);
       this.setState({loading: false, painted: true});
     }
   }
@@ -224,8 +233,38 @@ export class CharacterPreview extends Component<Props, State> {
   }
 }
 
+function releaseCanvas(canvas: HTMLCanvasElement | null | undefined) {
+  if (!canvas) return;
+  canvas.width = 0;
+  canvas.height = 0;
+}
+
+function releasePreviewTextures(characterId: string) {
+  const prefix = `${characterId}__`;
+  const gl = GLDrawCanvas?.GL;
+  const textureCache = gl?.textureCache;
+
+  if (gl && textureCache) {
+    for (const [key, data] of textureCache) {
+      if (!key.startsWith(prefix)) continue;
+      gl.deleteTexture(data.texture);
+      textureCache.delete(key);
+    }
+  }
+
+  for (const key of GLDrawImageCache.keys()) {
+    if (key.startsWith(prefix)) GLDrawImageCache.delete(key);
+  }
+}
+
 function discard(character: Character) {
+  const canvas = character.Canvas;
+  const blinkCanvas = character.CanvasBlink;
+
+  releasePreviewTextures(character.CharacterID);
   CharacterDelete(character, false);
+  releaseCanvas(canvas);
+  releaseCanvas(blinkCanvas);
   character.Canvas = null;
   character.CanvasBlink = null;
   character.Appearance = [];

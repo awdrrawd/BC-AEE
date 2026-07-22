@@ -138,22 +138,7 @@ function buildOutfitBundle(character: Character): ItemBundle[] {
   const bodyDonor = (isSelfCharacter(character) || includeBody) ? character : Player;
   const body = bodyDonor.Appearance.filter(item => categorise(item.Asset.Group) === 'body');
 
-  return bundleAppearance([...worn, ...body]).map(sanitise);
-}
-
-function sanitise(entry: ItemBundle): ItemBundle {
-  if (!entry.Property) return entry;
-
-  const property: ItemProperties & {LockName?: string; LockSet?: boolean} = {...entry.Property};
-  delete property.Expression;
-  delete property.LockedBy;
-  delete property.LockMemberNumber;
-  delete property.LockName;
-  delete property.LockSet;
-  delete property.RemoveTimer;
-  if (property.Effect) property.Effect = property.Effect.filter(effect => effect !== 'Lock');
-
-  return {...entry, Property: property};
+  return bundleAppearance([...worn, ...body]);
 }
 
 function applyOutfit(character: Character, bundle: ItemBundle[]) {

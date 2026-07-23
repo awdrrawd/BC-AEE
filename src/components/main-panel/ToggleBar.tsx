@@ -12,7 +12,9 @@ import {
   toggleTransformOverlay,
 } from '@/controllers/uiController';
 import {IconButton} from '@/components/ui/Button';
-import {Blend, ChevronLeft, ChevronRight, Italic, Layers, Move, Palette, RotateCcw, RotateCw, Scaling} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Layers, Move, Palette, RotateCcw, RotateCw, Scaling} from 'lucide-react';
+import {TransparentIcon} from '@/components/icons/TransparentIcon';
+import {TiltIcon} from '@/components/icons/TiltIcon';
 
 export function ToggleBar({state}: { state: AeeState }) {
   const openTransform = (mode: Exclude<DragMode, null>) => (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -41,12 +43,12 @@ export function ToggleBar({state}: { state: AeeState }) {
       <IconButton selected={state.transformOverlay.mode === 'scale' || state.activeDrag === 'scale'}
                   title={t('toggle-bar-scale-button-title')} icon={<Scaling className="h-4 w-4"/>} onClick={openTransform('scale')}/>
       <IconButton selected={state.transformOverlay.mode === 'skew' || state.activeDrag === 'skew'}
-                  title={t('toggle-bar-skew-button-title')} icon={<Italic className="h-4 w-4"/>} onClick={openTransform('skew')}/>
+                  title={t('toggle-bar-skew-button-title')} icon={<TiltIcon className="h-4 w-4"/>} onClick={openTransform('skew')}/>
       <IconButton selected={state.colorPicker.open && !state.colorPicker.bcMode}
                   title={t('toggle-bar-color-picker-button-title')} icon={<Palette className="h-4 w-4"/>}
                   onClick={() => openSelectedLayerColorPicker()}/>
       <IconButton selected={state.opacityOverlay.open} title={t('toggle-bar-opacity-button-title')}
-                  icon={<Blend className="h-4 w-4"/>} onClick={openOpacity}/>
+                  icon={<TransparentIcon className="h-4 w-4"/>} onClick={openOpacity}/>
       <IconButton title={t('toggle-bar-reset-transforms-button-title')} icon={<RotateCcw className="h-4 w-4"/>}
                   onClick={() => resetSelectedTransforms()}/>
     </div> : null}

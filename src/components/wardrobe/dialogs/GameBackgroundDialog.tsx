@@ -43,7 +43,7 @@ export function GameBackgroundDialog({current, onSelect, onClose}: {
       <Button density="stage"
               className="ml-auto h-10 w-10"
               onClick={onClose}
-              icon={<X className="h-5 w-5"/>}
+              icon={<X className="h-8 w-8"/>}
               aria-label={t('wardrobe-cancel')}
       />
     </header>

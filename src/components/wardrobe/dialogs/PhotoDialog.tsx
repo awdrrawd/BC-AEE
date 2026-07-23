@@ -207,7 +207,7 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
       <Button density="stage"
               className="h-9 w-9"
               onClick={onClose}
-              icon={<X className="h-5 w-5"/>}
+              icon={<X className="h-8 w-8"/>}
               aria-label={t('wardrobe-cancel')}
       />
     </header>

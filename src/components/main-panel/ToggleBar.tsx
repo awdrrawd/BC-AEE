@@ -13,9 +13,7 @@ import {
 } from '@/controllers/uiController';
 import {IconButton} from '@/components/ui/Button';
 import {ChevronLeft, ChevronRight, Layers, Move, Palette, Scaling} from 'lucide-react';
-import {TransparentIcon} from '@/components/icons/TransparentIcon';
-import {TiltIcon} from '@/components/icons/TiltIcon';
-import {RotateIcon} from '@/components/icons/RotateIcon';
+import {TransparentIcon, TiltIcon, RotateIcon} from '@/components/main-panel/Icons';
 
 export function ToggleBar({state}: { state: AeeState }) {
   const openTransform = (mode: Exclude<DragMode, null>) => (event: ReactMouseEvent<HTMLButtonElement>) => {

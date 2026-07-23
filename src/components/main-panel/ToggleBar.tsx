@@ -15,7 +15,7 @@ import {IconButton} from '@/components/ui/Button';
 import {ChevronLeft, ChevronRight, Layers, Move, Palette, Scaling} from 'lucide-react';
 import {TransparentIcon} from '@/components/icons/TransparentIcon';
 import {TiltIcon} from '@/components/icons/TiltIcon';
-import {Rotate3dIcon} from '@/components/icons/Rotate3dIcon';
+import {RotateIcon} from '@/components/icons/RotateIcon';
 
 export function ToggleBar({state}: { state: AeeState }) {
   const openTransform = (mode: Exclude<DragMode, null>) => (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -39,7 +39,7 @@ export function ToggleBar({state}: { state: AeeState }) {
       <IconButton selected={state.transformOverlay.mode === 'xy' || state.activeDrag === 'xy'}
                   title={t('toggle-bar-position-button-title')} icon={<Move className="h-4 w-4"/>} onClick={openTransform('xy')}/>
       <IconButton selected={state.transformOverlay.mode === 'rot' || state.activeDrag === 'rot'}
-                  title={t('toggle-bar-rotation-button-title')} icon={<Rotate3dIcon className="h-4 w-4"/>} onClick={openTransform('rot')}/>
+                  title={t('toggle-bar-rotation-button-title')} icon={<RotateIcon className="h-4 w-4"/>} onClick={openTransform('rot')}/>
       <IconButton selected={state.transformOverlay.mode === 'scale' || state.activeDrag === 'scale'}
                   title={t('toggle-bar-scale-button-title')} icon={<Scaling className="h-4 w-4"/>} onClick={openTransform('scale')}/>
       <IconButton selected={state.transformOverlay.mode === 'skew' || state.activeDrag === 'skew'}

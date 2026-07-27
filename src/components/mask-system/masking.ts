@@ -73,6 +73,11 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
 
   const cache = texCacheFor(gl);
   const img = ensureDecoded(dataUrl);
+  // GLDrawLoadTextureAlphaMask 會繞過我們的回傳值，直接讀取原生的
+  // GLDrawImageCache 來判斷圖片是否已就緒（img.width/height）。
+  // 我們沒呼叫 next()，原生 GLDrawLoadImage 不會幫我們寫入這個 cache，
+  // 必須自己補上，否則 GLDrawImageCache.get(url) 會是 undefined 而炸掉。
+  if (!GLDrawImageCache.has(url)) GLDrawImageCache.set(url, img);
   let ti = cache.get(dataUrl);
   if (ti) {
     if (!ti.ready && img.complete && img.naturalWidth) { // deferred upload once decoded

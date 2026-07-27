@@ -6,6 +6,7 @@ export const SHAPE_TOOLS = [
   'line', 'rect', 'square', 'circle', 'ellipse',
   'triangle', 'rtriangle', 'diamond', 'pentagon', 'hexagon',
   'arrow', 'cross', 'heart', 'star',
+  'spade', 'club', 'catpaw', 'moon', 'lightning',
 ] as const;
 
 export type ShapeTool = typeof SHAPE_TOOLS[number];
@@ -14,6 +15,7 @@ export const SHAPE_EMOJI: Record<string, string> = {
   line: '／', rect: '▭', square: '▢', circle: '◯', ellipse: '⬭',
   triangle: '△', rtriangle: '◺', diamond: '◇', pentagon: '⬠', hexagon: '⬡',
   arrow: '➜', cross: '✚', heart: '♡', star: '☆',
+  spade: '♠', club: '♣', catpaw: '🐾', moon: '☾', lightning: '⚡',
 };
 
 export interface ShapeStyle {
@@ -161,6 +163,79 @@ export function drawShapePreview(
         ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
         rot += step;
       }
+      ctx.closePath();
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'spade': { // 黑桃 (centre x0,y0, size r)
+      const s = r || 1; const cx = x0, cy = y0;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - s);
+      ctx.bezierCurveTo(cx - s * 1.1, cy + s * 0.15, cx - s * 0.5, cy + s * 0.7, cx, cy + s * 0.45);
+      ctx.bezierCurveTo(cx + s * 0.5, cy + s * 0.7, cx + s * 1.1, cy + s * 0.15, cx, cy - s);
+      ctx.closePath();
+      if (filled) ctx.fill();
+      ctx.stroke();
+      ctx.beginPath(); // stem
+      ctx.moveTo(cx, cy + s * 0.3);
+      ctx.lineTo(cx - s * 0.3, cy + s * 0.85);
+      ctx.lineTo(cx + s * 0.3, cy + s * 0.85);
+      ctx.closePath();
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'club': { // 梅花
+      const s = r || 1; const cx = x0, cy = y0; const rr = s * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(cx + rr, cy - s * 0.35); ctx.arc(cx, cy - s * 0.35, rr, 0, 2 * Math.PI);
+      ctx.moveTo(cx - s * 0.45 + rr, cy + s * 0.1); ctx.arc(cx - s * 0.45, cy + s * 0.1, rr, 0, 2 * Math.PI);
+      ctx.moveTo(cx + s * 0.45 + rr, cy + s * 0.1); ctx.arc(cx + s * 0.45, cy + s * 0.1, rr, 0, 2 * Math.PI);
+      if (filled) ctx.fill();
+      ctx.stroke();
+      ctx.beginPath(); // stem
+      ctx.moveTo(cx, cy + s * 0.2);
+      ctx.lineTo(cx - s * 0.24, cy + s * 0.8);
+      ctx.lineTo(cx + s * 0.24, cy + s * 0.8);
+      ctx.closePath();
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'catpaw': { // 貓爪：大肉墊 + 4 趾
+      const s = r || 1; const cx = x0, cy = y0; const pad = s * 0.6; const toeR = s * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(cx + pad, cy + s * 0.25);
+      ctx.ellipse(cx, cy + s * 0.25, pad, pad * 0.8, 0, 0, 2 * Math.PI);
+      const toes: [number, number][] = [[-0.55, -0.35], [-0.2, -0.62], [0.2, -0.62], [0.55, -0.35]];
+      for (const [dx, dy] of toes) {
+        ctx.moveTo(cx + dx * s + toeR, cy + dy * s);
+        ctx.ellipse(cx + dx * s, cy + dy * s, toeR, toeR, 0, 0, 2 * Math.PI);
+      }
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'moon': { // 月（新月）
+      const s = r || 1; const cx = x0, cy = y0;
+      ctx.beginPath();
+      ctx.arc(cx, cy, s, -Math.PI / 2, Math.PI / 2, false);
+      ctx.arc(cx + s * 0.5, cy, s * 0.85, Math.PI / 2, -Math.PI / 2, true);
+      ctx.closePath();
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'lightning': { // 閃電
+      const s = r || 1; const cx = x0, cy = y0;
+      ctx.beginPath();
+      ctx.moveTo(cx + s * 0.2, cy - s);
+      ctx.lineTo(cx - s * 0.4, cy + s * 0.1);
+      ctx.lineTo(cx, cy + s * 0.1);
+      ctx.lineTo(cx - s * 0.2, cy + s);
+      ctx.lineTo(cx + s * 0.5, cy - s * 0.2);
+      ctx.lineTo(cx + s * 0.05, cy - s * 0.2);
       ctx.closePath();
       if (filled) ctx.fill();
       ctx.stroke();

@@ -88,7 +88,7 @@ export const row1X = (id: string) => TOOLBAR_ROW1_RIGHT - TOOLBAR_ROW1.indexOf(i
 // Row 2 (y=125), right-to-left.
 export const TOOLBAR_Y2 = 125;
 export const TOOLBAR_ROW2_RIGHT = 1785;
-export const TOOLBAR_ROW2 = ['color', 'eraser', 'bucket', 'shape', 'fill', 'pen'];
+export const TOOLBAR_ROW2 = ['color', 'eraser', 'bucket', 'text', 'shape', 'fill', 'pen'];
 export const row2X = (id: string) => TOOLBAR_ROW2_RIGHT - TOOLBAR_ROW2.indexOf(id) * TOOLBAR_STEP;
 
 // Row 3 (y=225): stroke slider.
@@ -133,6 +133,7 @@ export const MASK_X = row1X('mask');
 export const TOOL_COLOR_X = row2X('color');
 export const TOOL_ERASER_X = row2X('eraser');
 export const TOOL_BUCKET_X = row2X('bucket');
+export const TOOL_TEXT_X = row2X('text');
 export const TOOL_SHAPE_X = row2X('shape');
 export const TOOL_FILL_X = row2X('fill');
 export const TOOL_PEN_X = row2X('pen');

@@ -70,20 +70,28 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   return textureInfo;
 }
 
-// 2D item-menu preview thumbnails go through DrawGetImage. Free-draw groups
-// show the naked-space preview; single glove is intentionally text-only.
-const PreviewProviders: Record<string, () => string> = {
-  ItemCanvas: () => NAKED_DATAURL, // covers ItemCanvas1/2/3 (hidden *Mask groups have no preview)
-};
+// 2D item-menu preview thumbnails go through DrawGetImage. We inject our own
+// preview image when a URL matches a registered rule. Free-draw groups show the
+// naked-space preview; single glove shows the glove picture ONLY for its base
+// item thumbnail (its 6 typed options stay text-only).
+export interface PreviewRule {
+  match: (src: string) => boolean;
+  url: () => string;
+}
+const previewRules: PreviewRule[] = [
+  {match: (src) => src.includes('ItemCanvas'), url: () => NAKED_DATAURL}, // ItemCanvas1/2/3 (hidden *Mask groups have no preview)
+];
+export function addPreviewRule(rule: PreviewRule) { previewRules.push(rule); }
+
 const previewImgCache = new Map<string, HTMLImageElement>();
 
 function drawGetImageHook(args: [string], next: (a: [string]) => unknown) {
   const src = args[0];
   if (typeof src === 'string' && src.indexOf('Preview') >= 0) {
-    for (const key in PreviewProviders) {
-      if (src.indexOf(key) >= 0) {
+    for (const rule of previewRules) {
+      if (rule.match(src)) {
         let im = previewImgCache.get(src);
-        if (!im) { im = new Image(); im.src = PreviewProviders[key](); previewImgCache.set(src, im); }
+        if (!im) { im = new Image(); im.src = rule.url(); previewImgCache.set(src, im); }
         return im;
       }
     }

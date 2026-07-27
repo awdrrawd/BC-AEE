@@ -5,7 +5,8 @@
 import bcAeeModSdk from '@/modsdk';
 import {installImagePatch} from './masking';
 import {registerSingleGlove, reconcileSingleGlove} from './singleGlove';
-import {registerFreeDrawGroups, installFreeDrawCallbacks, renderOverlay, cacheDrawArgs, maskRefresh} from './freeDraw';
+import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs} from './freeDraw';
+import {installMaskTranslations} from './translations';
 
 export {MaskIcon, MASK_ICON_SVG, MASK_ICON_URL} from './icons';
 export type {MaskIconName} from './icons';
@@ -20,7 +21,9 @@ function registerAll(): boolean {
   return ok;
 }
 
-// Draw the overlay + reconcile single glove after BC renders the character.
+// After BC renders: cache draw args (for editor input mapping), reconcile the
+// single glove, and keep each slot's canvas/vis companion in sync. The visible
+// drawing itself is now a real BC layer, so we no longer paint it here.
 function tryHookDrawCharacter(): boolean {
   if (drawHooked) return true;
   if (typeof DrawCharacter !== 'function') return false;
@@ -29,7 +32,7 @@ function tryHookDrawCharacter(): boolean {
     const [C, X, Y, Zoom, IsHeightResizeAllowed] = args;
     cacheDrawArgs(C, X, Y, Zoom, IsHeightResizeAllowed);
     reconcileSingleGlove(C);
-    renderOverlay(C, X, Y, Zoom, IsHeightResizeAllowed);
+    syncSlots(C);
     return ret;
   });
   drawHooked = true;
@@ -39,6 +42,9 @@ function tryHookDrawCharacter(): boolean {
 export function installMaskSystem() {
   if (started) return;
   started = true;
+
+  installMaskTranslations(); // supply labels for our groups/assets/options
+
 
   // BC assets / draw functions may not be ready the instant the bundle loads;
   // retry until image patch + registration + hook are all in place.
@@ -53,8 +59,7 @@ export function installMaskSystem() {
     }
     if (patch && registered && drawHooked && callbacksInstalled) {
       clearInterval(timer);
-      (window as unknown as Record<string, unknown>).AEEMaskRefresh = maskRefresh;
-      console.log('[AEE Mask] 就緒：自由繪圖 ×3（純繪製／遮罩切換）＋ 單手套 ×1（Priority=99）');
+      console.log('[AEE Mask] 就緒：自由繪圖 ×3（真實圖層＋AEE 變換／遮罩切換）＋ 單手套 ×1');
     }
   }, 500);
 }

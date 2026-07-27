@@ -6,10 +6,18 @@ import {
   FAMILY, SG_MASK_GROUP, SG_ASSET, SG_PRIORITY, SG_SCOPES, SG_OPTIONS,
   SG_LAYER_KEY, SG_LAYER_KEYS, type SGScope, type SGSide, type SGOption,
 } from './constants';
-import {SG_MASK_L_DATAURL, SG_MASK_R_DATAURL} from './assets';
-import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture} from './masking';
+import {SG_MASK_L_DATAURL, SG_MASK_R_DATAURL, SG_ITEM_DATAURL} from './assets';
+import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule} from './masking';
 
 const SG_DATAURL: Record<SGSide, string> = {L: SG_MASK_L_DATAURL, R: SG_MASK_R_DATAURL};
+
+// Show the glove picture for the base item thumbnail only (URL ends with the
+// bare asset name); the per-option preview URLs carry the option name suffix
+// and are left un-injected so those buttons stay text-only.
+addPreviewRule({
+  match: (src) => src.includes(SG_MASK_GROUP) && /[/\\]SingleGlove\.png$/.test(src),
+  url: () => SG_ITEM_DATAURL,
+});
 
 function readSelection(item: Item | null | undefined): SGOption | null {
   if (!item || !item.Property) return null;

@@ -27,7 +27,36 @@ function transparentPx(): string {
 }
 export const TRANSPARENT_DATAURL = transparentPx();
 
-// GLDrawLoadImage hook: return our injected texture for mask asset URLs.
+type TexInfo = {width: number; height: number; texture: WebGLTexture; ready?: boolean};
+
+// Content-keyed caches. These are NEVER busted, so a given mask image is decoded
+// once and every later bind is SYNCHRONOUS — no transparent frame, no async
+// `DrawRefreshCharacterForImage` rebuild loop, i.e. no flicker. Each distinct
+// image (per-character drawing / glove side) gets its own persistent texture, so
+// characters never collide on BC's URL-keyed cache. (Only the COMBINED mask is
+// re-computed per build — see the GLDrawAppearanceBuild hook.)
+const ourImageCache = new Map<string, HTMLImageElement>();
+const ourTexCache = new WeakMap<BCGLContext, Map<string, TexInfo>>();
+
+function texCacheFor(gl: BCGLContext): Map<string, TexInfo> {
+  let m = ourTexCache.get(gl);
+  if (!m) { m = new Map(); ourTexCache.set(gl, m); }
+  return m;
+}
+function ensureDecoded(dataUrl: string): HTMLImageElement {
+  let img = ourImageCache.get(dataUrl);
+  if (!img) {
+    img = new Image();
+    ourImageCache.set(dataUrl, img);
+    // Fires once per NEW image; the ensuing rebuild binds synchronously.
+    img.addEventListener('load', () => { try { DrawRefreshCharacterForImage(img!); } catch { /* ignore */ } });
+    img.addEventListener('error', () => console.error('[AEE Mask] 遮罩圖片載入失敗'));
+    img.src = dataUrl;
+  }
+  return img;
+}
+
+// GLDrawLoadImage hook: return our per-content injected texture for mask URLs.
 function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, string]) => unknown) {
   const gl = args[0], url = args[1];
   LastGL = gl;
@@ -42,32 +71,53 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   }
   if (!dataUrl) return next(args); // not our asset → original flow
 
-  let textureInfo = gl.textureCache?.get(url);
-  if (!textureInfo) {
-    const tex = gl.createTexture()!;
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    textureInfo = {width: 1, height: 1, texture: tex};
-    gl.textureCache?.set(url, textureInfo);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-    let img = GLDrawImageCache.get(url);
-    if (img) {
-      GLDrawBingImageToTextureInfo(gl as never, img, textureInfo);
-    } else {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
-      img = new Image();
-      GLDrawImageCache.set(url, img);
-      img.addEventListener('load', () => {
-        GLDrawBingImageToTextureInfo(gl as never, img!, textureInfo!);
-        DrawRefreshCharacterForImage(img!);
-      });
-      img.addEventListener('error', () => console.error('[AEE Mask] 遮罩圖片載入失敗：' + url));
-      img.src = dataUrl;
+  const cache = texCacheFor(gl);
+  const img = ensureDecoded(dataUrl);
+  let ti = cache.get(dataUrl);
+  if (ti) {
+    if (!ti.ready && img.complete && img.naturalWidth) { // deferred upload once decoded
+      gl.bindTexture(gl.TEXTURE_2D, ti.texture);
+      GLDrawBingImageToTextureInfo(gl as never, img, ti);
+      ti.ready = true;
     }
+    return ti;
   }
-  return textureInfo;
+
+  const tex = gl.createTexture()!;
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  ti = {width: 1, height: 1, texture: tex};
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  if (img.complete && img.naturalWidth) {
+    GLDrawBingImageToTextureInfo(gl as never, img, ti);
+    ti.ready = true;
+  } else {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+  }
+  cache.set(dataUrl, ti);
+  return ti;
+}
+
+// Does this character wear any of OUR masks (single glove / free-draw masks)?
+function characterUsesOurMasks(C: Character | null): boolean {
+  if (!C || !Array.isArray(C.Appearance)) return false;
+  return C.Appearance.some(it => {
+    const n = it?.Asset?.Group?.Name as string | undefined;
+    return n === 'SingleGloveFX' || (typeof n === 'string' && n.startsWith('ItemCanvas') && n.endsWith('Mask'));
+  });
+}
+
+// Clear ONLY the combined-mask cache (keeps source textures), forcing BC to
+// re-combine this build from our per-content source textures.
+function clearMaskCaches() {
+  try {
+    if (LastGL?.maskCache) LastGL.maskCache.clear();
+    if (typeof GLDrawCanvas !== 'undefined' && GLDrawCanvas && GLDrawCanvas.getContext) {
+      const gl2 = (GLDrawCanvas.getContext('webgl2') || GLDrawCanvas.getContext('webgl')) as BCGLContext | null;
+      if (gl2 && gl2 !== LastGL && gl2.maskCache) gl2.maskCache.clear();
+    }
+  } catch { /* ignore */ }
 }
 
 // 2D item-menu preview thumbnails go through DrawGetImage. We inject our own
@@ -105,23 +155,19 @@ function drawGetImageHook(args: [string], next: (a: [string]) => unknown) {
 let buildingChar: Character | null = null;
 export function getBuildingChar(): Character | null { return buildingChar; }
 
-// Clear all our injected textures so the next build re-requests them (and the
-// providers can return the building character's own shape).
-export function bustAllInjectedTextures() {
-  for (const name in MaskImageProviders) bustMaskTexture(name);
-}
-
 export function installImagePatch(): boolean {
   if (imagePatchInstalled) return true;
   if (typeof GLDrawLoadImage !== 'function') return false;
 
   bcAeeModSdk.hookFunction('GLDrawLoadImage', 10, glLoadImageHook as never);
   if (typeof DrawGetImage === 'function') bcAeeModSdk.hookFunction('DrawGetImage', 10, drawGetImageHook as never);
-  // Track the character being built + force per-character mask reload.
+  // Track the character being built; for characters that use our masks, force a
+  // per-character re-combine (source textures stay cached → no flicker).
   if (typeof GLDrawAppearanceBuild === 'function') {
     bcAeeModSdk.hookFunction('GLDrawAppearanceBuild', 6, (args, next) => {
-      buildingChar = (args as unknown as [Character])[0] ?? null;
-      bustAllInjectedTextures();
+      const C = (args as unknown as [Character])[0] ?? null;
+      buildingChar = C;
+      if (characterUsesOurMasks(C)) clearMaskCaches();
       try { return next(args); } finally { buildingChar = null; }
     });
   }
@@ -130,27 +176,11 @@ export function installImagePatch(): boolean {
   return true;
 }
 
-// Clear both GL caches (source `textureCache` AND combined `maskCache`) so a
-// dynamic mask change actually re-renders.
-function clearGLMaskCaches(gl: BCGLContext | null, name: string) {
-  if (!gl) return;
-  if (gl.textureCache) {
-    for (const k of Array.from(gl.textureCache.keys())) if (k.includes(name)) gl.textureCache.delete(k);
-  }
-  if (gl.maskCache) gl.maskCache.clear();
+// Force a mask re-combine after content changed (edit / glove switch). Source
+// textures are content-keyed and never dropped, so the re-bind stays synchronous.
+export function bustMaskTexture() {
+  clearMaskCaches();
 }
-
-export function bustMaskTexture(name: string) {
-  try {
-    clearGLMaskCaches(LastGL, name);
-    if (typeof GLDrawCanvas !== 'undefined' && GLDrawCanvas && GLDrawCanvas.getContext) {
-      const gl2 = (GLDrawCanvas.getContext('webgl2') || GLDrawCanvas.getContext('webgl')) as BCGLContext | null;
-      if (gl2 && gl2 !== LastGL) clearGLMaskCaches(gl2, name);
-    }
-    if (typeof GLDrawImageCache !== 'undefined' && GLDrawImageCache.forEach) {
-      for (const k of Array.from(GLDrawImageCache.keys())) if (k.includes(name)) GLDrawImageCache.delete(k);
-    }
-  } catch (e) {
-    console.warn('[AEE Mask] 清材質快取失敗（可忽略）：', e);
-  }
+export function bustAllInjectedTextures() {
+  clearMaskCaches();
 }

@@ -97,7 +97,7 @@ function slotComposite(slot: Slot): string {
 }
 function invalidateSlot(slot: Slot) {
   slot._composite = null;
-  bustMaskTexture(slot.maskAsset);
+  bustMaskTexture();
 }
 
 // Mask companion shape. During a GL build it must be the BUILDING character's

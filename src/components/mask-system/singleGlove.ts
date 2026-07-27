@@ -4,7 +4,7 @@
 
 import {
   FAMILY, SG_MASK_GROUP, SG_ASSET, SG_PRIORITY, SG_SCOPES, SG_OPTIONS,
-  SG_LAYER_KEY, SG_LAYER_KEYS, type SGScope, type SGSide, type SGOption,
+  SG_LAYER_KEY, type SGScope, type SGSide, type SGOption,
 } from './constants';
 import {SG_MASK_L_DATAURL, SG_MASK_R_DATAURL, SG_ITEM_DATAURL} from './assets';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule, getBuildingChar} from './masking';
@@ -111,7 +111,7 @@ export function reconcileSingleGlove(C: Character | null) {
   const key = C.MemberNumber != null ? C.MemberNumber : C;
   if (lastSig.get(key) === sig) return;
   lastSig.set(key, sig);
-  for (const k of SG_LAYER_KEYS) bustMaskTexture(k);
+  bustMaskTexture();
   if (typeof CharacterLoadCanvas === 'function') {
     setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0);
   }

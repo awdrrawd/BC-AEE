@@ -7,7 +7,7 @@ import {
   SG_LAYER_KEY, SG_LAYER_KEYS, type SGScope, type SGSide, type SGOption,
 } from './constants';
 import {SG_MASK_L_DATAURL, SG_MASK_R_DATAURL, SG_ITEM_DATAURL} from './assets';
-import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule} from './masking';
+import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule, getBuildingChar} from './masking';
 
 const SG_DATAURL: Record<SGSide, string> = {L: SG_MASK_L_DATAURL, R: SG_MASK_R_DATAURL};
 
@@ -31,7 +31,11 @@ function readSelection(item: Item | null | undefined): SGOption | null {
 }
 
 function selectedOption(): SGOption | null {
-  const C = (typeof CharacterGetCurrent === 'function' && CharacterGetCurrent()) || (typeof Player !== 'undefined' ? Player : null);
+  // During a GL build, use the character being built (so remote players show
+  // THEIR own glove); otherwise fall back to the current/edited character.
+  const C = getBuildingChar()
+    || (typeof CharacterGetCurrent === 'function' && CharacterGetCurrent())
+    || (typeof Player !== 'undefined' ? Player : null);
   return readSelection(C ? InventoryGet(C, SG_MASK_GROUP) : null);
 }
 
@@ -86,6 +90,12 @@ export function registerSingleGlove(): boolean {
     Extended: true,
     Layer: [mkLayer('gloves'), mkLayer('luzi'), mkLayer('both')],
   } as unknown as AssetDefinition, extendedConfig as unknown as ExtendedItemMainConfig, groupDef as unknown as AssetGroupDefinition);
+
+  // Display label (BC reads group/item names from `.Description`).
+  const gg = AssetGroupGet(FAMILY, SG_MASK_GROUP);
+  if (gg) (gg as unknown as {Description?: string}).Description = '單手套';
+  const ga = AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET);
+  if (ga) (ga as unknown as {Description?: string}).Description = '單手套';
 
   console.log('[AEE Mask] 已註冊單手套（typed：一個物件可選左右＋範圍）');
   return true;

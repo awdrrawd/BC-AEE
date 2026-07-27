@@ -5,15 +5,53 @@
 import bcAeeModSdk from '@/modsdk';
 import {installImagePatch} from './masking';
 import {registerSingleGlove, reconcileSingleGlove} from './singleGlove';
-import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs} from './freeDraw';
+import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay} from './freeDraw';
 import {installMaskTranslations} from './translations';
+import {SG_MASK_GROUP, DRAW_GROUPS} from './constants';
 
 export {MaskIcon, MASK_ICON_SVG, MASK_ICON_URL} from './icons';
 export type {MaskIconName} from './icons';
 
 let started = false;
 let drawHooked = false;
+let sanitizeHooked = false;
 let callbacksInstalled = false;
+
+// Our group names — used to spot orphaned items (see healOrphans).
+const OUR_GROUP_NAMES = new Set<string>([
+  SG_MASK_GROUP as unknown as string,
+  ...DRAW_GROUPS.map(g => g as unknown as string),
+  ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Mask'),
+]);
+
+// If BC rebuilt its asset list, a worn companion item can still point at OUR
+// asset object which BC dropped from the global `Asset[]` (but kept in AssetMap /
+// the group's Asset list). Iterating mods check `Asset.includes(item.Asset)`
+// exactly (LSCG `smartGetAssetGroup`) → false → they read `orphan.Asset.Group`
+// → crash. NOTE: `AssetGet()` still FINDS the orphan, so it can't detect this —
+// we must check the global array itself. Our asset object is still valid, so we
+// just re-link it into `Asset[]`; that makes `Asset.includes(a)` true again.
+function healOrphans(C: Character | null) {
+  if (!C || !Array.isArray(C.Appearance) || !Array.isArray(Asset)) return;
+  for (const it of C.Appearance) {
+    const a = it?.Asset;
+    if (!a || !a.Group || !OUR_GROUP_NAMES.has(a.Group.Name)) continue;
+    if (!Asset.includes(a)) Asset.push(a); // re-link orphaned OUR asset
+  }
+}
+
+// Heal every character's appearance BEFORE other CommonDrawAppearanceBuild hooks
+// (e.g. LSCG at priority 1) iterate it.
+function tryHookSanitize(): boolean {
+  if (sanitizeHooked) return true;
+  if (typeof CommonDrawAppearanceBuild !== 'function') return false;
+  bcAeeModSdk.hookFunction('CommonDrawAppearanceBuild', 8, (args, next) => {
+    try { healOrphans(args[0]); } catch { /* never let healing break drawing */ }
+    return next(args);
+  });
+  sanitizeHooked = true;
+  return true;
+}
 
 function registerAll(): boolean {
   let ok = registerFreeDrawGroups();
@@ -21,9 +59,10 @@ function registerAll(): boolean {
   return ok;
 }
 
-// After BC renders: cache draw args (for editor input mapping), reconcile the
-// single glove, and keep each slot's canvas/vis companion in sync. The visible
-// drawing itself is now a real BC layer, so we no longer paint it here.
+// After BC renders each character: cache draw args (editor input mapping),
+// reconcile the single glove, keep the local player's board canvases in sync,
+// and paint each character's own drawing overlay (per-character, so other AEE
+// players see everyone's drawings).
 function tryHookDrawCharacter(): boolean {
   if (drawHooked) return true;
   if (typeof DrawCharacter !== 'function') return false;
@@ -33,6 +72,7 @@ function tryHookDrawCharacter(): boolean {
     cacheDrawArgs(C, X, Y, Zoom, IsHeightResizeAllowed);
     reconcileSingleGlove(C);
     syncSlots(C);
+    renderOverlay(C, X, Y, Zoom, IsHeightResizeAllowed);
     return ret;
   });
   drawHooked = true;
@@ -52,6 +92,7 @@ export function installMaskSystem() {
     const patch = installImagePatch();
     const registered = registerAll();
     tryHookDrawCharacter();
+    tryHookSanitize();
 
     if (patch && registered && !callbacksInstalled) {
       callbacksInstalled = true;
@@ -59,7 +100,12 @@ export function installMaskSystem() {
     }
     if (patch && registered && drawHooked && callbacksInstalled) {
       clearInterval(timer);
-      console.log('[AEE Mask] 就緒：自由繪圖 ×3（真實圖層＋AEE 變換／遮罩切換）＋ 單手套 ×1');
+      console.log('[AEE Mask] 就緒：自由繪圖 ×3（每人各自顯示／遮罩切換）＋ 單手套 ×1');
+      // Heartbeat: if BC reloads its assets our runtime groups vanish while worn
+      // items still reference the old (orphaned) asset objects — which crashes
+      // other mods (e.g. LSCG). registerAll() is idempotent (asset-existence
+      // guarded) and cheap, so re-run it periodically to self-heal.
+      setInterval(() => { installImagePatch(); registerAll(); }, 4000);
     }
   }, 500);
 }

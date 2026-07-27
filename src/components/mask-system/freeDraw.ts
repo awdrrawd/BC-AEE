@@ -1,13 +1,17 @@
-// Free-draw ×3. Each slot = THREE assets:
+// Free-draw ×3. Each slot = TWO assets:
 //   - DrawingBoard (plain Extended item, in ItemCanvasN) → our drawing editor.
-//     Adding a Layer to an Extended item breaks its editor, so it carries none.
-//   - Visible companion (ItemCanvasNVis, hidden group) → a REAL image layer whose
-//     texture is the drawing composite (GL-injected); BC renders it natively.
+//     The drawing itself lives in its Property.CustomDraw (compressed dataURL).
 //   - Mask companion (ItemCanvasNMask, hidden group) → destination-out hiding.
 //
-// Transforms are self-contained (the layer stays at body origin 0,0): move =
-// offset baked into the composite position (drag with the 位移 mode, or the
-// arrow buttons); rotate/scale/mirror bake into the board-canvas pixels.
+// The VISIBLE drawing is painted PER-CHARACTER in a DrawCharacter hook
+// (renderOverlay), decoding each character's own Property.CustomDraw. We do NOT
+// use a real image layer for it: BC caches a layer's GL texture by URL globally,
+// so every character sharing the asset would show one image and remote viewers
+// couldn't see per-character drawings. The manual overlay reads each character's
+// synced Property, so other AEE players see everyone's drawings.
+//
+// Transforms are self-contained: move = offsetX/Y (drag with the 位移 mode or
+// the arrow buttons); rotate/scale/mirror bake into the board-canvas pixels.
 // Mask priority is left to the game's own layering (default 99).
 
 import {
@@ -22,7 +26,7 @@ import {
   EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, MASK_X,
   TOOL_COLOR_X, TOOL_ERASER_X, TOOL_BUCKET_X, TOOL_TEXT_X, TOOL_SHAPE_X, TOOL_FILL_X, TOOL_PEN_X,
 } from './constants';
-import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture} from './masking';
+import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingChar} from './masking';
 import {SHAPE_TOOLS, SHAPE_EMOJI, drawShapePreview, floodFill, type ShapeStyle} from './shapes';
 import {ICON} from './icons';
 import {askText} from '@/core/prompts';
@@ -48,8 +52,6 @@ const hitBox = (b: Box) => MouseIn(b.x, b.y, b.w, b.h);
 interface Slot {
   index: number;
   group: AssetGroupName;
-  visGroup: AssetGroupName;
-  visAsset: string;
   maskGroup: AssetGroupName;
   maskAsset: string;
   canvas: HTMLCanvasElement;
@@ -69,8 +71,6 @@ function makeSlot(i: number): Slot {
   return {
     index: i,
     group: DRAW_GROUPS[i],
-    visGroup: (DRAW_GROUPS[i] + 'Vis') as unknown as AssetGroupName,
-    visAsset: DRAW_GROUPS[i] + 'VisA',
     maskGroup: (DRAW_GROUPS[i] + 'Mask') as unknown as AssetGroupName,
     maskAsset: DRAW_GROUPS[i] + 'MaskA',
     canvas: c,
@@ -97,18 +97,94 @@ function slotComposite(slot: Slot): string {
 }
 function invalidateSlot(slot: Slot) {
   slot._composite = null;
-  bustMaskTexture(slot.visAsset);
   bustMaskTexture(slot.maskAsset);
 }
 
+// Mask companion shape. During a GL build it must be the BUILDING character's
+// drawing (so remote players get their own mask). While locally editing this
+// slot, use the live board canvas; otherwise the cached 500×1000 composite of
+// that character's Property.CustomDraw (built by renderOverlay).
 slots.forEach((slot) => {
-  MaskImageProviders[slot.visAsset] = () => {
-    const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
-    if (A === slot || isSlotMasked(C, slot)) return TRANSPARENT_DATAURL;
-    return slotComposite(slot);
+  MaskImageProviders[slot.maskAsset] = () => {
+    const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+    const C = getBuildingChar() || cur;
+    if (A === slot && C === cur) return slotComposite(slot); // live during local edit
+    const item = C ? findSlotItem(C, slot) : null;
+    const p = item?.Property as AnyProps | undefined;
+    const compressed = p?.[PROP_KEY] as string | undefined;
+    if (!compressed) return TRANSPARENT_DATAURL;
+    const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
+    return getMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
   };
-  MaskImageProviders[slot.maskAsset] = () => slotComposite(slot);
 });
+
+// Per-character visible overlay + mask-shape composites. Both decode each
+// character's own Property.CustomDraw (BC caches GL layer textures by URL
+// globally, so a real per-character layer is impossible — we read each
+// character's synced drawing here instead).
+const overlayImgCache = new Map<string, HTMLImageElement>();
+function getOverlayImage(compressed: string): HTMLImageElement {
+  let img = overlayImgCache.get(compressed);
+  if (!img) {
+    img = new Image();
+    img.src = typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed;
+    overlayImgCache.set(compressed, img);
+  }
+  return img;
+}
+
+// 500×1000 mask composites (drawing at its offset), keyed by drawing+offset.
+const maskCompositeCache = new Map<string, string>();
+const maskKey = (compressed: string, offX: number, offY: number) => `${compressed.length}|${offX}|${offY}|${compressed.slice(0, 40)}`;
+function getMaskComposite(compressed: string, offX: number, offY: number): string | null {
+  return maskCompositeCache.get(maskKey(compressed, offX, offY)) ?? null;
+}
+// Returns true if newly built.
+function ensureMaskComposite(compressed: string, offX: number, offY: number, img: HTMLImageElement): boolean {
+  const key = maskKey(compressed, offX, offY);
+  if (maskCompositeCache.has(key)) return false;
+  const c = document.createElement('canvas');
+  c.width = MASK_IMG_W; c.height = MASK_IMG_H;
+  c.getContext('2d')!.drawImage(img, offX, offY, MASK_IMG_W, MASK_IMG_H);
+  maskCompositeCache.set(key, c.toDataURL('image/png'));
+  return true;
+}
+
+export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: number, isHeightResizeAllowed?: boolean) {
+  if (!C || !Array.isArray(C.Appearance)) return;
+  const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  for (const slot of slots) {
+    const item = findSlotItem(C, slot);
+    if (!item) continue;
+    const p = item.Property as AnyProps | undefined;
+    const compressed = p?.[PROP_KEY] as string | undefined;
+    const offX = (p?.OffsetX as number) || 0, offY = (p?.OffsetY as number) || 0;
+    const editingThis = (A === slot && C === cur);
+
+    // Build this character's mask-shape composite (needed by the mask provider,
+    // for masked characters too). Skip while locally editing (live shape used).
+    if (compressed && !editingThis) {
+      const img = getOverlayImage(compressed);
+      if (img.complete && img.naturalWidth) {
+        const fresh = ensureMaskComposite(compressed, offX, offY, img);
+        if (fresh && isSlotMasked(C, slot) && typeof CharacterLoadCanvas === 'function') {
+          setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0); // rebuild now the shape exists
+        }
+      }
+    }
+
+    if (editingThis) continue;             // drawn live by slotDraw
+    if (isSlotMasked(C, slot)) continue;   // mask mode: no visible overlay
+    if (!compressed) continue;
+    const img = getOverlayImage(compressed);
+    if (!img.complete || !img.naturalWidth) continue;
+    const rect = getCharacterDrawRect(C, X, Y, Zoom, isHeightResizeAllowed);
+    MainCanvas.save();
+    MainCanvas.globalAlpha = 1;
+    MainCanvas.drawImage(img, rect.x + offX * (rect.w / 500), rect.y + offY * (rect.h / 1000), rect.w, rect.h);
+    MainCanvas.restore();
+  }
+}
 
 const State = {
   tool: 'pen', // pen | eraser | bucket | text | move | <shape>
@@ -131,55 +207,58 @@ function getMaskTargetGroups(): string[] {
   return MASK_TARGET_GROUPS.filter(n => !AssetGroupMap || AssetGroupMap.has(n));
 }
 
+// True once the asset actually exists in its group (survives BC asset reloads:
+// if AssetAdd failed/was wiped, this stays false so we re-register).
+function assetExists(group: AssetGroupName, name: string): boolean {
+  const g = AssetGroupGet(FAMILY, group);
+  const list = (g as unknown as {Asset?: {Name: string}[]} | null)?.Asset;
+  return !!(Array.isArray(list) && list.some(a => a.Name === name));
+}
+function safeAssetAdd(group: AssetGroup, def: unknown, cfg: unknown, groupDef: unknown) {
+  try {
+    AssetAdd(group, def as AssetDefinition, cfg as ExtendedItemMainConfig, groupDef as AssetGroupDefinition);
+  } catch (e) {
+    console.error('[AEE Mask] AssetAdd 失敗：', e);
+  }
+}
+
+// BC shows group/item names from `.Description` (AssetAdd overwrites it with the
+// Name), so set the displayed labels on the registered group + asset objects.
+function setDesc(group: AssetGroupName, assetName: string, label: string) {
+  const g = AssetGroupGet(FAMILY, group);
+  if (g) (g as unknown as {Description?: string}).Description = label;
+  const a = AssetGet(FAMILY, group, assetName);
+  if (a) (a as unknown as {Description?: string}).Description = label;
+}
+
 function registerDrawGroup(i: number): boolean {
   const g = DRAW_GROUPS[i];
   const slot = slots[i];
-  if (AssetGroupMap.has(g)) return true;
+  if (assetExists(g, DRAW_ASSET)) return true;
 
-  const group = AssetGroupAdd(FAMILY, {
+  const group = AssetGroupGet(FAMILY, g) ?? AssetGroupAdd(FAMILY, {
     Group: g, Category: 'Appearance', AllowNone: true, Random: false, Clothing: true,
   } as unknown as AssetGroupDefinition);
 
-  AssetAdd(group, {
+  safeAssetAdd(group, {
     Name: DRAW_ASSET,
     Value: 0, Wear: true, Extended: true, AlwaysInteract: true, Random: false,
-    RemoveItemOnRemove: [
-      {Group: slot.visGroup, Name: slot.visAsset},
-      {Group: slot.maskGroup, Name: slot.maskAsset},
-    ],
-  } as unknown as AssetDefinition, {} as unknown as ExtendedItemMainConfig, {Group: g} as unknown as AssetGroupDefinition);
-  return true;
-}
-
-function registerVisGroup(i: number): boolean {
-  const slot = slots[i];
-  if (AssetGroupGet(FAMILY, slot.visGroup)) return true;
-
-  const group = AssetGroupAdd(FAMILY, {
-    Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true, Random: false,
-    AllowCustomize: false, Priority: MASK_PRIORITY - 1,
-  } as unknown as AssetGroupDefinition);
-
-  const groupDef = {Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true};
-  AssetAdd(group, {
-    Name: slot.visAsset,
-    Description: `繪圖 ${i + 1}`,
-    Layer: [{Name: 'Board', AllowColorize: false, Priority: MASK_PRIORITY - 1}],
-  } as unknown as AssetDefinition, null as unknown as ExtendedItemMainConfig, groupDef as unknown as AssetGroupDefinition);
-  return true;
+    RemoveItemOnRemove: [{Group: slot.maskGroup, Name: slot.maskAsset}],
+  }, {}, {Group: g});
+  setDesc(g, DRAW_ASSET, `自由繪圖${i + 1}`);
+  return assetExists(g, DRAW_ASSET);
 }
 
 function registerMaskGroup(i: number): boolean {
   const slot = slots[i];
-  if (AssetGroupGet(FAMILY, slot.maskGroup)) return true;
+  if (assetExists(slot.maskGroup, slot.maskAsset)) return true;
 
-  const group = AssetGroupAdd(FAMILY, {
+  const group = AssetGroupGet(FAMILY, slot.maskGroup) ?? AssetGroupAdd(FAMILY, {
     Group: slot.maskGroup, Category: 'Appearance', Clothing: true, AllowNone: true, Random: false,
     AllowCustomize: false, Priority: MASK_PRIORITY,
   } as unknown as AssetGroupDefinition);
 
-  const groupDef = {Group: slot.maskGroup, Category: 'Appearance', Clothing: true, AllowNone: true};
-  AssetAdd(group, {
+  safeAssetAdd(group, {
     Name: slot.maskAsset,
     Description: `繪圖遮罩 ${i + 1}（隱藏身體以外）`,
     Layer: [{
@@ -188,15 +267,15 @@ function registerMaskGroup(i: number): boolean {
       Priority: MASK_PRIORITY,
       TextureMask: {Groups: getMaskTargetGroups(), ApplyToAbove: MASK_APPLY_TO_ABOVE},
     }],
-  } as unknown as AssetDefinition, null as unknown as ExtendedItemMainConfig, groupDef as unknown as AssetGroupDefinition);
-  return true;
+  }, null, {Group: slot.maskGroup, Category: 'Appearance', Clothing: true, AllowNone: true});
+  setDesc(slot.maskGroup, slot.maskAsset, `繪圖遮罩${i + 1}`);
+  return assetExists(slot.maskGroup, slot.maskAsset);
 }
 
 export function registerFreeDrawGroups(): boolean {
   if (typeof AssetGroupAdd !== 'function' || typeof AssetAdd !== 'function') return false;
   let ok = true;
   for (let i = 0; i < SLOT_COUNT; i++) ok = registerDrawGroup(i) && ok;
-  for (let i = 0; i < SLOT_COUNT; i++) ok = registerVisGroup(i) && ok;
   for (let i = 0; i < SLOT_COUNT; i++) ok = registerMaskGroup(i) && ok;
   return ok;
 }
@@ -488,11 +567,6 @@ function contrastColor(hex: string): string {
 function isSlotMasked(C: Character | null, slot: Slot): boolean {
   return !!(C && InventoryGet(C, slot.maskGroup));
 }
-function ensureVisWorn(C: Character, slot: Slot) {
-  if (!InventoryGet(C, slot.visGroup)) {
-    InventoryWear(C, slot.visAsset, slot.visGroup, null, null, null, null as never, false);
-  }
-}
 function toggleSlotMask() {
   if (!A) return;
   const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
@@ -506,8 +580,8 @@ function toggleSlotMask() {
     A.isMask = true;
   }
   invalidateSlot(A);
-  if (typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
-  else CharacterRefresh(C, false, false);
+  // Push=true syncs the worn/removed mask companion to the server so others see it.
+  CharacterRefresh(C, true, false);
 }
 
 // ---- Extended item callbacks ---------------------------------------------
@@ -542,13 +616,14 @@ function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null) {
   img.src = dataUrl;
 }
 
+// Keep the LOCAL player's board canvases current (they feed the editor + the
+// mask-companion shape). Remote characters render via renderOverlay from their
+// own Property, so we don't thrash the shared slot canvas with their drawings.
 export function syncSlots(C: Character | null) {
-  if (!C || !Array.isArray(C.Appearance)) return;
+  if (!C || C !== Player || !Array.isArray(C.Appearance)) return;
   for (const slot of slots) {
     const item = findSlotItem(C, slot);
-    if (!item) continue;
-    ensureSlotCanvasFromProperty(slot, item);
-    ensureVisWorn(C, slot);
+    if (item) ensureSlotCanvasFromProperty(slot, item);
   }
 }
 
@@ -564,7 +639,6 @@ function slotLoad(i: number) {
     A.offsetY = (p.OffsetY as number) || 0;
     if (p[PROP_KEY]) { A._loadedSig = undefined; ensureSlotCanvasFromProperty(A, item); }
   }
-  if (C) ensureVisWorn(C, A);
   A.sessionSnapshot = A.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   A.sessionState = {offsetX: A.offsetX, offsetY: A.offsetY, rotation: A.rotation, scale: A.scale, isMask: A.isMask};
   State.picker = null;
@@ -638,9 +712,8 @@ function applyToCharacter() {
   p.OffsetY = A.offsetY;
   A._loadedSig = compressed.length + ':' + compressed.slice(0, 16);
 
-  ensureVisWorn(C, A);
   invalidateSlot(A);
-  CharacterRefresh(C, true, false);
+  CharacterRefresh(C, true, false); // Push=true → ServerPlayerAppearanceSync (others get the drawing)
 }
 
 function onKeyDown(evt: KeyboardEvent) {

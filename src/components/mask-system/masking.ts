@@ -99,14 +99,34 @@ function drawGetImageHook(args: [string], next: (a: [string]) => unknown) {
   return next(args);
 }
 
+// Which character BC is currently building the GL canvas for. Mask providers
+// read this so each character gets ITS OWN mask shape (BC caches textures by
+// URL globally, so we bust + reload per build). Null outside a build.
+let buildingChar: Character | null = null;
+export function getBuildingChar(): Character | null { return buildingChar; }
+
+// Clear all our injected textures so the next build re-requests them (and the
+// providers can return the building character's own shape).
+export function bustAllInjectedTextures() {
+  for (const name in MaskImageProviders) bustMaskTexture(name);
+}
+
 export function installImagePatch(): boolean {
   if (imagePatchInstalled) return true;
   if (typeof GLDrawLoadImage !== 'function') return false;
 
   bcAeeModSdk.hookFunction('GLDrawLoadImage', 10, glLoadImageHook as never);
   if (typeof DrawGetImage === 'function') bcAeeModSdk.hookFunction('DrawGetImage', 10, drawGetImageHook as never);
+  // Track the character being built + force per-character mask reload.
+  if (typeof GLDrawAppearanceBuild === 'function') {
+    bcAeeModSdk.hookFunction('GLDrawAppearanceBuild', 6, (args, next) => {
+      buildingChar = (args as unknown as [Character])[0] ?? null;
+      bustAllInjectedTextures();
+      try { return next(args); } finally { buildingChar = null; }
+    });
+  }
   imagePatchInstalled = true;
-  console.log('[AEE Mask] GLDrawLoadImage + DrawGetImage 影像注入已掛上');
+  console.log('[AEE Mask] GLDrawLoadImage + DrawGetImage + 每角色遮罩注入已掛上');
   return true;
 }
 

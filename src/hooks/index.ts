@@ -9,6 +9,7 @@ import {initBcWheelScroll} from '@/hooks/bcWheelHooks';
 import {installWardrobeHooks} from '@/hooks/wardrobeHooks';
 import {installFontHooks} from '@/hooks/fontHooks';
 import {initItemFonts} from '@/controllers/fontController';
+import {installMaskSystem} from '@/components/mask-system';
 
 export function installAeeHooks() {
   installSettingEffects();
@@ -24,4 +25,5 @@ export function installAeeHooks() {
   installWardrobeHooks();
   installFontHooks();
   initItemFonts();
+  installMaskSystem();
 }

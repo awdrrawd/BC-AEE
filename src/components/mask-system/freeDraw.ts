@@ -18,9 +18,12 @@ import {
   FAMILY, DRAW_ASSET, PROP_KEY, SLOT_COUNT, DRAW_GROUPS,
   BOARD_W, BOARD_H, MASK_IMG_W, MASK_IMG_H, DRAW_X, DRAW_Y,
   MASK_TARGET_GROUPS, MASK_PRIORITY, MASK_APPLY_TO_ABOVE,
+  VIS_SLOTS, DRAW_VIS_PRIORITY,
   ICON_W, ICON_H, TOOLBAR_Y1, TOOLBAR_Y2,
   STROKE_Y, STROKE_H, STROKE_LABEL_X, STROKE_LABEL_W, STROKE_BAR_X, STROKE_BAR_W,
   STROKE_FRAME_X, STROKE_FRAME_W, STROKE_MIN, STROKE_MAX,
+  MPRIO_Y, MPRIO_H, MPRIO_FRAME_X, MPRIO_FRAME_W, MPRIO_LABEL_X, MPRIO_LABEL_W,
+  MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_MIN, MPRIO_MAX,
   PICKER_X, PICKER_Y, PICKER_W, PICKER_ITEM, PICKER_GAP, PICKER_PAD, PICKER_PER_ROW,
   MOVE_STEP, ROTATE_STEP, SCALE_STEP,
   EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, MASK_X,
@@ -54,13 +57,16 @@ interface Slot {
   group: AssetGroupName;
   maskGroup: AssetGroupName;
   maskAsset: string;
+  visGroup: AssetGroupName;   // DynamicAfterDraw companion (VIS_SLOTS only)
+  visAsset: string;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   offsetX: number; offsetY: number; rotation: number; scale: number;
   isMask: boolean;
+  maskPriority: number; // OverridePriority applied to the worn mask companion
   undoStack: ImageData[];
   sessionSnapshot: ImageData | null;
-  sessionState: {offsetX: number; offsetY: number; rotation: number; scale: number; isMask: boolean} | null;
+  sessionState: {offsetX: number; offsetY: number; rotation: number; scale: number; isMask: boolean; maskPriority: number} | null;
   _loadedSig?: string;
   _composite?: string | null;
 }
@@ -73,10 +79,13 @@ function makeSlot(i: number): Slot {
     group: DRAW_GROUPS[i],
     maskGroup: (DRAW_GROUPS[i] + 'Mask') as unknown as AssetGroupName,
     maskAsset: DRAW_GROUPS[i] + 'MaskA',
+    visGroup: (DRAW_GROUPS[i] + 'Vis') as unknown as AssetGroupName,
+    visAsset: DRAW_GROUPS[i] + 'VisA',
     canvas: c,
     ctx: c.getContext('2d')!,
     offsetX: 0, offsetY: 0, rotation: 0, scale: 1,
     isMask: false,
+    maskPriority: MASK_PRIORITY,
     undoStack: [],
     sessionSnapshot: null,
     sessionState: null,
@@ -150,6 +159,47 @@ function ensureMaskComposite(compressed: string, offX: number, offY: number, img
   return true;
 }
 
+// DynamicAfterDraw callback — BC calls this during the vis companion layer's
+// draw, once per character. Paint THAT character's own drawing at the layer
+// position (X,Y) so it's per-character AND respects layer order. Draw the blink
+// frame too, else the drawing vanishes whenever the character blinks.
+//
+// CRITICAL: the canvas passed to drawCanvas MUST come from
+// AnimationGenerateTempCanvas — BC's drawCanvas keys the GL texture by the
+// canvas's `name` attribute (`Img.getAttribute("name")`); a plain canvas has
+// none → null key → `GLDrawImageCache.set(null,…)` poisons the cache and crashes
+// AnimationPurge (`null.startsWith`), plus `GLDrawImage(null)`. The generated
+// name embeds C.CharacterID + the asset, so it's per-character and AnimationPurge
+// can clean it up. We stash the canvas in this character+asset's PersistentData
+// and repaint it each frame (the ECHO EFMask pattern).
+interface VisPersist { canvas?: HTMLCanvasElement }
+function visAfterDraw(slot: Slot, data: DynamicDrawingData) {
+  try {
+    const C = data.C;
+    // The locally-edited slot is shown live by slotDraw's preview; skip here to
+    // avoid drawing the stale saved copy behind it.
+    const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+    if (A === slot && C === cur) return;
+    const board = findSlotItem(C, slot);
+    const p = board?.Property as AnyProps | undefined;
+    const compressed = p?.[PROP_KEY] as string | undefined;
+    if (!compressed) return;
+    const img = getOverlayImage(compressed);
+    if (!img.complete || !img.naturalWidth) return;
+    const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
+
+    const store = data.PersistentData() as VisPersist;
+    const canvas = (store.canvas ??= AnimationGenerateTempCanvas(C, data.A, MASK_IMG_W, MASK_IMG_H));
+    const ctx = canvas.getContext('2d')!;
+    ctx.clearRect(0, 0, MASK_IMG_W, MASK_IMG_H);
+    ctx.drawImage(img, offX, offY, MASK_IMG_W, MASK_IMG_H);
+    data.drawCanvas(canvas, data.X, data.Y, data.AlphaMasks);
+    data.drawCanvasBlink(canvas, data.X, data.Y, data.AlphaMasks);
+  } catch (e) {
+    console.error('[AEE Mask] Vis AfterDraw 例外：', e);
+  }
+}
+
 export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: number, isHeightResizeAllowed?: boolean) {
   if (!C || !Array.isArray(C.Appearance)) return;
   const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
@@ -174,6 +224,7 @@ export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: n
     }
 
     if (editingThis) continue;             // drawn live by slotDraw
+    if (VIS_SLOTS.has(slot.index)) continue; // visible drawn by the DynamicAfterDraw companion
     if (isSlotMasked(C, slot)) continue;   // mask mode: no visible overlay
     if (!compressed) continue;
     const img = getOverlayImage(compressed);
@@ -197,6 +248,7 @@ const State = {
   snapshotBeforeShape: null as ImageData | null,
   lastText: '',
   draggingStroke: false,
+  draggingPriority: false,
   dragging: false,
   dragStartCX: 0, dragStartCY: 0, dragStartOffsetX: 0, dragStartOffsetY: 0,
 };
@@ -240,13 +292,38 @@ function registerDrawGroup(i: number): boolean {
     Group: g, Category: 'Appearance', AllowNone: true, Random: false, Clothing: true,
   } as unknown as AssetGroupDefinition);
 
+  const removeOnRemove = [{Group: slot.maskGroup, Name: slot.maskAsset}];
+  if (VIS_SLOTS.has(i)) removeOnRemove.push({Group: slot.visGroup, Name: slot.visAsset});
   safeAssetAdd(group, {
     Name: DRAW_ASSET,
     Value: 0, Wear: true, Extended: true, AlwaysInteract: true, Random: false,
-    RemoveItemOnRemove: [{Group: slot.maskGroup, Name: slot.maskAsset}],
+    RemoveItemOnRemove: removeOnRemove,
   }, {}, {Group: g});
   setDesc(g, DRAW_ASSET, `自由繪圖${i + 1}`);
   return assetExists(g, DRAW_ASSET);
+}
+
+// Visible-drawing companion: a real layer with DynamicAfterDraw, so BC calls our
+// AfterDraw callback during THIS layer's draw → we paint the character's own
+// drawing at the layer's z-position (layer-orderable + per-character). TEST: only
+// registered for VIS_SLOTS. HasImage:false → no image URL, only the AfterDraw.
+function registerVisGroup(i: number): boolean {
+  const slot = slots[i];
+  if (assetExists(slot.visGroup, slot.visAsset)) return true;
+
+  const group = AssetGroupGet(FAMILY, slot.visGroup) ?? AssetGroupAdd(FAMILY, {
+    Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true, Random: false,
+    AllowCustomize: false, Priority: DRAW_VIS_PRIORITY,
+  } as unknown as AssetGroupDefinition);
+
+  safeAssetAdd(group, {
+    Name: slot.visAsset,
+    Description: `自由繪圖 ${i + 1}（顯示）`,
+    DynamicAfterDraw: true,
+    Layer: [{HasImage: false, Priority: DRAW_VIS_PRIORITY}],
+  }, null, {Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true});
+  setDesc(slot.visGroup, slot.visAsset, `自由繪圖${i + 1}顯示`);
+  return assetExists(slot.visGroup, slot.visAsset);
 }
 
 function registerMaskGroup(i: number): boolean {
@@ -277,6 +354,7 @@ export function registerFreeDrawGroups(): boolean {
   let ok = true;
   for (let i = 0; i < SLOT_COUNT; i++) ok = registerDrawGroup(i) && ok;
   for (let i = 0; i < SLOT_COUNT; i++) ok = registerMaskGroup(i) && ok;
+  for (const i of VIS_SLOTS) ok = registerVisGroup(i) && ok;
   return ok;
 }
 
@@ -393,6 +471,11 @@ function onPointerDown(evt: MouseEvent) {
     updateStrokeFromPointerX(cx);
     return;
   }
+  if (State.picker !== 'shape' && pointInRect(cx, cy, MPRIO_BAR_X, MPRIO_Y, MPRIO_BAR_W, MPRIO_H)) {
+    State.draggingPriority = true;
+    updatePriorityFromPointerX(cx);
+    return;
+  }
   if (!inBoardArea(cx, cy)) return;
   const local = toLocal(cx, cy);
 
@@ -445,6 +528,7 @@ function onPointerMove(evt: MouseEvent) {
   if (!A) return;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (State.draggingStroke) { updateStrokeFromPointerX(cx); return; }
+  if (State.draggingPriority) { updatePriorityFromPointerX(cx); return; }
   if (State.dragging) {
     const r = getBoardScreenRect();
     A.offsetX = State.dragStartOffsetX + (cx - State.dragStartCX) * (500 / r.w);
@@ -476,6 +560,7 @@ function onPointerMove(evt: MouseEvent) {
 function onPointerUp(evt: MouseEvent) {
   if (!A) return;
   if (State.draggingStroke) { State.draggingStroke = false; return; }
+  if (State.draggingPriority) { State.draggingPriority = false; commitMaskPriority(); return; }
   if (State.dragging) { State.dragging = false; afterEdit(); return; }
   if (!State.isPressing) return;
   State.isPressing = false;
@@ -564,9 +649,59 @@ function contrastColor(hex: string): string {
 
 // ---- Mask toggle & companions --------------------------------------------
 
+// Property key on the DrawingBoard item that remembers this slot's mask
+// priority across on/off toggles + reloads (and syncs to other players).
+const PROP_MASK_PRIO = 'MaskPriority';
+
 function isSlotMasked(C: Character | null, slot: Slot): boolean {
   return !!(C && InventoryGet(C, slot.maskGroup));
 }
+
+// Push the slot's priority onto the WORN companion(s) as OverridePriority. BC
+// uses it as that layer's priority: for the mask (ApplyToAbove:false → masks
+// only clothing below it) and, for VIS_SLOTS, for the visible-drawing layer
+// (so the 順位 slider reorders the drawing itself).
+function applyMaskPriority(C: Character | null, slot: Slot) {
+  if (!C) return;
+  const setOn = (item: Item | null) => {
+    if (!item) return;
+    if (!CommonIsObject(item.Property)) item.Property = {};
+    (item.Property as AnyProps).OverridePriority = slot.maskPriority;
+  };
+  setOn(InventoryGet(C, slot.maskGroup));
+  if (VIS_SLOTS.has(slot.index)) setOn(InventoryGet(C, slot.visGroup));
+}
+
+// Wear/remove the visible companion (VIS_SLOTS) so it's worn exactly when the
+// slot has a drawing and is NOT in mask mode (mask mode hides the visible, as
+// before). Idempotent (acts only on mismatch); deferred + push so it syncs.
+let visRefreshPending = false;
+function syncVisCompanion(C: Character | null, slot: Slot) {
+  if (!C || !VIS_SLOTS.has(slot.index)) return;
+  const board = findSlotItem(C, slot);
+  const hasDraw = !!(board?.Property as AnyProps | undefined)?.[PROP_KEY];
+  const shouldWear = hasDraw && !isSlotMasked(C, slot);
+  const worn = !!InventoryGet(C, slot.visGroup);
+  if (shouldWear === worn) { if (worn) applyMaskPriority(C, slot); return; }
+  if (shouldWear) {
+    InventoryWear(C, slot.visAsset, slot.visGroup, null, null, null, null as never, false);
+    applyMaskPriority(C, slot);
+  } else {
+    InventoryRemove(C, slot.visGroup, false);
+  }
+  if (!visRefreshPending) {
+    visRefreshPending = true;
+    setTimeout(() => { visRefreshPending = false; try { CharacterRefresh(C, true, false); } catch { /* ignore */ } }, 0);
+  }
+}
+
+// Read the remembered priority off the DrawingBoard item (default 99).
+function loadMaskPriority(slot: Slot, boardItem: Item | null) {
+  const p = boardItem?.Property as AnyProps | undefined;
+  const v = p?.[PROP_MASK_PRIO];
+  slot.maskPriority = typeof v === 'number' ? v : MASK_PRIORITY;
+}
+
 function toggleSlotMask() {
   if (!A) return;
   const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
@@ -577,11 +712,36 @@ function toggleSlotMask() {
   } else {
     invalidateSlot(A);
     InventoryWear(C, A.maskAsset, A.maskGroup, null, null, null, null as never, false);
+    applyMaskPriority(C, A); // honour the remembered priority on the fresh companion
     A.isMask = true;
   }
   invalidateSlot(A);
   // Push=true syncs the worn/removed mask companion to the server so others see it.
   CharacterRefresh(C, true, false);
+}
+
+// Live-update during a priority-slider drag: ONLY move the value (cheap, like
+// the stroke slider) so dragging stays smooth. The heavy mask rebuild happens
+// once on release — see commitMaskPriority.
+function updatePriorityFromPointerX(cx: number) {
+  if (!A) return;
+  const ratio = Math.min(1, Math.max(0, (cx - MPRIO_BAR_X) / MPRIO_BAR_W));
+  A.maskPriority = Math.round(MPRIO_MIN + ratio * (MPRIO_MAX - MPRIO_MIN));
+}
+
+// On release: apply to the worn companion, persist to the DrawingBoard item,
+// rebuild once + push-sync so others get it.
+function commitMaskPriority() {
+  if (!A) return;
+  const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const board = C ? findSlotItem(C, A) : null;
+  if (board) {
+    if (!CommonIsObject(board.Property)) board.Property = {};
+    (board.Property as AnyProps)[PROP_MASK_PRIO] = A.maskPriority;
+  }
+  applyMaskPriority(C, A);
+  invalidateSlot(A);
+  if (C) CharacterRefresh(C, true, false);
 }
 
 // ---- Extended item callbacks ---------------------------------------------
@@ -624,6 +784,16 @@ export function syncSlots(C: Character | null) {
   for (const slot of slots) {
     const item = findSlotItem(C, slot);
     if (item) ensureSlotCanvasFromProperty(slot, item);
+    // Keep the remembered priority + the worn companion's OverridePriority in
+    // sync (e.g. after a relog restored the board but a fresh companion). Skip
+    // the slot being edited — this runs every frame, and reloading its stored
+    // value would clobber an in-progress slider drag (the value snapping back
+    // each frame is what made the drag feel stuck/laggy).
+    if (A !== slot) {
+      loadMaskPriority(slot, item);
+      if (isSlotMasked(C, slot)) applyMaskPriority(C, slot);
+    }
+    syncVisCompanion(C, slot); // wear/remove the visible companion (VIS_SLOTS)
   }
 }
 
@@ -633,6 +803,7 @@ function slotLoad(i: number) {
   const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
   A.isMask = isSlotMasked(C, A);
   const item = DialogFocusItem;
+  loadMaskPriority(A, item);
   if (item && item.Property) {
     const p = item.Property as AnyProps;
     A.offsetX = (p.OffsetX as number) || 0;
@@ -640,7 +811,7 @@ function slotLoad(i: number) {
     if (p[PROP_KEY]) { A._loadedSig = undefined; ensureSlotCanvasFromProperty(A, item); }
   }
   A.sessionSnapshot = A.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
-  A.sessionState = {offsetX: A.offsetX, offsetY: A.offsetY, rotation: A.rotation, scale: A.scale, isMask: A.isMask};
+  A.sessionState = {offsetX: A.offsetX, offsetY: A.offsetY, rotation: A.rotation, scale: A.scale, isMask: A.isMask, maskPriority: A.maskPriority};
   State.picker = null;
   if (State.tool === 'move') State.tool = 'pen';
   invalidateSlot(A);
@@ -689,6 +860,8 @@ function cancelEditingAndExit() {
         else InventoryRemove(C, A.maskGroup, false);
       }
       A.isMask = A.sessionState.isMask;
+      A.maskPriority = A.sessionState.maskPriority;
+      if (C && A.isMask) applyMaskPriority(C, A); // revert the live-dragged priority
     }
     A.undoStack = [];
   }
@@ -710,8 +883,10 @@ function applyToCharacter() {
   p[PROP_KEY] = compressed;
   p.OffsetX = A.offsetX;
   p.OffsetY = A.offsetY;
+  p[PROP_MASK_PRIO] = A.maskPriority;
   A._loadedSig = compressed.length + ':' + compressed.slice(0, 16);
 
+  applyMaskPriority(C, A);
   invalidateSlot(A);
   CharacterRefresh(C, true, false); // Push=true → ServerPlayerAppearanceSync (others get the drawing)
 }
@@ -777,6 +952,20 @@ function slotDraw() {
     drawBox(E2.rotL, '↺', 'White'); drawBox(E2.rotR, '↻', 'White');
     drawBox(E2.scUp, '＋', 'White'); drawBox(E2.scDn, '－', 'White');
     drawBox(E2.fH, '水平', 'White'); drawBox(E2.fV, '垂直', 'White');
+  }
+
+  // Layer-order slider (shown in both draw & mask modes; hidden only while the
+  // shape picker is open). The value is remembered on the drawing and drives the
+  // mask's OverridePriority when masking is on.
+  if (State.picker !== 'shape') {
+    DrawRect(MPRIO_FRAME_X, MPRIO_Y, MPRIO_FRAME_W, MPRIO_H, 'White');
+    DrawEmptyRect(MPRIO_FRAME_X, MPRIO_Y, MPRIO_FRAME_W, MPRIO_H, 'Black', 2);
+    DrawText('順位', MPRIO_LABEL_X + MPRIO_LABEL_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
+    DrawButton(MPRIO_BAR_X, MPRIO_Y, MPRIO_BAR_W, MPRIO_H, '', 'White', undefined, '拖曳調整順位；數字越高，開遮罩時能蓋住越多（優先權比它低的衣物才會被隱藏）');
+    const ppct = (A.maskPriority - MPRIO_MIN) / (MPRIO_MAX - MPRIO_MIN);
+    MainCanvas.fillStyle = '#4CAF50';
+    MainCanvas.fillRect(MPRIO_BAR_X + 4, MPRIO_Y + 4, (MPRIO_BAR_W - 8) * ppct, MPRIO_H - 8);
+    DrawText(`${A.maskPriority}`, MPRIO_BAR_X + MPRIO_BAR_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
   }
 
   if (State.draggingStroke) {
@@ -855,6 +1044,12 @@ export function installFreeDrawCallbacks() {
     g[`${prefix}Click`] = () => { try { slotClick(); } catch (e) { console.error('[AEE Mask] Click 錯誤：', e); } };
     g[`${prefix}Exit`] = () => { try { slotExit(); } catch (e) { console.error('[AEE Mask] Exit 錯誤：', e); } };
     g[`${prefix}Init`] = (C: Character, Item: Item, Push?: boolean, Refresh?: boolean) => slotInit(i, C, Item, Push, Refresh);
+    // Visible-drawing companion's DynamicAfterDraw hook (VIS_SLOTS only): BC
+    // calls Assets{Group}{Asset}AfterDraw during that layer's draw.
+    if (VIS_SLOTS.has(i)) {
+      const slot = slots[i];
+      g[`Assets${slot.visGroup}${slot.visAsset}AfterDraw`] = (data: DynamicDrawingData) => visAfterDraw(slot, data);
+    }
   }
   window.addEventListener('keydown', onKeyDown);
 }

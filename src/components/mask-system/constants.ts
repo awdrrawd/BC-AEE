@@ -47,7 +47,6 @@ export const SG_LAYER_KEY: Record<SGScope, string> = {
   luzi: 'SGLayerLuzi',
   both: 'SGLayerBoth',
 };
-export const SG_LAYER_KEYS = Object.values(SG_LAYER_KEY);
 
 // ---- Free-draw mask targets ----------------------------------------------
 // Perf: masking every non-body group (~90) is slow. Curate common clothing.
@@ -62,6 +61,11 @@ export const MASK_TARGET_GROUPS = ([
 export const MASK_PRIORITY = 99;
 export const MASK_APPLY_TO_ABOVE = false;
 
+// Mask-priority slider (only shown in mask mode). Drives the worn mask item's
+// Property.OverridePriority → BC hides clothing layers whose Priority is below
+// this value (ApplyToAbove:false). Lower = fewer items hidden. BC's own range.
+export const MPRIO_MIN = 0, MPRIO_MAX = 99;
+
 // ---- Free-draw ×3 ---------------------------------------------------------
 export const DRAW_ASSET = 'DrawingBoard';
 export const PROP_KEY = 'CustomDraw';
@@ -71,9 +75,15 @@ export const DRAW_GROUPS = (['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3'] as unk
 export const DRAW_X = 500, DRAW_Y = 0;
 export const BOARD_W = 250, BOARD_H = 500;
 
+// TEST (slot 0 only): render the visible drawing as a real DynamicAfterDraw
+// layer (companion `ItemCanvasNVis`) so it's per-character AND layer-orderable,
+// instead of the always-top-most DrawCharacter overlay. Slots in this set use
+// the companion; others keep the overlay.
+export const VIS_SLOTS = new Set<number>([0]);
+export const DRAW_VIS_PRIORITY = 99; // base layer priority (overridden by the 順位 slider)
+
 // Mask image is body-sized (500×1000), matching BC's own glove masks.
 export const MASK_IMG_W = 500, MASK_IMG_H = 1000;
-export const MASK_ALIGN = {x: 0, y: 0, scale: 1};
 
 // ---- Toolbar layout (canvas UI, coords in BC's 2000×1000 space) ----------
 export const ICON_W = 90, ICON_H = 90;
@@ -97,6 +107,12 @@ export const STROKE_LABEL_X = 1485, STROKE_LABEL_W = 90;
 export const STROKE_BAR_X = 1585, STROKE_BAR_W = 390;
 export const STROKE_FRAME_X = 1485, STROKE_FRAME_W = 490;
 export const STROKE_MIN = 1, STROKE_MAX = 20;
+
+// Mask-priority slider row (y=500, below the transform panel; mask mode only).
+export const MPRIO_Y = 500, MPRIO_H = 50;
+export const MPRIO_FRAME_X = 1485, MPRIO_FRAME_W = 490;
+export const MPRIO_LABEL_X = 1485, MPRIO_LABEL_W = 120;
+export const MPRIO_BAR_X = 1615, MPRIO_BAR_W = 360;
 
 // Shape picker panel (y=290). Gap 5, 5 per row.
 export const PICKER_X = 1485, PICKER_Y = 290, PICKER_W = 490;

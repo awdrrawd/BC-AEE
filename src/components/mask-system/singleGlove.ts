@@ -116,7 +116,3 @@ export function reconcileSingleGlove(C: Character | null) {
     setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0);
   }
 }
-
-// Console helpers.
-export function singleGloveWear() { InventoryWear(Player, SG_ASSET, SG_MASK_GROUP); CharacterRefresh(Player, true, false); }
-export function singleGloveClear() { InventoryRemove(Player, SG_MASK_GROUP); CharacterRefresh(Player, true, false); }

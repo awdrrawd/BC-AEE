@@ -61,11 +61,24 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   const gl = args[0], url = args[1];
   LastGL = gl;
 
+  // BC can call GLDrawLoadImage with a non-string url (e.g. a temp-canvas name
+  // that resolved to null); never assume `.includes` exists → pass straight
+  // through so we don't crash the whole draw.
+  if (typeof url !== 'string') return next(args);
+
   let dataUrl: string | null = null;
   for (const name in MaskImageProviders) {
     if (url.includes(name)) {
       const p = MaskImageProviders[name];
-      dataUrl = typeof p === 'function' ? p() : p;
+      // A throwing provider must NOT propagate: this hook runs inside
+      // GLDrawLoadTextureAlphaMask → an uncaught throw here takes down the whole
+      // character draw (screen fails to load). Swallow → transparent fallback.
+      try {
+        dataUrl = typeof p === 'function' ? p() : p;
+      } catch (e) {
+        console.error('[AEE Mask] 遮罩 provider 例外，改用透明：', e);
+        dataUrl = TRANSPARENT_DATAURL;
+      }
       if (dataUrl) break;
     }
   }
@@ -77,7 +90,10 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   // GLDrawImageCache 來判斷圖片是否已就緒（img.width/height）。
   // 我們沒呼叫 next()，原生 GLDrawLoadImage 不會幫我們寫入這個 cache，
   // 必須自己補上，否則 GLDrawImageCache.get(url) 會是 undefined 而炸掉。
-  if (!GLDrawImageCache.has(url)) GLDrawImageCache.set(url, img);
+  // 無條件覆蓋：這裡的 url 只會匹配到「我們自己的遮罩資產」，img 一定是我們
+  // 解好的正確內容。若用 !has 當守衛，一旦某次競態下原生先塞了一張 404/壞圖
+  // （width 0），之後就永遠不會被覆蓋 → 遮罩靜默失效。
+  GLDrawImageCache.set(url, img);
   let ti = cache.get(dataUrl);
   if (ti) {
     if (!ti.ready && img.complete && img.naturalWidth) { // deferred upload once decoded
@@ -184,8 +200,5 @@ export function installImagePatch(): boolean {
 // Force a mask re-combine after content changed (edit / glove switch). Source
 // textures are content-keyed and never dropped, so the re-bind stays synchronous.
 export function bustMaskTexture() {
-  clearMaskCaches();
-}
-export function bustAllInjectedTextures() {
   clearMaskCaches();
 }

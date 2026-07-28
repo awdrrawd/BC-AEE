@@ -1,11 +1,8 @@
 // Central manager for the mask-system toolbar SVG icons.
 //
 // The raw SVGs live in ./icons/*.svg and are imported as strings (Vite `?raw`).
-// From those we derive two things:
-//   - MASK_ICON_URL / ICON: `data:image/svg+xml` URLs, used as the `Image`
-//     argument to BC's canvas `DrawButton(...)` inside the free-draw editor.
-//   - <MaskIcon name=... />: a React component that inlines the SVG, for any
-//     React-side UI that wants to show the same glyph.
+// From those we derive MASK_ICON_URL / ICON: `data:image/svg+xml` URLs, used as
+// the `Image` argument to BC's canvas `DrawButton(...)` in the free-draw editor.
 
 import penSvg from './icons/pen.svg?raw';
 import eraserSvg from './icons/eraser.svg?raw';
@@ -48,14 +45,3 @@ export const MASK_ICON_URL = Object.fromEntries(
 
 // Alias used by the canvas toolbar (DrawButton Image arg).
 export const ICON = MASK_ICON_URL;
-
-export function MaskIcon({name, size = 24, className}: {name: MaskIconName; size?: number; className?: string}) {
-  return (
-    <span
-      className={className}
-      style={{display: 'inline-flex', width: size, height: size}}
-      // The SVGs are our own bundled assets, not user input.
-      dangerouslySetInnerHTML={{__html: MASK_ICON_SVG[name]}}
-    />
-  );
-}

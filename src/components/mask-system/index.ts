@@ -9,9 +9,6 @@ import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawAr
 import {installMaskTranslations} from './translations';
 import {SG_MASK_GROUP, DRAW_GROUPS} from './constants';
 
-export {MaskIcon, MASK_ICON_SVG, MASK_ICON_URL} from './icons';
-export type {MaskIconName} from './icons';
-
 let started = false;
 let drawHooked = false;
 let sanitizeHooked = false;
@@ -22,6 +19,7 @@ const OUR_GROUP_NAMES = new Set<string>([
   SG_MASK_GROUP as unknown as string,
   ...DRAW_GROUPS.map(g => g as unknown as string),
   ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Mask'),
+  ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Vis'),
 ]);
 
 // If BC rebuilt its asset list, a worn companion item can still point at OUR
@@ -68,11 +66,18 @@ function tryHookDrawCharacter(): boolean {
   if (typeof DrawCharacter !== 'function') return false;
   bcAeeModSdk.hookFunction('DrawCharacter', 1, (args, next) => {
     const ret = next(args);
-    const [C, X, Y, Zoom, IsHeightResizeAllowed] = args;
-    cacheDrawArgs(C, X, Y, Zoom, IsHeightResizeAllowed);
-    reconcileSingleGlove(C);
-    syncSlots(C);
-    renderOverlay(C, X, Y, Zoom, IsHeightResizeAllowed);
+    // This runs every frame for every character. A throw in any of our
+    // post-draw steps would propagate through the DrawCharacter hook chain and
+    // crash the whole screen — swallow it so we can never take BC down.
+    try {
+      const [C, X, Y, Zoom, IsHeightResizeAllowed] = args;
+      cacheDrawArgs(C, X, Y, Zoom, IsHeightResizeAllowed);
+      reconcileSingleGlove(C);
+      syncSlots(C);
+      renderOverlay(C, X, Y, Zoom, IsHeightResizeAllowed);
+    } catch (e) {
+      console.error('[AEE Mask] DrawCharacter 後處理例外：', e);
+    }
     return ret;
   });
   drawHooked = true;

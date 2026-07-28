@@ -10,6 +10,7 @@ import {installWardrobeHooks} from '@/hooks/wardrobeHooks';
 import {installFontHooks} from '@/hooks/fontHooks';
 import {initItemFonts} from '@/controllers/fontController';
 import {installMaskSystem} from '@/components/mask-system';
+import {installOnboarding} from '@/hooks/onboardingHooks';
 
 export function installAeeHooks() {
   installSettingEffects();
@@ -26,4 +27,5 @@ export function installAeeHooks() {
   installFontHooks();
   initItemFonts();
   installMaskSystem();
+  installOnboarding();
 }

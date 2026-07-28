@@ -155,6 +155,11 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
     if (category === 'other') continue;
     if (category === 'body' && !includeBody) continue;
     if (category === 'item' && !includeItems) continue;
+    // 已上鎖的拘束不被替換：跳過該群組，保留穿戴者身上原本的道具
+    if (category === 'item') {
+      const current = InventoryGet(character, entry.Group);
+      if (current && InventoryGetLock(current)) continue;
+    }
     wear.set(entry.Group, entry);
   }
 
@@ -169,7 +174,7 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
     const category = categorise(group);
     if (category === 'cloth') return false;                 // clothing is always a full replace
     if (replaceBody && category === 'body') return false;   // body swapped only with "include body"
-    if (category === 'item' && !includeItems) return false; // "include items" off ⇒ end up with no items
+    //if (category === 'item' && !includeItems) return false; // 造成試穿服裝時，拘束被脫掉的原因
     return true;                                            // the wearer's own body/hair (and kept items) stay
   });
 

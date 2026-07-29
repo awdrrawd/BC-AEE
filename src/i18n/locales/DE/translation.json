@@ -1,4 +1,13 @@
 {
+  "mask-single-glove-name": "Einzelhandschuh",
+  "mask-single-glove-select": "Einzelhandschuh wählen (Seite + Bereich)",
+  "mask-glove-l-gloves": "Links · Handschuhe",
+  "mask-glove-l-echo": "Links · ECHO",
+  "mask-glove-l-both": "Links · Alle",
+  "mask-glove-r-gloves": "Rechts · Handschuhe",
+  "mask-glove-r-echo": "Rechts · ECHO",
+  "mask-glove-r-both": "Rechts · Alle",
+  "mask-free-draw-name": "Freihand {n}",
   "about-title": "Über AEE",
   "about-line-opacity-offset": "Ein Kleidungs-Editor, der auch Rendering-Effekte bietet",
   "about-line-experimental": "Drehen, Skalieren, Neigen und Spiegeln sind experimentell",

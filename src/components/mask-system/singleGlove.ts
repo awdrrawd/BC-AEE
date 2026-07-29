@@ -2,14 +2,52 @@
 // 6 text-only options (L/R × {gloves, luzi/ECHO, both}); each carries SGSide /
 // SGScope in its Property. Mask layers are destination-out with a TextureMask.
 
+import {t} from '@/i18n/i18n';
 import {
   FAMILY, SG_MASK_GROUP, SG_ASSET, SG_PRIORITY, SG_SCOPES, SG_OPTIONS,
   SG_LAYER_KEY, type SGScope, type SGSide, type SGOption,
 } from './constants';
-import {SG_MASK_L_DATAURL, SG_MASK_R_DATAURL, SG_ITEM_DATAURL} from './assets';
+import {SG_MASK_DATAURL, SG_ITEM_DATAURL} from './assets';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule, getBuildingChar} from './masking';
 
-const SG_DATAURL: Record<SGSide, string> = {L: SG_MASK_L_DATAURL, R: SG_MASK_R_DATAURL};
+// The glove mask ships as ONE 1000x1000 image: right hand occupies x 0..500,
+// left hand x 500..1000 (full height). BC's TextureMask expects a body-sized
+// 500x1000 image, so crop each half into its own 500x1000 data URL at runtime.
+// Cropping needs the source decoded (async); until ready the provider returns a
+// transparent pixel, then we bust + reload so the mask appears.
+const MASK_IMG_W = 500, MASK_IMG_H = 1000;
+const SG_DATAURL: Partial<Record<SGSide, string>> = {};
+let cropStarted = false;
+function ensureMaskCrops() {
+  if (cropStarted) return;
+  cropStarted = true;
+  const img = new Image();
+  img.addEventListener('load', () => {
+    const sxForSide: Record<SGSide, number> = {R: 0, L: MASK_IMG_W}; // R=0..500, L=500..1000
+    for (const side of ['R', 'L'] as SGSide[]) {
+      try {
+        const c = document.createElement('canvas');
+        c.width = MASK_IMG_W;
+        c.height = MASK_IMG_H;
+        const ctx = c.getContext('2d');
+        if (!ctx) continue;
+        ctx.drawImage(img, sxForSide[side], 0, MASK_IMG_W, MASK_IMG_H, 0, 0, MASK_IMG_W, MASK_IMG_H);
+        SG_DATAURL[side] = c.toDataURL('image/png');
+      } catch (e) {
+        console.error('[AEE Mask] 單手套遮罩裁切失敗：', e);
+      }
+    }
+    // Crops are ready → drop the (transparent) cached mask texture and rebuild.
+    bustMaskTexture();
+    if (typeof CharacterGetCurrent === 'function' && typeof CharacterLoadCanvas === 'function') {
+      const C = CharacterGetCurrent();
+      if (C) setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0);
+    }
+  });
+  img.addEventListener('error', () => console.error('[AEE Mask] 單手套遮罩來源載入失敗'));
+  img.src = SG_MASK_DATAURL;
+}
+ensureMaskCrops();
 
 // Show the glove picture for the base item thumbnail only (URL ends with the
 // bare asset name); the per-option preview URLs carry the option name suffix
@@ -91,13 +129,20 @@ export function registerSingleGlove(): boolean {
     Layer: [mkLayer('gloves'), mkLayer('luzi'), mkLayer('both')],
   } as unknown as AssetDefinition, extendedConfig as unknown as ExtendedItemMainConfig, groupDef as unknown as AssetGroupDefinition);
 
-  // Display label (BC reads group/item names from `.Description`).
-  const gg = AssetGroupGet(FAMILY, SG_MASK_GROUP);
-  if (gg) (gg as unknown as {Description?: string}).Description = '單手套';
-  const ga = AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET);
-  if (ga) (ga as unknown as {Description?: string}).Description = '單手套';
-
+  applySingleGloveNames();
   return true;
+}
+
+// Set the group/asset display label from the current UI language (BC reads
+// group/item names from `.Description`). Re-run on the heartbeat so switching
+// language relabels the menu.
+export function applySingleGloveNames() {
+  if (typeof AssetGroupGet !== 'function') return;
+  const label = t('mask-single-glove-name');
+  const gg = AssetGroupGet(FAMILY, SG_MASK_GROUP);
+  if (gg) (gg as unknown as {Description?: string}).Description = label;
+  const ga = AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET);
+  if (ga) (ga as unknown as {Description?: string}).Description = label;
 }
 
 // On typed-option change, bust the mask texture so the hand/scope actually swaps.

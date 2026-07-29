@@ -1,4 +1,13 @@
 {
+  "mask-single-glove-name": "한손 장갑",
+  "mask-single-glove-select": "한손 장갑 선택 (좌우＋범위)",
+  "mask-glove-l-gloves": "왼손·장갑",
+  "mask-glove-l-echo": "왼손·ECHO",
+  "mask-glove-l-both": "왼손·전체",
+  "mask-glove-r-gloves": "오른손·장갑",
+  "mask-glove-r-echo": "오른손·ECHO",
+  "mask-glove-r-both": "오른손·전체",
+  "mask-free-draw-name": "자유 그리기 {n}",
   "about-title": "AEE 정보",
   "about-line-opacity-offset": "의류 편집 도구이며, 렌더링 효과도 제공",
   "about-line-experimental": "회전, 크기, 기울이기, 미러는 실험적 기능",

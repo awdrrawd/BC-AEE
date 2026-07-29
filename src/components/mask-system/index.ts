@@ -4,8 +4,8 @@
 
 import bcAeeModSdk from '@/modsdk';
 import {installImagePatch} from './masking';
-import {registerSingleGlove, reconcileSingleGlove} from './singleGlove';
-import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay} from './freeDraw';
+import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
+import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames} from './freeDraw';
 import {installMaskTranslations} from './translations';
 import {SG_MASK_GROUP, DRAW_GROUPS} from './constants';
 
@@ -54,6 +54,10 @@ function tryHookSanitize(): boolean {
 function registerAll(): boolean {
   let ok = registerFreeDrawGroups();
   ok = registerSingleGlove() && ok;
+  // Registration early-returns once the assets exist, so re-apply the display
+  // names every pass — this relabels the menu after a UI-language switch.
+  applyFreeDrawNames();
+  applySingleGloveNames();
   return ok;
 }
 

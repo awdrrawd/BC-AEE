@@ -1,4 +1,13 @@
 {
+  "mask-single-glove-name": "Gant unique",
+  "mask-single-glove-select": "Choisir le gant (côté + zone)",
+  "mask-glove-l-gloves": "Gauche · Gants",
+  "mask-glove-l-echo": "Gauche · ECHO",
+  "mask-glove-l-both": "Gauche · Tout",
+  "mask-glove-r-gloves": "Droite · Gants",
+  "mask-glove-r-echo": "Droite · ECHO",
+  "mask-glove-r-both": "Droite · Tout",
+  "mask-free-draw-name": "Dessin libre {n}",
   "about-title": "À propos d'AEE",
   "about-line-opacity-offset": "Un outil d'édition de vêtements qui offre aussi des effets de rendu",
   "about-line-experimental": "Rotation, échelle, inclinaison et miroir sont expérimentaux",

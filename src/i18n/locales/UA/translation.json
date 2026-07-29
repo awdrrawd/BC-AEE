@@ -1,4 +1,13 @@
 {
+  "mask-single-glove-name": "Одинарна рукавичка",
+  "mask-single-glove-select": "Вибір рукавички (сторона + зона)",
+  "mask-glove-l-gloves": "Ліва · Рукавички",
+  "mask-glove-l-echo": "Ліва · ECHO",
+  "mask-glove-l-both": "Ліва · Усе",
+  "mask-glove-r-gloves": "Права · Рукавички",
+  "mask-glove-r-echo": "Права · ECHO",
+  "mask-glove-r-both": "Права · Усе",
+  "mask-free-draw-name": "Вільний малюнок {n}",
   "about-title": "Про AEE",
   "about-line-opacity-offset": "Інструмент редагування одягу, який також надає ефекти рендерингу",
   "about-line-experimental": "Обертання, масштабування, нахил і дзеркалення експериментальні",

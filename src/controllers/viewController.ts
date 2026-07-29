@@ -20,8 +20,28 @@ export function assetUrl(path: string) {
   return url.toString();
 }
 
-export const CTRL_ICON_MAIN = assetUrl('AEE_ICON.png');
-export const CTRL_ICON_FRAME = assetUrl('AEE_ICON2.png');
+// View-control icons come from one 300x150 sprite sheet: two 150x150 tiles —
+// left (x 0..150) = frame/outline, right (x 150..300) = cat paw. The main
+// view-control button shows frame + paw composited; the sub (detail) buttons
+// show the frame only. `background-size: 200% 100%` scales each tile to the
+// (square) button; `background-position` 0%/100% picks the left/right tile.
+export const CTRL_ICONS_SHEET = assetUrl('AEE_icons.png');
+
+// Frame tile only (sub / detail buttons).
+export const CTRL_FRAME_STYLE = {
+  backgroundImage: `url(${CTRL_ICONS_SHEET})`,
+  backgroundSize: '200% 100%',
+  backgroundPosition: '0% 0%',
+  backgroundRepeat: 'no-repeat',
+} as const;
+
+// Cat paw over frame (main view-control button). First layer is drawn on top.
+export const CTRL_FRAME_PAW_STYLE = {
+  backgroundImage: `url(${CTRL_ICONS_SHEET}), url(${CTRL_ICONS_SHEET})`,
+  backgroundSize: '200% 100%, 200% 100%',
+  backgroundPosition: '100% 0%, 0% 0%',
+  backgroundRepeat: 'no-repeat, no-repeat',
+} as const;
 
 export function showCharControl() {
   mutateState(draft => {

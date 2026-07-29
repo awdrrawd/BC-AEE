@@ -59,5 +59,5 @@ export function IconButton({className, ...props}: Omit<ButtonHTMLAttributes<HTML
   selected?: boolean;
   tone?: ButtonTone;
 }) {
-  return <Button iconOnly className={cn('h-7 w-7', className)} {...props}/>;
+  return <Button iconOnly className={cn('h-6 w-6', className)} {...props}/>;
 }

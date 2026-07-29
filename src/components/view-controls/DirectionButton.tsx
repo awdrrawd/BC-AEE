@@ -7,6 +7,6 @@ const CHEVRONS = {up: ChevronUp, down: ChevronDown, left: ChevronLeft, right: Ch
 
 export function DirectionButton({direction, onClick}: { direction: Direction; onClick: () => void }) {
   const Chevron = CHEVRONS[direction];
-  return <IconButton className="h-6 w-6" icon={<Chevron className="h-3 w-3"/>}
+  return <IconButton className="h-6 w-6" icon={<Chevron className="h-4 w-4"/>}
                      aria-label={direction} onClick={onClick}/>;
 }

@@ -4,7 +4,7 @@ import {t} from '@/i18n/i18n';
 import {
   commitCharControlPos,
   CTRL_BTN_SIZE,
-  CTRL_ICON_MAIN,
+  CTRL_FRAME_PAW_STYLE,
   moveCharControl,
   toggleBgSubOpen,
   toggleCharControlOpen,
@@ -89,7 +89,7 @@ export function CharControl({state}: { state: AeeState }) {
           if (drag.current?.pointerId === event.pointerId) drag.current = null;
         }}
       >
-        <img className="pointer-events-none block h-full w-full" src={CTRL_ICON_MAIN} alt="AEE"/>
+        <span className="pointer-events-none block h-full w-full" style={CTRL_FRAME_PAW_STYLE} aria-label="AEE"/>
       </button>
       <div className={`${state.charControl.open ? 'flex' : 'hidden'} pointer-events-none absolute items-start gap-1.5`}
            style={expandedStyle}>

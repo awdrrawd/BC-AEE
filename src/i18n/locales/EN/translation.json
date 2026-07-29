@@ -1,4 +1,13 @@
 {
+  "mask-single-glove-name": "Single Glove",
+  "mask-single-glove-select": "Choose single glove (side + range)",
+  "mask-glove-l-gloves": "Left · Gloves",
+  "mask-glove-l-echo": "Left · ECHO",
+  "mask-glove-l-both": "Left · All",
+  "mask-glove-r-gloves": "Right · Gloves",
+  "mask-glove-r-echo": "Right · ECHO",
+  "mask-glove-r-both": "Right · All",
+  "mask-free-draw-name": "Free Draw {n}",
   "about-title": "About AEE",
   "about-line-opacity-offset": "A clothing editing tool that also provides rendering effects",
   "about-line-experimental": "Rotate, scale, skew, and mirror are experimental",

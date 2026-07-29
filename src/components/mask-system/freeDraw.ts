@@ -133,12 +133,39 @@ slots.forEach((slot) => {
 // globally, so a real per-character layer is impossible — we read each
 // character's synced drawing here instead).
 const overlayImgCache = new Map<string, HTMLImageElement>();
+
+// Once a (remote) drawing finishes decoding, mirror the local-player path: bust
+// the combined-mask cache and reload every rendered character so their mask
+// shape + visible overlay appear on the very next build. Without this, remote
+// characters relied on an incidental redraw happening to run AFTER the async
+// decode — which is exactly why "自己沒問題、看別人不穩定": the local player got a
+// guaranteed CharacterLoadCanvas on load (ensureSlotCanvasFromProperty), remote
+// players got nothing. Runs once per distinct drawing, so the cost is trivial.
+function refreshMaskConsumers() {
+  setTimeout(() => {
+    try {
+      bustMaskTexture();
+      if (typeof CharacterLoadCanvas !== 'function') return;
+      const seen = new Set<number>();
+      const list: Character[] = [];
+      if (typeof Player !== 'undefined' && Player) list.push(Player);
+      if (typeof ChatRoomCharacter !== 'undefined' && Array.isArray(ChatRoomCharacter)) list.push(...ChatRoomCharacter);
+      for (const C of list) {
+        const key = C?.MemberNumber;
+        if (key != null) { if (seen.has(key)) continue; seen.add(key); }
+        try { CharacterLoadCanvas(C); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }, 0);
+}
+
 function getOverlayImage(compressed: string): HTMLImageElement {
   let img = overlayImgCache.get(compressed);
   if (!img) {
     img = new Image();
-    img.src = typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed;
     overlayImgCache.set(compressed, img);
+    img.addEventListener('load', refreshMaskConsumers);
+    img.src = typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed;
   }
   return img;
 }
@@ -950,7 +977,7 @@ function slotDraw() {
   drawIconBtn(TOOL_PEN_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'pen' ? 'cyan' : 'White', ICON.pen, '畫筆');
   drawIconBtn(TOOL_FILL_X, TOOLBAR_Y2, ICON_W, ICON_H, State.filled ? 'cyan' : 'White', State.filled ? ICON.fillSolid : ICON.fillOutline, State.filled ? '填滿：實心（點一下切回線框）' : '填滿：線框（點一下切成實心）');
   DrawButton(TOOL_SHAPE_X, TOOLBAR_Y2, ICON_W, ICON_H, (SHAPE_EMOJI[State.tool] || '△'), State.picker === 'shape' || (SHAPE_TOOLS as readonly string[]).includes(State.tool) ? 'cyan' : 'White', undefined, '圖形（點擊展開，選擇要畫的形狀）');
-  DrawButton(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H, 'T', State.tool === 'text' ? 'cyan' : 'White', undefined, '文字（點畫布輸入文字）');
+  drawIconBtn(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'text' ? 'cyan' : 'White', ICON.text, '文字（點畫布輸入文字）');
   drawIconBtn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'bucket' ? 'cyan' : 'White', ICON.bucket, '填色（油漆桶）');
   drawIconBtn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'eraser' ? 'cyan' : 'White', ICON.eraser, '橡皮擦');
   drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color), ICON.color, '顏色（點擊開啟 AEE 取色器）');

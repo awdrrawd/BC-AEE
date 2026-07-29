@@ -49,13 +49,37 @@ export const SG_LAYER_KEY: Record<SGScope, string> = {
 };
 
 // ---- Free-draw mask targets ----------------------------------------------
-// Perf: masking every non-body group (~90) is slow. Curate common clothing.
+// Which clothing/accessory groups the drawing can "cut through" (destination-out
+// TextureMask). Reference: BC's Female3DCG appearance groups + ECHO 裸空间
+// (裸空间.js clothGroups) which is the canonical TextureMask target list.
+// getMaskTargetGroups() filters this to groups actually present, so ECHO/Luzi
+// custom groups are safe to list even without ECHO installed.
+//
+// DELIBERATELY EXCLUDED (per design): body (Body*/Hands*/Arms*), hair (Hair*),
+// and face/makeup (Eyes/Eyebrows/Mouth/Blush/*Shadow/*Markings/Emoticon…). Item*
+// restraint groups are also excluded — the drawing is meant to hide CLOTHING,
+// and masking ~60 item groups every build is costly.
 export const MASK_TARGET_GROUPS = ([
-  'Cloth', 'ClothLower', 'ClothAccessory',
-  'Bra', 'Corset', 'Panties', 'Socks', 'Shoes',
-  'Suit', 'SuitLower', 'Gloves', 'Hat',
-  'Glasses', 'Mask', 'Necklace', 'Bracelet',
-  'TailStraps', 'Wings',
+  // Core clothing
+  'Cloth', 'ClothLower', 'ClothOuter', 'ClothAccessory',
+  'Bra', 'Corset', 'Panties', 'Garters',
+  'Suit', 'SuitLower',
+  'Socks', 'SocksLeft', 'SocksRight', 'Shoes',
+  // Hands / arms accessories (not the body groups)
+  'Gloves', 'HandAccessoryLeft', 'HandAccessoryRight',
+  // Head / face wearables (accessories, NOT makeup)
+  'Hat', 'Glasses', 'Mask',
+  // Jewellery
+  'Necklace', 'Jewelry', 'Bracelet', 'AnkletLeft', 'AnkletRight',
+  // Misc wearables
+  'TailStraps', 'Wings', 'Decals',
+  // ECHO / Luzi custom clothing groups (interop; filtered out if absent)
+  'Cloth_笨笨蛋Luzi', 'Cloth_笨笨笨蛋Luzi2',
+  'ClothLower_笨笨蛋Luzi', 'ClothLower_笨笨笨蛋Luzi2',
+  'ClothAccessory_笨笨蛋Luzi', 'ClothAccessory_笨笨笨蛋Luzi2',
+  'Bra_笨笨蛋Luzi', 'Panties_笨笨蛋Luzi',
+  'Suit_笨笨蛋Luzi', 'SuitLower_笨笨蛋Luzi',
+  'Hat_笨笨蛋Luzi', 'Mask_笨笨蛋Luzi', 'Gloves_笨笨蛋Luzi',
 ] as unknown) as AssetGroupName[];
 
 export const MASK_PRIORITY = 99;

@@ -5,8 +5,9 @@ import {BOARD_W, BOARD_H} from './constants';
 export const SHAPE_TOOLS = [
   'line', 'rect', 'square', 'circle', 'ellipse',
   'triangle', 'rtriangle', 'diamond', 'pentagon', 'hexagon',
-  'arrow', 'cross', 'heart', 'star',
-  'spade', 'club', 'catpaw', 'moon', 'lightning',
+  'arrow', 'cross', 'heart', 'star', 'star4',
+  'star6', 'burst', 'spade', 'club', 'catpaw',
+  'moon', 'lightning', 'flower', 'teardrop',
 ] as const;
 
 export type ShapeTool = typeof SHAPE_TOOLS[number];
@@ -14,9 +15,28 @@ export type ShapeTool = typeof SHAPE_TOOLS[number];
 export const SHAPE_EMOJI: Record<string, string> = {
   line: '／', rect: '▭', square: '▢', circle: '◯', ellipse: '⬭',
   triangle: '△', rtriangle: '◺', diamond: '◇', pentagon: '⬠', hexagon: '⬡',
-  arrow: '➜', cross: '✚', heart: '♡', star: '☆',
-  spade: '♠', club: '♣', catpaw: '🐾', moon: '☾', lightning: '⚡',
+  arrow: '➜', cross: '✚', heart: '♡', star: '☆', star4: '✦',
+  star6: '✶', burst: '✴', spade: '♠', club: '♣', catpaw: '🐾',
+  moon: '☾', lightning: '⚡', flower: '❀', teardrop: '💧',
 };
+
+// N-pointed star centred at (cx,cy), first spike pointing up.
+function starPath(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number, spikes: number, outerR: number, innerR: number,
+) {
+  let rot = -Math.PI / 2;
+  const step = Math.PI / spikes;
+  ctx.beginPath();
+  ctx.moveTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+  for (let i = 0; i < spikes; i++) {
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+  }
+  ctx.closePath();
+}
 
 export interface ShapeStyle {
   tool: string;
@@ -148,21 +168,54 @@ export function drawShapePreview(
       ctx.stroke();
       break;
     }
-    case 'star': {
-      const spikes = 5;
-      const outerR = r || 1;
-      const innerR = outerR / 2.5;
-      let rot = Math.PI / 2 * 3;
-      const cx = x0, cy = y0;
-      const step = Math.PI / spikes;
+    case 'star': { // 五角星
+      const o = r || 1;
+      starPath(ctx, x0, y0, 5, o, o / 2.5);
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'star4': { // 四角星（尖銳）
+      const o = r || 1;
+      starPath(ctx, x0, y0, 4, o, o * 0.38);
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'star6': { // 六角星
+      const o = r || 1;
+      starPath(ctx, x0, y0, 6, o, o * 0.55);
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'burst': { // 星爆／閃耀（八角尖星）
+      const o = r || 1;
+      starPath(ctx, x0, y0, 8, o, o * 0.42);
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'flower': { // 花（5 花瓣 + 花心）
+      const s = r || 1; const cx = x0, cy = y0;
+      const petals = 5, pr = s * 0.42, pd = s * 0.55;
       ctx.beginPath();
-      ctx.moveTo(cx, cy - outerR);
-      for (let i = 0; i < spikes; i++) {
-        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
-        rot += step;
-        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
-        rot += step;
+      for (let i = 0; i < petals; i++) {
+        const a = -Math.PI / 2 + i * 2 * Math.PI / petals;
+        const px = cx + Math.cos(a) * pd, py = cy + Math.sin(a) * pd;
+        ctx.moveTo(px + pr, py); ctx.arc(px, py, pr, 0, 2 * Math.PI);
       }
+      ctx.moveTo(cx + pr * 0.6, cy); ctx.arc(cx, cy, pr * 0.6, 0, 2 * Math.PI);
+      if (filled) ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'teardrop': { // 水滴（尖端朝上）
+      const s = r || 1; const cx = x0, cy = y0;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - s);
+      ctx.bezierCurveTo(cx + s * 0.9, cy - s * 0.1, cx + s * 0.55, cy + s, cx, cy + s);
+      ctx.bezierCurveTo(cx - s * 0.55, cy + s, cx - s * 0.9, cy - s * 0.1, cx, cy - s);
       ctx.closePath();
       if (filled) ctx.fill();
       ctx.stroke();

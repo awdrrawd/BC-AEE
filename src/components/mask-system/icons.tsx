@@ -26,6 +26,8 @@ const undoBoxSvg = `<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBo
 
 const paletteSvg = `<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="100" height="100"><style>.s0 { fill: #30272d } .s1 { fill: #e9331a } .s2 { fill: #86a639 } .s3 { fill: #e5a628 } .s4 { fill: #ebfdfe }</style><g><path class="s0" d="m9 48v39h78v-30l-26.5 0.01 24-24.02-21.49-21.49-24.02 24 0.01-26.5h-30z"/><path class="s1" d="m15 48v33h18v-66h-18z"/><path class="s2" d="m42.79 70.33c-3.69 3.95-6.73 7.96-6.75 8.92-0.04 1.62 1.68 1.75 22.46 1.75h22.5v-18l-31.5 0.17z"/><path class="s3" d="m49 34.26l-13.47 13.27 0.47 24.97 39.5-39.47c-9.3-9.34-12.23-12.05-12.51-12.04-0.29 0.01-6.58 5.98-13.99 13.27z"/><path class="s4" d="m34.04 48.97c-1.15 1.14-1.4 4.54-1.24 16.73 0.17 12.84 0.44 15.3 1.7 15.3 0.83 0 1.51-0.79 1.53-1.75 0.01-0.96 3.05-4.88 6.75-8.71 5.65-5.86 6.4-7.02 4.72-7.32-1.35-0.24-3.55 1.22-6.74 4.46l-4.74 4.82c-0.5-23.35-0.72-24.78-1.98-23.53z"/></g></svg>`;
 
+const textSvg = `<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 67 67" width="100" height="100"><style>.s0 { fill: #000000 }</style><path id="Path 0" class="s0" d="m9 12v7h7v-7h14v43h-7v6h22v-6h-7v-43h14v7h7v-14h-50z"/></svg>`;
+
 // Raw SVG markup keyed by logical icon name.
 export const MASK_ICON_SVG = {
   pen: penSvg,                  // 筆 — 畫筆
@@ -36,6 +38,7 @@ export const MASK_ICON_SVG = {
   fillSolid: shapeSolidSvg,     // 圖形-填滿 — 填滿：實心
   bucket: bucketSvg,            // 填色 — 油漆桶
   shape: shapeEditSvg,          // 編輯 — （備用，圖形鈕目前顯示當前形狀符號）
+  text: textSvg,                // 文字 — 大寫 T serif（文字工具）
   undoBox: undoBoxSvg,          // 撤銷 — （備用）
   palette: paletteSvg,          // 調色盤 — （備用）
 } as const;

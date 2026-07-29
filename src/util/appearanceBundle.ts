@@ -2,6 +2,31 @@ export function bundleAppearance(items: readonly Item[]): ItemBundle[] {
   return CommonCloneDeep(ServerAppearanceBundle(items));
 }
 
+// Every lock-related field BC stores on an item's Property (see ItemProperties "Lock properties").
+const LOCK_PROPERTY_KEYS = [
+  'LockedBy', 'LockMemberNumber', 'LockMemberName', 'LockMessage',
+  'Password', 'LockPickSeed', 'CombinationNumber', 'MemberNumberListKeys',
+  'Hint', 'LockSet', 'RemoveItem', 'RemoveOnUnlock', 'ShowTimer',
+  'EnableRandomInput', 'MemberNumberList',
+] as const satisfies readonly (keyof ItemProperties)[];
+
+/**
+ * Returns a copy of the bundle entry with any padlock removed — clears the lock
+ * properties and drops the "Lock" effect. Non-mutating: the original entry (which
+ * may be a stored wardrobe slot) is left untouched.
+ */
+export function stripLock(entry: ItemBundle): ItemBundle {
+  if (!entry.Property) return entry;
+  const property: ItemProperties = {...entry.Property};
+  for (const key of LOCK_PROPERTY_KEYS) delete property[key];
+  if (Array.isArray(property.Effect)) {
+    const effect = property.Effect.filter(name => name !== 'Lock');
+    if (effect.length) property.Effect = effect;
+    else delete property.Effect;
+  }
+  return {...entry, Property: property};
+}
+
 export function bundleItem(item: Item): ItemBundle {
   return bundleAppearance([item])[0];
 }

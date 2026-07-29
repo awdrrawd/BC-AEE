@@ -38,6 +38,7 @@ function ImportDiffPicker({dialog}: { dialog: ImportDiffDialog }) {
   const {diffs} = dialog;
   const [selected, setSelected] = useState<Set<AssetGroupName>>(() => new Set(diffs.map(diff => diff.group)));
   const [expanded, setExpanded] = useState<Set<ImportCategoryKey>>(() => new Set());
+  const [applyLock, setApplyLock] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -47,14 +48,20 @@ function ImportDiffPicker({dialog}: { dialog: ImportDiffDialog }) {
     const all = new Set(diffs.map(diff => diff.group));
     setSelected(all);
     setExpanded(new Set());
+    setApplyLock(false);
     setPos(null);
-    applyImportPreview(dialog, all);
+    applyImportPreview(dialog, all, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialog]);
 
   function update(next: Set<AssetGroupName>) {
     setSelected(next);
-    applyImportPreview(dialog, next);
+    applyImportPreview(dialog, next, applyLock);
+  }
+
+  function toggleApplyLock(checked: boolean) {
+    setApplyLock(checked);
+    applyImportPreview(dialog, selected, checked);
   }
 
   function toggleGroup(group: AssetGroupName, checked: boolean) {
@@ -184,9 +191,18 @@ function ImportDiffPicker({dialog}: { dialog: ImportDiffDialog }) {
       </div>
     </div>
 
+    <label className="flex flex-none cursor-pointer items-center gap-2 border-t border-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800/40">
+      <input
+        type="checkbox"
+        checked={applyLock}
+        onChange={event => toggleApplyLock(event.target.checked)}
+        className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-(--aee-accent)"/>
+      <span>{t('import-dialog-apply-lock-label')}</span>
+    </label>
+
     <div className="flex flex-none gap-2 border-t border-zinc-800 p-2">
       <Button className="flex-1" tone="primary"
-              onClick={() => commitImport(dialog, selected)}>{t('import-dialog-done-button')}</Button>
+              onClick={() => commitImport(dialog, selected, applyLock)}>{t('import-dialog-done-button')}</Button>
       <Button className="flex-1" onClick={() => cancelImport(dialog)}>{t('import-dialog-cancel-button')}</Button>
     </div>
   </Panel>;

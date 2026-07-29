@@ -1,7 +1,7 @@
 import {t} from '@/i18n/i18n';
 import {mutateState} from '@/core/store';
 import {askText} from '@/core/prompts';
-import {bundleAppearance, bundleItem, decodeBundles, encodeBundle, itemFromBundle, wearBundle} from '@/util/appearanceBundle';
+import {bundleAppearance, bundleItem, decodeBundles, encodeBundle, itemFromBundle, stripLock, wearBundle} from '@/util/appearanceBundle';
 import {showToast} from '@/util/toast';
 import type {ImportCategoryKey, ImportDiff, ImportDiffDialog} from '@/core/types';
 
@@ -145,21 +145,30 @@ export function buildDiffList(character: Character, bundle: ItemBundle[]): Impor
   return diffs;
 }
 
-export function applyImportPreview(dialog: ImportDiffDialog, selectedGroups: ReadonlySet<AssetGroupName>) {
+export function applyImportPreview(
+  dialog: ImportDiffDialog,
+  selectedGroups: ReadonlySet<AssetGroupName>,
+  applyLock = false,
+) {
   const {character, diffs, originalAppearance} = dialog;
 
   CharacterAppearanceRestore(character, originalAppearance);
   for (const diff of diffs) {
     if (!selectedGroups.has(diff.group)) continue;
-    if (diff.entry) wearBundle(character, diff.entry);
+    // "Apply locks" off → wear the incoming item without its padlock.
+    if (diff.entry) wearBundle(character, applyLock ? diff.entry : stripLock(diff.entry));
     else InventoryRemove(character, diff.group, false);
   }
   CharacterRefresh(character, false);
 }
 
-export function commitImport(dialog: ImportDiffDialog, selectedGroups: ReadonlySet<AssetGroupName>) {
+export function commitImport(
+  dialog: ImportDiffDialog,
+  selectedGroups: ReadonlySet<AssetGroupName>,
+  applyLock = false,
+) {
   try {
-    applyImportPreview(dialog, selectedGroups);
+    applyImportPreview(dialog, selectedGroups, applyLock);
     const count = dialog.diffs.filter(diff => selectedGroups.has(diff.group)).length;
     if (CurrentScreen === 'ChatRoom') ChatRoomCharacterUpdate(dialog.character);
     showToast(t('import-controller-import-success-message', {count}));

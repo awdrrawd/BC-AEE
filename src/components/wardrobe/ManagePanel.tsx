@@ -86,6 +86,8 @@ export function ManagePanel({state}: { state: WardrobeState }) {
                 density="stage" className="h-auto border-0 bg-transparent px-0"/>
     <SettingRow label={t('wardrobe-include-items')} setting={settings.wardrobeIncludeItems}
                 density="stage" className="h-auto border-0 bg-transparent px-0"/>
+    <SettingRow label={t('wardrobe-include-lock')} setting={settings.wardrobeIncludeLock}
+                density="stage" className="h-auto border-0 bg-transparent px-0"/>
 
     <Button density="stage"
             className="h-10 shrink-0 self-end px-6"

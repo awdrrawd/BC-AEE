@@ -139,6 +139,7 @@ export const settings = {
   wardrobeCancelTryOn: bool('wardrobeCancelTryOn', false),
   wardrobeIncludeBody: bool('wardrobeIncludeBody', true),
   wardrobeIncludeItems: bool('wardrobeIncludeItems', true),
+  wardrobeIncludeLock: bool('wardrobeIncludeLock', false),
   wardrobeConfirmSave: bool('wardrobeConfirmSave', true),
   wardrobeCategories: value<string[]>('wardrobeCategories', ['Category 1', 'Category 2', 'Category 3']),
   wardrobeCategoryIcons: value<Record<string, string>>('wardrobeCategoryIcons', {}),

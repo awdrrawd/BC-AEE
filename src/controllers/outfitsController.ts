@@ -1,5 +1,5 @@
 import {t} from '@/i18n/i18n';
-import {bundleAppearance, decodeBundles, encodeBundle, wearBundle} from '@/util/appearanceBundle';
+import {bundleAppearance, decodeBundles, encodeBundle, stripLock, wearBundle} from '@/util/appearanceBundle';
 import {showToast} from '@/util/toast';
 import {activeWardrobeSource, getSlotMeta, setSlotMeta, type WardrobeSource} from '@/core/wardrobeStorage';
 import {
@@ -138,7 +138,9 @@ function buildOutfitBundle(character: Character): ItemBundle[] {
   const bodyDonor = (isSelfCharacter(character) || includeBody) ? character : Player;
   const body = bodyDonor.Appearance.filter(item => categorise(item.Asset.Group) === 'body');
 
-  return bundleAppearance([...worn, ...body]);
+  const bundle = bundleAppearance([...worn, ...body]);
+  // "Include lock" off → the saved outfit carries no padlocks.
+  return settings.wardrobeIncludeLock.get() ? bundle : bundle.map(stripLock);
 }
 
 function applyOutfit(character: Character, bundle: ItemBundle[]) {
@@ -146,6 +148,7 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
   // items are worn only with "include items" (the wearer's own body/items stay otherwise).
   const includeBody = settings.wardrobeIncludeBody.get();
   const includeItems = settings.wardrobeIncludeItems.get();
+  const includeLock = settings.wardrobeIncludeLock.get();
 
   const wear = new Map<AssetGroupName, ItemBundle>();
   for (const entry of bundle) {
@@ -160,7 +163,8 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
       const current = InventoryGet(character, entry.Group);
       if (current && InventoryGetLock(current)) continue;
     }
-    wear.set(entry.Group, entry);
+    // "Include lock" off → apply the outfit's items without their padlocks.
+    wear.set(entry.Group, includeLock ? entry : stripLock(entry));
   }
 
   const replaceBody = includeBody && bundle.some(entry => {

@@ -97,7 +97,6 @@ export function registerSingleGlove(): boolean {
   const ga = AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET);
   if (ga) (ga as unknown as {Description?: string}).Description = '單手套';
 
-  console.log('[AEE Mask] 已註冊單手套（typed：一個物件可選左右＋範圍）');
   return true;
 }
 

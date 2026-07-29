@@ -105,7 +105,6 @@ export function installMaskSystem() {
     }
     if (patch && registered && drawHooked && callbacksInstalled) {
       clearInterval(timer);
-      console.log('[AEE Mask] 就緒：自由繪圖 ×3（每人各自顯示／遮罩切換）＋ 單手套 ×1');
       // Heartbeat: if BC reloads its assets our runtime groups vanish while worn
       // items still reference the old (orphaned) asset objects — which crashes
       // other mods (e.g. LSCG). registerAll() is idempotent (asset-existence

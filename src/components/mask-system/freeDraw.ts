@@ -657,6 +657,20 @@ function isSlotMasked(C: Character | null, slot: Slot): boolean {
   return !!(C && InventoryGet(C, slot.maskGroup));
 }
 
+// Propagate an appearance change to the rest of the chatroom. Per BC's own docs,
+// CharacterRefresh(C, Push) persists/rebuilds but does NOT push the change to the
+// room — that needs ChatRoomCharacterUpdate. Without this, drawing on ANOTHER
+// character stays local and is wiped on that character's next server sync (the
+// "drawing on others is unstable" bug). Mirrors AEE's convention elsewhere
+// (importExportController / itemColorHooks). No-op outside a chatroom, where
+// CharacterRefresh(Push) already saves to the account DB.
+function syncCharacterToRoom(C: Character | null) {
+  if (!C) return;
+  if (typeof CurrentScreen === 'undefined' || CurrentScreen !== 'ChatRoom') return;
+  if (typeof ChatRoomCharacterUpdate !== 'function') return;
+  try { ChatRoomCharacterUpdate(C); } catch { /* ignore */ }
+}
+
 // Push the slot's priority onto the WORN companion(s) as OverridePriority. BC
 // uses it as that layer's priority: for the mask (ApplyToAbove:false → masks
 // only clothing below it) and, for VIS_SLOTS, for the visible-drawing layer
@@ -716,8 +730,10 @@ function toggleSlotMask() {
     A.isMask = true;
   }
   invalidateSlot(A);
-  // Push=true syncs the worn/removed mask companion to the server so others see it.
+  // Push=true saves to the account DB; ChatRoomCharacterUpdate propagates the
+  // worn/removed mask companion to the room (incl. when editing another char).
   CharacterRefresh(C, true, false);
+  syncCharacterToRoom(C);
 }
 
 // Live-update during a priority-slider drag: ONLY move the value (cheap, like
@@ -741,7 +757,7 @@ function commitMaskPriority() {
   }
   applyMaskPriority(C, A);
   invalidateSlot(A);
-  if (C) CharacterRefresh(C, true, false);
+  if (C) { CharacterRefresh(C, true, false); syncCharacterToRoom(C); }
 }
 
 // ---- Extended item callbacks ---------------------------------------------
@@ -855,13 +871,19 @@ function cancelEditingAndExit() {
       A.offsetY = A.sessionState.offsetY;
       A.rotation = A.sessionState.rotation;
       A.scale = A.sessionState.scale;
-      if (C && isSlotMasked(C, A) !== A.sessionState.isMask) {
+      // Mask toggles / priority are applied to the character live during a
+      // session, so reverting them must also be pushed — otherwise the room
+      // (and another edited character's server state) keeps the un-reverted value.
+      const maskChanged = !!C && isSlotMasked(C, A) !== A.sessionState.isMask;
+      const prioChanged = A.maskPriority !== A.sessionState.maskPriority;
+      if (maskChanged) {
         if (A.sessionState.isMask) { invalidateSlot(A); InventoryWear(C, A.maskAsset, A.maskGroup, null, null, null, null as never, false); }
         else InventoryRemove(C, A.maskGroup, false);
       }
       A.isMask = A.sessionState.isMask;
       A.maskPriority = A.sessionState.maskPriority;
       if (C && A.isMask) applyMaskPriority(C, A); // revert the live-dragged priority
+      if (C && (maskChanged || prioChanged)) { CharacterRefresh(C, true, false); syncCharacterToRoom(C); }
     }
     A.undoStack = [];
   }
@@ -888,7 +910,8 @@ function applyToCharacter() {
 
   applyMaskPriority(C, A);
   invalidateSlot(A);
-  CharacterRefresh(C, true, false); // Push=true → ServerPlayerAppearanceSync (others get the drawing)
+  CharacterRefresh(C, true, false); // Push=true → persist to account DB
+  syncCharacterToRoom(C);           // propagate the drawing to the room (self + others)
 }
 
 function onKeyDown(evt: KeyboardEvent) {

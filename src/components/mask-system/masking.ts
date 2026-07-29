@@ -193,7 +193,6 @@ export function installImagePatch(): boolean {
     });
   }
   imagePatchInstalled = true;
-  console.log('[AEE Mask] GLDrawLoadImage + DrawGetImage + 每角色遮罩注入已掛上');
   return true;
 }
 

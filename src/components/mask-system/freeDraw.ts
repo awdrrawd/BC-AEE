@@ -33,7 +33,7 @@ import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingCha
 import {SHAPE_TOOLS, SHAPE_EMOJI, drawShapePreview, floodFill, type ShapeStyle} from './shapes';
 import {ICON} from './icons';
 import {askText} from '@/core/prompts';
-import {t} from '@/i18n/i18n';
+import {maskLabel} from './translations';
 import {openColorPicker as openAeeColorPicker} from '@/controllers/uiController';
 
 type AnyProps = Record<string, unknown>;
@@ -300,7 +300,7 @@ function registerDrawGroup(i: number): boolean {
     Value: 0, Wear: true, Extended: true, AlwaysInteract: true, Random: false,
     RemoveItemOnRemove: removeOnRemove,
   }, {}, {Group: g});
-  setDesc(g, DRAW_ASSET, t('mask-free-draw-name', {n: i + 1}));
+  setDesc(g, DRAW_ASSET, maskLabel('mask-free-draw-name', {n: i + 1}));
   return assetExists(g, DRAW_ASSET);
 }
 
@@ -309,7 +309,7 @@ function registerDrawGroup(i: number): boolean {
 // relabels the three boards. The hidden mask/vis companions stay as-is (they
 // have AllowCustomize:false → no menu button).
 export function applyFreeDrawNames() {
-  for (let i = 0; i < SLOT_COUNT; i++) setDesc(DRAW_GROUPS[i], DRAW_ASSET, t('mask-free-draw-name', {n: i + 1}));
+  for (let i = 0; i < SLOT_COUNT; i++) setDesc(DRAW_GROUPS[i], DRAW_ASSET, maskLabel('mask-free-draw-name', {n: i + 1}));
 }
 
 // Visible-drawing companion: a real layer with DynamicAfterDraw, so BC calls our

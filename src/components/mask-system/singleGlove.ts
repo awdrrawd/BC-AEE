@@ -2,13 +2,13 @@
 // 6 text-only options (L/R × {gloves, luzi/ECHO, both}); each carries SGSide /
 // SGScope in its Property. Mask layers are destination-out with a TextureMask.
 
-import {t} from '@/i18n/i18n';
 import {
   FAMILY, SG_MASK_GROUP, SG_ASSET, SG_PRIORITY, SG_SCOPES, SG_OPTIONS,
   SG_LAYER_KEY, type SGScope, type SGSide, type SGOption,
 } from './constants';
 import {SG_MASK_DATAURL, SG_ITEM_DATAURL} from './assets';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule, getBuildingChar} from './masking';
+import {maskLabel} from './translations';
 
 // The glove mask ships as ONE 1000x1000 image: right hand occupies x 0..500,
 // left hand x 500..1000 (full height). BC's TextureMask expects a body-sized
@@ -138,7 +138,7 @@ export function registerSingleGlove(): boolean {
 // language relabels the menu.
 export function applySingleGloveNames() {
   if (typeof AssetGroupGet !== 'function') return;
-  const label = t('mask-single-glove-name');
+  const label = maskLabel('mask-single-glove-name');
   const gg = AssetGroupGet(FAMILY, SG_MASK_GROUP);
   if (gg) (gg as unknown as {Description?: string}).Description = label;
   const ga = AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET);

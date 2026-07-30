@@ -693,18 +693,46 @@ function isSlotMasked(C: Character | null, slot: Slot): boolean {
   return !!(C && InventoryGet(C, slot.maskGroup));
 }
 
-// Propagate an appearance change to the rest of the chatroom. Per BC's own docs,
-// CharacterRefresh(C, Push) persists/rebuilds but does NOT push the change to the
-// room — that needs ChatRoomCharacterUpdate. Without this, drawing on ANOTHER
-// character stays local and is wiped on that character's next server sync (the
-// "drawing on others is unstable" bug). Mirrors AEE's convention elsewhere
-// (importExportController / itemColorHooks). No-op outside a chatroom, where
-// CharacterRefresh(Push) already saves to the account DB.
-function syncCharacterToRoom(C: Character | null) {
+// Propagate an appearance change to the rest of the chatroom. No-op outside a
+// chatroom (there the caller's CharacterRefresh(Push) already saved to the DB).
+//
+// SELF: ChatRoomCharacterUpdate(Player) pushes the whole appearance; the server
+// accepts it because it carries the player's own CharacterID.
+//
+// ANOTHER CHARACTER (A editing B): the server DROPS a ChatRoomCharacterUpdate
+// that carries B's CharacterID coming from A — only B may push B's full
+// appearance (and CharacterRefresh(B, Push) doesn't even sync, since B isn't the
+// player). THAT is why the drawing only appeared after B re-saved in the
+// wardrobe. BC's sanctioned path for one member changing another's item is
+// ChatRoomCharacterItemUpdate(C, group): it targets B.MemberNumber, patches
+// ChatRoomData so a later sync won't revert it, and broadcasts to the room. We
+// send one update per group we actually touched (board / mask / vis companions).
+function syncCharacterToRoom(C: Character | null, ...groups: (AssetGroupName | string)[]) {
   if (!C) return;
   if (typeof CurrentScreen === 'undefined' || CurrentScreen !== 'ChatRoom') return;
-  if (typeof ChatRoomCharacterUpdate !== 'function') return;
-  try { ChatRoomCharacterUpdate(C); } catch { /* ignore */ }
+  const isPlayer = typeof C.IsPlayer === 'function' ? C.IsPlayer() : (typeof Player !== 'undefined' && C === Player);
+  try {
+    if (isPlayer) {
+      if (typeof ChatRoomCharacterUpdate === 'function') ChatRoomCharacterUpdate(C);
+      return;
+    }
+    if (typeof ChatRoomCharacterItemUpdate !== 'function') return;
+    const seen = new Set<string>();
+    for (const g of groups) {
+      const name = g as unknown as string;
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      try { ChatRoomCharacterItemUpdate(C, g as AssetGroupName); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+}
+
+// Groups whose worn item can change for a slot: the board itself, its mask
+// companion, and (VIS_SLOTS only) the visible-drawing companion.
+function slotSyncGroups(slot: Slot): (AssetGroupName | string)[] {
+  const gs: (AssetGroupName | string)[] = [slot.group, slot.maskGroup];
+  if (VIS_SLOTS.has(slot.index)) gs.push(slot.visGroup);
+  return gs;
 }
 
 // Push the slot's priority onto the WORN companion(s) as OverridePriority. BC
@@ -766,10 +794,10 @@ function toggleSlotMask() {
     A.isMask = true;
   }
   invalidateSlot(A);
-  // Push=true saves to the account DB; ChatRoomCharacterUpdate propagates the
-  // worn/removed mask companion to the room (incl. when editing another char).
+  // Push=true saves to the account DB (self); the room broadcast propagates the
+  // worn/removed mask companion — incl. when editing another character.
   CharacterRefresh(C, true, false);
-  syncCharacterToRoom(C);
+  syncCharacterToRoom(C, A.maskGroup);
 }
 
 // Live-update during a priority-slider drag: ONLY move the value (cheap, like
@@ -793,7 +821,7 @@ function commitMaskPriority() {
   }
   applyMaskPriority(C, A);
   invalidateSlot(A);
-  if (C) { CharacterRefresh(C, true, false); syncCharacterToRoom(C); }
+  if (C) { CharacterRefresh(C, true, false); syncCharacterToRoom(C, ...slotSyncGroups(A)); }
 }
 
 // ---- Extended item callbacks ---------------------------------------------
@@ -919,7 +947,7 @@ function cancelEditingAndExit() {
       A.isMask = A.sessionState.isMask;
       A.maskPriority = A.sessionState.maskPriority;
       if (C && A.isMask) applyMaskPriority(C, A); // revert the live-dragged priority
-      if (C && (maskChanged || prioChanged)) { CharacterRefresh(C, true, false); syncCharacterToRoom(C); }
+      if (C && (maskChanged || prioChanged)) { CharacterRefresh(C, true, false); syncCharacterToRoom(C, ...slotSyncGroups(A)); }
     }
     A.undoStack = [];
   }
@@ -944,10 +972,14 @@ function applyToCharacter() {
   p[PROP_MASK_PRIO] = A.maskPriority;
   A._loadedSig = compressed.length + ':' + compressed.slice(0, 16);
 
+  // Ensure the visible companion (VIS_SLOTS) reflects the new drawing on THIS
+  // character before we broadcast — syncSlots only runs for the local player, so
+  // when editing someone else nothing would otherwise wear/remove it on them.
+  syncVisCompanion(C, A);
   applyMaskPriority(C, A);
   invalidateSlot(A);
-  CharacterRefresh(C, true, false); // Push=true → persist to account DB
-  syncCharacterToRoom(C);           // propagate the drawing to the room (self + others)
+  CharacterRefresh(C, true, false); // Push=true → persist to account DB (self only)
+  syncCharacterToRoom(C, ...slotSyncGroups(A)); // broadcast board (+ mask/vis) to the room
 }
 
 function onKeyDown(evt: KeyboardEvent) {

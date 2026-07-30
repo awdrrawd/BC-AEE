@@ -739,11 +739,16 @@ function onPointerUp(evt: PointerEvent) {
   if (State.tool === 'select') { onSelectPointerUp(); return; }
   if (!State.isPressing) return;
   State.isPressing = false;
-  A.ctx.globalCompositeOperation = 'source-over';
   if (State.tool === 'pen' || State.tool === 'eraser') {
     // Draw the final tiny segment up to the real last point (the curve above
-    // always trails one point behind, at the midpoint).
+    // always trails one point behind, at the midpoint). Must match the same
+    // composite mode/style strokeSegmentTo() used mid-stroke — forcing
+    // source-over here (as before) drew this last segment as an opaque black
+    // dot instead of erasing, since the eraser's strokeStyle is a solid
+    // 'rgba(0,0,0,1)' meant only for destination-out.
     if (State.lastMid && State.lastPoint) {
+      A.ctx.globalCompositeOperation = State.tool === 'eraser' ? 'destination-out' : 'source-over';
+      A.ctx.strokeStyle = State.tool === 'eraser' ? 'rgba(0,0,0,1)' : State.color;
       A.ctx.beginPath();
       A.ctx.moveTo(State.lastMid[0], State.lastMid[1]);
       A.ctx.lineTo(State.lastPoint[0], State.lastPoint[1]);
@@ -752,6 +757,7 @@ function onPointerUp(evt: PointerEvent) {
     State.lastPoint = null;
     State.lastMid = null;
   } else {
+    A.ctx.globalCompositeOperation = 'source-over';
     const {cx, cy} = canvasCoordsFromEvent(evt);
     const local = toLocal(cx, cy);
     A.ctx.putImageData(State.snapshotBeforeShape!, 0, 0);

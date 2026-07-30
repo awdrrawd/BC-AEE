@@ -85,6 +85,15 @@ export const MASK_TARGET_GROUPS = ([
 export const MASK_PRIORITY = 99;
 export const MASK_APPLY_TO_ABOVE = false;
 
+// ---- Content-keyed cache limits -------------------------------------------
+// These caches are keyed by drawing content (dataURL / compressed string),
+// which changes on every edit. Capped with LRU eviction so a long session
+// (many edits, many characters' drawings) can't grow them without bound.
+export const MASK_TEXTURE_CACHE_SIZE = 64; // per-GL-context WebGLTexture cache
+export const MASK_IMAGE_CACHE_SIZE = 64;   // decoded HTMLImageElement cache (masking.ts)
+export const MASK_COMPOSITE_CACHE_SIZE = 48; // 500x1000 mask-shape composite dataURLs
+export const OVERLAY_IMAGE_CACHE_SIZE = 48;  // decoded HTMLImageElement cache (visible overlay)
+
 // Mask-priority slider (only shown in mask mode). Drives the worn mask item's
 // Property.OverridePriority → BC hides clothing layers whose Priority is below
 // this value (ApplyToAbove:false). Lower = fewer items hidden. BC's own range.
@@ -122,7 +131,7 @@ export const row1X = (id: string) => TOOLBAR_ROW1_RIGHT - TOOLBAR_ROW1.indexOf(i
 // Row 2 (y=125), right-to-left.
 export const TOOLBAR_Y2 = 125;
 export const TOOLBAR_ROW2_RIGHT = 1785;
-export const TOOLBAR_ROW2 = ['color', 'eraser', 'bucket', 'text', 'shape', 'fill', 'pen'];
+export const TOOLBAR_ROW2 = ['color', 'eraser', 'bucket', 'text', 'shape', 'fill', 'select', 'pen'];
 export const row2X = (id: string) => TOOLBAR_ROW2_RIGHT - TOOLBAR_ROW2.indexOf(id) * TOOLBAR_STEP;
 
 // Row 3 (y=225): stroke slider.
@@ -177,3 +186,4 @@ export const TOOL_TEXT_X = row2X('text');
 export const TOOL_SHAPE_X = row2X('shape');
 export const TOOL_FILL_X = row2X('fill');
 export const TOOL_PEN_X = row2X('pen');
+export const TOOL_SELECT_X = row2X('select');

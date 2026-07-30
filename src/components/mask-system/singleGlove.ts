@@ -18,7 +18,15 @@ import {maskLabel} from './translations';
 const MASK_IMG_W = 500, MASK_IMG_H = 1000;
 const SG_DATAURL: Partial<Record<SGSide, string>> = {};
 let cropStarted = false;
-function ensureMaskCrops() {
+const MASK_CROP_MAX_ATTEMPTS = 3;
+const MASK_CROP_RETRY_DELAY_MS = 1500; // backs off: 1.5s, 3s
+
+// The source is a same-origin data: URL (SG_MASK_DATAURL, bundled at build
+// time), so a load failure here isn't a transient network hiccup — it means
+// the decode itself failed (e.g. a momentarily starved browser image decoder).
+// Without a retry, that one failure would leave the glove mask permanently
+// transparent for the rest of the session (nothing else ever re-triggers this).
+function ensureMaskCrops(attempt = 1) {
   if (cropStarted) return;
   cropStarted = true;
   const img = new Image();
@@ -44,7 +52,15 @@ function ensureMaskCrops() {
       if (C) setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0);
     }
   });
-  img.addEventListener('error', () => console.error('[AEE Mask] 單手套遮罩來源載入失敗'));
+  img.addEventListener('error', () => {
+    console.error(`[AEE Mask] 單手套遮罩來源載入失敗（第 ${attempt}/${MASK_CROP_MAX_ATTEMPTS} 次）`);
+    if (attempt >= MASK_CROP_MAX_ATTEMPTS) {
+      console.error('[AEE Mask] 單手套遮罩來源多次載入失敗，已放棄重試；此次會話中該遮罩會維持透明。');
+      return;
+    }
+    cropStarted = false;
+    setTimeout(() => ensureMaskCrops(attempt + 1), MASK_CROP_RETRY_DELAY_MS * attempt);
+  });
   img.src = SG_MASK_DATAURL;
 }
 ensureMaskCrops();

@@ -3,6 +3,8 @@
 
 import bcAeeModSdk from '@/modsdk';
 import {NAKED_DATAURL} from './assets';
+import {LRUCache} from './lruCache';
+import {MASK_IMAGE_CACHE_SIZE, MASK_TEXTURE_CACHE_SIZE} from './constants';
 
 type MaskProvider = string | (() => string);
 
@@ -29,18 +31,31 @@ export const TRANSPARENT_DATAURL = transparentPx();
 
 type TexInfo = {width: number; height: number; texture: WebGLTexture; ready?: boolean};
 
-// Content-keyed caches. These are NEVER busted, so a given mask image is decoded
-// once and every later bind is SYNCHRONOUS — no transparent frame, no async
+// Content-keyed caches. A given mask image is decoded once and every later
+// bind is SYNCHRONOUS — no transparent frame, no async
 // `DrawRefreshCharacterForImage` rebuild loop, i.e. no flicker. Each distinct
 // image (per-character drawing / glove side) gets its own persistent texture, so
 // characters never collide on BC's URL-keyed cache. (Only the COMBINED mask is
 // re-computed per build — see the GLDrawAppearanceBuild hook.)
-const ourImageCache = new Map<string, HTMLImageElement>();
-const ourTexCache = new WeakMap<BCGLContext, Map<string, TexInfo>>();
+//
+// Both caches are keyed by CONTENT (dataURL), which changes on every edit, so
+// they're bounded with LRU eviction rather than left to grow forever over a
+// long session. Eviction only drops the oldest entry once the cap is
+// exceeded, so an active edit's own entries are never at risk of being the
+// one evicted (it's always the most-recently-touched).
+const ourImageCache = new LRUCache<string, HTMLImageElement>(MASK_IMAGE_CACHE_SIZE);
+const ourTexCache = new WeakMap<BCGLContext, LRUCache<string, TexInfo>>();
 
-function texCacheFor(gl: BCGLContext): Map<string, TexInfo> {
+function texCacheFor(gl: BCGLContext): LRUCache<string, TexInfo> {
   let m = ourTexCache.get(gl);
-  if (!m) { m = new Map(); ourTexCache.set(gl, m); }
+  if (!m) {
+    // Evicted textures must be released on the GPU, not just dropped from the
+    // JS-side map, or every distinct drawing ever shown leaks a WebGLTexture.
+    m = new LRUCache<string, TexInfo>(MASK_TEXTURE_CACHE_SIZE, (_key, ti) => {
+      try { gl.deleteTexture(ti.texture); } catch { /* context may already be lost */ }
+    });
+    ourTexCache.set(gl, m);
+  }
   return m;
 }
 function ensureDecoded(dataUrl: string): HTMLImageElement {
@@ -197,7 +212,9 @@ export function installImagePatch(): boolean {
 }
 
 // Force a mask re-combine after content changed (edit / glove switch). Source
-// textures are content-keyed and never dropped, so the re-bind stays synchronous.
+// textures are content-keyed and stay cached (LRU-bounded, see ourTexCache
+// above) so the re-bind is synchronous as long as the entry hasn't been
+// evicted; a rare eviction just costs one extra async decode/upload cycle.
 export function bustMaskTexture() {
   clearMaskCaches();
 }

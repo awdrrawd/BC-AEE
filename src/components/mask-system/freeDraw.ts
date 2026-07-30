@@ -27,10 +27,12 @@ import {
   PICKER_X, PICKER_Y, PICKER_W, PICKER_ITEM, PICKER_GAP, PICKER_PAD, PICKER_PER_ROW,
   MOVE_STEP, ROTATE_STEP, SCALE_STEP,
   EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, MASK_X,
-  TOOL_COLOR_X, TOOL_ERASER_X, TOOL_BUCKET_X, TOOL_TEXT_X, TOOL_SHAPE_X, TOOL_FILL_X, TOOL_PEN_X,
+  TOOL_COLOR_X, TOOL_ERASER_X, TOOL_BUCKET_X, TOOL_TEXT_X, TOOL_SHAPE_X, TOOL_FILL_X, TOOL_PEN_X, TOOL_SELECT_X,
+  MASK_COMPOSITE_CACHE_SIZE, OVERLAY_IMAGE_CACHE_SIZE,
 } from './constants';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingChar} from './masking';
 import {SHAPE_TOOLS, SHAPE_EMOJI, drawShapePreview, floodFill, type ShapeStyle} from './shapes';
+import {LRUCache} from './lruCache';
 import {ICON} from './icons';
 import {askText} from '@/core/prompts';
 import {maskLabel} from './translations';
@@ -132,7 +134,7 @@ slots.forEach((slot) => {
 // character's own Property.CustomDraw (BC caches GL layer textures by URL
 // globally, so a real per-character layer is impossible — we read each
 // character's synced drawing here instead).
-const overlayImgCache = new Map<string, HTMLImageElement>();
+const overlayImgCache = new LRUCache<string, HTMLImageElement>(OVERLAY_IMAGE_CACHE_SIZE);
 
 // Once a (remote) drawing finishes decoding, mirror the local-player path: bust
 // the combined-mask cache and reload every rendered character so their mask
@@ -171,7 +173,9 @@ function getOverlayImage(compressed: string): HTMLImageElement {
 }
 
 // 500×1000 mask composites (drawing at its offset), keyed by drawing+offset.
-const maskCompositeCache = new Map<string, string>();
+// Content-keyed (changes on every edit), so bounded with LRU eviction rather
+// than left to accumulate one entry per edit ever made in the session.
+const maskCompositeCache = new LRUCache<string, string>(MASK_COMPOSITE_CACHE_SIZE);
 const maskKey = (compressed: string, offX: number, offY: number) => `${compressed.length}|${offX}|${offY}|${compressed.slice(0, 40)}`;
 function getMaskComposite(compressed: string, offX: number, offY: number): string | null {
   return maskCompositeCache.get(maskKey(compressed, offX, offY)) ?? null;
@@ -266,7 +270,7 @@ export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: n
 }
 
 const State = {
-  tool: 'pen', // pen | eraser | bucket | text | move | <shape>
+  tool: 'pen', // pen | eraser | bucket | text | move | select | <shape>
   picker: null as null | 'shape',
   filled: false,
   thickness: 4,
@@ -279,6 +283,22 @@ const State = {
   draggingPriority: false,
   dragging: false,
   dragStartCX: 0, dragStartCY: 0, dragStartOffsetX: 0, dragStartOffsetY: 0,
+  // Pen/eraser stroke smoothing: quadratic curve through consecutive
+  // midpoints instead of straight lineTo segments, and each move only
+  // (re)draws the new tiny segment rather than the whole accumulated path.
+  lastPoint: null as [number, number] | null,
+  lastMid: null as [number, number] | null,
+  // Selection tool ("選取"): box-select a region, then drag it to a new spot
+  // instead of erasing and redrawing. selRect/selBuffer hold the cut-out
+  // piece; it floats on top of the board (never touching A.ctx) until
+  // committed (baked into the real canvas) or discarded.
+  selPhase: 'idle' as 'idle' | 'dragSelect' | 'floating' | 'dragMove',
+  selStart: [0, 0] as [number, number],
+  selPreviewRect: null as Box | null,
+  selRect: null as Box | null,
+  selBuffer: null as HTMLCanvasElement | null,
+  selOffsetX: 0, selOffsetY: 0,
+  selDragStartCX: 0, selDragStartCY: 0, selDragStartOffX: 0, selDragStartOffY: 0,
 };
 
 // ---- Registration --------------------------------------------------------
@@ -499,7 +519,97 @@ function afterEdit() {
   if (C && isSlotMasked(C, A) && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
 }
 
-function onPointerDown(evt: MouseEvent) {
+// ---- Selection tool ("選取"): box-select + drag-move a region -----------
+//
+// Cutting straight into A.ctx while the piece is being dragged would force
+// us to redraw the whole board every frame just to "un-cut" the previous
+// position. Instead: on mouseup after the box-select, the region is copied
+// to an offscreen buffer and cleared from the real canvas ONCE; while
+// floating, the buffer is only ever composited on top during slotDraw() (a
+// cheap drawImage, same cost as the existing live preview) and never
+// touches A.ctx until commitSelection() bakes it in for real.
+
+function pointInFloatingSel(local: [number, number]): boolean {
+  const r = State.selRect;
+  if (!r) return false;
+  const lx = local[0] - State.selOffsetX, ly = local[1] - State.selOffsetY;
+  return lx >= r.x && lx <= r.x + r.w && ly >= r.y && ly <= r.y + r.h;
+}
+
+function onSelectPointerDown(local: [number, number]) {
+  if (!A) return;
+  if (State.selPhase === 'floating') {
+    if (pointInFloatingSel(local)) {
+      State.selPhase = 'dragMove';
+      State.selDragStartCX = local[0]; State.selDragStartCY = local[1];
+      State.selDragStartOffX = State.selOffsetX; State.selDragStartOffY = State.selOffsetY;
+      return;
+    }
+    commitSelection(); // clicked outside the floating piece: drop it here, start fresh
+  }
+  State.selPhase = 'dragSelect';
+  State.selStart = local;
+  State.selPreviewRect = {x: local[0], y: local[1], w: 0, h: 0};
+}
+
+function onSelectPointerMove(local: [number, number]) {
+  if (State.selPhase === 'dragSelect') {
+    const [x0, y0] = State.selStart;
+    State.selPreviewRect = {
+      x: Math.min(x0, local[0]), y: Math.min(y0, local[1]),
+      w: Math.abs(local[0] - x0), h: Math.abs(local[1] - y0),
+    };
+  } else if (State.selPhase === 'dragMove') {
+    State.selOffsetX = State.selDragStartOffX + (local[0] - State.selDragStartCX);
+    State.selOffsetY = State.selDragStartOffY + (local[1] - State.selDragStartCY);
+  }
+}
+
+function onSelectPointerUp() {
+  if (!A) return;
+  if (State.selPhase === 'dragSelect') {
+    const r = State.selPreviewRect;
+    State.selPreviewRect = null;
+    if (!r || r.w < 4 || r.h < 4) { State.selPhase = 'idle'; return; } // too small to bother with
+    const x = Math.max(0, Math.round(r.x)), y = Math.max(0, Math.round(r.y));
+    const rect: Box = {
+      x, y,
+      w: Math.min(BOARD_W - x, Math.round(r.w)),
+      h: Math.min(BOARD_H - y, Math.round(r.h)),
+    };
+    pushUndo();
+    const buf = document.createElement('canvas');
+    buf.width = rect.w; buf.height = rect.h;
+    buf.getContext('2d')!.putImageData(A.ctx.getImageData(rect.x, rect.y, rect.w, rect.h), 0, 0);
+    A.ctx.clearRect(rect.x, rect.y, rect.w, rect.h);
+    State.selRect = rect;
+    State.selBuffer = buf;
+    State.selOffsetX = 0; State.selOffsetY = 0;
+    State.selPhase = 'floating';
+  } else if (State.selPhase === 'dragMove') {
+    State.selPhase = 'floating';
+  }
+}
+
+// Bake the floating piece into the real canvas at wherever it currently sits.
+function commitSelection() {
+  if (!A || State.selPhase !== 'floating' || !State.selBuffer || !State.selRect) return;
+  const r = State.selRect;
+  A.ctx.globalCompositeOperation = 'source-over';
+  A.ctx.drawImage(State.selBuffer, r.x + State.selOffsetX, r.y + State.selOffsetY);
+  resetSelection();
+  afterEdit();
+}
+// Drop the floating piece without drawing it back (used when discarding edits).
+function resetSelection() {
+  State.selPhase = 'idle';
+  State.selRect = null;
+  State.selBuffer = null;
+  State.selOffsetX = 0; State.selOffsetY = 0;
+  State.selPreviewRect = null;
+}
+
+function onPointerDown(evt: PointerEvent) {
   if (!A) return;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (pointInRect(cx, cy, STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H)) {
@@ -522,6 +632,7 @@ function onPointerDown(evt: MouseEvent) {
     State.dragStartOffsetX = A.offsetX; State.dragStartOffsetY = A.offsetY;
     return;
   }
+  if (State.tool === 'select') { onSelectPointerDown(local); return; }
   if (State.tool === 'bucket') {
     pushUndo();
     A.ctx.globalCompositeOperation = 'source-over';
@@ -553,14 +664,42 @@ function onPointerDown(evt: MouseEvent) {
   State.startY = local[1];
   pushUndo();
   if (State.tool === 'pen' || State.tool === 'eraser') {
-    A.ctx.beginPath();
-    A.ctx.moveTo(local[0], local[1]);
+    // No persistent path: each move below strokes only its own short segment
+    // (see onPointerMove), so cost stays flat instead of growing with stroke
+    // length. lastPoint/lastMid drive the midpoint-quadratic smoothing.
+    State.lastPoint = local;
+    State.lastMid = local;
   } else {
     State.snapshotBeforeShape = A.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   }
 }
 
-function onPointerMove(evt: MouseEvent) {
+function strokeSegmentTo(local: [number, number]) {
+  if (!A || !State.lastPoint || !State.lastMid) return;
+  A.ctx.lineCap = 'round';
+  A.ctx.lineJoin = 'round';
+  A.ctx.lineWidth = State.thickness;
+  if (State.tool === 'eraser') {
+    A.ctx.globalCompositeOperation = 'destination-out';
+    A.ctx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    A.ctx.globalCompositeOperation = 'source-over';
+    A.ctx.strokeStyle = State.color;
+  }
+  // Classic smoothing: curve through the midpoint of each consecutive pair
+  // of raw points, using the raw point itself as the control point. This
+  // rounds off the faceted corners you'd otherwise get from sparse,
+  // fast-moving mousemove/pointermove samples.
+  const mid: [number, number] = [(State.lastPoint[0] + local[0]) / 2, (State.lastPoint[1] + local[1]) / 2];
+  A.ctx.beginPath();
+  A.ctx.moveTo(State.lastMid[0], State.lastMid[1]);
+  A.ctx.quadraticCurveTo(State.lastPoint[0], State.lastPoint[1], mid[0], mid[1]);
+  A.ctx.stroke();
+  State.lastMid = mid;
+  State.lastPoint = local;
+}
+
+function onPointerMove(evt: PointerEvent) {
   if (!A) return;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (State.draggingStroke) { updateStrokeFromPointerX(cx); return; }
@@ -571,37 +710,48 @@ function onPointerMove(evt: MouseEvent) {
     A.offsetY = State.dragStartOffsetY + (cy - State.dragStartCY) * (1000 / r.h);
     return;
   }
+  if (State.tool === 'select') { onSelectPointerMove(toLocal(cx, cy)); return; }
   if (!State.isPressing) return;
-  const local = toLocal(cx, cy);
   if (State.tool === 'pen' || State.tool === 'eraser') {
-    A.ctx.lineCap = 'round';
-    A.ctx.lineJoin = 'round';
-    A.ctx.lineWidth = State.thickness;
-    if (State.tool === 'eraser') {
-      A.ctx.globalCompositeOperation = 'destination-out';
-      A.ctx.strokeStyle = 'rgba(0,0,0,1)';
-    } else {
-      A.ctx.globalCompositeOperation = 'source-over';
-      A.ctx.strokeStyle = State.color;
+    // getCoalescedEvents() recovers the extra points the browser buffered
+    // between animation frames during a fast stroke, instead of only ever
+    // seeing the one point-per-frame the OS delivered to us — this is what
+    // actually fixes "choppy/faceted at speed", pointer-events-only.
+    const coalesced = typeof evt.getCoalescedEvents === 'function' ? evt.getCoalescedEvents() : [];
+    const samples = coalesced.length ? coalesced : [evt];
+    for (const sample of samples) {
+      const p = canvasCoordsFromEvent(sample);
+      strokeSegmentTo(toLocal(p.cx, p.cy));
     }
-    A.ctx.lineTo(local[0], local[1]);
-    A.ctx.stroke();
   } else {
+    const local = toLocal(cx, cy);
     A.ctx.globalCompositeOperation = 'source-over';
     A.ctx.putImageData(State.snapshotBeforeShape!, 0, 0);
     drawShapePreview(A.ctx, shapeStyle(), State.startX, State.startY, local[0], local[1]);
   }
 }
 
-function onPointerUp(evt: MouseEvent) {
+function onPointerUp(evt: PointerEvent) {
   if (!A) return;
   if (State.draggingStroke) { State.draggingStroke = false; return; }
   if (State.draggingPriority) { State.draggingPriority = false; commitMaskPriority(); return; }
   if (State.dragging) { State.dragging = false; afterEdit(); return; }
+  if (State.tool === 'select') { onSelectPointerUp(); return; }
   if (!State.isPressing) return;
   State.isPressing = false;
   A.ctx.globalCompositeOperation = 'source-over';
-  if (State.tool !== 'pen' && State.tool !== 'eraser') {
+  if (State.tool === 'pen' || State.tool === 'eraser') {
+    // Draw the final tiny segment up to the real last point (the curve above
+    // always trails one point behind, at the midpoint).
+    if (State.lastMid && State.lastPoint) {
+      A.ctx.beginPath();
+      A.ctx.moveTo(State.lastMid[0], State.lastMid[1]);
+      A.ctx.lineTo(State.lastPoint[0], State.lastPoint[1]);
+      A.ctx.stroke();
+    }
+    State.lastPoint = null;
+    State.lastMid = null;
+  } else {
     const {cx, cy} = canvasCoordsFromEvent(evt);
     const local = toLocal(cx, cy);
     A.ctx.putImageData(State.snapshotBeforeShape!, 0, 0);
@@ -615,16 +765,19 @@ let listenersAttached = false;
 function attachListeners() {
   if (listenersAttached) return;
   listenersAttached = true;
-  MainCanvas.canvas.addEventListener('mousedown', onPointerDown);
-  MainCanvas.canvas.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerUp);
+  // Pointer Events (not separate mouse+touch handlers) so mouse, touch, and
+  // pen all go through the same code path, and so onPointerMove can call
+  // evt.getCoalescedEvents() for smoother fast strokes (see strokeSegmentTo).
+  MainCanvas.canvas.addEventListener('pointerdown', onPointerDown);
+  MainCanvas.canvas.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
 }
 function detachListeners() {
   if (!listenersAttached) return;
   listenersAttached = false;
-  MainCanvas.canvas.removeEventListener('mousedown', onPointerDown);
-  MainCanvas.canvas.removeEventListener('mousemove', onPointerMove);
-  window.removeEventListener('mouseup', onPointerUp);
+  MainCanvas.canvas.removeEventListener('pointerdown', onPointerDown);
+  MainCanvas.canvas.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
 }
 
 // ---- Transform (self-contained; baked into the drawing) ------------------
@@ -788,7 +941,6 @@ function toggleSlotMask() {
     InventoryRemove(C, A.maskGroup, false);
     A.isMask = false;
   } else {
-    invalidateSlot(A);
     InventoryWear(C, A.maskAsset, A.maskGroup, null, null, null, null as never, false);
     applyMaskPriority(C, A); // honour the remembered priority on the fresh companion
     A.isMask = true;
@@ -893,7 +1045,8 @@ function slotLoad(i: number) {
   A.sessionSnapshot = A.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   A.sessionState = {offsetX: A.offsetX, offsetY: A.offsetY, rotation: A.rotation, scale: A.scale, isMask: A.isMask, maskPriority: A.maskPriority};
   State.picker = null;
-  if (State.tool === 'move') State.tool = 'pen';
+  resetSelection(); // stale selection from a previous slot/session must not carry over
+  if (State.tool === 'move' || State.tool === 'select') State.tool = 'pen';
   invalidateSlot(A);
   if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
   DialogExtendedMessage = '直接在角色身上繪圖；「位移」可拖曳整張圖，旋轉/縮放/鏡射用按鈕；「遮罩」把圖當形狀隱藏身體以外';
@@ -908,6 +1061,7 @@ function slotInit(_i: number, C: Character, Item: Item, Push = true, Refresh = t
 }
 
 function leaveEditor() {
+  commitSelection(); // don't silently drop a floating piece if exited via Escape
   detachListeners();
   const editing = A;
   if (typeof DialogLeaveFocusItem === 'function') {
@@ -927,6 +1081,7 @@ function leaveEditor() {
 }
 
 function cancelEditingAndExit() {
+  resetSelection(); // discard the floating piece too — the whole edit is being reverted
   if (A) {
     if (A.sessionSnapshot) A.ctx.putImageData(A.sessionSnapshot, 0, 0);
     const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
@@ -956,6 +1111,7 @@ function cancelEditingAndExit() {
 }
 
 function applyToCharacter() {
+  commitSelection(); // defensive: make sure the saved PNG includes the floating piece
   if (!A) return;
   const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
   if (!C) return;
@@ -994,10 +1150,56 @@ function drawIconBtn(x: number, y: number, w: number, h: number, bgColor: string
   if (iconSrc) DrawImageResize(iconSrc, x + ICON_INSET, y + ICON_INSET, w - ICON_INSET * 2, h - ICON_INSET * 2);
 }
 
+// Draws whatever the selection tool is currently doing on top of the live
+// board preview. Never touches A.ctx — purely a screen-space overlay, so it's
+// as cheap as the existing live-preview drawImage() above it.
+function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}) {
+  const toScreen = (b: Box) => ({
+    x: rect.x + b.x * (rect.w / BOARD_W), y: rect.y + b.y * (rect.h / BOARD_H),
+    w: b.w * (rect.w / BOARD_W), h: b.h * (rect.h / BOARD_H),
+  });
+  // Render the floating piece both while it's just sitting there ('floating')
+  // and while it's actively being dragged ('dragMove') — these used to be
+  // treated as the same visual state, but dragMove is set the instant a drag
+  // starts and only flips back to 'floating' on pointerup. Since this function
+  // only checked for 'floating', the piece was never drawn during the actual
+  // drag — the cut-out region just sat empty (showing whatever's behind it)
+  // until release, which looked like the piece fading out mid-drag and
+  // snapping back solid on release.
+  if ((State.selPhase === 'floating' || State.selPhase === 'dragMove') && State.selBuffer && State.selRect) {
+    const b: Box = {...State.selRect, x: State.selRect.x + State.selOffsetX, y: State.selRect.y + State.selOffsetY};
+    const s = toScreen(b);
+    // Defensive: force full opacity/normal blending regardless of whatever
+    // state the shared MainCanvas context was left in by other draw calls.
+    MainCanvas.save();
+    MainCanvas.globalAlpha = 1;
+    MainCanvas.globalCompositeOperation = 'source-over';
+    MainCanvas.drawImage(State.selBuffer, s.x, s.y, s.w, s.h);
+    MainCanvas.setLineDash([6, 4]);
+    MainCanvas.strokeStyle = '#00BFFF';
+    MainCanvas.lineWidth = 2;
+    MainCanvas.strokeRect(s.x, s.y, s.w, s.h);
+    MainCanvas.restore();
+  } else if (State.selPhase === 'dragSelect' && State.selPreviewRect) {
+    const s = toScreen(State.selPreviewRect);
+    MainCanvas.save();
+    MainCanvas.setLineDash([6, 4]);
+    MainCanvas.strokeStyle = '#00BFFF';
+    MainCanvas.lineWidth = 2;
+    MainCanvas.strokeRect(s.x, s.y, s.w, s.h);
+    MainCanvas.restore();
+  }
+}
+
 function slotDraw() {
   if (!A) return;
   const rect = getBoardScreenRect();
+  MainCanvas.save();
+  MainCanvas.globalAlpha = 1;
+  MainCanvas.globalCompositeOperation = 'source-over';
   MainCanvas.drawImage(A.canvas, rect.x, rect.y, rect.w, rect.h); // live preview
+  MainCanvas.restore();
+  drawSelectionOverlay(rect);
 
   // Row 1
   DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', A.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', '遮罩：把這張圖當形狀，隱藏身體以外的東西（再按一次切回純繪製）');
@@ -1013,6 +1215,7 @@ function slotDraw() {
   drawIconBtn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'bucket' ? 'cyan' : 'White', ICON.bucket, '填色（油漆桶）');
   drawIconBtn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'eraser' ? 'cyan' : 'White', ICON.eraser, '橡皮擦');
   drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color), ICON.color, '顏色（點擊開啟 AEE 取色器）');
+  drawIconBtn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'select' ? 'cyan' : 'White', ICON.select, '選取並拖移');
 
   // Row 3: stroke slider
   DrawRect(STROKE_FRAME_X, STROKE_Y, STROKE_FRAME_W, STROKE_H, 'White');
@@ -1082,6 +1285,17 @@ function slotDraw() {
 
 function slotClick() {
   if (!A) return;
+  // BC fires this Click callback for every click on the item screen — including
+  // the exact same click that just finished a box-select drag (pointerup already
+  // ran onSelectPointerUp() and set selPhase to 'floating'). Committing here
+  // unconditionally would immediately bake that floating piece back in place
+  // before the user ever gets a chance to drag it, making the select tool look
+  // like it does nothing after the marquee. Clicks inside the board are already
+  // fully handled by the pointerdown/up handlers (pick up / drag / commit on
+  // out-of-bounds click), so only force a commit here for clicks that land on
+  // the toolbar/side-panel chrome outside the board — e.g. so pressing Undo or
+  // switching tools doesn't act on a stale floating piece.
+  if (!inBoardArea(MouseX, MouseY)) commitSelection();
   if (MouseIn(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { applyToCharacter(); leaveEditor(); return; }
   if (MouseIn(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { cancelEditingAndExit(); return; }
 
@@ -1104,6 +1318,7 @@ function slotClick() {
   if (MouseIn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'bucket'; State.picker = null; return; }
   if (MouseIn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'eraser'; State.picker = null; return; }
   if (MouseIn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H)) { openColorPicker(); return; }
+  if (MouseIn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'select'; State.picker = null; return; }
 
   if (MouseIn(STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H)) {
     if (typeof MouseX === 'number') updateStrokeFromPointerX(MouseX);

@@ -26,6 +26,7 @@ After it runs: rebuild the script (npx vite build), then commit AND push
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 import tempfile
@@ -45,8 +46,8 @@ except ImportError:
     sys.exit("Missing deps. Run:  pip install fonttools opentype-sanitizer")
 
 REPO = Path(__file__).resolve().parent.parent
-FONTS_DIR = REPO / "releases" / "download" / "fonts"
-FONTS_TS = REPO / "src" / "core" / "fonts.ts"
+FONTS_DIR = Path(os.environ.get("FONTS_DIR", REPO / "releases" / "download" / "fonts"))
+FONTS_TS = Path(os.environ.get("FONTS_TS", REPO / "src" / "core" / "fonts.ts"))
 FONT_EXTS = {".ttf", ".otf", ".woff2", ".woff"}
 
 

@@ -1,0 +1,51 @@
+name: Sync fonts to main
+
+on:
+  push:
+    branches: [fonts]
+    paths:
+      - "releases/download/fonts/**"
+
+permissions:
+  contents: write   # 要能推 commit / 開 PR 到 main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fonts branch (this repo)
+        uses: actions/checkout@v4
+        with:
+          path: fonts-data
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-repo
+          # 用預設 GITHUB_TOKEN 就能推同一個 repo 的另一個分支
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install fonttools opentype-sanitizer
+
+      - name: Run add-fonts.py against main's fonts.ts
+        env:
+          FONTS_DIR: ${{ github.workspace }}/fonts-data/releases/download/fonts
+          FONTS_TS: ${{ github.workspace }}/main-repo/src/core/fonts.ts
+        run: python fonts-data/scripts/add-fonts.py
+        # 注意：add-fonts.py 這時要從 main-repo/scripts/ 執行也可以，
+        # 只要它有被 checkout 出來即可，二選一路徑即可
+
+      - name: Open PR to main if changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          path: main-repo
+          branch: bot/sync-fonts
+          commit-message: "chore: 自動同步新增字型到 fonts.ts"
+          title: "自動同步：新增字型"
+          body: "由 fonts 分支的更新自動觸發，請人工確認字型名稱/授權後再合併。"

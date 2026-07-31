@@ -25,7 +25,7 @@ export interface SystemFontDef {
  * The files live committed in this repo under releases/download/fonts/.
  * A `file` that already starts with http(s) ignores this.
  */
-export const FONT_BASE_URL = 'https://raw.githubusercontent.com/awdrrawd/BC-AEE/main/releases/download/fonts/';
+export const FONT_BASE_URL = 'https://raw.githubusercontent.com/awdrrawd/BC-AEE/fonts/releases/download/fonts/';
 
 /**
  * Fonts downloaded on demand and cached in IndexedDB. Add entries here as you host more.

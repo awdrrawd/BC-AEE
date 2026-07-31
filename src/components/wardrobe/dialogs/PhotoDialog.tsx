@@ -15,11 +15,13 @@ import {
 } from '@/util/wardrobeBackground';
 import {BACKGROUND_CHOICES, backgroundChoiceLabel} from '@/components/wardrobe/dialogs/backgroundChoices';
 import {settings} from '@/core/settings';
+import {POSES, getPoseIconUrl} from '@/controllers/viewController';
 import {Button} from '@/components/ui/Button';
 import {ColorInput, Select} from '@/components/ui/Fields';
 import {Dialog} from '@/components/ui/Dialog';
 
 type BgMode = 'color' | 'transparent' | 'image';
+type PhotoTab = 'background' | 'pose';
 
 const OUTPUT_SCALE = 3;   // 1500 x 3000
 const PREVIEW_SCALE = 0.4; // 200 x 400
@@ -55,9 +57,11 @@ function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, w: nu
 
 export function PhotoDialog({onClose}: { onClose: () => void }) {
   const [initial] = useState(initialPhotoBackground);
+  const [tab, setTab] = useState<PhotoTab>('background');
   const [bgMode, setBgMode] = useState<BgMode>(initial.mode);
   const [bgColor, setBgColor] = useState(initial.color);
   const [bgPath, setBgPath] = useState(initial.path);
+  const [poseIndex, setPoseIndex] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
   const charRef = useRef<Character | null>(null);
@@ -98,6 +102,20 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
       charRef.current = null;
     };
   }, []);
+
+  // Re-pose the throwaway photo character only — the real character on stage is never touched.
+  const applyPhotoPose = (index: number) => {
+    const pose = POSES[index];
+    const character = charRef.current;
+    if (!pose || !character) return;
+    try {
+      CharacterSetActivePose(character, pose.name);
+      CharacterRefresh(character, false, false);
+      setPoseIndex(index);
+    } catch (error) {
+      console.warn('🐈‍⬛ [AEE] Failed to apply the photo pose', error);
+    }
+  };
 
   // Load the chosen wardrobe background image for compositing.
   useEffect(() => {
@@ -201,7 +219,14 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
     onClick={() => setBgMode(mode)}
   >{label}</Button>;
 
-  return <Dialog onDismiss={onClose} className="w-[720px] p-8">
+  const tabButton = (value: PhotoTab, label: string) => <Button
+    density="stage"
+    className="h-11 flex-1"
+    selected={tab === value}
+    onClick={() => setTab(value)}
+  >{label}</Button>;
+
+  return <Dialog onDismiss={onClose} className="h-[660px] w-[860px] p-8">
     <header className="mb-5 flex shrink-0 items-center justify-between">
       <h1 className="text-[32px] text-[#f0eee4]">{t('wardrobe-photo-title')}</h1>
       <Button density="stage"
@@ -212,7 +237,7 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
       />
     </header>
 
-    <div className="flex gap-6">
+    <div className="flex min-h-0 flex-1 gap-6">
       <div
         className="shrink-0 self-start overflow-hidden rounded-lg bg-[repeating-conic-gradient(#3a3a44_0%_25%,#2a2a32_0%_50%)] bg-size-[16px_16px]"
       >
@@ -224,9 +249,13 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <section className="flex flex-col gap-2">
-          <h3 className="text-[22px] text-white">{t('wardrobe-photo-bg')}</h3>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+        <div className="flex shrink-0 gap-2">
+          {tabButton('background', t('wardrobe-photo-bg'))}
+          {tabButton('pose', t('wardrobe-photo-pose'))}
+        </div>
+
+        {tab === 'background' ? <section className="flex shrink-0 flex-col gap-2">
           <div className="flex gap-2">
             {modeButton('color', t('wardrobe-photo-bg-solid'))}
             {modeButton('transparent', t('wardrobe-photo-bg-transparent'))}
@@ -245,9 +274,33 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
               {option.label}
             </option>)}
           </Select> : null}
-        </section>
+        </section> : null}
 
-        <div className={cn('mt-auto flex flex-col gap-2', busy && 'pointer-events-none opacity-60')}>
+        {tab === 'pose' ? <section className="flex min-h-0 flex-1 flex-col gap-2">
+          <div className="aee-scroll grid min-h-0 flex-1 auto-rows-min grid-cols-4 content-start gap-2 overflow-y-auto pr-1">
+            {POSES.map((pose, index) => <button
+              key={pose.name}
+              type="button"
+              title={t(pose.labelKey)}
+              onClick={() => applyPhotoPose(index)}
+              className={cn(
+                'flex flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border p-1.5 transition',
+                poseIndex === index
+                  ? 'border-(--aee-accent) bg-(--aee-accent-22)'
+                  : 'border-white/10 bg-white/5 hover:border-(--aee-accent) hover:bg-(--aee-accent-22)',
+              )}
+            >
+              <img className="block h-14 w-14 object-contain" src={getPoseIconUrl(pose.name)} alt={pose.name}
+                   onError={event => {
+                     (event.currentTarget as HTMLImageElement).style.display = 'none';
+                   }}/>
+              <span
+                className="w-full overflow-hidden text-ellipsis whitespace-nowrap px-0.5 text-center text-[12px] text-zinc-300">{t(pose.labelKey)}</span>
+            </button>)}
+          </div>
+        </section> : null}
+
+        <div className={cn('mt-auto flex shrink-0 flex-col gap-2', busy && 'pointer-events-none opacity-60')}>
           <Button density="stage" className="h-12" onClick={() => void saveImage()}
                   icon={<Download className="h-5 w-5"/>}>{t('wardrobe-photo-save-image')}</Button>
           <Button density="stage" className="h-12" onClick={() => void copyImage()}

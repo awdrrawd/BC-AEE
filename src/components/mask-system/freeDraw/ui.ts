@@ -1,0 +1,251 @@
+// Toolbar rendering + click routing for the free-draw editor screen: the
+// live board preview, row 1/2 icon buttons, stroke + mask-priority sliders,
+// the shape picker, and the transform panel.
+
+import type {Box} from './types';
+import {
+  ICON_W, ICON_H, TOOLBAR_Y1, TOOLBAR_Y2,
+  STROKE_Y, STROKE_H, STROKE_LABEL_X, STROKE_LABEL_W, STROKE_BAR_X, STROKE_BAR_W,
+  STROKE_FRAME_X, STROKE_FRAME_W, STROKE_MIN, STROKE_MAX,
+  MPRIO_Y, MPRIO_H, MPRIO_FRAME_X, MPRIO_FRAME_W, MPRIO_LABEL_X, MPRIO_LABEL_W,
+  MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_MIN, MPRIO_MAX,
+  PICKER_X, PICKER_Y, PICKER_W,
+  MOVE_STEP, ROTATE_STEP, SCALE_STEP,
+  EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, MASK_X,
+  TOOL_COLOR_X, TOOL_ERASER_X, TOOL_BUCKET_X, TOOL_TEXT_X, TOOL_SHAPE_X, TOOL_FILL_X, TOOL_PEN_X, TOOL_SELECT_X,
+  DRAW_GROUPS, BOARD_W, BOARD_H,
+} from '../constants';
+import {SHAPE_TOOLS, SHAPE_EMOJI} from '../shapes';
+import {ICON} from '../icons';
+import {openColorPicker as openAeeColorPicker} from '@/controllers/uiController';
+import {A, undo, clearBoard} from './slots';
+import {State} from './editorState';
+import {getBoardScreenRect, getPickerLayout, getPickerItemRect, updateStrokeFromPointerX, colorForFill, contrastColor, inBoardArea} from './geometry';
+import {toggleSlotMask} from './maskToggle';
+import {applyTransform, flipCanvas, moveBy} from './transform';
+import {applyToCharacter, leaveEditor, cancelEditingAndExit} from './lifecycle';
+import {commitSelection} from './selection';
+import {afterEdit} from './editing';
+
+// Transform panel layout (from the user's DDT layout): four mode headers with
+// grouped controls beneath each.
+const E2 = {
+  moveHdr: {x: 1485, y: 290, w: 90, h: 90}, rotHdr: {x: 1585, y: 290, w: 90, h: 90},
+  scaleHdr: {x: 1685, y: 290, w: 90, h: 90}, mirrorHdr: {x: 1785, y: 290, w: 90, h: 90},
+  up: {x: 1485, y: 390, w: 40, h: 40}, down: {x: 1535, y: 390, w: 40, h: 40},
+  left: {x: 1485, y: 440, w: 40, h: 40}, right: {x: 1535, y: 440, w: 40, h: 40},
+  rotL: {x: 1585, y: 390, w: 40, h: 40}, rotR: {x: 1635, y: 390, w: 40, h: 40},
+  scUp: {x: 1685, y: 390, w: 40, h: 40}, scDn: {x: 1735, y: 390, w: 40, h: 40},
+  fH: {x: 1785, y: 390, w: 40, h: 40}, fV: {x: 1835, y: 390, w: 40, h: 40},
+} as const;
+const drawBox = (b: Box, text: string, bg: string, hover?: string) => DrawButton(b.x, b.y, b.w, b.h, text, bg, undefined, hover);
+const hitBox = (b: Box) => MouseIn(b.x, b.y, b.w, b.h);
+
+// AEE's own colour picker (live-updates State.color).
+function openColorPicker() {
+  openAeeColorPicker(State.color, (hex) => { if (hex) State.color = hex; });
+}
+
+const ICON_INSET = 15;
+function drawIconBtn(x: number, y: number, w: number, h: number, bgColor: string, iconSrc: string, hover: string) {
+  DrawButton(x, y, w, h, '', bgColor, undefined, hover);
+  if (iconSrc) DrawImageResize(iconSrc, x + ICON_INSET, y + ICON_INSET, w - ICON_INSET * 2, h - ICON_INSET * 2);
+}
+
+// Draws whatever the selection tool is currently doing on top of the live
+// board preview. Never touches A.ctx — purely a screen-space overlay, so it's
+// as cheap as the existing live-preview drawImage() above it.
+function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}) {
+  const toScreen = (b: Box) => ({
+    x: rect.x + b.x * (rect.w / BOARD_W), y: rect.y + b.y * (rect.h / BOARD_H),
+    w: b.w * (rect.w / BOARD_W), h: b.h * (rect.h / BOARD_H),
+  });
+  // Render the floating piece both while it's just sitting there ('floating')
+  // and while it's actively being dragged ('dragMove') — these used to be
+  // treated as the same visual state, but dragMove is set the instant a drag
+  // starts and only flips back to 'floating' on pointerup. Since this function
+  // only checked for 'floating', the piece was never drawn during the actual
+  // drag — the cut-out region just sat empty (showing whatever's behind it)
+  // until release, which looked like the piece fading out mid-drag and
+  // snapping back solid on release.
+  if ((State.selPhase === 'floating' || State.selPhase === 'dragMove') && State.selBuffer && State.selRect) {
+    const b: Box = {...State.selRect, x: State.selRect.x + State.selOffsetX, y: State.selRect.y + State.selOffsetY};
+    const s = toScreen(b);
+    // Defensive: force full opacity/normal blending regardless of whatever
+    // state the shared MainCanvas context was left in by other draw calls.
+    MainCanvas.save();
+    MainCanvas.globalAlpha = 1;
+    MainCanvas.globalCompositeOperation = 'source-over';
+    MainCanvas.drawImage(State.selBuffer, s.x, s.y, s.w, s.h);
+    MainCanvas.setLineDash([6, 4]);
+    MainCanvas.strokeStyle = '#00BFFF';
+    MainCanvas.lineWidth = 2;
+    MainCanvas.strokeRect(s.x, s.y, s.w, s.h);
+    MainCanvas.restore();
+  } else if (State.selPhase === 'dragSelect' && State.selPreviewRect) {
+    const s = toScreen(State.selPreviewRect);
+    MainCanvas.save();
+    MainCanvas.setLineDash([6, 4]);
+    MainCanvas.strokeStyle = '#00BFFF';
+    MainCanvas.lineWidth = 2;
+    MainCanvas.strokeRect(s.x, s.y, s.w, s.h);
+    MainCanvas.restore();
+  }
+}
+
+export function slotDraw() {
+  if (!A) return;
+  const active = A;
+  const rect = getBoardScreenRect();
+  MainCanvas.save();
+  MainCanvas.globalAlpha = 1;
+  MainCanvas.globalCompositeOperation = 'source-over';
+  MainCanvas.drawImage(active.canvas, rect.x, rect.y, rect.w, rect.h); // live preview
+  MainCanvas.restore();
+  drawSelectionOverlay(rect);
+
+  // Row 1
+  DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', '遮罩：把這張圖當形狀，隱藏身體以外的東西（再按一次切回純繪製）');
+  drawIconBtn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.undo, '復原上一筆');
+  DrawButton(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Trash.png', '清除整張畫布');
+  DrawButton(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Cancel.png', '取消（不保留這次所有編輯並退出）');
+
+  // Row 2
+  drawIconBtn(TOOL_PEN_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'pen' ? 'cyan' : 'White', ICON.pen, '畫筆');
+  drawIconBtn(TOOL_FILL_X, TOOLBAR_Y2, ICON_W, ICON_H, State.filled ? 'cyan' : 'White', State.filled ? ICON.fillSolid : ICON.fillOutline, State.filled ? '填滿：實心（點一下切回線框）' : '填滿：線框（點一下切成實心）');
+  DrawButton(TOOL_SHAPE_X, TOOLBAR_Y2, ICON_W, ICON_H, (SHAPE_EMOJI[State.tool] || '△'), State.picker === 'shape' || (SHAPE_TOOLS as readonly string[]).includes(State.tool) ? 'cyan' : 'White', undefined, '圖形（點擊展開，選擇要畫的形狀）');
+  drawIconBtn(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'text' ? 'cyan' : 'White', ICON.text, '文字（點畫布輸入文字）');
+  drawIconBtn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'bucket' ? 'cyan' : 'White', ICON.bucket, '填色（油漆桶）');
+  drawIconBtn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'eraser' ? 'cyan' : 'White', ICON.eraser, '橡皮擦');
+  drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color), ICON.color, '顏色（點擊開啟 AEE 取色器）');
+  drawIconBtn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'select' ? 'cyan' : 'White', ICON.select, '選取並拖移');
+
+  // Row 3: stroke slider
+  DrawRect(STROKE_FRAME_X, STROKE_Y, STROKE_FRAME_W, STROKE_H, 'White');
+  DrawEmptyRect(STROKE_FRAME_X, STROKE_Y, STROKE_FRAME_W, STROKE_H, 'Black', 2);
+  DrawText('筆觸', STROKE_LABEL_X + STROKE_LABEL_W / 2, STROKE_Y + STROKE_H / 2, 'black');
+  DrawButton(STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H, '', 'White', undefined, '拖曳／點擊拉桿設定筆觸粗細');
+  const pct = (State.thickness - STROKE_MIN) / (STROKE_MAX - STROKE_MIN);
+  MainCanvas.fillStyle = 'black';
+  MainCanvas.fillRect(STROKE_BAR_X + 4, STROKE_Y + 4, (STROKE_BAR_W - 8) * pct, STROKE_H - 8);
+  DrawText(`${State.thickness}px`, STROKE_BAR_X + STROKE_BAR_W / 2, STROKE_Y + STROKE_H / 2, 'black');
+
+  if (State.picker === 'shape') {
+    const layout = getPickerLayout(SHAPE_TOOLS.length);
+    DrawRect(PICKER_X, PICKER_Y, PICKER_W, layout.height, 'White');
+    DrawEmptyRect(PICKER_X, PICKER_Y, PICKER_W, layout.height, 'Black', 2);
+    SHAPE_TOOLS.forEach((item, idx) => {
+      const r2 = getPickerItemRect(idx);
+      DrawButton(r2.x, r2.y, r2.w, r2.h, SHAPE_EMOJI[item] || '❖', State.tool === item ? 'cyan' : 'White', undefined, item);
+    });
+  } else {
+    // Transform panel: mode headers + grouped controls.
+    drawBox(E2.moveHdr, '位移', State.tool === 'move' ? 'cyan' : 'White', '位移：點一下後可在左側直接拖曳整張圖；或用下方方向鍵');
+    drawBox(E2.rotHdr, '旋轉', 'White');
+    drawBox(E2.scaleHdr, '縮放', 'White');
+    drawBox(E2.mirrorHdr, '鏡射', 'White');
+    drawBox(E2.up, '上', 'White'); drawBox(E2.down, '下', 'White');
+    drawBox(E2.left, '左', 'White'); drawBox(E2.right, '右', 'White');
+    drawBox(E2.rotL, '↺', 'White'); drawBox(E2.rotR, '↻', 'White');
+    drawBox(E2.scUp, '＋', 'White'); drawBox(E2.scDn, '－', 'White');
+    drawBox(E2.fH, '水平', 'White'); drawBox(E2.fV, '垂直', 'White');
+  }
+
+  // Layer-order slider (shown in both draw & mask modes; hidden only while the
+  // shape picker is open). The value is remembered on the drawing and drives the
+  // mask's OverridePriority when masking is on.
+  if (State.picker !== 'shape') {
+    DrawRect(MPRIO_FRAME_X, MPRIO_Y, MPRIO_FRAME_W, MPRIO_H, 'White');
+    DrawEmptyRect(MPRIO_FRAME_X, MPRIO_Y, MPRIO_FRAME_W, MPRIO_H, 'Black', 2);
+    DrawText('順位', MPRIO_LABEL_X + MPRIO_LABEL_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
+    DrawButton(MPRIO_BAR_X, MPRIO_Y, MPRIO_BAR_W, MPRIO_H, '', 'White', undefined, '拖曳調整順位；數字越高，開遮罩時能蓋住越多（優先權比它低的衣物才會被隱藏）');
+    const ppct = (active.maskPriority - MPRIO_MIN) / (MPRIO_MAX - MPRIO_MIN);
+    MainCanvas.fillStyle = '#4CAF50';
+    MainCanvas.fillRect(MPRIO_BAR_X + 4, MPRIO_Y + 4, (MPRIO_BAR_W - 8) * ppct, MPRIO_H - 8);
+    DrawText(`${active.maskPriority}`, MPRIO_BAR_X + MPRIO_BAR_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
+  }
+
+  if (State.draggingStroke) {
+    const screenR = State.thickness * (rect.w / BOARD_W) / 2;
+    const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+    MainCanvas.save();
+    MainCanvas.beginPath();
+    MainCanvas.arc(cx, cy, Math.max(screenR, 1), 0, 2 * Math.PI);
+    MainCanvas.fillStyle = colorForFill(State.color);
+    MainCanvas.globalAlpha = 0.85;
+    MainCanvas.fill();
+    MainCanvas.globalAlpha = 1;
+    MainCanvas.lineWidth = 2;
+    MainCanvas.strokeStyle = contrastColor(State.color);
+    MainCanvas.stroke();
+    MainCanvas.restore();
+    DrawText(`${State.thickness}px`, cx, cy - screenR - 22, contrastColor(State.color) === 'white' ? 'black' : 'white');
+  }
+
+  DrawButton(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Accept.png', '套用並退出（保留這次所有編輯）');
+  DrawButton(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Exit.png', '不儲存，直接退出');
+}
+
+export function slotClick() {
+  if (!A) return;
+  // BC fires this Click callback for every click on the item screen — including
+  // the exact same click that just finished a box-select drag (pointerup already
+  // ran onSelectPointerUp() and set selPhase to 'floating'). Committing here
+  // unconditionally would immediately bake that floating piece back in place
+  // before the user ever gets a chance to drag it, making the select tool look
+  // like it does nothing after the marquee. Clicks inside the board are already
+  // fully handled by the pointerdown/up handlers (pick up / drag / commit on
+  // out-of-bounds click), so only force a commit here for clicks that land on
+  // the toolbar/side-panel chrome outside the board — e.g. so pressing Undo or
+  // switching tools doesn't act on a stale floating piece.
+  if (!inBoardArea(MouseX, MouseY)) commitSelection();
+  if (MouseIn(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { applyToCharacter(); leaveEditor(); return; }
+  if (MouseIn(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { cancelEditingAndExit(); return; }
+
+  if (MouseIn(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H)) { toggleSlotMask(); return; }
+  if (MouseIn(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H)) { cancelEditingAndExit(); return; }
+  if (MouseIn(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H)) { clearBoard(); afterEdit(); return; }
+  if (MouseIn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H)) { undo(); afterEdit(); return; }
+
+  if (State.picker === 'shape') {
+    for (let i = 0; i < SHAPE_TOOLS.length; i++) {
+      const r = getPickerItemRect(i);
+      if (MouseIn(r.x, r.y, r.w, r.h)) { State.tool = SHAPE_TOOLS[i]; State.picker = null; return; }
+    }
+  }
+
+  if (MouseIn(TOOL_PEN_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'pen'; State.picker = null; return; }
+  if (MouseIn(TOOL_FILL_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.filled = !State.filled; return; }
+  if (MouseIn(TOOL_SHAPE_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.picker = State.picker === 'shape' ? null : 'shape'; return; }
+  if (MouseIn(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'text'; State.picker = null; return; }
+  if (MouseIn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'bucket'; State.picker = null; return; }
+  if (MouseIn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'eraser'; State.picker = null; return; }
+  if (MouseIn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H)) { openColorPicker(); return; }
+  if (MouseIn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H)) { State.tool = 'select'; State.picker = null; return; }
+
+  if (MouseIn(STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H)) {
+    if (typeof MouseX === 'number') updateStrokeFromPointerX(MouseX);
+    else State.thickness = State.thickness >= STROKE_MAX ? STROKE_MIN : State.thickness + 2;
+    return;
+  }
+
+  if (State.picker !== 'shape') {
+    if (hitBox(E2.moveHdr)) { State.tool = State.tool === 'move' ? 'pen' : 'move'; return; } // toggle drag-move
+    if (hitBox(E2.up)) { moveBy(0, -MOVE_STEP); return; }
+    if (hitBox(E2.down)) { moveBy(0, MOVE_STEP); return; }
+    if (hitBox(E2.left)) { moveBy(-MOVE_STEP, 0); return; }
+    if (hitBox(E2.right)) { moveBy(MOVE_STEP, 0); return; }
+    if (hitBox(E2.rotL)) { applyTransform(-ROTATE_STEP, 0); return; }
+    if (hitBox(E2.rotR)) { applyTransform(ROTATE_STEP, 0); return; }
+    if (hitBox(E2.scUp)) { applyTransform(0, SCALE_STEP); return; }
+    if (hitBox(E2.scDn)) { applyTransform(0, -SCALE_STEP); return; }
+    if (hitBox(E2.fH)) { flipCanvas('x'); return; }
+    if (hitBox(E2.fV)) { flipCanvas('y'); return; }
+  }
+}
+
+export function onKeyDown(evt: KeyboardEvent) {
+  if (evt.key === 'Escape' && DialogFocusItem?.Asset?.Group && DRAW_GROUPS.includes(DialogFocusItem.Asset.Group.Name)) {
+    leaveEditor();
+  }
+}

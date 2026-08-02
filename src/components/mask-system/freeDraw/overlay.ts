@@ -27,7 +27,7 @@ slots.forEach((slot) => {
     const compressed = p?.[PROP_KEY] as string | undefined;
     if (!compressed) return TRANSPARENT_DATAURL;
     const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
-    return getMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
+    return getOrBuildMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
   };
 });
 
@@ -86,6 +86,24 @@ function ensureMaskComposite(compressed: string, offX: number, offY: number, img
   c.getContext('2d')!.drawImage(img, offX, offY, MASK_IMG_W, MASK_IMG_H);
   maskCompositeCache.set(key, c.toDataURL('image/png'));
   return true;
+}
+
+// Mask shape for the provider: the cached composite, or — if it's missing
+// because the drawing hasn't been built by renderOverlay yet OR was evicted from
+// the LRU in a busy room — build it synchronously right here as long as the
+// image has decoded. Previously the provider returned TRANSPARENT whenever the
+// composite wasn't cached, so a remote drawing whose composite hadn't been built
+// (or got evicted) rendered with NO mask even though the drawing itself showed —
+// the "可以畫圖卻無法遮罩 / 看別人不穩定" symptom. On the first decode the image
+// isn't ready yet (returns null → transparent this frame); img.onload then fires
+// refreshMaskConsumers to rebuild, so it appears on the next build.
+function getOrBuildMaskComposite(compressed: string, offX: number, offY: number): string | null {
+  const cached = getMaskComposite(compressed, offX, offY);
+  if (cached) return cached;
+  const img = getOverlayImage(compressed);
+  if (!img.complete || !img.naturalWidth) return null; // still decoding — onload will rebuild
+  ensureMaskComposite(compressed, offX, offY, img);
+  return getMaskComposite(compressed, offX, offY);
 }
 
 // DynamicAfterDraw callback — BC calls this during the vis companion layer's

@@ -9,8 +9,15 @@ import {
 import {maskLabel} from '../translations';
 import {slots} from './slots';
 
+// The full static target list — NOT filtered by what's currently loaded. BC uses
+// TextureMask.Groups purely as Map keys (CommonDraw.js): a name that doesn't
+// resolve to a real group is a harmless no-op, and a group that loads LATER
+// (e.g. ECHO/Luzi clothing) then starts being masked automatically. Filtering
+// this at registration time froze the targets to whatever happened to be loaded
+// in that instant, which is why free-draw masking was unstable ("可以畫圖卻無法
+// 遮罩") while the glove — using static scope lists — stayed stable.
 function getMaskTargetGroups(): string[] {
-  return MASK_TARGET_GROUPS.filter(n => !AssetGroupMap || AssetGroupMap.has(n));
+  return [...MASK_TARGET_GROUPS] as unknown as string[];
 }
 
 // True once the asset actually exists in its group (survives BC asset reloads:

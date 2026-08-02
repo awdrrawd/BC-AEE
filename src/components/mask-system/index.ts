@@ -3,15 +3,16 @@
 // into AEE's hook installer (see src/hooks/index.ts).
 
 import bcAeeModSdk from '@/modsdk';
-import {installImagePatch} from './masking';
+import {installImagePatch, bustMaskTexture} from './masking';
 import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
 import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames} from './freeDraw';
 import {installMaskTranslations} from './translations';
-import {SG_MASK_GROUP, DRAW_GROUPS} from './constants';
+import {SG_MASK_GROUP, SG_ASSET, DRAW_GROUPS, DRAW_ASSET} from './constants';
 
 let started = false;
 let drawHooked = false;
 let sanitizeHooked = false;
+let assetReloadHooked = false;
 let callbacksInstalled = false;
 
 // Our group names — used to spot orphaned items (see healOrphans).
@@ -21,6 +22,17 @@ const OUR_GROUP_NAMES = new Set<string>([
   ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Mask'),
   ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Vis'),
 ]);
+
+// Every [group, asset] pair we register — used to purge stale AssetMap/
+// AssetGroupMap entries after a BC asset reload (see reRegisterAfterReload).
+function ourAssetPairs(): [string, string][] {
+  const pairs: [string, string][] = [[SG_MASK_GROUP as unknown as string, SG_ASSET]];
+  for (const g of DRAW_GROUPS) {
+    const gn = g as unknown as string;
+    pairs.push([gn, DRAW_ASSET], [gn + 'Mask', gn + 'MaskA'], [gn + 'Vis', gn + 'VisA']);
+  }
+  return pairs;
+}
 
 // If BC rebuilt its asset list, a worn companion item can still point at OUR
 // asset object which BC dropped from the global `Asset[]` (but kept in AssetMap /
@@ -48,6 +60,40 @@ function tryHookSanitize(): boolean {
     return next(args);
   });
   sanitizeHooked = true;
+  return true;
+}
+
+// ECHO-style survival of a BC asset reload. AssetLoadAll() does `Asset = [];
+// AssetGroup = []` and rebuilds ONLY BC's own assets from AssetFemale3DCG — our
+// runtime groups vanish from the global arrays (so their wardrobe buttons
+// disappear) yet linger in AssetMap/AssetGroupMap. Because registration's
+// existence guards read those maps, they'd wrongly early-return and never re-add
+// our groups. So on every reload: purge our stale map entries, then re-register
+// from scratch → BC's fresh arrays contain our groups again and the menu is
+// restored. (Worn items still point at the pre-reload asset objects; the
+// CommonDrawAppearanceBuild heal keeps those rendering + crash-safe.)
+function reRegisterAfterReload() {
+  try {
+    for (const name of OUR_GROUP_NAMES) AssetGroupMap.delete(name as unknown as AssetGroupName);
+    for (const [g, a] of ourAssetPairs()) AssetMap.delete(`${g}/${a}` as `${AssetGroupName}/${string}`);
+  } catch { /* ignore */ }
+  try {
+    registerAll();
+    bustMaskTexture();
+  } catch (e) {
+    console.error('[AEE Mask] 資產重載後重新註冊失敗：', e);
+  }
+}
+
+function tryHookAssetReload(): boolean {
+  if (assetReloadHooked) return true;
+  if (typeof AssetLoadAll !== 'function') return false;
+  bcAeeModSdk.hookFunction('AssetLoadAll', 1, (args, next) => {
+    const ret = next(args); // let BC finish rebuilding first
+    reRegisterAfterReload();
+    return ret;
+  });
+  assetReloadHooked = true;
   return true;
 }
 
@@ -102,12 +148,13 @@ export function installMaskSystem() {
     const registered = registerAll();
     tryHookDrawCharacter();
     tryHookSanitize();
+    tryHookAssetReload();
 
     if (patch && registered && !callbacksInstalled) {
       callbacksInstalled = true;
       installFreeDrawCallbacks();
     }
-    if (patch && registered && drawHooked && callbacksInstalled) {
+    if (patch && registered && drawHooked && callbacksInstalled && assetReloadHooked) {
       clearInterval(timer);
       // Heartbeat: if BC reloads its assets our runtime groups vanish while worn
       // items still reference the old (orphaned) asset objects — which crashes

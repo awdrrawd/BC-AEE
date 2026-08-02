@@ -15,6 +15,10 @@ interface HoverInfo {
 
 export function EyedropperOverlay({onPick, onCancel}: { onPick: (hex: string) => void; onCancel: () => void }) {
   const [hover, setHover] = useState<HoverInfo | null>(null);
+  // Set when getImageData throws a SecurityError: the canvas was tainted by a
+  // cross-origin image drawn before our CORS-hardening hook could prevent it
+  // (installCanvasCorsHooks). Surface a reason instead of a silent dead crosshair.
+  const [blocked, setBlocked] = useState(false);
   const loupeRef = useRef<HTMLCanvasElement>(null);
 
   const onCancelRef = useRef(onCancel);
@@ -74,7 +78,10 @@ export function EyedropperOverlay({onPick, onCancel}: { onPick: (hex: string) =>
     let region: ImageData;
     try {
       region = ctx.getImageData(px - half, py - half, SAMPLE, SAMPLE);
-    } catch {
+    } catch (e) {
+      // SecurityError == tainted canvas (cross-origin image). Anything else is a
+      // transient read failure we can just skip this frame.
+      if (e instanceof DOMException && e.name === 'SecurityError') setBlocked(true);
       return setHover(null);
     }
     const center = (half * region.width + half) * 4;
@@ -128,6 +135,12 @@ export function EyedropperOverlay({onPick, onCancel}: { onPick: (hex: string) =>
       onCancel();
     }}
   >
+    {blocked && !hover ? <div
+      className="pointer-events-none fixed left-1/2 top-4 z-1000051 max-w-[90vw] -translate-x-1/2 rounded-md border-2 border-zinc-100 bg-black/85 px-3 py-2 text-center text-sm font-bold text-white shadow-2xl"
+    >
+      無法取色：畫布已被跨來源圖片污染，請重新整理頁面後再試
+      <div className="mt-0.5 text-xs font-normal opacity-80">Can't pick: the canvas is tainted by a cross-origin image — reload the page and retry.</div>
+    </div> : null}
     <div
       className="pointer-events-none fixed z-1000051 flex flex-col items-center"
       style={{left: loupeLeft, top: loupeTop, visibility: hover ? 'visible' : 'hidden'}}

@@ -302,21 +302,52 @@ function hexToRGBA(hex: string): [number, number, number, number] {
   return [parseInt(h.substring(0, 2), 16) || 0, parseInt(h.substring(2, 4), 16) || 0, parseInt(h.substring(4, 6), 16) || 0, 255];
 }
 
+// Premultiplied-alpha read: two near-transparent pixels should compare as
+// "the same" no matter what leftover RGB they happen to carry (very common
+// after erasing, or on anti-aliased stroke edges) — comparing raw
+// un-premultiplied RGBA let stray colour in transparent pixels register as a
+// "different colour" and stop the flood early, which is what made fills look
+// patchy/incomplete near stroke edges.
+function premul(data: Uint8ClampedArray, i: number): [number, number, number, number] {
+  const a = data[i + 3];
+  const k = a / 255;
+  return [data[i] * k, data[i + 1] * k, data[i + 2] * k, a];
+}
+
 // Paint bucket: fill the contiguous, similarly-coloured region at (sx,sy).
+//
+// Two passes:
+//  1. The actual flood fill, using premultiplied-colour tolerance matching —
+//     this decides how far the fill spreads, and no longer trips over stray
+//     RGB baked into transparent pixels.
+//  2. A 1px "rim" pass immediately around the filled region: pixels that sit
+//     on a stroke's anti-aliased edge (partway between the target colour and
+//     the line colour, so just outside the flood's tolerance) get the fill
+//     colour blended in proportionally to how close they still are to the
+//     target, instead of being left as a hard, jagged, half-filled border.
+//     This never extends the flood itself — it only touches pixels already
+//     touching a filled pixel — so it can't leak further through gaps in a
+//     drawing; it just smooths the edge the flood already reached.
 export function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number, hex: string) {
   sx = Math.floor(sx); sy = Math.floor(sy);
   if (sx < 0 || sy < 0 || sx >= BOARD_W || sy >= BOARD_H) return;
   const img = ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   const data = img.data;
+  const orig = data.slice(); // snapshot for the rim pass' blend-weight calc below
   const idx = (x: number, y: number) => (y * BOARD_W + x) * 4;
   const si = idx(sx, sy);
-  const tr = data[si], tg = data[si + 1], tb = data[si + 2], ta = data[si + 3];
+  const [tr, tg, tb, ta] = premul(orig, si);
   const [fr, fg, fb, fa] = hexToRGBA(hex);
-  if (tr === fr && tg === fg && tb === fb && ta === fa) return;
+  if (data[si] === fr && data[si + 1] === fg && data[si + 2] === fb && data[si + 3] === fa) return;
+
   const tol = 32;
-  const match = (i: number) => Math.abs(data[i] - tr) <= tol && Math.abs(data[i + 1] - tg) <= tol &&
-    Math.abs(data[i + 2] - tb) <= tol && Math.abs(data[i + 3] - ta) <= tol;
+  const dist = (i: number) => {
+    const [r, g, b, a] = premul(orig, i);
+    return Math.max(Math.abs(r - tr), Math.abs(g - tg), Math.abs(b - tb), Math.abs(a - ta));
+  };
+
   const visited = new Uint8Array(BOARD_W * BOARD_H);
+  const filled = new Uint8Array(BOARD_W * BOARD_H);
   const stack: number[] = [sx, sy];
   while (stack.length) {
     const y = stack.pop()!, x = stack.pop()!;
@@ -324,12 +355,39 @@ export function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number,
     if (visited[p]) continue;
     visited[p] = 1;
     const i = p * 4;
-    if (!match(i)) continue;
+    if (dist(i) > tol) continue;
     data[i] = fr; data[i + 1] = fg; data[i + 2] = fb; data[i + 3] = fa;
+    filled[p] = 1;
     if (x > 0) stack.push(x - 1, y);
     if (x < BOARD_W - 1) stack.push(x + 1, y);
     if (y > 0) stack.push(x, y - 1);
     if (y < BOARD_H - 1) stack.push(x, y + 1);
   }
+
+  // Rim pass: blend the fill colour into unfilled pixels that border a
+  // filled one, weighted by how close they are to the target colour (1 right
+  // at the flood's tolerance cutoff, fading to 0 by rimTol). Pixels beyond
+  // rimTol are left untouched — they're genuinely different content (e.g. the
+  // stroke's own solid colour), not just an anti-aliased fringe.
+  const rimTol = tol * 3;
+  for (let y = 0; y < BOARD_H; y++) {
+    for (let x = 0; x < BOARD_W; x++) {
+      const p = y * BOARD_W + x;
+      if (filled[p]) continue;
+      const touchesFilled =
+        (x > 0 && filled[p - 1]) || (x < BOARD_W - 1 && filled[p + 1]) ||
+        (y > 0 && filled[p - BOARD_W]) || (y < BOARD_H - 1 && filled[p + BOARD_W]);
+      if (!touchesFilled) continue;
+      const i = p * 4;
+      const d = dist(i);
+      if (d > rimTol) continue;
+      const w = Math.max(0, Math.min(1, 1 - (d - tol) / (rimTol - tol)));
+      data[i] = orig[i] + (fr - orig[i]) * w;
+      data[i + 1] = orig[i + 1] + (fg - orig[i + 1]) * w;
+      data[i + 2] = orig[i + 2] + (fb - orig[i + 2]) * w;
+      data[i + 3] = orig[i + 3] + (fa - orig[i + 3]) * w;
+    }
+  }
+
   ctx.putImageData(img, 0, 0);
 }

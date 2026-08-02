@@ -105,48 +105,58 @@ function selectedOption(): SGOption | null {
 
 export function registerSingleGlove(): boolean {
   if (typeof AssetGroupGet !== 'function' || typeof AssetGroupAdd !== 'function') return false;
-  if (AssetGroupGet(FAMILY, SG_MASK_GROUP)) return true;
+  // Guard on the ASSET, not the group. Guarding on the group meant that if
+  // AssetGroupAdd succeeded but the later AssetAdd failed (or a reload wiped the
+  // asset but left the group in the map), the group existed with no usable item
+  // and was NEVER retried → single glove permanently broken. Also reuse an
+  // existing group object (?? AssetGroupAdd) so a retry can't push a duplicate.
+  if (AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET)) return true;
 
-  const glovesGroup = AssetGroupGet(FAMILY, 'Gloves');
-  const group = AssetGroupAdd(FAMILY, {
-    Group: SG_MASK_GROUP,
-    Category: 'Appearance',
-    Clothing: true,
-    AllowNone: true,
-    Random: false,
-    Zone: glovesGroup ? glovesGroup.Zone : [],
-    ParentSize: glovesGroup ? glovesGroup.ParentSize : undefined,
-    Priority: SG_PRIORITY,
-  } as unknown as AssetGroupDefinition);
+  try {
+    const glovesGroup = AssetGroupGet(FAMILY, 'Gloves');
+    const group = AssetGroupGet(FAMILY, SG_MASK_GROUP) ?? AssetGroupAdd(FAMILY, {
+      Group: SG_MASK_GROUP,
+      Category: 'Appearance',
+      Clothing: true,
+      AllowNone: true,
+      Random: false,
+      Zone: glovesGroup ? glovesGroup.Zone : [],
+      ParentSize: glovesGroup ? glovesGroup.ParentSize : undefined,
+      Priority: SG_PRIORITY,
+    } as unknown as AssetGroupDefinition);
 
-  const mkLayer = (scope: SGScope) => ({
-    Name: SG_LAYER_KEY[scope],
-    HasImage: false,
-    BlendingMode: 'destination-out',
-    Priority: SG_PRIORITY,
-    TextureMask: {Groups: SG_SCOPES[scope].groups, ApplyToAbove: true},
-  });
+    const mkLayer = (scope: SGScope) => ({
+      Name: SG_LAYER_KEY[scope],
+      HasImage: false,
+      BlendingMode: 'destination-out',
+      Priority: SG_PRIORITY,
+      TextureMask: {Groups: SG_SCOPES[scope].groups, ApplyToAbove: true},
+    });
 
-  const groupDef = {Group: SG_MASK_GROUP, Category: 'Appearance', Clothing: true, AllowNone: true};
-  const extendedConfig = {
-    [SG_MASK_GROUP]: {
-      [SG_ASSET]: {
-        Archetype: 'typed',
-        // Each option carries SGSide/SGScope → written straight into item.Property.
-        Options: SG_OPTIONS.map(o => ({Name: o.Name, Property: {SGSide: o.side, SGScope: o.scope}})),
+    const groupDef = {Group: SG_MASK_GROUP, Category: 'Appearance', Clothing: true, AllowNone: true};
+    const extendedConfig = {
+      [SG_MASK_GROUP]: {
+        [SG_ASSET]: {
+          Archetype: 'typed',
+          // Each option carries SGSide/SGScope → written straight into item.Property.
+          Options: SG_OPTIONS.map(o => ({Name: o.Name, Property: {SGSide: o.side, SGScope: o.scope}})),
+        },
       },
-    },
-  };
+    };
 
-  AssetAdd(group, {
-    Name: SG_ASSET,
-    Description: '單手套（可選左右＋範圍）',
-    Extended: true,
-    Layer: [mkLayer('gloves'), mkLayer('luzi'), mkLayer('both')],
-  } as unknown as AssetDefinition, extendedConfig as unknown as ExtendedItemMainConfig, groupDef as unknown as AssetGroupDefinition);
+    AssetAdd(group, {
+      Name: SG_ASSET,
+      Description: '單手套（可選左右＋範圍）',
+      Extended: true,
+      Layer: [mkLayer('gloves'), mkLayer('luzi'), mkLayer('both')],
+    } as unknown as AssetDefinition, extendedConfig as unknown as ExtendedItemMainConfig, groupDef as unknown as AssetGroupDefinition);
+  } catch (e) {
+    console.error('[AEE Mask] 單手套註冊失敗：', e);
+    return false; // leave the guard false so the heartbeat retries
+  }
 
   applySingleGloveNames();
-  return true;
+  return !!AssetGet(FAMILY, SG_MASK_GROUP, SG_ASSET);
 }
 
 // Set the group/asset display label from the current UI language (BC reads

@@ -11,8 +11,10 @@ import {installFontHooks} from '@/hooks/fontHooks';
 import {initItemFonts} from '@/controllers/fontController';
 import {installMaskSystem} from '@/components/mask-system';
 import {installOnboarding} from '@/hooks/onboardingHooks';
+import {installCanvasCorsHooks} from '@/hooks/canvasCorsHooks';
 
 export function installAeeHooks() {
+  installCanvasCorsHooks();
   installSettingEffects();
   installRenderHooks();
   installAppearanceHooks();

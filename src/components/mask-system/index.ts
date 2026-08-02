@@ -13,6 +13,7 @@ let started = false;
 let drawHooked = false;
 let sanitizeHooked = false;
 let assetReloadHooked = false;
+let appearanceSyncHooked = false;
 let callbacksInstalled = false;
 
 // Our group names — used to spot orphaned items (see healOrphans).
@@ -97,6 +98,75 @@ function tryHookAssetReload(): boolean {
   return true;
 }
 
+// Preserve OUR custom items when a NON-AEE member changes a plugin user's
+// clothing. BC drops any bundled item whose asset the sender's client can't
+// resolve (ServerBundledItemToAppearanceItem → null), so a full-appearance push
+// from someone without AEE arrives missing our ItemCanvas*/SingleGloveFX items,
+// and ServerAppearanceLoadFromBundle rebuilds C.Appearance without them → the
+// drawings/masks vanish for everyone. (ECHO items survive because that editor
+// still has ECHO; only OUR groups get stripped.) Per-item edits go through a
+// different path that only touches the one group, so this is specific to full
+// pushes. Fix, entirely on the AEE user's own client: snapshot our items before
+// the bundle is applied and, when the update came from SOMEONE ELSE, re-add any
+// of our items the bundle dropped. Guarded to foreign sources so the wearer can
+// still remove their own drawings normally (self-sync keeps them anyway).
+const preserveRepushPending = new Set<number>();
+
+function preserveOurItemsAfterSync(C: Character, sourceMember: number, before: Item[]) {
+  const list = C.Appearance;
+  if (!Array.isArray(list)) return;
+  let restored = false;
+  for (const it of before) {
+    const gname = it?.Asset?.Group?.Name;
+    if (!gname) continue;
+    if (!list.some(x => x?.Asset?.Group?.Name === gname)) { list.push(it); restored = true; }
+  }
+  if (!restored) return;
+  // On the wearer, re-broadcast so the non-AEE editor's strip doesn't persist to
+  // the server / future joiners. The re-push carries the editor's legitimate
+  // change AND our restored items. Debounced per character; not a loop — a
+  // non-AEE receiver just re-drops them locally without re-pushing.
+  const isPlayer = typeof C.IsPlayer === 'function' ? C.IsPlayer() : false;
+  const mn = C.MemberNumber;
+  const inRoom = typeof ServerPlayerIsInChatRoom === 'function' && ServerPlayerIsInChatRoom();
+  if (isPlayer && inRoom && mn != null && sourceMember !== mn && !preserveRepushPending.has(mn)) {
+    preserveRepushPending.add(mn);
+    setTimeout(() => {
+      preserveRepushPending.delete(mn);
+      try { if (typeof ChatRoomCharacterUpdate === 'function') ChatRoomCharacterUpdate(C); } catch { /* ignore */ }
+    }, 600);
+  }
+}
+
+function tryHookAppearanceSync(): boolean {
+  if (appearanceSyncHooked) return true;
+  if (typeof ServerAppearanceLoadFromBundle !== 'function') return false;
+  bcAeeModSdk.hookFunction('ServerAppearanceLoadFromBundle', 5, (args, next) => {
+    const C = args[0] as Character | undefined;
+    const sourceMember = args[3] as number | null | undefined;
+    const appearanceFull = !!args[4];
+    let before: Item[] = [];
+    try {
+      // Only the non-full path rebuilds C.Appearance; only act on a FOREIGN source.
+      if (C && !appearanceFull && Array.isArray(C.Appearance)
+        && sourceMember != null && C.MemberNumber != null && sourceMember !== C.MemberNumber) {
+        before = C.Appearance.filter(it => {
+          const n = it?.Asset?.Group?.Name;
+          return typeof n === 'string' && OUR_GROUP_NAMES.has(n);
+        });
+      }
+    } catch { /* ignore */ }
+    const ret = next(args);
+    if (before.length && C && sourceMember != null) {
+      try { preserveOurItemsAfterSync(C, sourceMember, before); }
+      catch (e) { console.error('[AEE Mask] 外部換裝保留自訂物品失敗：', e); }
+    }
+    return ret;
+  });
+  appearanceSyncHooked = true;
+  return true;
+}
+
 function registerAll(): boolean {
   let ok = registerFreeDrawGroups();
   ok = registerSingleGlove() && ok;
@@ -149,12 +219,13 @@ export function installMaskSystem() {
     tryHookDrawCharacter();
     tryHookSanitize();
     tryHookAssetReload();
+    tryHookAppearanceSync();
 
     if (patch && registered && !callbacksInstalled) {
       callbacksInstalled = true;
       installFreeDrawCallbacks();
     }
-    if (patch && registered && drawHooked && callbacksInstalled && assetReloadHooked) {
+    if (patch && registered && drawHooked && callbacksInstalled && assetReloadHooked && appearanceSyncHooked) {
       clearInterval(timer);
       // Heartbeat: if BC reloads its assets our runtime groups vanish while worn
       // items still reference the old (orphaned) asset objects — which crashes

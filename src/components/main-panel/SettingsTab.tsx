@@ -19,6 +19,7 @@ export function SettingsTab() {
       <SettingRow label={t('settings-paste-import')} setting={settings.pasteImport}/>
       <SettingRow label={t('settings-enable-copy-paste')} setting={settings.enableCopyPaste}/>
       <SettingRow label={t('settings-parts-filter')} setting={settings.enablePartsFilter}/>
+      <SettingRow label={t('settings-hide-restraints')} setting={settings.enableHideRestraints}/>
       <SettingRow label={t('settings-bc-wheel-scroll')} setting={settings.bcWheelScroll}/>
       <SettingRow label={t('settings-hover-layer-highlight')} setting={settings.hoverHighlight}/>
       <SettingRow label={t('settings-hover-item-highlight')} setting={settings.hoverHighlightChar}/>

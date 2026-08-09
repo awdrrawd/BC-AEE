@@ -100,6 +100,7 @@ export const settings = {
   pasteImport: bool('pasteImport', false),
   bcWheelScroll: bool('bcWheelScroll', false),
   enablePartsFilter: bool('enablePartsFilter', false),
+  enableHideRestraints: bool('enableHideRestraints', false),
   enableWardrobe: bool('enableWardrobe', false),
   // Item (TextItem) font: 'default' = no override, otherwise a fonts.ts font id.
   itemFont: value('itemFont', 'default'),

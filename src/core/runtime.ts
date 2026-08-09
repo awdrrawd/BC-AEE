@@ -44,6 +44,7 @@ export interface Runtime {
   inAppearanceRun: boolean;
   currentDrawLayerItem: Item | null;
   currentDrawLayerIndex: number | null;
+  hideRestraints: boolean;
 }
 
 export const runtime: Runtime = {
@@ -87,4 +88,5 @@ export const runtime: Runtime = {
   inAppearanceRun: false,
   currentDrawLayerItem: null,
   currentDrawLayerIndex: null,
+  hideRestraints: false,
 };

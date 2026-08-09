@@ -13,6 +13,7 @@ import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh} from '@/controlle
 import {closeImportDialog} from '@/controllers/importExportController';
 import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
 import {resetPartsFilterMode, withFilteredGroups} from '@/controllers/partsFilterController';
+import {clearHideRestraints, withRestraintsHidden} from '@/controllers/hideRestraintsController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -34,11 +35,15 @@ export function installAppearanceHooks() {
       stopHoverCharHighlight();
       stopHoverTryOn(false);
       closeImportDialog();
+      // Leaving the screen is the only automatic way hiding turns off — refresh
+      // the character we were editing so its restraints draw again.
+      clearHideRestraints(transition.previous.selection);
     }
 
     if (transition.enteredAppearance) {
       saveBgAndRefresh();
       resetPartsFilterMode();
+      clearHideRestraints(transition.current.selection);
     }
 
     if (transition.phaseChanged && transition.current.phase !== 'groups') {
@@ -107,6 +112,10 @@ export function installAppearanceHooks() {
       return next(args);
     }
     return next(args);
+  });
+
+  bcAeeModSdk.hookFunction('CharacterLoadCanvas', 5, (args, next) => {
+    return withRestraintsHidden(args[0], () => next(args));
   });
 
   bcAeeModSdk.hookFunction('AppearanceLoad', 1, (args, next) => {

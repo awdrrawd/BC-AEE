@@ -5,6 +5,7 @@ import {clearCopyBuffer, drawCopyBufferPreview, isAppearanceOverlayActive, isCop
 import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
 import {cyclePartsFilterMode, drawPartsFilterBadge, isPartsFilterAvailable, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
+import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, isHideRestraintsAvailable, toggleHideRestraints} from '@/controllers/hideRestraintsController';
 import {t} from '@/i18n/i18n';
 import {enterWardrobeScreen} from '@/hooks/wardrobeHooks';
 import {settings} from '@/core/settings';
@@ -41,10 +42,13 @@ export function installMenuHooks() {
       if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'Copy', 'Paste');
       else AppearanceMenu.unshift('Copy', 'Paste');
     }
-    // Unshift parts-filter first so copy (AEE_ClearCopy) ends up ahead of it:
-    // final leading order is 複製 → 部位 → 衣櫃 → 匯出 → 匯入.
+    // Unshift in reverse of the wanted order so copy (AEE_ClearCopy) ends up
+    // ahead: final leading order is 複製 → 拘束 → 部位 → 衣櫃 → 匯出 → 匯入.
     if (isPartsFilterAvailable() && !AppearanceMenu.includes('AEE_PartsFilter')) {
       AppearanceMenu.unshift('AEE_PartsFilter');
+    }
+    if (isHideRestraintsAvailable() && !AppearanceMenu.includes('AEE_HideRestraints')) {
+      AppearanceMenu.unshift('AEE_HideRestraints');
     }
     if (settings.enableCopyPaste.get() && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
       AppearanceMenu.unshift('AEE_ClearCopy');
@@ -55,10 +59,12 @@ export function installMenuHooks() {
     const menu = AppearanceMenu;
     const clearCopyIndex = menu.indexOf('AEE_ClearCopy');
     const partsFilterIndex = menu.indexOf('AEE_PartsFilter');
-    if (clearCopyIndex < 0 && partsFilterIndex < 0) {
+    const hideRestraintsIndex = menu.indexOf('AEE_HideRestraints');
+    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0) {
       next(args);
     } else {
-      AppearanceMenu = menu.map((button, index) => (index === clearCopyIndex || index === partsFilterIndex ? 'Copy' : button));
+      AppearanceMenu = menu.map((button, index) =>
+        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex ? 'Copy' : button));
       try {
         next(args);
       } finally {
@@ -70,6 +76,10 @@ export function installMenuHooks() {
       const clearCopyX = x + 117 * clearCopyIndex;
       DrawButton(clearCopyX, 25, 90, 90, '', 'White', null, t('copy-cancel-tooltip'));
       drawCopyBufferPreview(clearCopyX, 25, 90, CharacterAppearanceSelection ?? null, CLEAR_ICON);
+    }
+    if (hideRestraintsIndex >= 0 && !isAppearanceOverlayActive()) {
+      const hideRestraintsX = x + 117 * hideRestraintsIndex;
+      DrawButton(hideRestraintsX, 25, 90, 90, '', isHideRestraintsActive() ? '#FFB0B0' : 'White', hideRestraintsIcon(), hideRestraintsTooltip());
     }
     if (partsFilterIndex >= 0 && !isAppearanceOverlayActive()) {
       const partsFilterX = x + 117 * partsFilterIndex;
@@ -110,6 +120,10 @@ export function installMenuHooks() {
       }
       if (AppearanceMenu[index] === 'AEE_PartsFilter' && !isAppearanceOverlayActive()) {
         cyclePartsFilterMode();
+        return;
+      }
+      if (AppearanceMenu[index] === 'AEE_HideRestraints' && !isAppearanceOverlayActive()) {
+        toggleHideRestraints();
         return;
       }
     }

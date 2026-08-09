@@ -1,4 +1,4 @@
-import {getUiLanguageSetting, setUiLanguage, SUPPORTED_LANGUAGES, t} from '@/i18n/i18n';
+import {getUiLanguageSetting, setUiLanguage, SUPPORTED_LANGUAGES, LANG_FLAG_FONT, t} from '@/i18n/i18n';
 import {Select} from '@/components/ui/Fields';
 
 export function LanguageSelect() {
@@ -9,6 +9,7 @@ export function LanguageSelect() {
     <Select
       value={value}
       onChange={event => setUiLanguage(event.target.value)}
+      style={{fontFamily: LANG_FLAG_FONT}}
     >
       <option value="">{t('settings-language-auto')}</option>
       {SUPPORTED_LANGUAGES.map(lang =>

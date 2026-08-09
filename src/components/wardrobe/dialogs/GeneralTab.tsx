@@ -1,4 +1,4 @@
-import {getUiLanguageSetting, setUiLanguage, SUPPORTED_LANGUAGES, t} from '@/i18n/i18n';
+import {getUiLanguageSetting, setUiLanguage, SUPPORTED_LANGUAGES, LANG_FLAG_FONT, t} from '@/i18n/i18n';
 import {type BooleanSetting, settings} from '@/core/settings';
 import {SettingRow} from '@/components/ui/SettingRow';
 import {Select} from '@/components/ui/Fields';
@@ -28,6 +28,7 @@ export function GeneralTab() {
         value={language}
         onChange={event => setUiLanguage(event.currentTarget.value)}
         className="w-50"
+        style={{fontFamily: LANG_FLAG_FONT}}
       >
         <option value="">{t('wardrobe-language-auto')}</option>
         {SUPPORTED_LANGUAGES.map(option => <option key={option.code} value={option.code}>{option.label}</option>)}

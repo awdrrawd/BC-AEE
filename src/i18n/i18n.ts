@@ -61,17 +61,23 @@ const resources = {
 
 // Languages the user can pick from the settings dropdown. Labels are shown in
 // their own language so they're recognizable regardless of current UI language.
+// label 前綴國旗 emoji（國家碼 regional indicator）。顯示需下拉套用 LANG_FLAG_FONT，
+// 白嫖 BC country-flag polyfill 全域注入的 "Twemoji Country Flags" @font-face。
 export const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
-  {code: 'EN', label: 'English'},
-  {code: 'TW', label: '繁體中文'},
-  {code: 'CN', label: '简体中文'},
-  {code: 'JA', label: '日本語'},
-  {code: 'KO', label: '한국어'},
-  {code: 'DE', label: 'Deutsch'},
-  {code: 'FR', label: 'Français'},
-  {code: 'RU', label: 'Русский'},
-  {code: 'UA', label: 'Українська'},
+  {code: 'EN', label: '🇬🇧 English'},
+  {code: 'TW', label: '🇹🇼 繁體中文'},
+  {code: 'CN', label: '🇨🇳 简体中文'},
+  {code: 'JA', label: '🇯🇵 日本語'},
+  {code: 'KO', label: '🇰🇷 한국어'},
+  {code: 'DE', label: '🇩🇪 Deutsch'},
+  {code: 'FR', label: '🇫🇷 Français'},
+  {code: 'RU', label: '🇷🇺 Русский'},
+  {code: 'UA', label: '🇺🇦 Українська'},
 ];
+
+// 語言下拉的字體棧：國旗字體排第一（只含國旗字形），文字 fallback 到後面。Shadow DOM 下
+// 以 inline style 套用最保險。手機/Mac 該 family 不存在會自動跳過、用系統國旗字型。
+export const LANG_FLAG_FONT = '"Twemoji Country Flags",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif';
 
 export type LocalizedText = string | Record<string, string>;
 

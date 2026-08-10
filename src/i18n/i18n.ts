@@ -11,6 +11,7 @@ import tw from '@/i18n/locales/TW/translation.json';
 import ua from '@/i18n/locales/UA/translation.json';
 import ja from '@/i18n/locales/JA/translation.json';
 import ko from '@/i18n/locales/KO/translation.json';
+import vi from '@/i18n/locales/VI/translation.json';
 
 declare const TranslationLanguage: string | undefined;
 
@@ -30,6 +31,8 @@ const LANGUAGE_MAP: Record<string, string> = {
   JP: 'JA',
   KO: 'KO',
   KR: 'KO',
+  VI: 'VI',
+  VN: 'VI',
   'de-DE': 'DE',
   'fr-FR': 'FR',
   'ru-RU': 'RU',
@@ -45,6 +48,7 @@ const LANGUAGE_MAP: Record<string, string> = {
   'uk-UA': 'UA',
   'ja-JP': 'JA',
   'ko-KR': 'KO',
+  'vi-VN': 'VI',
 };
 
 const resources = {
@@ -57,6 +61,7 @@ const resources = {
   UA: {translation: ua},
   JA: {translation: ja},
   KO: {translation: ko},
+  VI: {translation: vi},
 } as const;
 
 // Languages the user can pick from the settings dropdown. Labels are shown in
@@ -69,6 +74,7 @@ export const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
   {code: 'CN', label: '🇨🇳 简体中文'},
   {code: 'JA', label: '🇯🇵 日本語'},
   {code: 'KO', label: '🇰🇷 한국어'},
+  {code: 'VI', label: '🇻🇳 Tiếng Việt'},
   {code: 'DE', label: '🇩🇪 Deutsch'},
   {code: 'FR', label: '🇫🇷 Français'},
   {code: 'RU', label: '🇷🇺 Русский'},

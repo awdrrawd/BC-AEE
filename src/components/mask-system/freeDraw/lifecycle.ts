@@ -11,6 +11,7 @@ import {
   slotSyncGroups, syncCharacterToRoom, PROP_MASK_PRIO,
 } from './maskToggle';
 import {attachListeners, detachListeners} from './input';
+import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 
 function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null) {
@@ -80,7 +81,7 @@ export function slotLoad(i: number) {
   if (State.tool === 'move' || State.tool === 'select') State.tool = 'pen';
   invalidateSlot(active);
   if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
-  DialogExtendedMessage = '直接在角色身上繪圖；「位移」可拖曳整張圖，旋轉/縮放/鏡射用按鈕；「遮罩」把圖當形狀隱藏身體以外';
+  DialogExtendedMessage = t('free-draw-hint');
 }
 
 export function slotExit() { detachListeners(); }

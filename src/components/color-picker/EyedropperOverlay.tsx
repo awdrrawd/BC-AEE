@@ -1,5 +1,6 @@
 import {type PointerEvent as ReactPointerEvent, useEffect, useRef, useState} from 'react';
 import {getCanvas} from '@/core/bc';
+import {t} from '@/i18n/i18n';
 import {rgbToHex} from '@/components/color-picker/colorMath';
 
 const SAMPLE = 15;
@@ -138,8 +139,7 @@ export function EyedropperOverlay({onPick, onCancel}: { onPick: (hex: string) =>
     {blocked && !hover ? <div
       className="pointer-events-none fixed left-1/2 top-4 z-1000051 max-w-[90vw] -translate-x-1/2 rounded-md border-2 border-zinc-100 bg-black/85 px-3 py-2 text-center text-sm font-bold text-white shadow-2xl"
     >
-      無法取色：畫布已被跨來源圖片污染，請重新整理頁面後再試
-      <div className="mt-0.5 text-xs font-normal opacity-80">Can't pick: the canvas is tainted by a cross-origin image — reload the page and retry.</div>
+      {t('color-picker-eyedropper-taint')}
     </div> : null}
     <div
       className="pointer-events-none fixed z-1000051 flex flex-col items-center"

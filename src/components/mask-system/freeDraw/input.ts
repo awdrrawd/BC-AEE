@@ -6,6 +6,7 @@
 import type {ShapeStyle} from '../shapes';
 import {drawShapePreview, floodFill} from '../shapes';
 import {askText} from '@/core/prompts';
+import {t} from '@/i18n/i18n';
 import {STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H, MPRIO_Y, MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_H, BOARD_W, BOARD_H} from '../constants';
 import {A, pushUndo} from './slots';
 import {State} from './editorState';
@@ -57,7 +58,7 @@ export function onPointerDown(evt: PointerEvent) {
   if (State.tool === 'text') {
     const [lx, ly] = local;
     const slot = A;
-    askText('輸入要畫上的文字：', State.lastText).then(text => {
+    askText(t('free-draw-text-prompt'), State.lastText).then(text => {
       if (A !== slot || text == null || text === '') return;
       State.lastText = text;
       pushUndo();

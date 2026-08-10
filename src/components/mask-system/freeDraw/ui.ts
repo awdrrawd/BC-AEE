@@ -17,6 +17,7 @@ import {
 } from '../constants';
 import {SHAPE_TOOLS, SHAPE_EMOJI} from '../shapes';
 import {ICON} from '../icons';
+import {t} from '@/i18n/i18n';
 import {openColorPicker as openAeeColorPicker} from '@/controllers/uiController';
 import {A, undo, clearBoard} from './slots';
 import {State} from './editorState';
@@ -105,26 +106,26 @@ export function slotDraw() {
   drawSelectionOverlay(rect);
 
   // Row 1
-  DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', '遮罩：把這張圖當形狀，隱藏身體以外的東西（再按一次切回純繪製）');
-  drawIconBtn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.undo, '復原上一筆');
-  DrawButton(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Trash.png', '清除整張畫布');
-  DrawButton(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Cancel.png', '取消（不保留這次所有編輯並退出）');
+  DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', t('free-draw-mask-tooltip'));
+  drawIconBtn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.undo, t('free-draw-undo-tooltip'));
+  DrawButton(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Trash.png', t('free-draw-clear-tooltip'));
+  DrawButton(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Cancel.png', t('free-draw-cancel-tooltip'));
 
   // Row 2
-  drawIconBtn(TOOL_PEN_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'pen' ? 'cyan' : 'White', ICON.pen, '畫筆');
-  drawIconBtn(TOOL_FILL_X, TOOLBAR_Y2, ICON_W, ICON_H, State.filled ? 'cyan' : 'White', State.filled ? ICON.fillSolid : ICON.fillOutline, State.filled ? '填滿：實心（點一下切回線框）' : '填滿：線框（點一下切成實心）');
-  DrawButton(TOOL_SHAPE_X, TOOLBAR_Y2, ICON_W, ICON_H, (SHAPE_EMOJI[State.tool] || '△'), State.picker === 'shape' || (SHAPE_TOOLS as readonly string[]).includes(State.tool) ? 'cyan' : 'White', undefined, '圖形（點擊展開，選擇要畫的形狀）');
-  drawIconBtn(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'text' ? 'cyan' : 'White', ICON.text, '文字（點畫布輸入文字）');
-  drawIconBtn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'bucket' ? 'cyan' : 'White', ICON.bucket, '填色（油漆桶）');
-  drawIconBtn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'eraser' ? 'cyan' : 'White', ICON.eraser, '橡皮擦');
-  drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color), ICON.color, '顏色（點擊開啟 AEE 取色器）');
-  drawIconBtn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'select' ? 'cyan' : 'White', ICON.select, '選取並拖移');
+  drawIconBtn(TOOL_PEN_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'pen' ? 'cyan' : 'White', ICON.pen, t('free-draw-pen-tooltip'));
+  drawIconBtn(TOOL_FILL_X, TOOLBAR_Y2, ICON_W, ICON_H, State.filled ? 'cyan' : 'White', State.filled ? ICON.fillSolid : ICON.fillOutline, State.filled ? t('free-draw-fill-solid-tooltip') : t('free-draw-fill-outline-tooltip'));
+  DrawButton(TOOL_SHAPE_X, TOOLBAR_Y2, ICON_W, ICON_H, (SHAPE_EMOJI[State.tool] || '△'), State.picker === 'shape' || (SHAPE_TOOLS as readonly string[]).includes(State.tool) ? 'cyan' : 'White', undefined, t('free-draw-shape-tooltip'));
+  drawIconBtn(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'text' ? 'cyan' : 'White', ICON.text, t('free-draw-text-tooltip'));
+  drawIconBtn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'bucket' ? 'cyan' : 'White', ICON.bucket, t('free-draw-bucket-tooltip'));
+  drawIconBtn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'eraser' ? 'cyan' : 'White', ICON.eraser, t('free-draw-eraser-tooltip'));
+  drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color), ICON.color, t('free-draw-color-tooltip'));
+  drawIconBtn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'select' ? 'cyan' : 'White', ICON.select, t('free-draw-select-tooltip'));
 
   // Row 3: stroke slider
   DrawRect(STROKE_FRAME_X, STROKE_Y, STROKE_FRAME_W, STROKE_H, 'White');
   DrawEmptyRect(STROKE_FRAME_X, STROKE_Y, STROKE_FRAME_W, STROKE_H, 'Black', 2);
-  DrawText('筆觸', STROKE_LABEL_X + STROKE_LABEL_W / 2, STROKE_Y + STROKE_H / 2, 'black');
-  DrawButton(STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H, '', 'White', undefined, '拖曳／點擊拉桿設定筆觸粗細');
+  DrawText(t('free-draw-stroke-label'), STROKE_LABEL_X + STROKE_LABEL_W / 2, STROKE_Y + STROKE_H / 2, 'black');
+  DrawButton(STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H, '', 'White', undefined, t('free-draw-stroke-tooltip'));
   const pct = (State.thickness - STROKE_MIN) / (STROKE_MAX - STROKE_MIN);
   MainCanvas.fillStyle = 'black';
   MainCanvas.fillRect(STROKE_BAR_X + 4, STROKE_Y + 4, (STROKE_BAR_W - 8) * pct, STROKE_H - 8);
@@ -140,15 +141,15 @@ export function slotDraw() {
     });
   } else {
     // Transform panel: mode headers + grouped controls.
-    drawBox(E2.moveHdr, '位移', State.tool === 'move' ? 'cyan' : 'White', '位移：點一下後可在左側直接拖曳整張圖；或用下方方向鍵');
-    drawBox(E2.rotHdr, '旋轉', 'White');
-    drawBox(E2.scaleHdr, '縮放', 'White');
-    drawBox(E2.mirrorHdr, '鏡射', 'White');
-    drawBox(E2.up, '上', 'White'); drawBox(E2.down, '下', 'White');
-    drawBox(E2.left, '左', 'White'); drawBox(E2.right, '右', 'White');
+    drawBox(E2.moveHdr, t('free-draw-move'), State.tool === 'move' ? 'cyan' : 'White', t('free-draw-move-tooltip'));
+    drawBox(E2.rotHdr, t('free-draw-rotate'), 'White');
+    drawBox(E2.scaleHdr, t('free-draw-scale'), 'White');
+    drawBox(E2.mirrorHdr, t('free-draw-mirror'), 'White');
+    drawBox(E2.up, t('free-draw-up'), 'White'); drawBox(E2.down, t('free-draw-down'), 'White');
+    drawBox(E2.left, t('free-draw-left'), 'White'); drawBox(E2.right, t('free-draw-right'), 'White');
     drawBox(E2.rotL, '↺', 'White'); drawBox(E2.rotR, '↻', 'White');
     drawBox(E2.scUp, '＋', 'White'); drawBox(E2.scDn, '－', 'White');
-    drawBox(E2.fH, '水平', 'White'); drawBox(E2.fV, '垂直', 'White');
+    drawBox(E2.fH, t('free-draw-flip-h'), 'White'); drawBox(E2.fV, t('free-draw-flip-v'), 'White');
   }
 
   // Layer-order slider (shown in both draw & mask modes; hidden only while the
@@ -157,8 +158,8 @@ export function slotDraw() {
   if (State.picker !== 'shape') {
     DrawRect(MPRIO_FRAME_X, MPRIO_Y, MPRIO_FRAME_W, MPRIO_H, 'White');
     DrawEmptyRect(MPRIO_FRAME_X, MPRIO_Y, MPRIO_FRAME_W, MPRIO_H, 'Black', 2);
-    DrawText('順位', MPRIO_LABEL_X + MPRIO_LABEL_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
-    DrawButton(MPRIO_BAR_X, MPRIO_Y, MPRIO_BAR_W, MPRIO_H, '', 'White', undefined, '拖曳調整順位；數字越高，開遮罩時能蓋住越多（優先權比它低的衣物才會被隱藏）');
+    DrawText(t('free-draw-priority-label'), MPRIO_LABEL_X + MPRIO_LABEL_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
+    DrawButton(MPRIO_BAR_X, MPRIO_Y, MPRIO_BAR_W, MPRIO_H, '', 'White', undefined, t('free-draw-priority-tooltip'));
     const ppct = (active.maskPriority - MPRIO_MIN) / (MPRIO_MAX - MPRIO_MIN);
     MainCanvas.fillStyle = '#4CAF50';
     MainCanvas.fillRect(MPRIO_BAR_X + 4, MPRIO_Y + 4, (MPRIO_BAR_W - 8) * ppct, MPRIO_H - 8);
@@ -182,8 +183,8 @@ export function slotDraw() {
     DrawText(`${State.thickness}px`, cx, cy - screenR - 22, contrastColor(State.color) === 'white' ? 'black' : 'white');
   }
 
-  DrawButton(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Accept.png', '套用並退出（保留這次所有編輯）');
-  DrawButton(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Exit.png', '不儲存，直接退出');
+  DrawButton(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Accept.png', t('free-draw-accept-tooltip'));
+  DrawButton(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Exit.png', t('free-draw-exit-tooltip'));
 }
 
 export function slotClick() {

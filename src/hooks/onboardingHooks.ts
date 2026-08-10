@@ -18,6 +18,12 @@ const HINT: Record<string, string> = {
   CN: '🐈‍⬛ <b>Liko - AEE 已就绪。</b>想编辑外观时，对任一「物品」或「服装」打开<b>染色（调色）</b>界面，就会看到 AEE 操作面板，并前往设置获得更好的体验。',
   JA: '🐈‍⬛ <b>Liko - AEE の準備ができました。</b>外見を編集するには、アイテムや衣装の<b>染色（カラー）</b>画面を開いてください。AEE パネルが表示されます。設定を開くとより快適に使えます。',
   KO: '🐈‍⬛ <b>Liko - AEE 준비 완료.</b>외형을 편집하려면 아이템이나 의상의 <b>염색(색상)</b> 화면을 여세요. AEE 패널이 나타납니다. 설정에서 더 나은 경험을 누려보세요.',
+  VI: '🐈‍⬛ <b>Liko - AEE đã sẵn sàng.</b> Để chỉnh sửa ngoại hình, hãy mở màn hình <b>nhuộm màu</b> của bất kỳ vật phẩm hay trang phục nào — bảng AEE sẽ hiện ở đó. Vào Cài đặt để có trải nghiệm tốt hơn.',
+  DE: '🐈‍⬛ <b>Liko - AEE ist bereit.</b> Um ein Aussehen zu bearbeiten, öffne den <b>Färben-/Farbbildschirm</b> eines beliebigen Gegenstands oder Kleidungsstücks — dort erscheint das AEE-Panel. Besuche die Einstellungen für ein besseres Erlebnis.',
+  FR: '🐈‍⬛ <b>Liko - AEE est prêt.</b> Pour modifier une apparence, ouvre l\'écran de <b>teinture / couleur</b> de n\'importe quel objet ou vêtement — le panneau AEE y apparaît. Va dans les Paramètres pour une meilleure expérience.',
+  ES: '🐈‍⬛ <b>Liko - AEE está listo.</b> Para editar una apariencia, abre la pantalla de <b>tinte / color</b> de cualquier objeto o prenda: ahí aparece el panel de AEE. Visita los Ajustes para una mejor experiencia.',
+  RU: '🐈‍⬛ <b>Liko - AEE готов.</b> Чтобы редактировать внешний вид, откройте экран <b>окрашивания / цвета</b> любого предмета или одежды — там появится панель AEE. Загляните в настройки для лучшего опыта.',
+  UA: '🐈‍⬛ <b>Liko - AEE готовий.</b> Щоб редагувати зовнішній вигляд, відкрийте екран <b>фарбування / кольору</b> будь-якого предмета чи одягу — там з\'явиться панель AEE. Завітайте до налаштувань для кращого досвіду.',
 };
 
 function hintMessage(): string {

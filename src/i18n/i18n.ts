@@ -12,6 +12,8 @@ import ua from '@/i18n/locales/UA/translation.json';
 import ja from '@/i18n/locales/JA/translation.json';
 import ko from '@/i18n/locales/KO/translation.json';
 import vi from '@/i18n/locales/VI/translation.json';
+import es from '@/i18n/locales/ES/translation.json';
+import ar from '@/i18n/locales/AR/translation.json';
 
 declare const TranslationLanguage: string | undefined;
 
@@ -33,6 +35,8 @@ const LANGUAGE_MAP: Record<string, string> = {
   KR: 'KO',
   VI: 'VI',
   VN: 'VI',
+  ES: 'ES',
+  //AR: 'AR', 阿拉伯是由右至左先不使用
   'de-DE': 'DE',
   'fr-FR': 'FR',
   'ru-RU': 'RU',
@@ -49,6 +53,8 @@ const LANGUAGE_MAP: Record<string, string> = {
   'ja-JP': 'JA',
   'ko-KR': 'KO',
   'vi-VN': 'VI',
+  'es-ES': 'ES',
+  'ar-SA': 'AR',
 };
 
 const resources = {
@@ -62,6 +68,8 @@ const resources = {
   JA: {translation: ja},
   KO: {translation: ko},
   VI: {translation: vi},
+  ES: {translation: es},
+  AR: {translation: ar},
 } as const;
 
 // Languages the user can pick from the settings dropdown. Labels are shown in
@@ -77,8 +85,10 @@ export const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
   {code: 'VI', label: '🇻🇳 Tiếng Việt'},
   {code: 'DE', label: '🇩🇪 Deutsch'},
   {code: 'FR', label: '🇫🇷 Français'},
+  {code: 'ES', label: '🇪🇸 Español'},
   {code: 'RU', label: '🇷🇺 Русский'},
   {code: 'UA', label: '🇺🇦 Українська'},
+  {code: 'AR', label: '🇸🇦 العربية'},
 ];
 
 // 語言下拉的字體棧：國旗字體排第一（只含國旗字形），文字 fallback 到後面。Shadow DOM 下

@@ -54,7 +54,7 @@ const LANGUAGE_MAP: Record<string, string> = {
   'ko-KR': 'KO',
   'vi-VN': 'VI',
   'es-ES': 'ES',
-  'ar-SA': 'AR',
+  //'ar-SA': 'AR', 阿拉伯是由右至左先不使用
 };
 
 const resources = {

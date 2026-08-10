@@ -7,6 +7,7 @@ import {installImagePatch, bustMaskTexture} from './masking';
 import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
 import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames} from './freeDraw';
 import {installMaskTranslations} from './translations';
+import {installPeerDetection, isAeeMember} from './peers';
 import {SG_MASK_GROUP, SG_ASSET, DRAW_GROUPS, DRAW_ASSET} from './constants';
 
 let started = false;
@@ -143,24 +144,25 @@ function tryHookAppearanceSync(): boolean {
   if (typeof ServerAppearanceLoadFromBundle !== 'function') return false;
   bcAeeModSdk.hookFunction('ServerAppearanceLoadFromBundle', 5, (args, next) => {
     const C = args[0] as Character | undefined;
-    const bundle = args[2] as {Group?: string}[] | undefined;
     const sourceMember = args[3] as number | null | undefined;
     const appearanceFull = !!args[4];
     let before: Item[] = [];
     try {
-      // Only the non-full path rebuilds C.Appearance; only act on a FOREIGN source.
-      // AND only when the sender is NON-AEE. A non-AEE client can't serialize our
-      // assets, so its bundle carries ZERO of our groups — an accidental strip we
-      // must undo. An AEE sender's bundle still lists our OTHER worn items, so any
-      // group it omits was removed on purpose (e.g. A takes off B's mask) and must
-      // NOT be restored — else the removal keeps reverting.
-      // ponytail: "sender has any of our groups" ≈ "sender is AEE"; a rare case
-      // (an AEE user removing their LAST decorated item) also carries zero groups
-      // and would still be restored — needs real remote-AEE detection to fix.
-      const senderHasOurGroups = Array.isArray(bundle)
-        && bundle.some(b => typeof b?.Group === 'string' && OUR_GROUP_NAMES.has(b.Group));
-      if (C && !appearanceFull && !senderHasOurGroups && Array.isArray(C.Appearance)
-        && sourceMember != null && C.MemberNumber != null && sourceMember !== C.MemberNumber) {
+      // Only the non-full path rebuilds C.Appearance. Restore our dropped items
+      // ONLY when the change came from a NON-AEE client: such a client cannot
+      // serialize our custom assets, so a missing group is an accidental strip we
+      // must undo. When the sender IS running AEE, any group it omits was removed
+      // ON PURPOSE (e.g. A takes off B's drawing) and must stay removed — this is
+      // how ECHO gates it too (CharacterTag). Deliberate removals also reach us
+      // first via the per-item ChatRoomSyncItem path (which bypasses this hook),
+      // so by the time a later full sync arrives the item is already gone from
+      // C.Appearance → `before` is empty → nothing is wrongly re-added.
+      //
+      // No `sourceMember !== C.MemberNumber` guard: a non-AEE wearer pushing their
+      // OWN appearance (dressing themselves) is exactly the strip we want to undo,
+      // and there the source IS the wearer.
+      if (C && !appearanceFull && !isAeeMember(sourceMember) && Array.isArray(C.Appearance)
+        && sourceMember != null && C.MemberNumber != null) {
         before = C.Appearance.filter(it => {
           const n = it?.Asset?.Group?.Name;
           return typeof n === 'string' && OUR_GROUP_NAMES.has(n);
@@ -231,6 +233,7 @@ export function installMaskSystem() {
     tryHookSanitize();
     tryHookAssetReload();
     tryHookAppearanceSync();
+    installPeerDetection(); // idempotent; learns which room members run AEE
 
     if (patch && registered && !callbacksInstalled) {
       callbacksInstalled = true;

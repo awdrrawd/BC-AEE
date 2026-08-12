@@ -8,12 +8,14 @@ export function OutfitCard({
                              slotIndex,
                              selected,
                              markedForSwap,
+                             dropTarget = false,
                              onSelect,
                              onRename,
                            }: {
   slotIndex: number;
   selected: boolean;
   markedForSwap: boolean;
+  dropTarget?: boolean;
   onSelect: () => void;
   onRename?: () => void;
 }) {
@@ -22,6 +24,7 @@ export function OutfitCard({
   const name = slotName(slotIndex);
 
   return <div
+    data-slot={slotIndex}
     role="button"
     tabIndex={0}
     onClick={onSelect}
@@ -32,13 +35,15 @@ export function OutfitCard({
     className={cn(
       'group relative cursor-pointer overflow-hidden rounded-xl border transition',
       isSlotOccupied(slotIndex) ? 'bg-(--aee-card-bg)' : 'bg-white/3',
-      !selected && !markedForSwap && 'border-white/6 hover:border-white/15 hover:bg-white/4',
+      !selected && !markedForSwap && !dropTarget && 'border-white/6 hover:border-white/15 hover:bg-white/4',
     )}
     style={selected
       ? {borderColor: 'var(--aee-accent)', borderWidth: 3, boxShadow: '0 0 14px var(--aee-accent)'}
-      : markedForSwap
-        ? {borderColor: 'orange', borderWidth: 3}
-        : undefined}
+      : dropTarget
+        ? {borderColor: 'var(--aee-accent)', borderWidth: 3, borderStyle: 'dashed'}
+        : markedForSwap
+          ? {borderColor: 'orange', borderWidth: 3}
+          : undefined}
   >
     <CharacterPreview
       appearance={source.outfitAt(slotIndex)}

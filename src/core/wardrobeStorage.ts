@@ -19,6 +19,10 @@ const LEGACY_EXTENSION_WARDROBE_KEY = 'LIKO_AEE_WARDROBE';
 
 export const CUSTOM_BG_PATH = 'custom';
 
+// BC rejects an AccountUpdate over ~180000 chars, and the compressed FBCWardrobe string
+// dominates that payload. Budget it with headroom for the rest of the account update.
+const FBC_WARDROBE_BUDGET = 170000; // ponytail: calibrated from a 181518-char overflow; lower if the cap still trips
+
 function extensionSettings(): Record<string, unknown> | undefined {
   return Player?.ExtensionSettings as Record<string, unknown> | undefined;
 }
@@ -85,16 +89,29 @@ interface StoredExtensionWardrobe {
   n: string[];
 }
 
+/** Compressed payload that would be written to FBCWardrobe for the current extended slots (24–96). */
+function compressedExtendedWardrobe(): string {
+  const extended = (Player?.Wardrobe ?? [])
+    .slice(DEFAULT_WARDROBE_SIZE, EXPANDED_WARDROBE_SIZE)
+    .map(outfit => (Array.isArray(outfit) ? outfit : []));
+  return LZString.compressToUTF16(JSON.stringify(extended));
+}
+
+/** Online extended-wardrobe storage usage against BC's AccountUpdate size cap. */
+export function fbcWardrobeUsage(): {used: number; budget: number} {
+  return {used: compressedExtendedWardrobe().length, budget: FBC_WARDROBE_BUDGET};
+}
+
 /** Serializes the extended slots (24–96) into the shared FBCWardrobe extension setting. */
 function writeFbcWardrobe(): boolean {
   if (!Player.Wardrobe) return false;
-  const extended = Player.Wardrobe
-    .slice(DEFAULT_WARDROBE_SIZE, EXPANDED_WARDROBE_SIZE)
-    .map(outfit => (Array.isArray(outfit) ? outfit : []));
   try {
+    const payload = compressedExtendedWardrobe();
+    // Over BC's AccountUpdate cap: reject before writing so the caller rolls back and warns,
+    // rather than letting the oversized sync throw later at flush time.
+    if (payload.length > FBC_WARDROBE_BUDGET) return false;
     Player.ExtensionSettings ??= {};
-    (Player.ExtensionSettings as Record<string, unknown>)[FBC_WARDROBE_KEY] =
-      LZString.compressToUTF16(JSON.stringify(extended));
+    (Player.ExtensionSettings as Record<string, unknown>)[FBC_WARDROBE_KEY] = payload;
     ServerPlayerExtensionSettingsSync(FBC_WARDROBE_KEY);
     return true;
   } catch (error) {

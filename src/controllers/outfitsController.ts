@@ -390,7 +390,15 @@ export function importOutfitFromCode(index: number, code: string) {
 }
 
 export function exportWardrobeToFile() {
-  const slots = collectWardrobeSlots();
+  writeWardrobeFile(collectWardrobeSlots());
+}
+
+/** Exports only the given wardrobe slot indices to a file (the ExportDialog's checkbox selection). */
+export function exportSelectedSlotsToFile(indices: ReadonlySet<number>) {
+  writeWardrobeFile(collectWardrobeSlots().filter(slot => indices.has(slot.index)));
+}
+
+function writeWardrobeFile(slots: ReturnType<typeof collectWardrobeSlots>) {
   if (!slots.length) {
     showToast(t('wardrobe-toast-file-empty'));
     return;

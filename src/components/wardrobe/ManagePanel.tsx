@@ -4,7 +4,6 @@ import cn from '@/util/cn';
 
 import {
   exportOutfitToClipboard,
-  exportWardrobeToFile,
   exportWornToClipboard,
   importOutfitFromCode,
   readImportFile,
@@ -17,6 +16,7 @@ import {openDialog} from '@/core/dialogs';
 import {askConfirm} from '@/core/prompts';
 import {showToast} from '@/util/toast';
 import {getTargetCharacter, type WardrobeState} from '@/core/wardrobeStore';
+import {ExportDialog} from '@/components/wardrobe/dialogs/ExportDialog';
 import {ImportDialog} from '@/components/wardrobe/dialogs/ImportDialog';
 import {OutfitEditForm} from '@/components/wardrobe/OutfitEditForm';
 import {OutfitNameField} from '@/components/wardrobe/OutfitNameField';
@@ -119,7 +119,7 @@ export function ManagePanel({state}: { state: WardrobeState }) {
 
     <TransferRow
       label={t('wardrobe-file-save')}
-      onExport={exportWardrobeToFile}
+      onExport={() => openDialog(close => <ExportDialog onClose={close}/>)}
       onImportFile={file => void importFromFile(file)}
     />
   </Panel>;

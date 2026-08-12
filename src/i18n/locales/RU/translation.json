@@ -1,5 +1,5 @@
 {
-  "mask-single-glove-name": "Одиночная перчатка",
+  "mask-single-glove-name": "🐾Одиночная перчатка",
   "mask-single-glove-select": "Выбор перчатки (сторона + зона)",
   "mask-glove-l-gloves": "Левая · Перчатки",
   "mask-glove-l-echo": "Левая · ECHO",
@@ -7,7 +7,7 @@
   "mask-glove-r-gloves": "Правая · Перчатки",
   "mask-glove-r-echo": "Правая · ECHO",
   "mask-glove-r-both": "Правая · Все",
-  "mask-free-draw-name": "Свободный рисунок {n}",
+  "mask-free-draw-name": "🐾Свободный рисунок {n}",
   "about-title": "Об AEE",
   "about-line-opacity-offset": "Инструмент редактирования одежды с эффектами рендеринга",
   "about-line-experimental": "Поворот, масштаб, наклон и отражение экспериментальны",

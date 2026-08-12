@@ -1,5 +1,5 @@
 {
-  "mask-single-glove-name": "シングルグローブ",
+  "mask-single-glove-name": "🐾シングルグローブ",
   "mask-single-glove-select": "シングルグローブを選択（左右＋範囲）",
   "mask-glove-l-gloves": "左手・手袋",
   "mask-glove-l-echo": "左手・ECHO",
@@ -7,7 +7,7 @@
   "mask-glove-r-gloves": "右手・手袋",
   "mask-glove-r-echo": "右手・ECHO",
   "mask-glove-r-both": "右手・全部",
-  "mask-free-draw-name": "フリードロー{n}",
+  "mask-free-draw-name": "🐾フリードロー{n}",
   "about-title": "AEE について",
   "about-line-opacity-offset": "衣服編集ツールで、レンダリング効果も提供",
   "about-line-experimental": "回転・拡大縮小・傾き・ミラーは実験的機能",

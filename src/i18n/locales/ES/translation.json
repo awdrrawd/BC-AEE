@@ -1,5 +1,5 @@
 {
-  "mask-single-glove-name": "Guante único",
+  "mask-single-glove-name": "🐾Guante único",
   "mask-single-glove-select": "Elegir guante único (lado + rango)",
   "mask-glove-l-gloves": "Izq. · Guantes",
   "mask-glove-l-echo": "Izq. · ECHO",
@@ -7,7 +7,7 @@
   "mask-glove-r-gloves": "Der. · Guantes",
   "mask-glove-r-echo": "Der. · ECHO",
   "mask-glove-r-both": "Der. · Todo",
-  "mask-free-draw-name": "Dibujo libre {n}",
+  "mask-free-draw-name": "🐾Dibujo libre {n}",
   "about-title": "Acerca de AEE",
   "about-line-opacity-offset": "Una herramienta de edición de ropa que también ofrece efectos de renderizado",
   "about-line-experimental": "Rotar, escalar, sesgar y reflejar son experimentales",

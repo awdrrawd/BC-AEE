@@ -1,5 +1,5 @@
 {
-  "mask-single-glove-name": "單手套",
+  "mask-single-glove-name": "🐾單手套",
   "mask-single-glove-select": "選擇單手套（左右＋範圍）",
   "mask-glove-l-gloves": "左手手套",
   "mask-glove-l-echo": "左手ECHO",
@@ -7,7 +7,7 @@
   "mask-glove-r-gloves": "右手手套",
   "mask-glove-r-echo": "右手ECHO",
   "mask-glove-r-both": "右手全部",
-  "mask-free-draw-name": "自由繪圖{n}",
+  "mask-free-draw-name": "🐾自由繪圖{n}",
   "about-title": "關於 AEE",
   "about-line-opacity-offset": "此為服裝編輯工具，並提供渲染效果",
   "about-line-experimental": "旋轉、縮放、傾斜、鏡射為測試功能",

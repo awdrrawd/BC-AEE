@@ -1,5 +1,5 @@
 {
-  "mask-single-glove-name": "قفاز مفرد",
+  "mask-single-glove-name": "🐾قفاز مفرد",
   "mask-single-glove-select": "اختر قفازًا مفردًا (الجهة + النطاق)",
   "mask-glove-l-gloves": "يسار · قفازات",
   "mask-glove-l-echo": "يسار · ECHO",
@@ -7,7 +7,7 @@
   "mask-glove-r-gloves": "يمين · قفازات",
   "mask-glove-r-echo": "يمين · ECHO",
   "mask-glove-r-both": "يمين · الكل",
-  "mask-free-draw-name": "رسم حر {n}",
+  "mask-free-draw-name": "🐾رسم حر {n}",
   "about-title": "حول AEE",
   "about-line-opacity-offset": "أداة لتحرير الملابس توفر أيضًا تأثيرات العرض",
   "about-line-experimental": "التدوير والتحجيم والإمالة والانعكاس ميزات تجريبية",

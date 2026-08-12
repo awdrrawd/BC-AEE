@@ -17,6 +17,7 @@ export interface Slot {
   isMask: boolean;
   maskPriority: number; // OverridePriority applied to the worn mask companion
   undoStack: ImageData[];
+  redoStack: ImageData[]; // cleared by any fresh edit (pushUndo)
   sessionSnapshot: ImageData | null;
   sessionState: {offsetX: number; offsetY: number; rotation: number; scale: number; isMask: boolean; maskPriority: number} | null;
   _loadedSig?: string;

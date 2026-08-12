@@ -137,6 +137,7 @@ export function cancelEditingAndExit() {
       if (C && (maskChanged || prioChanged)) { CharacterRefresh(C, true, false); syncCharacterToRoom(C, ...slotSyncGroups(A)); }
     }
     A.undoStack = [];
+    A.redoStack = [];
   }
   State.picker = null;
   leaveEditor();

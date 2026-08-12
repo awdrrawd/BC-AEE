@@ -384,6 +384,8 @@
   "wardrobe-cancel": "Cancel",
   "free-draw-mask-tooltip": "Mask: use this drawing as a shape to hide everything outside the body (click again for plain drawing)",
   "free-draw-undo-tooltip": "Undo last stroke",
+  "free-draw-redo-tooltip": "Redo (restore the step you undid)",
+  "free-draw-symmetry-tooltip": "Symmetry drawing (mirror about the canvas centre; not for text or fill)",
   "free-draw-clear-tooltip": "Clear the whole canvas",
   "free-draw-cancel-tooltip": "Cancel (discard all edits and exit)",
   "free-draw-pen-tooltip": "Pen",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "Apply and exit (keep all edits)",
   "free-draw-exit-tooltip": "Exit without saving",
   "free-draw-hint": "Draw directly on the character; \"Move\" drags the whole drawing, use the buttons for rotate/scale/mirror; \"Mask\" uses the drawing as a shape to hide everything outside the body",
+  "free-draw-image-tooltip": "Import image (file only; drag to move, drag the corner to resize)",
+  "free-draw-image-failed": "Could not read that image — try another file",
+  "free-draw-image-tainted": "That image's pixels can't be read; import cancelled",
+  "free-draw-image-placed": "Drag to move, drag the blue corner to resize. Click outside or Accept to merge it into the drawing",
   "free-draw-text-prompt": "Enter the text to draw:",
   "color-picker-eyedropper-taint": "Can't pick: the canvas is tainted by a cross-origin image — reload the page and retry."
 }

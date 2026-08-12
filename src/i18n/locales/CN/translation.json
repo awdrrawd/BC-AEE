@@ -384,6 +384,8 @@
   "wardrobe-cancel": "取消",
   "free-draw-mask-tooltip": "遮罩：把这张图当作形状，隐藏身体以外的部分（再按一次切回纯绘制）",
   "free-draw-undo-tooltip": "撤销上一笔",
+  "free-draw-redo-tooltip": "重做（恢复被撤销的那一步）",
+  "free-draw-symmetry-tooltip": "对称绘制（以画布中轴镜射；文字与填色不套用）",
   "free-draw-clear-tooltip": "清除整张画布",
   "free-draw-cancel-tooltip": "取消（不保留本次所有编辑并退出）",
   "free-draw-pen-tooltip": "画笔",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "应用并退出（保留本次所有编辑）",
   "free-draw-exit-tooltip": "不保存，直接退出",
   "free-draw-hint": "直接在角色身上绘图；「位移」可拖动整张图，旋转/缩放/镜像用按钮；「遮罩」把图当作形状隐藏身体以外",
+  "free-draw-image-tooltip": "导入图片（只能选文件，放上后可拖曳、拉右下角缩放）",
+  "free-draw-image-failed": "图片读取失败，请换一张再试",
+  "free-draw-image-tainted": "这张图片无法读取像素，已取消导入",
+  "free-draw-image-placed": "拖曳可移动、拉右下角蓝点可缩放；点画布外或按应用即合并成画布的一部分",
   "free-draw-text-prompt": "输入要画上的文字：",
   "color-picker-eyedropper-taint": "无法取色：画布已被跨来源图片污染，请刷新页面后再试。"
 }

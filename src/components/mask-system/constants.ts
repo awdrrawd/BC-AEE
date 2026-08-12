@@ -122,10 +122,13 @@ export const MASK_IMG_W = 500, MASK_IMG_H = 1000;
 export const ICON_W = 90, ICON_H = 90;
 export const TOOLBAR_STEP = 100;
 
-// Row 1 (y=25), laid out right-to-left.
+// Row 1 (y=25), laid out right-to-left. 'image' sits here rather than in the
+// tool row because row 2 has no free slot left of x=1085 that doesn't overlap
+// the character/board preview (which spans x≈500–1000) — and it's a one-shot
+// action like clear/undo, not a persistent tool mode.
 export const TOOLBAR_Y1 = 25;
 export const TOOLBAR_ROW1_RIGHT = 1885;
-export const TOOLBAR_ROW1 = ['exit', 'accept', 'cancel', 'clear', 'undo', 'mask'];
+export const TOOLBAR_ROW1 = ['exit', 'accept', 'cancel', 'clear', 'undo', 'redo', 'mask', 'image', 'symmetry'];
 export const row1X = (id: string) => TOOLBAR_ROW1_RIGHT - TOOLBAR_ROW1.indexOf(id) * TOOLBAR_STEP;
 
 // Row 2 (y=125), right-to-left.
@@ -147,9 +150,27 @@ export const MPRIO_FRAME_X = 1485, MPRIO_FRAME_W = 490;
 export const MPRIO_LABEL_X = 1485, MPRIO_LABEL_W = 120;
 export const MPRIO_BAR_X = 1615, MPRIO_BAR_W = 360;
 
+// View-toggle row (y=560). Sits below the priority slider and hides with it
+// while the shape picker is open — the picker overlays y=290..780.
+export const BOUNDS_X = MPRIO_FRAME_X, BOUNDS_W = MPRIO_FRAME_W;
+export const BOUNDS_Y = 560, BOUNDS_H = 50;
+
+// Toolbar button states. Two deliberately different colours, because they mean
+// two different things: cyan marks the ONE tool currently selected (exclusive,
+// and obvious from what happens when you draw), green marks a MODE left
+// switched on — 遮罩 / 對稱 / 填滿 / 外框 are the ones you can forget about and
+// then wonder why the next stroke behaves oddly.
+export const BTN_TOOL_ON = 'cyan';
+export const BTN_MODE_ON = '#4CAF50';
+export const BTN_OFF = 'White';
+
 // Shape picker panel (y=290). Gap 5, 5 per row.
 export const PICKER_X = 1485, PICKER_Y = 290, PICKER_W = 490;
 export const PICKER_ITEM = 90, PICKER_GAP = 5, PICKER_PAD = 10, PICKER_PER_ROW = 5;
+
+// Resize grip on a floating piece (imported image / box selection), board px.
+// ~2× that on screen, so it stays a usable touch target.
+export const SEL_HANDLE = 14;
 
 // Edit panel: move / rotate / scale.
 export const EDIT_PANEL_X = 1485, EDIT_PANEL_Y = 290, EDIT_PANEL_W = 490, EDIT_PANEL_H = 210;
@@ -178,7 +199,10 @@ export const ACCEPT_ICON_X = row1X('accept');
 export const TOOLBAR_CANCEL_X = row1X('cancel');
 export const TOOLBAR_CLEAR_X = row1X('clear');
 export const TOOLBAR_UNDO_X = row1X('undo');
+export const TOOLBAR_REDO_X = row1X('redo');
 export const MASK_X = row1X('mask');
+export const IMAGE_X = row1X('image');
+export const SYMMETRY_X = row1X('symmetry');
 export const TOOL_COLOR_X = row2X('color');
 export const TOOL_ERASER_X = row2X('eraser');
 export const TOOL_BUCKET_X = row2X('bucket');

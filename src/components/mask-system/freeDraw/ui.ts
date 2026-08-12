@@ -11,7 +11,8 @@ import {
   MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_MIN, MPRIO_MAX,
   PICKER_X, PICKER_Y, PICKER_W,
   MOVE_STEP, ROTATE_STEP, SCALE_STEP,
-  EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, MASK_X,
+  EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, TOOLBAR_REDO_X,
+  MASK_X, IMAGE_X, SYMMETRY_X,
   TOOL_COLOR_X, TOOL_ERASER_X, TOOL_BUCKET_X, TOOL_TEXT_X, TOOL_SHAPE_X, TOOL_FILL_X, TOOL_PEN_X, TOOL_SELECT_X,
   DRAW_GROUPS, BOARD_W, BOARD_H,
 } from '../constants';
@@ -19,13 +20,16 @@ import {SHAPE_TOOLS, SHAPE_EMOJI} from '../shapes';
 import {ICON} from '../icons';
 import {t} from '@/i18n/i18n';
 import {openColorPicker as openAeeColorPicker} from '@/controllers/uiController';
-import {A, undo, clearBoard} from './slots';
+import {runtime} from '@/core/runtime';
+import {A, undo, redo, clearBoard, scratch, preview, previewCtx} from './slots';
+import {strokeInProgress} from './input';
 import {State} from './editorState';
 import {getBoardScreenRect, getPickerLayout, getPickerItemRect, updateStrokeFromPointerX, colorForFill, contrastColor, inBoardArea} from './geometry';
 import {toggleSlotMask} from './maskToggle';
 import {applyTransform, flipCanvas, moveBy} from './transform';
 import {applyToCharacter, leaveEditor, cancelEditingAndExit} from './lifecycle';
-import {commitSelection} from './selection';
+import {commitSelection, selHandleRect} from './selection';
+import {importImage} from './imageImport';
 import {afterEdit} from './editing';
 
 // Transform panel layout (from the user's DDT layout): four mode headers with
@@ -42,9 +46,17 @@ const E2 = {
 const drawBox = (b: Box, text: string, bg: string, hover?: string) => DrawButton(b.x, b.y, b.w, b.h, text, bg, undefined, hover);
 const hitBox = (b: Box) => MouseIn(b.x, b.y, b.w, b.h);
 
-// AEE's own colour picker (live-updates State.color).
+// AEE's own colour picker (live-updates State.color). It already carries an
+// opacity slider and an eyedropper, so both come along for free — we just have
+// to keep the opacity. The alpha reaches us through runtime.colorPickerAlpha,
+// which is refreshed immediately before every live callback (uiController), so
+// unlike the panel's own state it is never stale during a preview drag.
 function openColorPicker() {
-  openAeeColorPicker(State.color, (hex) => { if (hex) State.color = hex; });
+  openAeeColorPicker(State.color, (hex) => {
+    if (!hex) return;
+    State.color = hex;
+    State.alpha = runtime.colorPickerAlpha / 255;
+  }, false, Math.round(State.alpha * 100));
 }
 
 const ICON_INSET = 15;
@@ -69,7 +81,9 @@ function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}
   // drag — the cut-out region just sat empty (showing whatever's behind it)
   // until release, which looked like the piece fading out mid-drag and
   // snapping back solid on release.
-  if ((State.selPhase === 'floating' || State.selPhase === 'dragMove') && State.selBuffer && State.selRect) {
+  // 'dragScale' belongs here for the same reason as 'dragMove': it's set for the
+  // whole duration of the drag, so leaving it out blanks the piece until release.
+  if ((State.selPhase === 'floating' || State.selPhase === 'dragMove' || State.selPhase === 'dragScale') && State.selBuffer && State.selRect) {
     const b: Box = {...State.selRect, x: State.selRect.x + State.selOffsetX, y: State.selRect.y + State.selOffsetY};
     const s = toScreen(b);
     // Defensive: force full opacity/normal blending regardless of whatever
@@ -82,6 +96,15 @@ function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}
     MainCanvas.strokeStyle = '#00BFFF';
     MainCanvas.lineWidth = 2;
     MainCanvas.strokeRect(s.x, s.y, s.w, s.h);
+    const grip = selHandleRect();
+    if (grip) {
+      const g = toScreen(grip);
+      MainCanvas.setLineDash([]);
+      MainCanvas.fillStyle = '#00BFFF';
+      MainCanvas.fillRect(g.x, g.y, g.w, g.h);
+      MainCanvas.strokeStyle = 'white';
+      MainCanvas.strokeRect(g.x, g.y, g.w, g.h);
+    }
     MainCanvas.restore();
   } else if (State.selPhase === 'dragSelect' && State.selPreviewRect) {
     const s = toScreen(State.selPreviewRect);
@@ -101,15 +124,33 @@ export function slotDraw() {
   MainCanvas.save();
   MainCanvas.globalAlpha = 1;
   MainCanvas.globalCompositeOperation = 'source-over';
-  MainCanvas.drawImage(active.canvas, rect.x, rect.y, rect.w, rect.h); // live preview
+  // A stroke in flight lives on the scratch layer until release, so the preview
+  // has to show board+scratch merged exactly as commitStroke() will merge them —
+  // otherwise a reduced-opacity stroke looks like nothing is happening until you
+  // let go. Merged offscreen: see the `preview` canvas in slots.ts.
+  if (strokeInProgress()) {
+    previewCtx.globalCompositeOperation = 'source-over';
+    previewCtx.globalAlpha = 1;
+    previewCtx.clearRect(0, 0, BOARD_W, BOARD_H);
+    previewCtx.drawImage(active.canvas, 0, 0);
+    previewCtx.globalAlpha = State.alpha;
+    previewCtx.globalCompositeOperation = State.tool === 'eraser' ? 'destination-out' : 'source-over';
+    previewCtx.drawImage(scratch, 0, 0);
+    MainCanvas.drawImage(preview, rect.x, rect.y, rect.w, rect.h);
+  } else {
+    MainCanvas.drawImage(active.canvas, rect.x, rect.y, rect.w, rect.h); // live preview
+  }
   MainCanvas.restore();
   drawSelectionOverlay(rect);
 
   // Row 1
   DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', t('free-draw-mask-tooltip'));
   drawIconBtn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.undo, t('free-draw-undo-tooltip'));
+  drawIconBtn(TOOLBAR_REDO_X, TOOLBAR_Y1, ICON_W, ICON_H, active.redoStack.length ? 'White' : '#DDDDDD', ICON.redo, t('free-draw-redo-tooltip'));
   DrawButton(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Trash.png', t('free-draw-clear-tooltip'));
   DrawButton(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Cancel.png', t('free-draw-cancel-tooltip'));
+  drawIconBtn(IMAGE_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.image, t('free-draw-image-tooltip'));
+  drawIconBtn(SYMMETRY_X, TOOLBAR_Y1, ICON_W, ICON_H, State.symmetry ? 'cyan' : 'White', ICON.symmetry, t('free-draw-symmetry-tooltip'));
 
   // Row 2
   drawIconBtn(TOOL_PEN_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'pen' ? 'cyan' : 'White', ICON.pen, t('free-draw-pen-tooltip'));
@@ -118,7 +159,7 @@ export function slotDraw() {
   drawIconBtn(TOOL_TEXT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'text' ? 'cyan' : 'White', ICON.text, t('free-draw-text-tooltip'));
   drawIconBtn(TOOL_BUCKET_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'bucket' ? 'cyan' : 'White', ICON.bucket, t('free-draw-bucket-tooltip'));
   drawIconBtn(TOOL_ERASER_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'eraser' ? 'cyan' : 'White', ICON.eraser, t('free-draw-eraser-tooltip'));
-  drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color), ICON.color, t('free-draw-color-tooltip'));
+  drawIconBtn(TOOL_COLOR_X, TOOLBAR_Y2, ICON_W, ICON_H, colorForFill(State.color, State.alpha), ICON.color, t('free-draw-color-tooltip'));
   drawIconBtn(TOOL_SELECT_X, TOOLBAR_Y2, ICON_W, ICON_H, State.tool === 'select' ? 'cyan' : 'White', ICON.select, t('free-draw-select-tooltip'));
 
   // Row 3: stroke slider
@@ -172,7 +213,7 @@ export function slotDraw() {
     MainCanvas.save();
     MainCanvas.beginPath();
     MainCanvas.arc(cx, cy, Math.max(screenR, 1), 0, 2 * Math.PI);
-    MainCanvas.fillStyle = colorForFill(State.color);
+    MainCanvas.fillStyle = colorForFill(State.color, State.alpha);
     MainCanvas.globalAlpha = 0.85;
     MainCanvas.fill();
     MainCanvas.globalAlpha = 1;
@@ -204,9 +245,14 @@ export function slotClick() {
   if (MouseIn(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { cancelEditingAndExit(); return; }
 
   if (MouseIn(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H)) { toggleSlotMask(); return; }
+  // Async (file dialog): the click that opens it is the user gesture the browser
+  // requires; the piece is placed whenever they actually pick something.
+  if (MouseIn(IMAGE_X, TOOLBAR_Y1, ICON_W, ICON_H)) { void importImage(); return; }
   if (MouseIn(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H)) { cancelEditingAndExit(); return; }
   if (MouseIn(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H)) { clearBoard(); afterEdit(); return; }
   if (MouseIn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H)) { undo(); afterEdit(); return; }
+  if (MouseIn(TOOLBAR_REDO_X, TOOLBAR_Y1, ICON_W, ICON_H)) { redo(); afterEdit(); return; }
+  if (MouseIn(SYMMETRY_X, TOOLBAR_Y1, ICON_W, ICON_H)) { State.symmetry = !State.symmetry; return; }
 
   if (State.picker === 'shape') {
     for (let i = 0; i < SHAPE_TOOLS.length; i++) {

@@ -23,6 +23,7 @@ function makeSlot(i: number): Slot {
     isMask: false,
     maskPriority: MASK_PRIORITY,
     undoStack: [],
+    redoStack: [],
     sessionSnapshot: null,
     sessionState: null,
   };
@@ -62,13 +63,38 @@ export function pushUndo() {
   if (!A) return;
   A.undoStack.push(A.ctx.getImageData(0, 0, BOARD_W, BOARD_H));
   if (A.undoStack.length > 20) A.undoStack.shift();
+  A.redoStack.length = 0; // a new edit invalidates anything that was undone
 }
+// undo/redo are symmetric: each pops its own stack and pushes the CURRENT board
+// onto the other, so they can be alternated indefinitely.
 export function undo() {
   if (!A || !A.undoStack.length) return;
+  A.redoStack.push(A.ctx.getImageData(0, 0, BOARD_W, BOARD_H));
   A.ctx.putImageData(A.undoStack.pop()!, 0, 0);
+}
+export function redo() {
+  if (!A || !A.redoStack.length) return;
+  A.undoStack.push(A.ctx.getImageData(0, 0, BOARD_W, BOARD_H));
+  A.ctx.putImageData(A.redoStack.pop()!, 0, 0);
 }
 export function clearBoard() {
   if (!A) return;
   pushUndo();
   A.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
 }
+
+// Stroke scratch layer. Pen/eraser segments are drawn here at FULL opacity and
+// composited onto the board once, on release — drawing them straight onto the
+// board with a partial alpha would double-composite every overlapping segment
+// join and bead the stroke. One shared canvas: only one stroke exists at a time.
+export const scratch = document.createElement('canvas');
+scratch.width = BOARD_W; scratch.height = BOARD_H;
+export const scratchCtx = scratch.getContext('2d')!;
+
+// Board+scratch composited for the editor preview. It has to happen offscreen:
+// the eraser's blend is destination-out, and applying that straight to
+// MainCanvas would cut through the character and background sitting under the
+// board, instead of only through the drawing.
+export const preview = document.createElement('canvas');
+preview.width = BOARD_W; preview.height = BOARD_H;
+export const previewCtx = preview.getContext('2d')!;

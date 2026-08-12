@@ -384,6 +384,8 @@
   "wardrobe-cancel": "Cancelar",
   "free-draw-mask-tooltip": "Máscara: usa este dibujo como forma para ocultar todo lo que quede fuera del cuerpo (haz clic de nuevo para dibujo normal)",
   "free-draw-undo-tooltip": "Deshacer el último trazo",
+  "free-draw-redo-tooltip": "Rehacer (restaurar el paso deshecho)",
+  "free-draw-symmetry-tooltip": "Dibujo simétrico (espejo en el eje central; no para texto ni relleno)",
   "free-draw-clear-tooltip": "Borrar todo el lienzo",
   "free-draw-cancel-tooltip": "Cancelar (descartar todos los cambios y salir)",
   "free-draw-pen-tooltip": "Lápiz",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "Aplicar y salir (conservar todos los cambios)",
   "free-draw-exit-tooltip": "Salir sin guardar",
   "free-draw-hint": "Dibuja directamente sobre el personaje; «Mover» arrastra todo el dibujo, usa los botones para rotar/escalar/reflejar; «Máscara» usa el dibujo como forma para ocultar todo lo que quede fuera del cuerpo",
+  "free-draw-image-tooltip": "Importar imagen (solo archivo; arrastra para mover, esquina para redimensionar)",
+  "free-draw-image-failed": "No se pudo leer esa imagen — prueba con otro archivo",
+  "free-draw-image-tainted": "No se pueden leer los píxeles de esta imagen; importación cancelada",
+  "free-draw-image-placed": "Arrastra para mover, tira de la esquina azul para redimensionar. Haz clic fuera o Aceptar para fusionarla en el dibujo",
   "free-draw-text-prompt": "Introduce el texto a dibujar:",
   "color-picker-eyedropper-taint": "No se puede seleccionar: el lienzo está contaminado por una imagen de origen cruzado; recarga la página e inténtalo de nuevo."
 }

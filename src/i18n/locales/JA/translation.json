@@ -384,6 +384,8 @@
   "wardrobe-cancel": "キャンセル",
   "free-draw-mask-tooltip": "マスク：この絵を形として使い、体以外を隠す（もう一度押すと通常描画に戻る）",
   "free-draw-undo-tooltip": "直前の一筆を元に戻す",
+  "free-draw-redo-tooltip": "やり直し（元に戻した操作を復元）",
+  "free-draw-symmetry-tooltip": "対称描画（キャンバス中心軸で鏡像。文字と塗りつぶしは対象外）",
   "free-draw-clear-tooltip": "キャンバス全体を消去",
   "free-draw-cancel-tooltip": "キャンセル（今回の編集を保存せず終了）",
   "free-draw-pen-tooltip": "ペン",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "適用して終了（今回の編集を保存）",
   "free-draw-exit-tooltip": "保存せずに終了",
   "free-draw-hint": "キャラクターに直接描画；「移動」で絵全体をドラッグ、回転/拡大縮小/反転はボタンで；「マスク」は絵を形として体以外を隠す",
+  "free-draw-image-tooltip": "画像を読み込む（ファイルのみ。配置後はドラッグで移動、右下でサイズ変更）",
+  "free-draw-image-failed": "画像を読み込めませんでした。別のファイルをお試しください",
+  "free-draw-image-tainted": "この画像はピクセルを読み取れないため、読み込みを中止しました",
+  "free-draw-image-placed": "ドラッグで移動、右下の青い角でサイズ変更。キャンバス外をクリックか適用で絵に統合されます",
   "free-draw-text-prompt": "描画するテキストを入力：",
   "color-picker-eyedropper-taint": "取得できません：キャンバスがクロスオリジン画像で汚染されています。ページを再読み込みして再試行してください。"
 }

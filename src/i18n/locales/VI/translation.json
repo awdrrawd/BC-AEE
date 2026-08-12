@@ -384,6 +384,8 @@
   "wardrobe-cancel": "Hủy",
   "free-draw-mask-tooltip": "Mặt nạ: dùng hình vẽ này làm hình dạng để ẩn mọi thứ ngoài cơ thể (bấm lại để vẽ thường)",
   "free-draw-undo-tooltip": "Hoàn tác nét cuối",
+  "free-draw-redo-tooltip": "Làm lại (khôi phục bước vừa hoàn tác)",
+  "free-draw-symmetry-tooltip": "Vẽ đối xứng (lấy trục giữa khung làm gương; không áp dụng cho chữ và tô màu)",
   "free-draw-clear-tooltip": "Xóa toàn bộ khung vẽ",
   "free-draw-cancel-tooltip": "Hủy (bỏ mọi chỉnh sửa và thoát)",
   "free-draw-pen-tooltip": "Bút",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "Áp dụng và thoát (giữ mọi chỉnh sửa)",
   "free-draw-exit-tooltip": "Thoát không lưu",
   "free-draw-hint": "Vẽ trực tiếp lên nhân vật; \"Di chuyển\" kéo cả hình, dùng nút cho xoay/thu phóng/lật gương; \"Mặt nạ\" dùng hình làm hình dạng để ẩn mọi thứ ngoài cơ thể",
+  "free-draw-image-tooltip": "Nhập ảnh (chỉ chọn tệp; kéo để di chuyển, kéo góc để đổi kích thước)",
+  "free-draw-image-failed": "Không đọc được ảnh — hãy thử tệp khác",
+  "free-draw-image-tainted": "Không thể đọc điểm ảnh của ảnh này; đã hủy nhập",
+  "free-draw-image-placed": "Kéo để di chuyển, kéo góc xanh để đổi kích thước. Bấm ra ngoài hoặc Áp dụng để hợp nhất vào bản vẽ",
   "free-draw-text-prompt": "Nhập văn bản cần vẽ:",
   "color-picker-eyedropper-taint": "Không thể lấy màu: khung vẽ bị nhiễm bởi ảnh khác nguồn — hãy tải lại trang rồi thử lại."
 }

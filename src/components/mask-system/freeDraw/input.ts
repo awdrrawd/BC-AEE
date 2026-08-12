@@ -8,12 +8,13 @@ import {drawShapePreview, floodFill} from '../shapes';
 import {askText} from '@/core/prompts';
 import {t} from '@/i18n/i18n';
 import {STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H, MPRIO_Y, MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_H, BOARD_W, BOARD_H} from '../constants';
-import {A, pushUndo} from './slots';
+import {A, pushUndo, scratch, scratchCtx} from './slots';
 import {State} from './editorState';
 import {toLocal, inBoardArea, getBoardScreenRect, updateStrokeFromPointerX, pointInRect} from './geometry';
 import {updatePriorityFromPointerX, commitMaskPriority} from './maskToggle';
 import {afterEdit} from './editing';
 import {onSelectPointerDown, onSelectPointerMove, onSelectPointerUp} from './selection';
+import {onPaste} from './imageImport';
 
 function canvasCoordsFromEvent(evt: MouseEvent) {
   const canvas = MainCanvas.canvas;
@@ -21,11 +22,33 @@ function canvasCoordsFromEvent(evt: MouseEvent) {
   return {cx: (evt.clientX - rect.left) * (canvas.width / rect.width), cy: (evt.clientY - rect.top) * (canvas.height / rect.height)};
 }
 function shapeStyle(): ShapeStyle {
-  return {tool: State.tool, filled: State.filled, color: State.color, thickness: State.thickness};
+  return {tool: State.tool, filled: State.filled, color: State.color, thickness: State.thickness, shift: State.shift};
+}
+
+// Run `draw` once normally and, with symmetry on, once more mirrored about the
+// board's vertical centre. Everything that takes board coords goes through here
+// so the two passes can never drift apart.
+function withSymmetry(ctx: CanvasRenderingContext2D, draw: () => void) {
+  draw();
+  if (!State.symmetry) return;
+  ctx.save();
+  ctx.translate(BOARD_W, 0);
+  ctx.scale(-1, 1);
+  draw();
+  ctx.restore();
+}
+
+// Pen tablets report 0..1; mice report a fixed value, so only a real pen drives
+// the width. A 0 reading (first sample of a stroke, or hardware that doesn't
+// report pressure at all) means "unknown" → full width, never a vanishing line.
+function pressureOf(evt: PointerEvent): number {
+  if (evt.pointerType !== 'pen') return 1;
+  return evt.pressure > 0 ? 0.25 + evt.pressure * 0.75 : 1;
 }
 
 export function onPointerDown(evt: PointerEvent) {
   if (!A) return;
+  State.shift = evt.shiftKey;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (pointInRect(cx, cy, STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H)) {
     State.draggingStroke = true;
@@ -51,7 +74,9 @@ export function onPointerDown(evt: PointerEvent) {
   if (State.tool === 'bucket') {
     pushUndo();
     A.ctx.globalCompositeOperation = 'source-over';
-    floodFill(A.ctx, local[0], local[1], State.color);
+    // The fill writes pixels directly (putImageData), which ignores globalAlpha
+    // — the opacity has to go into the colour it writes instead.
+    floodFill(A.ctx, local[0], local[1], State.color, State.alpha);
     afterEdit();
     return;
   }
@@ -62,13 +87,16 @@ export function onPointerDown(evt: PointerEvent) {
       if (A !== slot || text == null || text === '') return;
       State.lastText = text;
       pushUndo();
+      slot.ctx.save();
       slot.ctx.globalCompositeOperation = 'source-over';
+      slot.ctx.globalAlpha = State.alpha;
       const size = State.thickness * 5 + 10;
       slot.ctx.fillStyle = State.color;
       slot.ctx.textAlign = 'left';
       slot.ctx.textBaseline = 'middle';
       slot.ctx.font = `${size}px sans-serif`;
-      slot.ctx.fillText(text, lx, ly);
+      slot.ctx.fillText(text, lx, ly); // no symmetry pass: mirrored text is just backwards
+      slot.ctx.restore();
       afterEdit();
     });
     return;
@@ -84,38 +112,60 @@ export function onPointerDown(evt: PointerEvent) {
     // length. lastPoint/lastMid drive the midpoint-quadratic smoothing.
     State.lastPoint = local;
     State.lastMid = local;
+    scratchCtx.clearRect(0, 0, BOARD_W, BOARD_H); // fresh stroke layer
   } else {
     State.snapshotBeforeShape = A.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   }
 }
 
-function strokeSegmentTo(local: [number, number]) {
+// Strokes go onto the scratch layer at FULL opacity; commitStroke() composites
+// the finished shape onto the board once, applying State.alpha there. The eraser
+// paints the scratch solid too — it only becomes a cut-out at composite time.
+function strokeSegmentTo(local: [number, number], pressure: number) {
   if (!A || !State.lastPoint || !State.lastMid) return;
-  A.ctx.lineCap = 'round';
-  A.ctx.lineJoin = 'round';
-  A.ctx.lineWidth = State.thickness;
-  if (State.tool === 'eraser') {
-    A.ctx.globalCompositeOperation = 'destination-out';
-    A.ctx.strokeStyle = 'rgba(0,0,0,1)';
-  } else {
-    A.ctx.globalCompositeOperation = 'source-over';
-    A.ctx.strokeStyle = State.color;
-  }
+  const ctx = scratchCtx;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(0.5, State.thickness * pressure);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = State.tool === 'eraser' ? '#000000' : State.color;
   // Classic smoothing: curve through the midpoint of each consecutive pair
   // of raw points, using the raw point itself as the control point. This
   // rounds off the faceted corners you'd otherwise get from sparse,
   // fast-moving mousemove/pointermove samples.
-  const mid: [number, number] = [(State.lastPoint[0] + local[0]) / 2, (State.lastPoint[1] + local[1]) / 2];
-  A.ctx.beginPath();
-  A.ctx.moveTo(State.lastMid[0], State.lastMid[1]);
-  A.ctx.quadraticCurveTo(State.lastPoint[0], State.lastPoint[1], mid[0], mid[1]);
-  A.ctx.stroke();
+  const from = State.lastMid, ctrl = State.lastPoint;
+  const mid: [number, number] = [(ctrl[0] + local[0]) / 2, (ctrl[1] + local[1]) / 2];
+  withSymmetry(ctx, () => {
+    ctx.beginPath();
+    ctx.moveTo(from[0], from[1]);
+    ctx.quadraticCurveTo(ctrl[0], ctrl[1], mid[0], mid[1]);
+    ctx.stroke();
+  });
   State.lastMid = mid;
   State.lastPoint = local;
 }
 
+// Merge the finished stroke into the board: source-over for the pen, and
+// destination-out for the eraser so State.alpha reads as erase STRENGTH.
+function commitStroke() {
+  if (!A) return;
+  A.ctx.save();
+  A.ctx.globalAlpha = State.alpha;
+  A.ctx.globalCompositeOperation = State.tool === 'eraser' ? 'destination-out' : 'source-over';
+  A.ctx.drawImage(scratch, 0, 0);
+  A.ctx.restore();
+  scratchCtx.clearRect(0, 0, BOARD_W, BOARD_H);
+}
+
+// True while a pen/eraser stroke is still only on the scratch layer, so the
+// editor preview knows to composite it on top of the board (see ui.ts).
+export function strokeInProgress(): boolean {
+  return State.isPressing && (State.tool === 'pen' || State.tool === 'eraser');
+}
+
 export function onPointerMove(evt: PointerEvent) {
   if (!A) return;
+  State.shift = evt.shiftKey;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (State.draggingStroke) { updateStrokeFromPointerX(cx); return; }
   if (State.draggingPriority) { updatePriorityFromPointerX(cx); return; }
@@ -136,14 +186,25 @@ export function onPointerMove(evt: PointerEvent) {
     const samples = coalesced.length ? coalesced : [evt];
     for (const sample of samples) {
       const p = canvasCoordsFromEvent(sample);
-      strokeSegmentTo(toLocal(p.cx, p.cy));
+      strokeSegmentTo(toLocal(p.cx, p.cy), pressureOf(sample));
     }
   } else {
     const local = toLocal(cx, cy);
     A.ctx.globalCompositeOperation = 'source-over';
     A.ctx.putImageData(State.snapshotBeforeShape!, 0, 0);
-    drawShapePreview(A.ctx, shapeStyle(), State.startX, State.startY, local[0], local[1]);
+    drawShape(local);
   }
+}
+
+// Shapes redraw from the pre-drag snapshot each frame, so they can be painted
+// straight onto the board with globalAlpha — there's no accumulation to bead.
+function drawShape(local: [number, number]) {
+  if (!A) return;
+  const ctx = A.ctx;
+  ctx.save();
+  ctx.globalAlpha = State.alpha;
+  withSymmetry(ctx, () => drawShapePreview(ctx, shapeStyle(), State.startX, State.startY, local[0], local[1]));
+  ctx.restore();
 }
 
 export function onPointerUp(evt: PointerEvent) {
@@ -156,19 +217,20 @@ export function onPointerUp(evt: PointerEvent) {
   State.isPressing = false;
   if (State.tool === 'pen' || State.tool === 'eraser') {
     // Draw the final tiny segment up to the real last point (the curve above
-    // always trails one point behind, at the midpoint). Must match the same
-    // composite mode/style strokeSegmentTo() used mid-stroke — forcing
-    // source-over here (as before) drew this last segment as an opaque black
-    // dot instead of erasing, since the eraser's strokeStyle is a solid
-    // 'rgba(0,0,0,1)' meant only for destination-out.
+    // always trails one point behind, at the midpoint) onto the scratch layer,
+    // in the same style strokeSegmentTo() used, then merge the whole stroke.
     if (State.lastMid && State.lastPoint) {
-      A.ctx.globalCompositeOperation = State.tool === 'eraser' ? 'destination-out' : 'source-over';
-      A.ctx.strokeStyle = State.tool === 'eraser' ? 'rgba(0,0,0,1)' : State.color;
-      A.ctx.beginPath();
-      A.ctx.moveTo(State.lastMid[0], State.lastMid[1]);
-      A.ctx.lineTo(State.lastPoint[0], State.lastPoint[1]);
-      A.ctx.stroke();
+      const from = State.lastMid, to = State.lastPoint;
+      scratchCtx.globalCompositeOperation = 'source-over';
+      scratchCtx.strokeStyle = State.tool === 'eraser' ? '#000000' : State.color;
+      withSymmetry(scratchCtx, () => {
+        scratchCtx.beginPath();
+        scratchCtx.moveTo(from[0], from[1]);
+        scratchCtx.lineTo(to[0], to[1]);
+        scratchCtx.stroke();
+      });
     }
+    commitStroke();
     State.lastPoint = null;
     State.lastMid = null;
   } else {
@@ -176,7 +238,7 @@ export function onPointerUp(evt: PointerEvent) {
     const {cx, cy} = canvasCoordsFromEvent(evt);
     const local = toLocal(cx, cy);
     A.ctx.putImageData(State.snapshotBeforeShape!, 0, 0);
-    drawShapePreview(A.ctx, shapeStyle(), State.startX, State.startY, local[0], local[1]);
+    drawShape(local);
     State.snapshotBeforeShape = null;
   }
   afterEdit();
@@ -192,6 +254,7 @@ export function attachListeners() {
   MainCanvas.canvas.addEventListener('pointerdown', onPointerDown);
   MainCanvas.canvas.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('paste', onPaste); // Ctrl+V an image onto the board
 }
 export function detachListeners() {
   if (!listenersAttached) return;
@@ -199,4 +262,5 @@ export function detachListeners() {
   MainCanvas.canvas.removeEventListener('pointerdown', onPointerDown);
   MainCanvas.canvas.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('paste', onPaste);
 }

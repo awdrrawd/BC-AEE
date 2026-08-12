@@ -10,6 +10,16 @@ export const State = {
   filled: false,
   thickness: 4,
   color: '#A020F0', // default purple
+  // 0–1, taken from the AEE colour picker's own opacity slider. For pen/eraser
+  // it's applied when the finished stroke is composited off the scratch layer
+  // (see slots.ts), so partial opacity never beads at the segment joins; the
+  // eraser reads it as erase STRENGTH, giving a soft eraser for free.
+  alpha: 1,
+  // Mirror every pen/eraser stroke and shape about the board's vertical centre
+  // — the usual way to paint symmetric body art. Text and bucket opt out (a
+  // mirrored glyph is just backwards, and a flood fill has no path to mirror).
+  symmetry: false,
+  shift: false, // held during a shape drag → 45° line / square / circle
   isPressing: false,
   startX: 0, startY: 0,
   snapshotBeforeShape: null as ImageData | null,
@@ -27,13 +37,20 @@ export const State = {
   // instead of erasing and redrawing. selRect/selBuffer hold the cut-out
   // piece; it floats on top of the board (never touching A.ctx) until
   // committed (baked into the real canvas) or discarded.
-  selPhase: 'idle' as 'idle' | 'dragSelect' | 'floating' | 'dragMove',
+  // An imported image is the SAME thing (see imageImport.ts) — it just arrives
+  // in selBuffer instead of being cut out of the board, so it inherits the drag,
+  // resize and commit behaviour for free.
+  selPhase: 'idle' as 'idle' | 'dragSelect' | 'floating' | 'dragMove' | 'dragScale',
   selStart: [0, 0] as [number, number],
   selPreviewRect: null as Box | null,
+  // selRect is the piece's DISPLAY box; selBuffer keeps its own (possibly
+  // higher) pixel resolution, so resizing re-samples from the source rather
+  // than from whatever it was last shown at.
   selRect: null as Box | null,
   selBuffer: null as HTMLCanvasElement | null,
   selOffsetX: 0, selOffsetY: 0,
   selDragStartCX: 0, selDragStartCY: 0, selDragStartOffX: 0, selDragStartOffY: 0,
+  selScaleStartW: 0, selScaleStartH: 0,
 };
 
 // Drop the floating piece without drawing it back (used when discarding edits).

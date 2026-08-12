@@ -384,6 +384,8 @@
   "wardrobe-cancel": "Annuler",
   "free-draw-mask-tooltip": "Masque : utiliser ce dessin comme forme pour masquer tout ce qui dépasse du corps (recliquer pour un dessin normal)",
   "free-draw-undo-tooltip": "Annuler le dernier trait",
+  "free-draw-redo-tooltip": "Rétablir (restaurer l'étape annulée)",
+  "free-draw-symmetry-tooltip": "Dessin symétrique (miroir sur l'axe central ; hors texte et remplissage)",
   "free-draw-clear-tooltip": "Effacer toute la toile",
   "free-draw-cancel-tooltip": "Annuler (abandonner toutes les modifications et quitter)",
   "free-draw-pen-tooltip": "Stylo",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "Appliquer et quitter (conserver toutes les modifications)",
   "free-draw-exit-tooltip": "Quitter sans enregistrer",
   "free-draw-hint": "Dessiner directement sur le personnage ; « Déplacer » fait glisser tout le dessin, les boutons pour pivoter/redimensionner/miroir ; « Masque » utilise le dessin comme forme pour masquer tout ce qui dépasse du corps",
+  "free-draw-image-tooltip": "Importer une image (fichier uniquement ; glisser pour déplacer, coin pour redimensionner)",
+  "free-draw-image-failed": "Impossible de lire cette image — essayez un autre fichier",
+  "free-draw-image-tainted": "Les pixels de cette image sont illisibles ; import annulé",
+  "free-draw-image-placed": "Glissez pour déplacer, tirez le coin bleu pour redimensionner. Cliquez à l'extérieur ou Valider pour la fusionner au dessin",
   "free-draw-text-prompt": "Saisir le texte à dessiner :",
   "color-picker-eyedropper-taint": "Impossible de prélever : la toile est corrompue par une image cross-origin — recharge la page et réessaie."
 }

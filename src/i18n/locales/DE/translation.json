@@ -384,6 +384,8 @@
   "wardrobe-cancel": "Abbrechen",
   "free-draw-mask-tooltip": "Maske: dieses Bild als Form nutzen, um alles außerhalb des Körpers zu verbergen (erneut klicken für normales Zeichnen)",
   "free-draw-undo-tooltip": "Letzten Strich rückgängig",
+  "free-draw-redo-tooltip": "Wiederholen (den rückgängig gemachten Schritt zurückholen)",
+  "free-draw-symmetry-tooltip": "Symmetrisch zeichnen (an der Mittelachse gespiegelt; nicht für Text und Füllung)",
   "free-draw-clear-tooltip": "Gesamte Leinwand löschen",
   "free-draw-cancel-tooltip": "Abbrechen (alle Änderungen verwerfen und beenden)",
   "free-draw-pen-tooltip": "Stift",
@@ -413,6 +415,10 @@
   "free-draw-accept-tooltip": "Übernehmen und beenden (alle Änderungen behalten)",
   "free-draw-exit-tooltip": "Ohne Speichern beenden",
   "free-draw-hint": "Direkt auf dem Charakter zeichnen; „Verschieben“ zieht das ganze Bild, Tasten für Drehen/Skalieren/Spiegeln; „Maske“ nutzt das Bild als Form, um alles außerhalb des Körpers zu verbergen",
+  "free-draw-image-tooltip": "Bild importieren (nur Datei; zum Verschieben ziehen, Ecke zum Skalieren)",
+  "free-draw-image-failed": "Bild konnte nicht gelesen werden — bitte eine andere Datei versuchen",
+  "free-draw-image-tainted": "Die Pixel dieses Bildes sind nicht lesbar; Import abgebrochen",
+  "free-draw-image-placed": "Ziehen zum Verschieben, blaue Ecke zum Skalieren. Klick außerhalb oder Übernehmen fügt es in die Zeichnung ein",
   "free-draw-text-prompt": "Zu zeichnenden Text eingeben:",
   "color-picker-eyedropper-taint": "Farbaufnahme nicht möglich: Die Leinwand ist durch ein Cross-Origin-Bild verunreinigt – Seite neu laden und erneut versuchen."
 }

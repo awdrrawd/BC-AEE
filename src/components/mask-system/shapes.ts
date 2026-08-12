@@ -43,6 +43,7 @@ export interface ShapeStyle {
   filled: boolean;
   color: string;
   thickness: number;
+  shift?: boolean; // held → constrain: 45° line / square / circle
 }
 
 export function drawShapePreview(
@@ -53,6 +54,22 @@ export function drawShapePreview(
   ctx.lineWidth = style.thickness;
   ctx.strokeStyle = style.color;
   ctx.fillStyle = style.color;
+  // Shift constrains the drag before any shape maths sees it: the line snaps to
+  // the nearest 45°, and the box-defined shapes (rect/ellipse) get equal sides,
+  // which is what makes them a square / a true circle.
+  if (style.shift) {
+    if (style.tool === 'line' || style.tool === 'arrow') {
+      const len = Math.hypot(x1 - x0, y1 - y0);
+      const step = Math.PI / 4;
+      const ang = Math.round(Math.atan2(y1 - y0, x1 - x0) / step) * step;
+      x1 = x0 + Math.cos(ang) * len;
+      y1 = y0 + Math.sin(ang) * len;
+    } else if (style.tool === 'rect' || style.tool === 'ellipse') {
+      const side = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      x1 = x0 + (x1 < x0 ? -side : side);
+      y1 = y0 + (y1 < y0 ? -side : side);
+    }
+  }
   const w = x1 - x0, h = y1 - y0;
   const r = Math.hypot(w, h);
   const {filled} = style;
@@ -297,9 +314,14 @@ export function drawShapePreview(
   }
 }
 
-function hexToRGBA(hex: string): [number, number, number, number] {
+function hexToRGBA(hex: string, alpha = 1): [number, number, number, number] {
   const h = (hex || '#000000').replace('#', '');
-  return [parseInt(h.substring(0, 2), 16) || 0, parseInt(h.substring(2, 4), 16) || 0, parseInt(h.substring(4, 6), 16) || 0, 255];
+  return [
+    parseInt(h.substring(0, 2), 16) || 0,
+    parseInt(h.substring(2, 4), 16) || 0,
+    parseInt(h.substring(4, 6), 16) || 0,
+    Math.round(Math.min(1, Math.max(0, alpha)) * 255),
+  ];
 }
 
 // Premultiplied-alpha read: two near-transparent pixels should compare as
@@ -328,7 +350,7 @@ function premul(data: Uint8ClampedArray, i: number): [number, number, number, nu
 //     This never extends the flood itself — it only touches pixels already
 //     touching a filled pixel — so it can't leak further through gaps in a
 //     drawing; it just smooths the edge the flood already reached.
-export function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number, hex: string) {
+export function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number, hex: string, alpha = 1) {
   sx = Math.floor(sx); sy = Math.floor(sy);
   if (sx < 0 || sy < 0 || sx >= BOARD_W || sy >= BOARD_H) return;
   const img = ctx.getImageData(0, 0, BOARD_W, BOARD_H);
@@ -337,7 +359,7 @@ export function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number,
   const idx = (x: number, y: number) => (y * BOARD_W + x) * 4;
   const si = idx(sx, sy);
   const [tr, tg, tb, ta] = premul(orig, si);
-  const [fr, fg, fb, fa] = hexToRGBA(hex);
+  const [fr, fg, fb, fa] = hexToRGBA(hex, alpha);
   if (data[si] === fr && data[si + 1] === fg && data[si + 2] === fb && data[si + 3] === fa) return;
 
   const tol = 32;

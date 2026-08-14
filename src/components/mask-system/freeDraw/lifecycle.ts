@@ -68,6 +68,7 @@ function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<vo
 // own Property, so we don't thrash the shared slot canvas with their drawings.
 export function syncSlots(C: Character | null) {
   if (!C || C !== Player || !Array.isArray(C.Appearance)) return;
+  let priorityChanged = false;
   for (const slot of slots) {
     const item = findSlotItem(C, slot);
     if (item) ensureSlotCanvasFromProperty(slot, item);
@@ -78,10 +79,17 @@ export function syncSlots(C: Character | null) {
     // each frame is what made the drag feel stuck/laggy).
     if (A !== slot) {
       loadMaskPriority(slot, item);
-      if (isSlotMasked(C, slot)) applyMaskPriority(C, slot);
+      if (isSlotMasked(C, slot)) priorityChanged = applyMaskPriority(C, slot) || priorityChanged;
     }
     syncVisCompanion(C, slot); // wear/remove the visible companion (VIS_SLOTS)
   }
+  // CharacterLoadCanvas snapshots Appearance into DrawAppearance, then builds
+  // AppearanceLayers/AppearanceMasks from that snapshot.  Merely repairing a
+  // companion's OverridePriority after login therefore leaves the already-built
+  // layer order and mask cache stale until some unrelated wardrobe action
+  // happens to refresh the character. Rebuild once when the repair changed a
+  // value so the remembered slider setting takes effect immediately.
+  if (priorityChanged && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
 }
 
 export async function slotLoad(i: number) {

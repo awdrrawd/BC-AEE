@@ -61,15 +61,19 @@ export function slotSyncGroups(slot: Slot): (AssetGroupName | string)[] {
 // uses it as that layer's priority: for the mask (ApplyToAbove:false → masks
 // only clothing below it) and, for VIS_SLOTS, for the visible-drawing layer
 // (so the 順位 slider reorders the drawing itself).
-export function applyMaskPriority(C: Character | null, slot: Slot) {
-  if (!C) return;
+export function applyMaskPriority(C: Character | null, slot: Slot): boolean {
+  if (!C) return false;
+  let changed = false;
   const setOn = (item: Item | null) => {
     if (!item) return;
     if (!CommonIsObject(item.Property)) item.Property = {};
+    if ((item.Property as AnyProps).OverridePriority === slot.maskPriority) return;
     (item.Property as AnyProps).OverridePriority = slot.maskPriority;
+    changed = true;
   };
   setOn(InventoryGet(C, slot.maskGroup));
   if (VIS_SLOTS.has(slot.index)) setOn(InventoryGet(C, slot.visGroup));
+  return changed;
 }
 
 // Wear/remove the visible companion (VIS_SLOTS) so it's worn exactly when the

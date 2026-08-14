@@ -120,6 +120,16 @@ function getOrBuildMaskComposite(compressed: string, offX: number, offY: number)
 // can clean it up. We stash the canvas in this character+asset's PersistentData
 // and repaint it each frame (the ECHO EFMask pattern).
 interface VisPersist { canvas?: HTMLCanvasElement }
+
+// Runtime-registered companions are not guaranteed to receive AfterDraw on
+// every BC build. Track actual successful paints for the current character
+// frame so the normal overlay can safely fill in when the callback is skipped.
+const visPaintedThisFrame = new WeakMap<Character, Set<number>>();
+
+export function beginVisFrame(C: Character | null) {
+  if (C) visPaintedThisFrame.set(C, new Set());
+}
+
 export function visAfterDraw(slot: Slot, data: DynamicDrawingData) {
   try {
     const C = data.C;
@@ -142,6 +152,9 @@ export function visAfterDraw(slot: Slot, data: DynamicDrawingData) {
     ctx.drawImage(img, offX, offY, MASK_IMG_W, MASK_IMG_H);
     data.drawCanvas(canvas, data.X, data.Y, data.AlphaMasks);
     data.drawCanvasBlink(canvas, data.X, data.Y, data.AlphaMasks);
+    let painted = visPaintedThisFrame.get(C);
+    if (!painted) visPaintedThisFrame.set(C, painted = new Set());
+    painted.add(slot.index);
   } catch (e) {
     console.error('[AEE Mask] Vis AfterDraw 例外：', e);
   }
@@ -171,7 +184,7 @@ export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: n
     }
 
     if (editingThis) continue;             // drawn live by slotDraw
-    if (VIS_SLOTS.has(slot.index)) continue; // visible drawn by the DynamicAfterDraw companion
+    if (VIS_SLOTS.has(slot.index) && visPaintedThisFrame.get(C)?.has(slot.index)) continue;
     if (isSlotMasked(C, slot)) continue;   // mask mode: no visible overlay
     if (!compressed) continue;
     const img = getOverlayImage(compressed);

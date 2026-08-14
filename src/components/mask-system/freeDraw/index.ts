@@ -33,11 +33,11 @@ import {SLOT_COUNT, DRAW_GROUPS, DRAW_ASSET, VIS_SLOTS} from '../constants';
 import {slots} from './slots';
 import {slotLoad, slotExit, slotInit, syncSlots} from './lifecycle';
 import {slotDraw, slotClick, onKeyDown} from './ui';
-import {visAfterDraw, renderOverlay} from './overlay';
+import {beginVisFrame, visAfterDraw, renderOverlay} from './overlay';
 import {cacheDrawArgs} from './geometry';
 import {registerFreeDrawGroups, applyFreeDrawNames} from './registration';
 
-export {registerFreeDrawGroups, applyFreeDrawNames, syncSlots, cacheDrawArgs, renderOverlay};
+export {registerFreeDrawGroups, applyFreeDrawNames, syncSlots, cacheDrawArgs, beginVisFrame, renderOverlay};
 
 export function installFreeDrawCallbacks() {
   const g = globalThis as unknown as Record<string, unknown>;

@@ -48,21 +48,13 @@ function registerDrawGroup(i: number): boolean {
   const g = DRAW_GROUPS[i];
   const slot = slots[i];
   if (assetExists(g, DRAW_ASSET)) {
-    // Older AEE builds registered DrawingBoard without a drawable layer and
-    // tried to render through a separate companion. Upgrade the live Asset in
-    // place: CharacterAppearanceSortLayers can then sort this worn item's own
-    // layer using Property.OverridePriority.
+    // Undo the short-lived HasImage implementation in-place as well as on a
+    // clean load. The board stores editor data only; the Vis companion owns
+    // the sortable visible layer and the Mask companion owns TextureMask.
     const asset = AssetGet(FAMILY, g, DRAW_ASSET) as unknown as {
-      DynamicAfterDraw: boolean;
-      Layer: Array<{HasImage: boolean; Priority: number}>;
+      Layer?: Array<{HasImage: boolean}>;
     } | null;
-    if (asset) {
-      asset.DynamicAfterDraw = false;
-      for (const layer of asset.Layer) {
-        layer.HasImage = true;
-        layer.Priority = DRAW_VIS_PRIORITY;
-      }
-    }
+    for (const layer of asset?.Layer ?? []) layer.HasImage = false;
     return true;
   }
 
@@ -75,7 +67,6 @@ function registerDrawGroup(i: number): boolean {
   safeAssetAdd(group, {
     Name: DRAW_ASSET,
     Value: 0, Wear: true, Extended: true, AlwaysInteract: true, Random: false,
-    Layer: [{HasImage: true, Priority: DRAW_VIS_PRIORITY}],
     RemoveItemOnRemove: removeOnRemove,
   }, {}, {Group: g});
   setDesc(g, DRAW_ASSET, maskLabel('mask-free-draw-name', {n: i + 1}));
@@ -88,6 +79,27 @@ function registerDrawGroup(i: number): boolean {
 // have AllowCustomize:false → no menu button).
 export function applyFreeDrawNames() {
   for (let i = 0; i < SLOT_COUNT; i++) setDesc(DRAW_GROUPS[i], DRAW_ASSET, maskLabel('mask-free-draw-name', {n: i + 1}));
+}
+
+// A separate real layer lets BC sort the visible drawing without turning the
+// editor's DrawingBoard asset into the TextureMask image source.
+function registerVisGroup(i: number): boolean {
+  const slot = slots[i];
+  if (assetExists(slot.visGroup, slot.visAsset)) return true;
+
+  const group = AssetGroupGet(FAMILY, slot.visGroup) ?? AssetGroupAdd(FAMILY, {
+    Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true, Random: false,
+    AllowCustomize: false, Priority: DRAW_VIS_PRIORITY,
+  } as unknown as AssetGroupDefinition);
+
+  safeAssetAdd(group, {
+    Name: slot.visAsset,
+    Description: `自由繪圖 ${i + 1}（顯示）`,
+    DynamicAfterDraw: true,
+    Layer: [{HasImage: false, Priority: DRAW_VIS_PRIORITY}],
+  }, null, {Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true});
+  setDesc(slot.visGroup, slot.visAsset, `自由繪圖${i + 1}顯示`);
+  return assetExists(slot.visGroup, slot.visAsset);
 }
 
 function registerMaskGroup(i: number): boolean {
@@ -118,7 +130,6 @@ export function registerFreeDrawGroups(): boolean {
   let ok = true;
   for (let i = 0; i < SLOT_COUNT; i++) ok = registerDrawGroup(i) && ok;
   for (let i = 0; i < SLOT_COUNT; i++) ok = registerMaskGroup(i) && ok;
-  // The old Vis companion assets are retained only for migration/removal.
-  // Visible drawings now use DrawingBoard's own sortable layer.
+  for (const i of VIS_SLOTS) ok = registerVisGroup(i) && ok;
   return ok;
 }

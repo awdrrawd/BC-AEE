@@ -4,7 +4,7 @@
 // and broadcasting worn-item changes to the room.
 
 import type {AnyProps, Slot} from './types';
-import {VIS_SLOTS, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
+import {VIS_SLOTS, PROP_KEY, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
 import {A, invalidateSlot, findSlotItem} from './slots';
 
 // Property key on the DrawingBoard item that remembers this slot's mask
@@ -71,23 +71,31 @@ export function applyMaskPriority(C: Character | null, slot: Slot): boolean {
     (item.Property as AnyProps).OverridePriority = slot.maskPriority;
     changed = true;
   };
-  setOn(findSlotItem(C, slot));
   setOn(InventoryGet(C, slot.maskGroup));
+  if (VIS_SLOTS.has(slot.index)) setOn(InventoryGet(C, slot.visGroup));
   return changed;
 }
 
 // Wear/remove the visible companion (VIS_SLOTS) so it's worn exactly when the
-// slot has a drawing and is NOT in mask mode (mask mode hides the visible, as
-// before). Idempotent (acts only on mismatch); deferred + push so it syncs.
+// slot has a drawing. Mask mode does not remove it: the separate mask companion
+// cuts the selected clothing while this layer keeps the stroke visible.
 let visRefreshPending = false;
 export function syncVisCompanion(C: Character | null, slot: Slot) {
   if (!C || !VIS_SLOTS.has(slot.index)) return;
+  const board = findSlotItem(C, slot);
+  const hasDraw = !!(board?.Property as AnyProps | undefined)?.[PROP_KEY];
+  // The visible drawing and its mask are independent layers. Keep the visible
+  // companion worn in mask mode too, so enabling the mask cuts clothing while
+  // the stroke itself remains visible at the same selected priority.
+  const shouldWear = hasDraw;
   const worn = !!InventoryGet(C, slot.visGroup);
-  // Migration from the experimental companion implementation. DrawingBoard
-  // now renders its own DynamicAfterDraw layer, so a companion would duplicate
-  // the drawing and can be removed safely.
-  if (!worn) { applyMaskPriority(C, slot); return; }
-  InventoryRemove(C, slot.visGroup, false);
+  if (shouldWear === worn) { if (worn) applyMaskPriority(C, slot); return; }
+  if (shouldWear) {
+    InventoryWear(C, slot.visAsset, slot.visGroup, null, null, null, null as never, false);
+    applyMaskPriority(C, slot);
+  } else {
+    InventoryRemove(C, slot.visGroup, false);
+  }
   if (!visRefreshPending) {
     visRefreshPending = true;
     setTimeout(() => { visRefreshPending = false; try { CharacterRefresh(C, true, false); } catch { /* ignore */ } }, 0);

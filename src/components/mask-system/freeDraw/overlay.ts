@@ -5,7 +5,7 @@
 
 import type {AnyProps, Slot} from './types';
 import {
-  PROP_KEY, MASK_IMG_W, MASK_IMG_H, MASK_COMPOSITE_CACHE_SIZE, OVERLAY_IMAGE_CACHE_SIZE, VIS_SLOTS,
+  PROP_KEY, DRAW_ASSET, MASK_IMG_W, MASK_IMG_H, MASK_COMPOSITE_CACHE_SIZE, OVERLAY_IMAGE_CACHE_SIZE, VIS_SLOTS,
 } from '../constants';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingChar} from '../masking';
 import {LRUCache} from '../lruCache';
@@ -18,7 +18,7 @@ import {getCharacterDrawRect} from './geometry';
 // slot, use the live board canvas; otherwise the cached 500×1000 composite of
 // that character's Property.CustomDraw (built by renderOverlay).
 slots.forEach((slot) => {
-  MaskImageProviders[slot.maskAsset] = () => {
+  const drawingImage = () => {
     const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
     const C = getBuildingChar() || cur;
     if (A === slot && C === cur) return slotComposite(slot); // live during local edit
@@ -29,6 +29,11 @@ slots.forEach((slot) => {
     const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
     return getOrBuildMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
   };
+  MaskImageProviders[slot.maskAsset] = drawingImage;
+  // DrawingBoard is a normal sortable HasImage layer. Replace its otherwise
+  // nonexistent PNG with this character's own full-body drawing, using the
+  // same proven content-keyed GL injection path as the mask texture.
+  MaskImageProviders[`/${slot.group}/${DRAW_ASSET}`] = drawingImage;
 });
 
 const overlayImgCache = new LRUCache<string, HTMLImageElement>(OVERLAY_IMAGE_CACHE_SIZE);
@@ -121,15 +126,6 @@ function getOrBuildMaskComposite(compressed: string, offX: number, offY: number)
 // and repaint it each frame (the ECHO EFMask pattern).
 interface VisPersist { canvas?: HTMLCanvasElement }
 
-// Runtime-registered companions are not guaranteed to receive AfterDraw on
-// every BC build. Track actual successful paints for the current character
-// frame so the normal overlay can safely fill in when the callback is skipped.
-const visPaintedThisFrame = new WeakMap<Character, Set<number>>();
-
-export function beginVisFrame(C: Character | null) {
-  if (C) visPaintedThisFrame.set(C, new Set());
-}
-
 export function visAfterDraw(slot: Slot, data: DynamicDrawingData) {
   try {
     const C = data.C;
@@ -152,9 +148,6 @@ export function visAfterDraw(slot: Slot, data: DynamicDrawingData) {
     ctx.drawImage(img, offX, offY, MASK_IMG_W, MASK_IMG_H);
     data.drawCanvas(canvas, data.X, data.Y, data.AlphaMasks);
     data.drawCanvasBlink(canvas, data.X, data.Y, data.AlphaMasks);
-    let painted = visPaintedThisFrame.get(C);
-    if (!painted) visPaintedThisFrame.set(C, painted = new Set());
-    painted.add(slot.index);
   } catch (e) {
     console.error('[AEE Mask] Vis AfterDraw 例外：', e);
   }
@@ -184,7 +177,7 @@ export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: n
     }
 
     if (editingThis) continue;             // drawn live by slotDraw
-    if (VIS_SLOTS.has(slot.index) && visPaintedThisFrame.get(C)?.has(slot.index)) continue;
+    if (VIS_SLOTS.has(slot.index)) continue; // rendered into C.Canvas at this layer's sorted position
     if (isSlotMasked(C, slot)) continue;   // mask mode: no visible overlay
     if (!compressed) continue;
     const img = getOverlayImage(compressed);

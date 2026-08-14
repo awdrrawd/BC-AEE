@@ -29,15 +29,14 @@
 //   lifecycle.ts       - extended-item load/exit/init, enter/leave/cancel/apply
 //   ui.ts             - toolbar drawing + click routing
 
-import {SLOT_COUNT, DRAW_GROUPS, DRAW_ASSET, VIS_SLOTS} from '../constants';
-import {slots} from './slots';
+import {SLOT_COUNT, DRAW_GROUPS, DRAW_ASSET} from '../constants';
 import {slotLoad, slotExit, slotInit, syncSlots} from './lifecycle';
 import {slotDraw, slotClick, onKeyDown} from './ui';
-import {beginVisFrame, visAfterDraw, renderOverlay} from './overlay';
+import {renderOverlay} from './overlay';
 import {cacheDrawArgs} from './geometry';
 import {registerFreeDrawGroups, applyFreeDrawNames} from './registration';
 
-export {registerFreeDrawGroups, applyFreeDrawNames, syncSlots, cacheDrawArgs, beginVisFrame, renderOverlay};
+export {registerFreeDrawGroups, applyFreeDrawNames, syncSlots, cacheDrawArgs, renderOverlay};
 
 export function installFreeDrawCallbacks() {
   const g = globalThis as unknown as Record<string, unknown>;
@@ -48,12 +47,6 @@ export function installFreeDrawCallbacks() {
     g[`${prefix}Click`] = () => { try { slotClick(); } catch (e) { console.error('[AEE Mask] Click 錯誤：', e); } };
     g[`${prefix}Exit`] = () => { try { slotExit(); } catch (e) { console.error('[AEE Mask] Exit 錯誤：', e); } };
     g[`${prefix}Init`] = (C: Character, Item: Item, Push?: boolean, Refresh?: boolean) => slotInit(i, C, Item, Push, Refresh);
-    // Visible-drawing companion's DynamicAfterDraw hook (VIS_SLOTS only): BC
-    // calls Assets{Group}{Asset}AfterDraw during that layer's draw.
-    if (VIS_SLOTS.has(i)) {
-      const slot = slots[i];
-      g[`Assets${slot.visGroup}${slot.visAsset}AfterDraw`] = (data: DynamicDrawingData) => visAfterDraw(slot, data);
-    }
   }
   window.addEventListener('keydown', onKeyDown);
 }

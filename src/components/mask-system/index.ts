@@ -5,7 +5,7 @@
 import bcAeeModSdk from '@/modsdk';
 import {installImagePatch, bustMaskTexture} from './masking';
 import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
-import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, beginVisFrame, renderOverlay, applyFreeDrawNames} from './freeDraw';
+import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames} from './freeDraw';
 import {installMaskTranslations} from './translations';
 import {installPeerDetection, isAeeMember} from './peers';
 import {SG_MASK_GROUP, SG_ASSET, DRAW_GROUPS, DRAW_ASSET} from './constants';
@@ -198,7 +198,6 @@ function tryHookDrawCharacter(): boolean {
   if (drawHooked) return true;
   if (typeof DrawCharacter !== 'function') return false;
   bcAeeModSdk.hookFunction('DrawCharacter', 1, (args, next) => {
-    beginVisFrame(args[0]);
     const ret = next(args);
     // This runs every frame for every character. A throw in any of our
     // post-draw steps would propagate through the DrawCharacter hook chain and

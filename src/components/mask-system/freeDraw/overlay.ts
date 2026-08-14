@@ -5,7 +5,7 @@
 
 import type {AnyProps} from './types';
 import {
-  PROP_KEY, MASK_IMG_W, MASK_IMG_H, MASK_COMPOSITE_CACHE_SIZE, OVERLAY_IMAGE_CACHE_SIZE, VIS_SLOTS,
+  PROP_KEY, MASK_IMG_W, MASK_IMG_H, MASK_COMPOSITE_CACHE_SIZE, OVERLAY_IMAGE_CACHE_SIZE,
 } from '../constants';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingChar} from '../masking';
 import {LRUCache} from '../lruCache';
@@ -30,12 +30,9 @@ slots.forEach((slot) => {
     return getOrBuildMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
   };
   MaskImageProviders[slot.maskAsset] = drawingImage;
-  // The visible companion is a normal BC image layer at its own asset URL.
-  // Namespace its otherwise-identical data URL with a harmless fragment so
-  // masking.ts does not share one decoded image/WebGL texture between a normal
-  // draw and GLDrawLoadTextureAlphaMask. Single-glove masks are stable because
-  // their source is mask-only; free draw must preserve that same isolation.
-  MaskImageProviders[`/${slot.visGroup}/${slot.visAsset}`] = () => `${drawingImage()}#aee-vis-${slot.index}`;
+  // Vis and Mask are mutually exclusive worn states, so the same source can be
+  // supplied directly without any artificial URL/cache namespace.
+  MaskImageProviders[`/${slot.visGroup}/${slot.visAsset}`] = drawingImage;
 });
 
 const overlayImgCache = new LRUCache<string, HTMLImageElement>(OVERLAY_IMAGE_CACHE_SIZE);
@@ -80,7 +77,9 @@ function getOverlayImage(compressed: string): HTMLImageElement {
 // Content-keyed (changes on every edit), so bounded with LRU eviction rather
 // than left to accumulate one entry per edit ever made in the session.
 const maskCompositeCache = new LRUCache<string, string>(MASK_COMPOSITE_CACHE_SIZE);
-const maskKey = (compressed: string, offX: number, offY: number) => `${compressed.length}|${offX}|${offY}|${compressed.slice(0, 40)}`;
+// Exact content identity prevents same-length PNG/LZ payloads with common
+// headers from returning another edit's or character's cached mask.
+const maskKey = (compressed: string, offX: number, offY: number) => `${offX}|${offY}|${compressed}`;
 function getMaskComposite(compressed: string, offX: number, offY: number): string | null {
   return maskCompositeCache.get(maskKey(compressed, offX, offY)) ?? null;
 }
@@ -135,10 +134,5 @@ export function renderOverlay(C: Character | null) {
         }
       }
     }
-
-    // Visible content is drawn exclusively by the sortable Vis asset's
-    // AfterDraw callback. Never add a post-character fallback here: that would
-    // necessarily sit above every BC appearance layer and defeat priority.
-    if (VIS_SLOTS.has(slot.index)) continue;
   }
 }

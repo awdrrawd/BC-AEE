@@ -18,7 +18,9 @@ import {safeCurrentCharacter} from './currentCharacter';
 function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
   const compressed = p ? (p[PROP_KEY] as string | undefined) : undefined;
-  const sig = compressed ? (compressed.length + ':' + compressed.slice(0, 16)) : '';
+  // Exact content identity: PNG/LZ payloads share long prefixes, so a short
+  // prefix plus length can alias two different drawings and retain stale pixels.
+  const sig = compressed || '';
   if (slot._loadedSig === sig) return Promise.resolve();
   if (slot._loadingSig === sig && slot._loadPromise) return slot._loadPromise;
   const token = (slot._loadToken ?? 0) + 1;
@@ -173,6 +175,7 @@ export function cancelEditingAndExit() {
       A.isMask = A.sessionState.isMask;
       A.maskPriority = A.sessionState.maskPriority;
       if (C && A.isMask) applyMaskPriority(C, A); // revert the live-dragged priority
+      if (C) syncVisCompanion(C, A); // restore the mutually-exclusive visible state too
       if (C && (maskChanged || prioChanged)) { CharacterRefresh(C, true, false); syncCharacterToRoom(C, ...slotSyncGroups(A)); }
     }
     A.undoStack = [];
@@ -198,7 +201,7 @@ export function applyToCharacter() {
   p.OffsetX = A.offsetX;
   p.OffsetY = A.offsetY;
   p[PROP_MASK_PRIO] = A.maskPriority;
-  A._loadedSig = compressed.length + ':' + compressed.slice(0, 16);
+  A._loadedSig = compressed;
 
   // Ensure the visible companion (VIS_SLOTS) reflects the new drawing on THIS
   // character before we broadcast — syncSlots only runs for the local player, so

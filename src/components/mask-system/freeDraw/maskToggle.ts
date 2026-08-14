@@ -77,9 +77,8 @@ export function applyMaskPriority(C: Character | null, slot: Slot): boolean {
   return changed;
 }
 
-// Wear/remove the visible companion (VIS_SLOTS) so it's worn exactly when the
-// slot has a drawing. Mask mode does not remove it: the separate mask companion
-// cuts the selected clothing while this layer keeps the stroke visible.
+// Wear the visible companion only in normal drawing mode. Mask mode removes it
+// so the stroke disappears and only its clothing cut-out remains.
 let visRefreshPending = false;
 export function syncVisCompanion(C: Character | null, slot: Slot): boolean {
   if (!C || !VIS_SLOTS.has(slot.index)) return false;

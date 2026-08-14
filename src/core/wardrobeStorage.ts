@@ -98,14 +98,16 @@ function compressedExtendedWardrobe(): string {
   return LZString.compressToUTF16(JSON.stringify(extended));
 }
 
-function extensionSettingsUploadBytes(fbcWardrobe: string): number {
-  const settingsPayload = {...(extensionSettings() ?? {}), [FBC_WARDROBE_KEY]: fbcWardrobe};
-  return new TextEncoder().encode(JSON.stringify({ExtensionSettings: settingsPayload})).byteLength;
+function extensionSettingUploadBytes(fbcWardrobe: string): number {
+  // ServerPlayerExtensionSettingsSync only sends this dot-notation key. Other
+  // plugins' ExtensionSettings do not share this request or consume AEE's limit.
+  const path = `ExtensionSettings.${FBC_WARDROBE_KEY}`;
+  return new TextEncoder().encode(JSON.stringify({[path]: fbcWardrobe})).byteLength;
 }
 
-/** Actual UTF-8 upload size of ExtensionSettings against BC's AccountUpdate limit. */
+/** Actual UTF-8 upload size of AEE's FBCWardrobe key against BC's AccountUpdate limit. */
 export function fbcWardrobeUsage(): {used: number; budget: number} {
-  return {used: extensionSettingsUploadBytes(compressedExtendedWardrobe()), budget: ACCOUNT_UPDATE_BYTE_LIMIT};
+  return {used: extensionSettingUploadBytes(compressedExtendedWardrobe()), budget: ACCOUNT_UPDATE_BYTE_LIMIT};
 }
 
 /** Serializes the extended slots (24–96) into the shared FBCWardrobe extension setting. */
@@ -115,7 +117,7 @@ function writeFbcWardrobe(): boolean {
     const payload = compressedExtendedWardrobe();
     // Over BC's AccountUpdate cap: reject before writing so the caller rolls back and warns,
     // rather than letting the oversized sync throw later at flush time.
-    if (extensionSettingsUploadBytes(payload) > ACCOUNT_UPDATE_BYTE_LIMIT) return false;
+    if (extensionSettingUploadBytes(payload) > ACCOUNT_UPDATE_BYTE_LIMIT) return false;
     Player.ExtensionSettings ??= {};
     (Player.ExtensionSettings as Record<string, unknown>)[FBC_WARDROBE_KEY] = payload;
     ServerPlayerExtensionSettingsSync(FBC_WARDROBE_KEY);

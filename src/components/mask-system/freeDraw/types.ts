@@ -21,5 +21,9 @@ export interface Slot {
   sessionSnapshot: ImageData | null;
   sessionState: {offsetX: number; offsetY: number; rotation: number; scale: number; isMask: boolean; maskPriority: number} | null;
   _loadedSig?: string;
+  _loadToken?: number;
+  _loadingSig?: string;
+  _loadPromise?: Promise<void>;
+  loading?: boolean;
   _composite?: string | null;
 }

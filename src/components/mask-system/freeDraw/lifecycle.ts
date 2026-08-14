@@ -14,29 +14,53 @@ import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 
-function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null) {
+function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
   const compressed = p ? (p[PROP_KEY] as string | undefined) : undefined;
   const sig = compressed ? (compressed.length + ':' + compressed.slice(0, 16)) : '';
-  if (slot._loadedSig === sig) return;
-  slot._loadedSig = sig;
+  if (slot._loadedSig === sig) return Promise.resolve();
+  if (slot._loadingSig === sig && slot._loadPromise) return slot._loadPromise;
+  const token = (slot._loadToken ?? 0) + 1;
+  slot._loadToken = token;
   slot.offsetX = (p?.OffsetX as number) || 0;
   slot.offsetY = (p?.OffsetY as number) || 0;
   if (!compressed) {
     slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
     invalidateSlot(slot);
-    return;
+    slot._loadedSig = sig;
+    return Promise.resolve();
   }
   const dataUrl = typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed;
-  const img = new Image();
-  img.onload = () => {
-    slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
-    slot.ctx.drawImage(img, 0, 0, BOARD_W, BOARD_H);
-    invalidateSlot(slot);
-    const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
-    if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
-  };
-  img.src = dataUrl;
+  slot._loadingSig = sig;
+  const promise = new Promise<void>(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      if (slot._loadToken === token) {
+        slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
+        slot.ctx.drawImage(img, 0, 0, BOARD_W, BOARD_H);
+        slot._loadedSig = sig;
+        invalidateSlot(slot);
+        const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+        if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
+      }
+      if (slot._loadToken === token) {
+        slot._loadingSig = undefined;
+        slot._loadPromise = undefined;
+      }
+      resolve();
+    };
+    img.onerror = () => {
+      if (slot._loadToken === token) {
+        slot._loadedSig = undefined;
+        slot._loadingSig = undefined;
+        slot._loadPromise = undefined;
+      }
+      resolve();
+    };
+    img.src = dataUrl;
+  });
+  slot._loadPromise = promise;
+  return promise;
 }
 
 // Keep the LOCAL player's board canvases current (they feed the editor + the
@@ -60,10 +84,10 @@ export function syncSlots(C: Character | null) {
   }
 }
 
-export function slotLoad(i: number) {
+export async function slotLoad(i: number) {
   setActiveSlot(slots[i]);
   const active = slots[i];
-  attachListeners();
+  active.loading = true;
   const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
   active.isMask = isSlotMasked(C, active);
   const item = DialogFocusItem;
@@ -72,19 +96,25 @@ export function slotLoad(i: number) {
     const p = item.Property as AnyProps;
     active.offsetX = (p.OffsetX as number) || 0;
     active.offsetY = (p.OffsetY as number) || 0;
-    if (p[PROP_KEY]) { active._loadedSig = undefined; ensureSlotCanvasFromProperty(active, item); }
   }
+  await ensureSlotCanvasFromProperty(active, item);
+  if (A !== active) return;
   active.sessionSnapshot = active.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   active.sessionState = {offsetX: active.offsetX, offsetY: active.offsetY, rotation: active.rotation, scale: active.scale, isMask: active.isMask, maskPriority: active.maskPriority};
   State.picker = null;
   resetSelection(); // stale selection from a previous slot/session must not carry over
   if (State.tool === 'move' || State.tool === 'select') State.tool = 'pen';
   invalidateSlot(active);
+  active.loading = false;
+  attachListeners();
   if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
   DialogExtendedMessage = t('free-draw-hint');
 }
 
-export function slotExit() { detachListeners(); }
+export function slotExit() {
+  if (A) A.loading = false;
+  detachListeners();
+}
 
 export function slotInit(_i: number, C: Character, Item: Item, Push = true, Refresh = true): boolean {
   if (!CommonIsObject(Item.Property)) Item.Property = {};

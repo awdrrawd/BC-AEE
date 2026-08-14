@@ -47,7 +47,7 @@ function pressureOf(evt: PointerEvent): number {
 }
 
 export function onPointerDown(evt: PointerEvent) {
-  if (!A) return;
+  if (!A || A.loading) return;
   State.shift = evt.shiftKey;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (pointInRect(cx, cy, STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H)) {
@@ -164,7 +164,7 @@ export function strokeInProgress(): boolean {
 }
 
 export function onPointerMove(evt: PointerEvent) {
-  if (!A) return;
+  if (!A || A.loading) return;
   State.shift = evt.shiftKey;
   const {cx, cy} = canvasCoordsFromEvent(evt);
   if (State.draggingStroke) { updateStrokeFromPointerX(cx); return; }
@@ -244,6 +244,22 @@ export function onPointerUp(evt: PointerEvent) {
   afterEdit();
 }
 
+function cancelPointerInteraction(evt: PointerEvent) {
+  if (!A) return;
+  scratchCtx.clearRect(0, 0, BOARD_W, BOARD_H);
+  State.isPressing = false;
+  State.dragging = false;
+  State.draggingStroke = false;
+  if (State.draggingPriority) {
+    State.draggingPriority = false;
+    commitMaskPriority();
+  }
+  State.snapshotBeforeShape = null;
+  State.lastPoint = null;
+  State.lastMid = null;
+  evt.preventDefault();
+}
+
 let listenersAttached = false;
 export function attachListeners() {
   if (listenersAttached) return;
@@ -254,6 +270,7 @@ export function attachListeners() {
   MainCanvas.canvas.addEventListener('pointerdown', onPointerDown);
   MainCanvas.canvas.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', cancelPointerInteraction);
   window.addEventListener('paste', onPaste); // Ctrl+V an image onto the board
 }
 export function detachListeners() {
@@ -262,5 +279,14 @@ export function detachListeners() {
   MainCanvas.canvas.removeEventListener('pointerdown', onPointerDown);
   MainCanvas.canvas.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', cancelPointerInteraction);
   window.removeEventListener('paste', onPaste);
+  scratchCtx.clearRect(0, 0, BOARD_W, BOARD_H);
+  State.isPressing = false;
+  State.dragging = false;
+  State.draggingStroke = false;
+  State.draggingPriority = false;
+  State.snapshotBeforeShape = null;
+  State.lastPoint = null;
+  State.lastMid = null;
 }

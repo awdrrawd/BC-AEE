@@ -108,11 +108,9 @@ export const DRAW_GROUPS = (['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3'] as unk
 export const DRAW_X = 500, DRAW_Y = 0;
 export const BOARD_W = 250, BOARD_H = 500;
 
-// TEST (slot 0 only): render the visible drawing as a real DynamicAfterDraw
-// layer (companion `ItemCanvasNVis`) so it's per-character AND layer-orderable,
-// instead of the always-top-most DrawCharacter overlay. Slots in this set use
-// the companion; others keep the overlay.
-export const VIS_SLOTS = new Set<number>([0]);
+// Render every visible drawing as a real DynamicAfterDraw layer (companion
+// `ItemCanvasNVis`) so all three slots are per-character and layer-orderable.
+export const VIS_SLOTS = new Set<number>(Array.from({length: SLOT_COUNT}, (_, index) => index));
 export const DRAW_VIS_PRIORITY = 99; // base layer priority (overridden by the 順位 slider)
 
 // Mask image is body-sized (500×1000), matching BC's own glove masks.

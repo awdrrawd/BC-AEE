@@ -14,6 +14,13 @@ import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 
+function safeCurrentCharacter(): Character | null {
+  try {
+    if (typeof CharacterGetCurrent === 'function') return CharacterGetCurrent() || null;
+  } catch { /* CurrentCharacter is not initialized outside character screens */ }
+  return typeof Player !== 'undefined' ? Player : null;
+}
+
 function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
   const compressed = p ? (p[PROP_KEY] as string | undefined) : undefined;
@@ -40,7 +47,7 @@ function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<vo
         slot.ctx.drawImage(img, 0, 0, BOARD_W, BOARD_H);
         slot._loadedSig = sig;
         invalidateSlot(slot);
-        const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+        const C = safeCurrentCharacter();
         if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
       }
       if (slot._loadToken === token) {

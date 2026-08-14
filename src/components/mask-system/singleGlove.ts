@@ -21,6 +21,17 @@ let cropStarted = false;
 const MASK_CROP_MAX_ATTEMPTS = 3;
 const MASK_CROP_RETRY_DELAY_MS = 1500; // backs off: 1.5s, 3s
 
+// CharacterGetCurrent exists globally even when BC has not created
+// CurrentCharacter yet. In that state its implementation reads
+// CurrentCharacter.FocusGroup and throws, so existence checks alone are not
+// sufficient for asynchronous image callbacks/providers.
+function safeCurrentCharacter(): Character | null {
+  try {
+    if (typeof CharacterGetCurrent === 'function') return CharacterGetCurrent() || null;
+  } catch { /* character screen is not ready */ }
+  return typeof Player !== 'undefined' ? Player : null;
+}
+
 // The source is a same-origin data: URL (SG_MASK_DATAURL, bundled at build
 // time), so a load failure here isn't a transient network hiccup — it means
 // the decode itself failed (e.g. a momentarily starved browser image decoder).
@@ -47,8 +58,8 @@ function ensureMaskCrops(attempt = 1) {
     }
     // Crops are ready → drop the (transparent) cached mask texture and rebuild.
     bustMaskTexture();
-    if (typeof CharacterGetCurrent === 'function' && typeof CharacterLoadCanvas === 'function') {
-      const C = CharacterGetCurrent();
+    if (typeof CharacterLoadCanvas === 'function') {
+      const C = safeCurrentCharacter();
       if (C) setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0);
     }
   });
@@ -88,8 +99,7 @@ function selectedOption(): SGOption | null {
   // During a GL build, use the character being built (so remote players show
   // THEIR own glove); otherwise fall back to the current/edited character.
   const C = getBuildingChar()
-    || (typeof CharacterGetCurrent === 'function' && CharacterGetCurrent())
-    || (typeof Player !== 'undefined' ? Player : null);
+    || safeCurrentCharacter();
   return readSelection(C ? InventoryGet(C, SG_MASK_GROUP) : null);
 }
 

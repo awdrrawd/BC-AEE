@@ -9,6 +9,7 @@ import {
 import {SG_MASK_DATAURL, SG_ITEM_DATAURL} from './assets';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, addPreviewRule, getBuildingChar} from './masking';
 import {maskLabel} from './translations';
+import {safeCurrentCharacter} from './freeDraw/currentCharacter';
 
 // The glove mask ships as ONE 1000x1000 image: right hand occupies x 0..500,
 // left hand x 500..1000 (full height). BC's TextureMask expects a body-sized
@@ -20,17 +21,6 @@ const SG_DATAURL: Partial<Record<SGSide, string>> = {};
 let cropStarted = false;
 const MASK_CROP_MAX_ATTEMPTS = 3;
 const MASK_CROP_RETRY_DELAY_MS = 1500; // backs off: 1.5s, 3s
-
-// CharacterGetCurrent exists globally even when BC has not created
-// CurrentCharacter yet. In that state its implementation reads
-// CurrentCharacter.FocusGroup and throws, so existence checks alone are not
-// sufficient for asynchronous image callbacks/providers.
-function safeCurrentCharacter(): Character | null {
-  try {
-    if (typeof CharacterGetCurrent === 'function') return CharacterGetCurrent() || null;
-  } catch { /* character screen is not ready */ }
-  return typeof Player !== 'undefined' ? Player : null;
-}
 
 // The source is a same-origin data: URL (SG_MASK_DATAURL, bundled at build
 // time), so a load failure here isn't a transient network hiccup — it means

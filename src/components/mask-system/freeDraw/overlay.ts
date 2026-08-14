@@ -3,7 +3,7 @@
 // globally, so a real per-character layer is impossible — we read each
 // character's synced drawing here instead).
 
-import type {AnyProps, Slot} from './types';
+import type {AnyProps} from './types';
 import {
   PROP_KEY, MASK_IMG_W, MASK_IMG_H, MASK_COMPOSITE_CACHE_SIZE, OVERLAY_IMAGE_CACHE_SIZE, VIS_SLOTS,
 } from '../constants';
@@ -11,15 +11,15 @@ import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingCha
 import {LRUCache} from '../lruCache';
 import {slots, A, slotComposite, findSlotItem} from './slots';
 import {isSlotMasked} from './maskToggle';
-import {getCharacterDrawRect} from './geometry';
+import {safeCurrentCharacter} from './currentCharacter';
 
 // Mask companion shape. During a GL build it must be the BUILDING character's
 // drawing (so remote players get their own mask). While locally editing this
 // slot, use the live board canvas; otherwise the cached 500×1000 composite of
 // that character's Property.CustomDraw (built by renderOverlay).
 slots.forEach((slot) => {
-  MaskImageProviders[slot.maskAsset] = () => {
-    const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const drawingImage = () => {
+    const cur = safeCurrentCharacter();
     const C = getBuildingChar() || cur;
     if (A === slot && C === cur) return slotComposite(slot); // live during local edit
     const item = C ? findSlotItem(C, slot) : null;
@@ -29,6 +29,13 @@ slots.forEach((slot) => {
     const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
     return getOrBuildMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
   };
+  MaskImageProviders[slot.maskAsset] = drawingImage;
+  // The visible companion is a normal BC image layer at its own asset URL.
+  // Namespace its otherwise-identical data URL with a harmless fragment so
+  // masking.ts does not share one decoded image/WebGL texture between a normal
+  // draw and GLDrawLoadTextureAlphaMask. Single-glove masks are stable because
+  // their source is mask-only; free draw must preserve that same isolation.
+  MaskImageProviders[`/${slot.visGroup}/${slot.visAsset}`] = () => `${drawingImage()}#aee-vis-${slot.index}`;
 });
 
 const overlayImgCache = new LRUCache<string, HTMLImageElement>(OVERLAY_IMAGE_CACHE_SIZE);
@@ -106,60 +113,9 @@ function getOrBuildMaskComposite(compressed: string, offX: number, offY: number)
   return getMaskComposite(compressed, offX, offY);
 }
 
-// DynamicAfterDraw callback — BC calls this during the vis companion layer's
-// draw, once per character. Paint THAT character's own drawing at the layer
-// position (X,Y) so it's per-character AND respects layer order. Draw the blink
-// frame too, else the drawing vanishes whenever the character blinks.
-//
-// CRITICAL: the canvas passed to drawCanvas MUST come from
-// AnimationGenerateTempCanvas — BC's drawCanvas keys the GL texture by the
-// canvas's `name` attribute (`Img.getAttribute("name")`); a plain canvas has
-// none → null key → `GLDrawImageCache.set(null,…)` poisons the cache and crashes
-// AnimationPurge (`null.startsWith`), plus `GLDrawImage(null)`. The generated
-// name embeds C.CharacterID + the asset, so it's per-character and AnimationPurge
-// can clean it up. We stash the canvas in this character+asset's PersistentData
-// and repaint it each frame (the ECHO EFMask pattern).
-interface VisPersist { canvas?: HTMLCanvasElement }
-
-const visPaintedThisFrame = new WeakMap<Character, Set<number>>();
-
-export function beginVisFrame(C: Character | null) {
-  if (C) visPaintedThisFrame.set(C, new Set());
-}
-
-export function visAfterDraw(slot: Slot, data: DynamicDrawingData) {
-  try {
-    const C = data.C;
-    // The locally-edited slot is shown live by slotDraw's preview; skip here to
-    // avoid drawing the stale saved copy behind it.
-    const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
-    if (A === slot && C === cur) return;
-    const board = findSlotItem(C, slot);
-    const p = board?.Property as AnyProps | undefined;
-    const compressed = p?.[PROP_KEY] as string | undefined;
-    if (!compressed) return;
-    const img = getOverlayImage(compressed);
-    if (!img.complete || !img.naturalWidth) return;
-    const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
-
-    const store = data.PersistentData() as VisPersist;
-    const canvas = (store.canvas ??= AnimationGenerateTempCanvas(C, data.A, MASK_IMG_W, MASK_IMG_H));
-    const ctx = canvas.getContext('2d')!;
-    ctx.clearRect(0, 0, MASK_IMG_W, MASK_IMG_H);
-    ctx.drawImage(img, offX, offY, MASK_IMG_W, MASK_IMG_H);
-    data.drawCanvas(canvas, data.X, data.Y, data.AlphaMasks);
-    data.drawCanvasBlink(canvas, data.X, data.Y, data.AlphaMasks);
-    let painted = visPaintedThisFrame.get(C);
-    if (!painted) visPaintedThisFrame.set(C, painted = new Set());
-    painted.add(slot.index);
-  } catch (e) {
-    console.error('[AEE Mask] Vis AfterDraw 例外：', e);
-  }
-}
-
-export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: number, isHeightResizeAllowed?: boolean) {
+export function renderOverlay(C: Character | null) {
   if (!C || !Array.isArray(C.Appearance)) return;
-  const cur = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const cur = safeCurrentCharacter();
   for (const slot of slots) {
     const item = findSlotItem(C, slot);
     if (!item) continue;
@@ -180,16 +136,9 @@ export function renderOverlay(C: Character | null, X: number, Y: number, Zoom: n
       }
     }
 
-    if (editingThis) continue;             // drawn live by slotDraw
-    if (VIS_SLOTS.has(slot.index) && visPaintedThisFrame.get(C)?.has(slot.index)) continue;
-    if (isSlotMasked(C, slot)) continue;   // mask mode: no visible overlay
-    if (!compressed) continue;
-    const img = getOverlayImage(compressed);
-    if (!img.complete || !img.naturalWidth) continue;
-    const rect = getCharacterDrawRect(C, X, Y, Zoom, isHeightResizeAllowed);
-    MainCanvas.save();
-    MainCanvas.globalAlpha = 1;
-    MainCanvas.drawImage(img, rect.x + offX * (rect.w / 500), rect.y + offY * (rect.h / 1000), rect.w, rect.h);
-    MainCanvas.restore();
+    // Visible content is drawn exclusively by the sortable Vis asset's
+    // AfterDraw callback. Never add a post-character fallback here: that would
+    // necessarily sit above every BC appearance layer and defeat priority.
+    if (VIS_SLOTS.has(slot.index)) continue;
   }
 }

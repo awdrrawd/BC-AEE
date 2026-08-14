@@ -85,7 +85,23 @@ export function applyFreeDrawNames() {
 // editor's DrawingBoard asset into the TextureMask image source.
 function registerVisGroup(i: number): boolean {
   const slot = slots[i];
-  if (assetExists(slot.visGroup, slot.visAsset)) return true;
+  if (assetExists(slot.visGroup, slot.visAsset)) {
+    const asset = AssetGet(FAMILY, slot.visGroup, slot.visAsset) as unknown as {
+      DynamicAfterDraw: boolean;
+      Layer?: Array<{Name?: string; HasImage: boolean; Priority: number; TextureMask?: unknown}>;
+    } | null;
+    if (asset) {
+      asset.DynamicAfterDraw = false;
+      // Remove the experimental embedded mask layer. Masking belongs solely to
+      // ItemCanvasNMask; Vis is worn only in normal visible-drawing mode.
+      if (asset.Layer) asset.Layer = asset.Layer.filter(layer => !layer.TextureMask);
+      for (const layer of asset.Layer ?? []) {
+        layer.HasImage = true;
+        layer.Priority = DRAW_VIS_PRIORITY;
+      }
+    }
+    return true;
+  }
 
   const group = AssetGroupGet(FAMILY, slot.visGroup) ?? AssetGroupAdd(FAMILY, {
     Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true, Random: false,
@@ -95,8 +111,8 @@ function registerVisGroup(i: number): boolean {
   safeAssetAdd(group, {
     Name: slot.visAsset,
     Description: `自由繪圖 ${i + 1}（顯示）`,
-    DynamicAfterDraw: true,
-    Layer: [{HasImage: false, Priority: DRAW_VIS_PRIORITY}],
+    DynamicAfterDraw: false,
+    Layer: [{HasImage: true, Priority: DRAW_VIS_PRIORITY}],
   }, null, {Group: slot.visGroup, Category: 'Appearance', Clothing: true, AllowNone: true});
   setDesc(slot.visGroup, slot.visAsset, `自由繪圖${i + 1}顯示`);
   return assetExists(slot.visGroup, slot.visAsset);

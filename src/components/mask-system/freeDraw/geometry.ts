@@ -10,6 +10,7 @@ import {
 } from '../constants';
 import {A} from './slots';
 import {State} from './editorState';
+import {safeCurrentCharacter} from './currentCharacter';
 
 export function getCharacterDrawRect(C: Character | null, X: number, Y: number, Zoom: number, isHeightResizeAllowed?: boolean) {
   if (!C) return {x: X, y: Y, w: 500 * Zoom, h: 1000 * Zoom};
@@ -23,7 +24,7 @@ interface DrawArgs {X: number; Y: number; Zoom: number; IsHeightResizeAllowed?: 
 const lastCharDrawArgs = new Map<number | Character, DrawArgs>();
 export function cacheDrawArgs(C: Character | null, X: number, Y: number, Zoom: number, isHeightResizeAllowed?: boolean) {
   if (!C) return;
-  const current = typeof CharacterGetCurrent === 'function' ? CharacterGetCurrent() : null;
+  const current = safeCurrentCharacter();
   if (current && C !== current) return;
   const key = C.MemberNumber != null ? C.MemberNumber : C;
   lastCharDrawArgs.set(key, {X, Y, Zoom, IsHeightResizeAllowed: isHeightResizeAllowed});
@@ -35,7 +36,7 @@ function getCachedDrawArgs(C: Character | null): DrawArgs | null {
 }
 
 export function getBoardScreenRect() {
-  const C = CharacterGetCurrent();
+  const C = safeCurrentCharacter();
   const cached = getCachedDrawArgs(C);
   const base = cached
     ? getCharacterDrawRect(C, cached.X, cached.Y, cached.Zoom, cached.IsHeightResizeAllowed)

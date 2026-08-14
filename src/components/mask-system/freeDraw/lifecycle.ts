@@ -13,13 +13,7 @@ import {
 import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
-
-function safeCurrentCharacter(): Character | null {
-  try {
-    if (typeof CharacterGetCurrent === 'function') return CharacterGetCurrent() || null;
-  } catch { /* CurrentCharacter is not initialized outside character screens */ }
-  return typeof Player !== 'undefined' ? Player : null;
-}
+import {safeCurrentCharacter} from './currentCharacter';
 
 function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
@@ -88,7 +82,7 @@ export function syncSlots(C: Character | null) {
       loadMaskPriority(slot, item);
       if (isSlotMasked(C, slot)) priorityChanged = applyMaskPriority(C, slot) || priorityChanged;
     }
-    syncVisCompanion(C, slot); // wear/remove the visible companion (VIS_SLOTS)
+    priorityChanged = syncVisCompanion(C, slot) || priorityChanged;
   }
   // CharacterLoadCanvas snapshots Appearance into DrawAppearance, then builds
   // AppearanceLayers/AppearanceMasks from that snapshot.  Merely repairing a
@@ -103,7 +97,7 @@ export async function slotLoad(i: number) {
   setActiveSlot(slots[i]);
   const active = slots[i];
   active.loading = true;
-  const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const C = safeCurrentCharacter();
   active.isMask = isSlotMasked(C, active);
   const item = DialogFocusItem;
   loadMaskPriority(active, item);
@@ -152,7 +146,7 @@ export function leaveEditor() {
   setActiveSlot(null);
   if (editing) {
     invalidateSlot(editing);
-    const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+    const C = safeCurrentCharacter();
     if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
   }
 }
@@ -161,7 +155,7 @@ export function cancelEditingAndExit() {
   resetSelection(); // discard the floating piece too — the whole edit is being reverted
   if (A) {
     if (A.sessionSnapshot) A.ctx.putImageData(A.sessionSnapshot, 0, 0);
-    const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+    const C = safeCurrentCharacter();
     if (A.sessionState) {
       A.offsetX = A.sessionState.offsetX;
       A.offsetY = A.sessionState.offsetY;
@@ -191,7 +185,7 @@ export function cancelEditingAndExit() {
 export function applyToCharacter() {
   commitSelection(); // defensive: make sure the saved PNG includes the floating piece
   if (!A) return;
-  const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const C = safeCurrentCharacter();
   if (!C) return;
   const item = findSlotItem(C, A) || InventoryGet(C, A.group);
   if (!item) return;

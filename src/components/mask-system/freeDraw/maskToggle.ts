@@ -6,6 +6,7 @@
 import type {AnyProps, Slot} from './types';
 import {VIS_SLOTS, PROP_KEY, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
 import {A, invalidateSlot, findSlotItem} from './slots';
+import {safeCurrentCharacter} from './currentCharacter';
 
 // Property key on the DrawingBoard item that remembers this slot's mask
 // priority across on/off toggles + reloads (and syncs to other players).
@@ -80,16 +81,19 @@ export function applyMaskPriority(C: Character | null, slot: Slot): boolean {
 // slot has a drawing. Mask mode does not remove it: the separate mask companion
 // cuts the selected clothing while this layer keeps the stroke visible.
 let visRefreshPending = false;
-export function syncVisCompanion(C: Character | null, slot: Slot) {
-  if (!C || !VIS_SLOTS.has(slot.index)) return;
+export function syncVisCompanion(C: Character | null, slot: Slot): boolean {
+  if (!C || !VIS_SLOTS.has(slot.index)) return false;
   const board = findSlotItem(C, slot);
   const hasDraw = !!(board?.Property as AnyProps | undefined)?.[PROP_KEY];
-  // The visible drawing and its mask are independent layers. Keep the visible
-  // companion worn in mask mode too, so enabling the mask cuts clothing while
-  // the stroke itself remains visible at the same selected priority.
-  const shouldWear = hasDraw;
+  // Visible drawing and masking are mutually exclusive presentations of the
+  // same shape. In mask mode the stroke itself must disappear, otherwise it
+  // paints directly over the cut-out area and makes the mask look ineffective.
+  const shouldWear = hasDraw && !isSlotMasked(C, slot);
   const worn = !!InventoryGet(C, slot.visGroup);
-  if (shouldWear === worn) { if (worn) applyMaskPriority(C, slot); return; }
+  // Report a priority repair to the caller. BC has already snapshotted the
+  // current AppearanceLayers by the time syncSlots runs, so changing the worn
+  // item's property alone cannot reorder the layer until CharacterLoadCanvas.
+  if (shouldWear === worn) return worn ? applyMaskPriority(C, slot) : false;
   if (shouldWear) {
     InventoryWear(C, slot.visAsset, slot.visGroup, null, null, null, null as never, false);
     applyMaskPriority(C, slot);
@@ -100,6 +104,7 @@ export function syncVisCompanion(C: Character | null, slot: Slot) {
     visRefreshPending = true;
     setTimeout(() => { visRefreshPending = false; try { CharacterRefresh(C, true, false); } catch { /* ignore */ } }, 0);
   }
+  return false; // the scheduled CharacterRefresh handles wear/remove changes
 }
 
 // Read the remembered priority off the DrawingBoard item (default 99).
@@ -111,7 +116,7 @@ export function loadMaskPriority(slot: Slot, boardItem: Item | null) {
 
 export function toggleSlotMask() {
   if (!A) return;
-  const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const C = safeCurrentCharacter();
   if (!C) return;
   if (isSlotMasked(C, A)) {
     InventoryRemove(C, A.maskGroup, false);
@@ -121,11 +126,12 @@ export function toggleSlotMask() {
     applyMaskPriority(C, A); // honour the remembered priority on the fresh companion
     A.isMask = true;
   }
+  syncVisCompanion(C, A);
   invalidateSlot(A);
   // Push=true saves to the account DB (self); the room broadcast propagates the
   // worn/removed mask companion — incl. when editing another character.
   CharacterRefresh(C, true, false);
-  syncCharacterToRoom(C, A.maskGroup);
+  syncCharacterToRoom(C, A.maskGroup, A.visGroup);
 }
 
 // Live-update during a priority-slider drag: ONLY move the value (cheap, like
@@ -141,7 +147,7 @@ export function updatePriorityFromPointerX(cx: number) {
 // rebuild once + push-sync so others get it.
 export function commitMaskPriority() {
   if (!A) return;
-  const C = CharacterGetCurrent ? CharacterGetCurrent() : Player;
+  const C = safeCurrentCharacter();
   const board = C ? findSlotItem(C, A) : null;
   if (board) {
     if (!CommonIsObject(board.Property)) board.Property = {};

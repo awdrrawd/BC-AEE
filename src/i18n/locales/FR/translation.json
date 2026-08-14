@@ -412,6 +412,8 @@
   "free-draw-flip-v": "Vert.",
   "free-draw-priority-label": "Ordre",
   "free-draw-priority-tooltip": "Glisser pour ajuster l'ordre ; plus élevé couvre davantage lors du masquage (seuls les vêtements de priorité inférieure sont masqués)",
+  "free-draw-bounds-label": "Limite du canevas",
+  "free-draw-bounds-tooltip": "Afficher ou masquer la limite de la zone de dessin",
   "free-draw-accept-tooltip": "Appliquer et quitter (conserver toutes les modifications)",
   "free-draw-exit-tooltip": "Quitter sans enregistrer",
   "free-draw-hint": "Dessiner directement sur le personnage ; « Déplacer » fait glisser tout le dessin, les boutons pour pivoter/redimensionner/miroir ; « Masque » utilise le dessin comme forme pour masquer tout ce qui dépasse du corps",

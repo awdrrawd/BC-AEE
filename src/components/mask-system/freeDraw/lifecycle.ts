@@ -84,7 +84,10 @@ export function syncSlots(C: Character | null) {
       loadMaskPriority(slot, item);
       if (isSlotMasked(C, slot)) priorityChanged = applyMaskPriority(C, slot) || priorityChanged;
     }
-    priorityChanged = syncVisCompanion(C, slot) || priorityChanged;
+    // Keep the unsaved live drawing's Vis layer worn while its editor is open;
+    // otherwise this per-frame sync would remove it again because CustomDraw is
+    // intentionally not persisted until Accept.
+    priorityChanged = syncVisCompanion(C, slot, A === slot && slot.undoStack.length > 0 ? true : undefined) || priorityChanged;
   }
   // CharacterLoadCanvas snapshots Appearance into DrawAppearance, then builds
   // AppearanceLayers/AppearanceMasks from that snapshot.  Merely repairing a
@@ -113,6 +116,7 @@ export async function slotLoad(i: number) {
   active.sessionSnapshot = active.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   active.sessionState = {offsetX: active.offsetX, offsetY: active.offsetY, rotation: active.rotation, scale: active.scale, isMask: active.isMask, maskPriority: active.maskPriority};
   State.picker = null;
+  State.priorityPreview = false;
   resetSelection(); // stale selection from a previous slot/session must not carry over
   if (State.tool === 'move' || State.tool === 'select') State.tool = 'pen';
   invalidateSlot(active);
@@ -174,6 +178,13 @@ export function cancelEditingAndExit() {
       }
       A.isMask = A.sessionState.isMask;
       A.maskPriority = A.sessionState.maskPriority;
+      if (C && prioChanged) {
+        const board = findSlotItem(C, A);
+        if (board) {
+          if (!CommonIsObject(board.Property)) board.Property = {};
+          (board.Property as AnyProps)[PROP_MASK_PRIO] = A.maskPriority;
+        }
+      }
       if (C && A.isMask) applyMaskPriority(C, A); // revert the live-dragged priority
       if (C) syncVisCompanion(C, A); // restore the mutually-exclusive visible state too
       if (C && (maskChanged || prioChanged)) { CharacterRefresh(C, true, false); syncCharacterToRoom(C, ...slotSyncGroups(A)); }

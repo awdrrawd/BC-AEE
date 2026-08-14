@@ -412,6 +412,8 @@
   "free-draw-flip-v": "Vert.",
   "free-draw-priority-label": "Order",
   "free-draw-priority-tooltip": "Drag to adjust order; higher covers more when masking (only clothing with lower priority is hidden)",
+  "free-draw-bounds-label": "Canvas boundary",
+  "free-draw-bounds-tooltip": "Show or hide the drawable canvas boundary",
   "free-draw-accept-tooltip": "Apply and exit (keep all edits)",
   "free-draw-exit-tooltip": "Exit without saving",
   "free-draw-hint": "Draw directly on the character; \"Move\" drags the whole drawing, use the buttons for rotate/scale/mirror; \"Mask\" uses the drawing as a shape to hide everything outside the body",

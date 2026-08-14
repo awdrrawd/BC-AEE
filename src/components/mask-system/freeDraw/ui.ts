@@ -9,6 +9,7 @@ import {
   STROKE_FRAME_X, STROKE_FRAME_W, STROKE_MIN, STROKE_MAX,
   MPRIO_Y, MPRIO_H, MPRIO_FRAME_X, MPRIO_FRAME_W, MPRIO_LABEL_X, MPRIO_LABEL_W,
   MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_MIN, MPRIO_MAX,
+  BOUNDS_X, BOUNDS_Y, BOUNDS_W, BOUNDS_H,
   PICKER_X, PICKER_Y, PICKER_W,
   MOVE_STEP, ROTATE_STEP, SCALE_STEP,
   EXIT_ICON_X, ACCEPT_ICON_X, TOOLBAR_CANCEL_X, TOOLBAR_CLEAR_X, TOOLBAR_UNDO_X, TOOLBAR_REDO_X,
@@ -68,7 +69,7 @@ function drawIconBtn(x: number, y: number, w: number, h: number, bgColor: string
 // Draws whatever the selection tool is currently doing on top of the live
 // board preview. Never touches A.ctx — purely a screen-space overlay, so it's
 // as cheap as the existing live-preview drawImage() above it.
-function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}) {
+function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}, contentAlpha: number) {
   const toScreen = (b: Box) => ({
     x: rect.x + b.x * (rect.w / BOARD_W), y: rect.y + b.y * (rect.h / BOARD_H),
     w: b.w * (rect.w / BOARD_W), h: b.h * (rect.h / BOARD_H),
@@ -89,9 +90,10 @@ function drawSelectionOverlay(rect: {x: number; y: number; w: number; h: number}
     // Defensive: force full opacity/normal blending regardless of whatever
     // state the shared MainCanvas context was left in by other draw calls.
     MainCanvas.save();
-    MainCanvas.globalAlpha = 1;
+    MainCanvas.globalAlpha = contentAlpha;
     MainCanvas.globalCompositeOperation = 'source-over';
     MainCanvas.drawImage(State.selBuffer, s.x, s.y, s.w, s.h);
+    MainCanvas.globalAlpha = 1;
     MainCanvas.setLineDash([6, 4]);
     MainCanvas.strokeStyle = '#00BFFF';
     MainCanvas.lineWidth = 2;
@@ -121,14 +123,18 @@ export function slotDraw() {
   if (!A) return;
   const active = A;
   const rect = getBoardScreenRect();
+  const contentAlpha = active.isMask ? 0.4 : 1;
   MainCanvas.save();
-  MainCanvas.globalAlpha = 1;
+  MainCanvas.globalAlpha = contentAlpha;
   MainCanvas.globalCompositeOperation = 'source-over';
   // A stroke in flight lives on the scratch layer until release, so the preview
   // has to show board+scratch merged exactly as commitStroke() will merge them —
   // otherwise a reduced-opacity stroke looks like nothing is happening until you
   // let go. Merged offscreen: see the `preview` canvas in slots.ts.
-  if (strokeInProgress()) {
+  if (State.priorityPreview && !active.isMask) {
+    // CharacterLoadCanvas is showing the live slot through the sorted Vis
+    // layer. Drawing it here too would put it above every item again.
+  } else if (strokeInProgress()) {
     previewCtx.globalCompositeOperation = 'source-over';
     previewCtx.globalAlpha = 1;
     previewCtx.clearRect(0, 0, BOARD_W, BOARD_H);
@@ -141,7 +147,15 @@ export function slotDraw() {
     MainCanvas.drawImage(active.canvas, rect.x, rect.y, rect.w, rect.h); // live preview
   }
   MainCanvas.restore();
-  drawSelectionOverlay(rect);
+  drawSelectionOverlay(rect, contentAlpha);
+  if (State.showBounds) {
+    MainCanvas.save();
+    MainCanvas.setLineDash([10, 6]);
+    MainCanvas.lineWidth = 3;
+    MainCanvas.strokeStyle = '#00BFFF';
+    MainCanvas.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    MainCanvas.restore();
+  }
 
   // Row 1
   DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', t('free-draw-mask-tooltip'));
@@ -205,6 +219,7 @@ export function slotDraw() {
     MainCanvas.fillStyle = '#4CAF50';
     MainCanvas.fillRect(MPRIO_BAR_X + 4, MPRIO_Y + 4, (MPRIO_BAR_W - 8) * ppct, MPRIO_H - 8);
     DrawText(`${active.maskPriority}`, MPRIO_BAR_X + MPRIO_BAR_W / 2, MPRIO_Y + MPRIO_H / 2, 'black');
+    DrawButton(BOUNDS_X, BOUNDS_Y, BOUNDS_W, BOUNDS_H, t('free-draw-bounds-label'), State.showBounds ? '#4CAF50' : 'White', undefined, t('free-draw-bounds-tooltip'));
   }
 
   if (State.draggingStroke) {
@@ -277,6 +292,7 @@ export function slotClick() {
   }
 
   if (State.picker !== 'shape') {
+    if (MouseIn(BOUNDS_X, BOUNDS_Y, BOUNDS_W, BOUNDS_H)) { State.showBounds = !State.showBounds; return; }
     if (hitBox(E2.moveHdr)) { State.tool = State.tool === 'move' ? 'pen' : 'move'; return; } // toggle drag-move
     if (hitBox(E2.up)) { moveBy(0, -MOVE_STEP); return; }
     if (hitBox(E2.down)) { moveBy(0, MOVE_STEP); return; }

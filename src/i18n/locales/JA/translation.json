@@ -412,6 +412,8 @@
   "free-draw-flip-v": "垂直",
   "free-draw-priority-label": "順位",
   "free-draw-priority-tooltip": "ドラッグで順位を調整；数値が高いほどマスク時に多く覆う（優先度がそれより低い衣装のみ隠れる）",
+  "free-draw-bounds-label": "キャンバス境界",
+  "free-draw-bounds-tooltip": "描画可能なキャンバス境界を表示または非表示にします",
   "free-draw-accept-tooltip": "適用して終了（今回の編集を保存）",
   "free-draw-exit-tooltip": "保存せずに終了",
   "free-draw-hint": "キャラクターに直接描画；「移動」で絵全体をドラッグ、回転/拡大縮小/反転はボタンで；「マスク」は絵を形として体以外を隠す",

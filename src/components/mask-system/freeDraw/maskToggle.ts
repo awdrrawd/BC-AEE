@@ -12,6 +12,16 @@ import {safeCurrentCharacter} from './currentCharacter';
 // priority across on/off toggles + reloads (and syncs to other players).
 export const PROP_MASK_PRIO = 'MaskPriority';
 
+let priorityPreviewTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushPriorityPreview(slot: Slot, C: Character) {
+  priorityPreviewTimer = null;
+  if (A !== slot) return;
+  applyMaskPriority(C, slot);
+  invalidateSlot(slot);
+  if (typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
+}
+
 export function isSlotMasked(C: Character | null, slot: Slot): boolean {
   return !!(C && InventoryGet(C, slot.maskGroup));
 }
@@ -80,10 +90,13 @@ export function applyMaskPriority(C: Character | null, slot: Slot): boolean {
 // Wear the visible companion only in normal drawing mode. Mask mode removes it
 // so the stroke disappears and only its clothing cut-out remains.
 let visRefreshPending = false;
-export function syncVisCompanion(C: Character | null, slot: Slot): boolean {
+export function syncVisCompanion(C: Character | null, slot: Slot, liveHasDraw?: boolean): boolean {
   if (!C || !VIS_SLOTS.has(slot.index)) return false;
   const board = findSlotItem(C, slot);
-  const hasDraw = !!(board?.Property as AnyProps | undefined)?.[PROP_KEY];
+  // During an edit the slot canvas may already contain pixels while the saved
+  // DrawingBoard property is still empty. The live override makes the Vis layer
+  // available immediately for priority preview without persisting the drawing.
+  const hasDraw = liveHasDraw ?? !!(board?.Property as AnyProps | undefined)?.[PROP_KEY];
   // Visible drawing and masking are mutually exclusive presentations of the
   // same shape. In mask mode the stroke itself must disappear, otherwise it
   // paints directly over the cut-out area and makes the mask look ineffective.
@@ -133,19 +146,34 @@ export function toggleSlotMask() {
   syncCharacterToRoom(C, A.maskGroup, A.visGroup);
 }
 
-// Live-update during a priority-slider drag: ONLY move the value (cheap, like
-// the stroke slider) so dragging stays smooth. The heavy mask rebuild happens
+// Live-update during a priority-slider drag. Character canvas rebuilds are
+// throttled below so the sorted drawing/mask follows the slider smoothly.
 // once on release — see commitMaskPriority.
 export function updatePriorityFromPointerX(cx: number) {
   if (!A) return;
   const ratio = Math.min(1, Math.max(0, (cx - MPRIO_BAR_X) / MPRIO_BAR_W));
   A.maskPriority = Math.round(MPRIO_MIN + ratio * (MPRIO_MAX - MPRIO_MIN));
+  const slot = A;
+  const C = safeCurrentCharacter();
+  if (!C) return;
+  // BC only rebuilds AppearanceLayers during CharacterLoadCanvas. Throttle the
+  // rebuild while dragging so the character preview follows the slider without
+  // making every pointermove perform a full character render.
+  applyMaskPriority(C, slot);
+  invalidateSlot(slot);
+  if (priorityPreviewTimer === null) {
+    priorityPreviewTimer = setTimeout(() => flushPriorityPreview(slot, C), 80);
+  }
 }
 
 // On release: apply to the worn companion, persist to the DrawingBoard item,
 // rebuild once + push-sync so others get it.
 export function commitMaskPriority() {
   if (!A) return;
+  if (priorityPreviewTimer !== null) {
+    clearTimeout(priorityPreviewTimer);
+    priorityPreviewTimer = null;
+  }
   const C = safeCurrentCharacter();
   const board = C ? findSlotItem(C, A) : null;
   if (board) {

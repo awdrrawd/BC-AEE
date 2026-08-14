@@ -412,6 +412,8 @@
   "free-draw-flip-v": "Vert.",
   "free-draw-priority-label": "Orden",
   "free-draw-priority-tooltip": "Arrastra para ajustar el orden; más alto cubre más al enmascarar (solo se oculta la ropa con menor prioridad)",
+  "free-draw-bounds-label": "Límite del lienzo",
+  "free-draw-bounds-tooltip": "Mostrar u ocultar el límite del área de dibujo",
   "free-draw-accept-tooltip": "Aplicar y salir (conservar todos los cambios)",
   "free-draw-exit-tooltip": "Salir sin guardar",
   "free-draw-hint": "Dibuja directamente sobre el personaje; «Mover» arrastra todo el dibujo, usa los botones para rotar/escalar/reflejar; «Máscara» usa el dibujo como forma para ocultar todo lo que quede fuera del cuerpo",

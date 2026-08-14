@@ -57,6 +57,7 @@ export function onPointerDown(evt: PointerEvent) {
   }
   if (State.picker !== 'shape' && pointInRect(cx, cy, MPRIO_BAR_X, MPRIO_Y, MPRIO_BAR_W, MPRIO_H)) {
     State.draggingPriority = true;
+    State.priorityPreview = true;
     updatePriorityFromPointerX(cx);
     return;
   }

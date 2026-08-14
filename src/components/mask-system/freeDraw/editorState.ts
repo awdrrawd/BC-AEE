@@ -26,6 +26,11 @@ export const State = {
   lastText: '',
   draggingStroke: false,
   draggingPriority: false,
+  // Show BC's actual sorted Vis layer after changing priority instead of the
+  // editor's always-on-top canvas preview. Cleared by the next content edit.
+  priorityPreview: false,
+  // Editor-only view preference; never serialized into the worn item.
+  showBounds: false,
   dragging: false,
   dragStartCX: 0, dragStartCY: 0, dragStartOffsetX: 0, dragStartOffsetY: 0,
   // Pen/eraser stroke smoothing: quadratic curve through consecutive

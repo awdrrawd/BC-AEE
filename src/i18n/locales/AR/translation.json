@@ -68,6 +68,7 @@
   "paste-item-tooltip": "اللصق في هذه الخانة",
   "copy-cancel-tooltip": "إلغاء النسخ",
   "settings-hide-lscg-layers-panel": "إخفاء لوحة طبقات LSCG",
+  "settings-hide-arousal-ui": "إخفاء شريط الإثارة وواجهات أخرى",
   "settings-enable-button-replacement": "استبدال الأزرار بتصدير/استيراد BCX",
   "settings-paste-import": "Ctrl+V لاستيراد الملابس (في غرفة الملابس)",
   "settings-bc-wheel-scroll": "عجلة التمرير للتنقل بين المجموعات",

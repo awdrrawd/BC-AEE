@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Paste onto this slot",
   "copy-cancel-tooltip": "Cancel copy",
   "settings-hide-lscg-layers-panel": "Hide LSCG layers panel",
+  "settings-hide-arousal-ui": "Hide arousal bar and other UI",
   "settings-enable-button-replacement": "Replace buttons with BCX export/import",
   "settings-paste-import": "Ctrl+V import clothes (in dressing room)",
   "settings-bc-wheel-scroll": "Scroll wheel to page through groups",

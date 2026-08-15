@@ -25,6 +25,7 @@ export function SettingsTab() {
       <SettingRow label={t('settings-hover-item-highlight')} setting={settings.hoverHighlightChar}/>
       <SettingRow label={t('settings-hover-tryon')} setting={settings.hoverTryOn}/>
       <SettingRow label={t('settings-hide-lscg-layers-panel')} setting={settings.hideLscgLayers}/>
+      <SettingRow label={t('settings-hide-arousal-ui')} setting={settings.hideArousalUi}/>
     </section>
     <AboutAee/>
   </>;

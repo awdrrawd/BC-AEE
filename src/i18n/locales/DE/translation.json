@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Auf diesen Platz einfügen",
   "copy-cancel-tooltip": "Kopieren abbrechen",
   "settings-hide-lscg-layers-panel": "LSCG-Ebenenpanel ausblenden",
+  "settings-hide-arousal-ui": "Erregungsleiste und andere UI ausblenden",
   "settings-enable-button-replacement": "Buttons durch BCX-Export/Import ersetzen",
   "settings-paste-import": "Kleidung mit Strg+V importieren (in der Umkleide)",
   "settings-bc-wheel-scroll": "Mausrad zum Blättern durch Gruppen",

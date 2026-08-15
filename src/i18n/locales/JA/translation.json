@@ -68,6 +68,7 @@
   "paste-item-tooltip": "ここに貼り付け",
   "copy-cancel-tooltip": "コピーを取消",
   "settings-hide-lscg-layers-panel": "LSCG レイヤーパネルを隠す",
+  "settings-hide-arousal-ui": "興奮バーとその他のUIを隠す",
   "settings-enable-button-replacement": "ボタンをBCXのエクスポート/インポートに置き換え",
   "settings-paste-import": "Ctrl+V で衣服をインポート（更衣室内）",
   "settings-bc-wheel-scroll": "ホイールでグループをめくる",

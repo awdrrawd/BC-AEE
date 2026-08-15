@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Coller sur cet emplacement",
   "copy-cancel-tooltip": "Annuler la copie",
   "settings-hide-lscg-layers-panel": "Masquer le panneau des calques LSCG",
+  "settings-hide-arousal-ui": "Masquer la barre d'excitation et les autres interfaces",
   "settings-enable-button-replacement": "Remplacer les boutons par l'export/import BCX",
   "settings-paste-import": "Importer les vêtements par Ctrl+V (dans le vestiaire)",
   "settings-bc-wheel-scroll": "Molette pour défiler dans les groupes",

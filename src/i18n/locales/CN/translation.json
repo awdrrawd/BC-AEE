@@ -68,6 +68,7 @@
   "paste-item-tooltip": "粘贴到此栏位",
   "copy-cancel-tooltip": "取消复制",
   "settings-hide-lscg-layers-panel": "隐藏 LSCG 图层面板",
+  "settings-hide-arousal-ui": "隐藏兴奋条与其他UI",
   "settings-enable-button-replacement": "按钮替换为BCX导出/导入",
   "settings-paste-import": "Ctrl+V 导入服装（更衣室内）",
   "settings-bc-wheel-scroll": "滚轮翻页部件组",

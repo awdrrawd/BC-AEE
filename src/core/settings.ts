@@ -95,6 +95,7 @@ export const settings = {
   hoverTryOn: bool('hoverTryOn', false),
   enableCopyPaste: bool('enableCopyPaste', false),
   hideLscgLayers: bool('hideLscgLayers', false),
+  hideArousalUi: bool('hideArousalUi', false),
   enableAeeMenu: bool('enableAeeMenu', false),
   useAeeColorPicker: bool('useAeeColorPicker', false),
   pasteImport: bool('pasteImport', false),

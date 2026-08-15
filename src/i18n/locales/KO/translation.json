@@ -68,6 +68,7 @@
   "paste-item-tooltip": "이 슬롯에 붙여넣기",
   "copy-cancel-tooltip": "복사 취소",
   "settings-hide-lscg-layers-panel": "LSCG 레이어 패널 숨기기",
+  "settings-hide-arousal-ui": "흥분 표시줄과 기타 UI 숨기기",
   "settings-enable-button-replacement": "버튼을 BCX 내보내기/가져오기로 교체",
   "settings-paste-import": "Ctrl+V로 의류 가져오기 (탈의실 내)",
   "settings-bc-wheel-scroll": "휠로 그룹 넘기기",

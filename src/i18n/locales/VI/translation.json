@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Dán vào ô này",
   "copy-cancel-tooltip": "Hủy sao chép",
   "settings-hide-lscg-layers-panel": "Ẩn bảng lớp LSCG",
+  "settings-hide-arousal-ui": "Ẩn thanh hưng phấn và UI khác",
   "settings-enable-button-replacement": "Thay nút bằng xuất/nhập BCX",
   "settings-paste-import": "Ctrl+V nhập trang phục (trong phòng thay đồ)",
   "settings-bc-wheel-scroll": "Lăn chuột để chuyển trang nhóm",

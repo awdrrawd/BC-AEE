@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Pegar en esta ranura",
   "copy-cancel-tooltip": "Cancelar copia",
   "settings-hide-lscg-layers-panel": "Ocultar el panel de capas LSCG",
+  "settings-hide-arousal-ui": "Ocultar la barra de excitación y otras interfaces",
   "settings-enable-button-replacement": "Reemplazar botones con exportar/importar BCX",
   "settings-paste-import": "Ctrl+V importar ropa (en el vestidor)",
   "settings-bc-wheel-scroll": "Rueda del ratón para cambiar de grupo",

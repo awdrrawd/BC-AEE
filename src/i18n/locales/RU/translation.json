@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Вставить в этот слот",
   "copy-cancel-tooltip": "Отменить копирование",
   "settings-hide-lscg-layers-panel": "Скрыть панель слоёв LSCG",
+  "settings-hide-arousal-ui": "Скрыть шкалу возбуждения и другой UI",
   "settings-enable-button-replacement": "Заменить кнопки на экспорт/импорт BCX",
   "settings-paste-import": "Импорт одежды через Ctrl+V (в гардеробной)",
   "settings-bc-wheel-scroll": "Колесо мыши для прокрутки групп",

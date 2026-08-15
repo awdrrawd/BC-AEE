@@ -68,6 +68,7 @@
   "paste-item-tooltip": "Вставити в цей слот",
   "copy-cancel-tooltip": "Скасувати копіювання",
   "settings-hide-lscg-layers-panel": "Приховати панель шарів LSCG",
+  "settings-hide-arousal-ui": "Сховати шкалу збудження та інший UI",
   "settings-enable-button-replacement": "Замінити кнопки на експорт/імпорт BCX",
   "settings-paste-import": "Імпорт одягу через Ctrl+V (у гардеробній)",
   "settings-bc-wheel-scroll": "Колесо миші для прокрутки груп",

@@ -25,7 +25,7 @@ import {runtime} from '@/core/runtime';
 import {A, undo, redo, clearBoard, scratch, preview, previewCtx} from './slots';
 import {strokeInProgress} from './input';
 import {State} from './editorState';
-import {getBoardScreenRect, getPickerLayout, getPickerItemRect, updateStrokeFromPointerX, colorForFill, contrastColor, inBoardArea} from './geometry';
+import {getBoardScreenRect, getBoardViewportRect, getPickerLayout, getPickerItemRect, updateStrokeFromPointerX, colorForFill, contrastColor, inBoardArea} from './geometry';
 import {toggleSlotMask} from './maskToggle';
 import {applyTransform, flipCanvas, moveBy} from './transform';
 import {applyToCharacter, leaveEditor, cancelEditingAndExit} from './lifecycle';
@@ -149,11 +149,12 @@ export function slotDraw() {
   MainCanvas.restore();
   drawSelectionOverlay(rect, contentAlpha);
   if (State.showBounds) {
+    const bounds = getBoardViewportRect();
     MainCanvas.save();
     MainCanvas.setLineDash([10, 6]);
     MainCanvas.lineWidth = 3;
     MainCanvas.strokeStyle = '#00BFFF';
-    MainCanvas.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    MainCanvas.strokeRect(bounds.x, bounds.y, bounds.w, bounds.h);
     MainCanvas.restore();
   }
 

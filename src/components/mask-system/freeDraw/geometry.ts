@@ -35,12 +35,18 @@ function getCachedDrawArgs(C: Character | null): DrawArgs | null {
   return lastCharDrawArgs.get(key) || null;
 }
 
-export function getBoardScreenRect() {
+// Fixed drawable viewport on the character. Unlike getBoardScreenRect(), this
+// does not include the drawing's movable content offset.
+export function getBoardViewportRect() {
   const C = safeCurrentCharacter();
   const cached = getCachedDrawArgs(C);
-  const base = cached
+  return cached
     ? getCharacterDrawRect(C, cached.X, cached.Y, cached.Zoom, cached.IsHeightResizeAllowed)
     : getCharacterDrawRect(C, DRAW_X, DRAW_Y, 1, undefined);
+}
+
+export function getBoardScreenRect() {
+  const base = getBoardViewportRect();
   const ox = A ? A.offsetX : 0, oy = A ? A.offsetY : 0;
   return {x: base.x + ox * (base.w / 500), y: base.y + oy * (base.h / 1000), w: base.w, h: base.h};
 }

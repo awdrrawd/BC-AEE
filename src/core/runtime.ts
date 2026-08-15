@@ -29,9 +29,12 @@ export interface Runtime {
   hoverCharTimer: number | null;
   hoverCharStartTime: number | null;
   hoverTryOnActive: boolean;
+  hoverTryOnEnabled: boolean;
   hoverTryOnGroup: AssetGroupName | null;
   hoverTryOnAsset: string | null;
   hoverTryOnBackup: Item | null;
+  hoverTryOnRestraint: boolean;
+  hoverTryOnCharacter: Character | null;
   pendingTransform: PendingTransform | null;
   pendingTransformApplied: number;
   mirrorCopyFlags: MirrorCopyFlags | null;
@@ -74,9 +77,12 @@ export const runtime: Runtime = {
   hoverCharTimer: null,
   hoverCharStartTime: null,
   hoverTryOnActive: false,
+  hoverTryOnEnabled: true,
   hoverTryOnGroup: null,
   hoverTryOnAsset: null,
   hoverTryOnBackup: null,
+  hoverTryOnRestraint: false,
+  hoverTryOnCharacter: null,
   pendingTransform: null,
   pendingTransformApplied: 0,
   mirrorCopyFlags: null,

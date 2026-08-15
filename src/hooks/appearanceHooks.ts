@@ -2,6 +2,7 @@ import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
 import {
   applyHoverTryOn,
+  isHoverTryOnEnabled,
   setCharControlVisible,
   startHoverCharHighlight,
   stopHoverCharHighlight,
@@ -26,6 +27,7 @@ import {
 import {settings} from '@/core/settings';
 
 export function installAppearanceHooks() {
+  installDialogHoverTryOnHandlers();
   onAppearanceScreenTransition(transition => {
     if (shouldShowAppearanceViewControl()) setCharControlVisible(true);
     else setCharControlVisible(false);
@@ -156,7 +158,8 @@ export function installAppearanceHooks() {
     // Drop the hover try-on preview before BC handles the click, so its commit
     // logic (equip a cell / Accept / cancel) always acts on the real worn item
     // and a preview is never accidentally committed.
-    stopHoverTryOn(false);
+    // Restraints also need their pose/effects rebuilt before an extended dialog opens.
+    stopHoverTryOn(runtime.hoverTryOnRestraint);
     return withFilteredGroups(() => {
       // Our copy/paste column lives left of BC's row buttons; if it was clicked,
       // handle it and stop BC from also processing the click.
@@ -176,6 +179,7 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('DialogClick', 0, (args, next) => {
+    if (runtime.hoverTryOnActive && runtime.hoverTryOnRestraint) stopHoverTryOn(true);
     if (isEditingBody() && isBodyClick()) return;
     return next(args);
   });
@@ -200,6 +204,45 @@ export function installAppearanceHooks() {
       }
     }
   });
+}
+
+function installDialogHoverTryOnHandlers() {
+  const getButton = (target: EventTarget | null): HTMLElement | null => {
+    if (!(target instanceof Element)) return null;
+    return target.closest<HTMLElement>('#dialog-inventory-grid .dialog-grid-button[data-index]');
+  };
+
+  document.addEventListener('pointerover', event => {
+    if (!isHoverTryOnEnabled() || CommonIsMobile) return;
+    const button = getButton(event.target);
+    if (!button || (event.relatedTarget instanceof Node && button.contains(event.relatedTarget))) return;
+    if (button.getAttribute('aria-checked') === 'true') {
+      if (runtime.hoverTryOnActive && runtime.hoverTryOnRestraint) stopHoverTryOn(true);
+      return;
+    }
+    if (button.getAttribute('aria-disabled') === 'true') return;
+    const index = Number.parseInt(button.dataset.index ?? '', 10);
+    const item = Number.isInteger(index) ? DialogInventory?.[index] : null;
+    let character: Character | null = null;
+    try {
+      character = typeof CurrentCharacter !== 'undefined' ? CurrentCharacter : null;
+    } catch {
+      return;
+    }
+    if (!item || !character || item.Asset?.Group?.Category !== 'Item') return;
+    applyHoverTryOn(item, character, true);
+  }, true);
+
+  document.addEventListener('pointerout', event => {
+    const button = getButton(event.target);
+    if (!button || (event.relatedTarget instanceof Node && button.contains(event.relatedTarget))) return;
+    if (runtime.hoverTryOnActive && runtime.hoverTryOnRestraint) stopHoverTryOn(true);
+  }, true);
+
+  document.addEventListener('pointerdown', event => {
+    if (!getButton(event.target)) return;
+    if (runtime.hoverTryOnActive && runtime.hoverTryOnRestraint) stopHoverTryOn(true);
+  }, true);
 }
 
 function handleHoverCharHighlight(isAppearance: boolean) {
@@ -230,7 +273,7 @@ function handleHoverCharHighlight(isAppearance: boolean) {
 }
 
 function handleHoverTryOn() {
-  if (!settings.hoverTryOn.get()
+  if (!isHoverTryOnEnabled()
     || CharacterAppearanceMode !== 'Cloth'
     || !CharacterAppearanceSelection
     || CommonIsMobile

@@ -9,6 +9,17 @@ import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, isHid
 import {t} from '@/i18n/i18n';
 import {enterWardrobeScreen} from '@/hooks/wardrobeHooks';
 import {settings} from '@/core/settings';
+import {isHoverTryOnEnabled, toggleHoverTryOn} from '@/controllers/uiController';
+
+const HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn';
+
+function hoverTryOnIcon(): string {
+  return isHoverTryOnEnabled() ? 'Icons/Public.png' : 'Icons/Private.png';
+}
+
+function dialogHoverTryOnButtonX(): number {
+  return 1885 - DialogMenuButton.length * 110;
+}
 
 function isEditablePasteTarget(event: ClipboardEvent): boolean {
   for (const node of event.composedPath()) {
@@ -34,6 +45,10 @@ export function installMenuHooks() {
 
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
+    if (CharacterAppearanceMode === 'Cloth' && settings.hoverTryOn.get()) {
+      const randomIndex = AppearanceMenu.indexOf('WearRandom');
+      if (randomIndex >= 0) AppearanceMenu[randomIndex] = HOVER_TRY_ON_BUTTON;
+    }
     if (CharacterAppearanceMode !== '') return;
     if (settings.enableAeeMenu.get()) {
       AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
@@ -60,11 +75,12 @@ export function installMenuHooks() {
     const clearCopyIndex = menu.indexOf('AEE_ClearCopy');
     const partsFilterIndex = menu.indexOf('AEE_PartsFilter');
     const hideRestraintsIndex = menu.indexOf('AEE_HideRestraints');
-    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0) {
+    const hoverTryOnIndex = menu.indexOf(HOVER_TRY_ON_BUTTON);
+    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0 && hoverTryOnIndex < 0) {
       next(args);
     } else {
       AppearanceMenu = menu.map((button, index) =>
-        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex ? 'Copy' : button));
+        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex || index === hoverTryOnIndex ? 'Copy' : button));
       try {
         next(args);
       } finally {
@@ -85,6 +101,9 @@ export function installMenuHooks() {
       const partsFilterX = x + 117 * partsFilterIndex;
       DrawButton(partsFilterX, 25, 90, 90, '', 'White', partsFilterIcon(), partsFilterTooltip());
       drawPartsFilterBadge(partsFilterX, 25);
+    }
+    if (hoverTryOnIndex >= 0 && !isAppearanceOverlayActive()) {
+      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon'));
     }
     if (settings.enableAeeMenu.get()) {
       for (let index = 0; index < menu.length; index++) {
@@ -126,6 +145,26 @@ export function installMenuHooks() {
         toggleHideRestraints();
         return;
       }
+      if (AppearanceMenu[index] === HOVER_TRY_ON_BUTTON && !isAppearanceOverlayActive()) {
+        toggleHoverTryOn();
+        return;
+      }
+    }
+    return next(args);
+  });
+
+  bcAeeModSdk.hookFunction('DialogDrawTopMenu', 10, (args, next) => {
+    const result = next(args);
+    if (settings.hoverTryOn.get() && DialogMenuMode === 'items') {
+      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon'));
+    }
+    return result;
+  });
+
+  bcAeeModSdk.hookFunction('DialogClick', 10, (args, next) => {
+    if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && MouseIn(dialogHoverTryOnButtonX(), 15, 90, 90)) {
+      toggleHoverTryOn();
+      return;
     }
     return next(args);
   });

@@ -438,7 +438,15 @@ export function installSettingEffects() {
     if (!enabled) stopHoverCharHighlight();
   });
   settings.hoverTryOn.onChange(enabled => {
+    runtime.hoverTryOnEnabled = enabled;
     if (!enabled) stopHoverTryOn();
+    try {
+      if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
+        AppearanceMenuBuild(CharacterAppearanceSelection);
+      }
+    } catch {
+      // The appearance menu may not exist while settings are changed elsewhere.
+    }
   });
   settings.enableCopyPaste.onChange(enabled => {
     if (!enabled) clearCopyBuffer();
@@ -562,12 +570,19 @@ export function stopHoverCharHighlight() {
   if (character) CharacterLoadCanvas?.(character);
 }
 
-export function applyHoverTryOn(item: DialogInventoryItem) {
-  const character = CharacterAppearanceSelection;
+export function applyHoverTryOn(
+  item: DialogInventoryItem,
+  character: Character | null = CharacterAppearanceSelection,
+  copyItemData = false,
+) {
   const asset = item?.Asset;
   if (!character || !asset?.Group?.Name) return;
   const group = asset.Group.Name;
   const assetName = asset.Name;
+  const restraint = asset.Group.Category === 'Item';
+  if (runtime.hoverTryOnActive && runtime.hoverTryOnCharacter && runtime.hoverTryOnCharacter !== character) {
+    stopHoverTryOn(true);
+  }
   if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup === group && runtime.hoverTryOnAsset === assetName) return;
 
   if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup && runtime.hoverTryOnGroup !== group) {
@@ -582,24 +597,49 @@ export function applyHoverTryOn(item: DialogInventoryItem) {
   }
 
   try {
-    const defaultColor: ItemColor | null = asset.DefaultColor ? [...asset.DefaultColor] : null;
-    CharacterAppearanceSetItem(character, group, asset, defaultColor);
+    const sourceColor = copyItemData ? (item.Color ?? asset.DefaultColor) : asset.DefaultColor;
+    const previewColor: ItemColor | null = typeof sourceColor === 'string'
+      ? sourceColor
+      : sourceColor ? [...sourceColor] : null;
+    const preview = CharacterAppearanceSetItem(
+      character,
+      group,
+      asset,
+      previewColor,
+    );
+    if (!preview) {
+      restoreTryOnGroup(character, group, runtime.hoverTryOnBackup);
+      return;
+    }
+    if (copyItemData && item.Property) preview.Property = CommonCloneDeep(item.Property);
+    if (copyItemData && item.Craft) preview.Craft = CommonCloneDeep(item.Craft);
     runtime.hoverTryOnActive = true;
     runtime.hoverTryOnAsset = assetName;
-    CharacterLoadCanvas(character);
-  } catch {
-    // Ignore transient render errors.
+    runtime.hoverTryOnRestraint = restraint;
+    runtime.hoverTryOnCharacter = character;
+    if (restraint) CharacterRefresh(character, false, false);
+    else CharacterLoadCanvas(character);
+  } catch (error) {
+    console.warn('[AEE] Hover try-on preview failed:', {group, asset: assetName, error});
+    restoreTryOnGroup(character, group, runtime.hoverTryOnBackup);
+    runtime.hoverTryOnActive = false;
+    runtime.hoverTryOnGroup = null;
+    runtime.hoverTryOnAsset = null;
+    runtime.hoverTryOnBackup = null;
+    runtime.hoverTryOnRestraint = false;
+    runtime.hoverTryOnCharacter = null;
   }
 }
 
 export function stopHoverTryOn(redraw = true) {
   if (!runtime.hoverTryOnActive) return;
-  const character = CharacterAppearanceSelection;
+  const character = runtime.hoverTryOnCharacter || CharacterAppearanceSelection;
   if (character && runtime.hoverTryOnGroup) {
     restoreTryOnGroup(character, runtime.hoverTryOnGroup, runtime.hoverTryOnBackup);
     if (redraw) {
       try {
-        CharacterLoadCanvas(character);
+        if (runtime.hoverTryOnRestraint) CharacterRefresh(character, false, false);
+        else CharacterLoadCanvas(character);
       } catch {
         // Ignore transient render errors.
       }
@@ -609,6 +649,17 @@ export function stopHoverTryOn(redraw = true) {
   runtime.hoverTryOnGroup = null;
   runtime.hoverTryOnAsset = null;
   runtime.hoverTryOnBackup = null;
+  runtime.hoverTryOnRestraint = false;
+  runtime.hoverTryOnCharacter = null;
+}
+
+export function isHoverTryOnEnabled(): boolean {
+  return settings.hoverTryOn.get() && runtime.hoverTryOnEnabled;
+}
+
+export function toggleHoverTryOn(): void {
+  runtime.hoverTryOnEnabled = !runtime.hoverTryOnEnabled;
+  if (!runtime.hoverTryOnEnabled) stopHoverTryOn();
 }
 
 function restoreTryOnGroup(character: Character, group: AssetGroupName, backup: Item | null) {

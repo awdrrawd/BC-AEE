@@ -1,21 +1,127 @@
-MIT License
+Liko-AEE Non-Commercial Attribution License
+Liko-AEE 非商業姓名標示授權
 
-Copyright (c) 2026 awdrrawd
+Copyright (c) 2026 Likolisu
+Contributors / 協力者: InkerBot (https://github.com/InkerBot), Tao MUSE
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Project / 專案原始倉庫: https://github.com/awdrrawd/BC-AEE
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+--------------------------------------------------------------------
+中文版（與下方英文版具同等效力；如有歧異，以下方英文版為準）
+--------------------------------------------------------------------
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. 授權範圍
+
+在遵守下列條件的前提下，任何人皆可免費取得本軟體與其相關文件檔案
+（以下稱「本軟體」）之副本，並被授予以下權利：使用、重製、修改、
+合併、出版、散布、再授權（sublicense）本軟體之副本，以及允許被
+提供本軟體的人為上述行為，惟不得將本軟體或其衍生作品用於商業目的
+（詳見第 3 條）。
+
+2. 姓名標示（Attribution）
+
+任何重製、修改或散布本軟體（含全部或實質部分）之副本或衍生作品時，
+皆須：
+
+  a. 保留本授權聲明全文；
+  b. 清楚註明原作者為 Likolisu，並附上原始倉庫連結
+     （https://github.com/awdrrawd/BC-AEE）；
+  c. 清楚註明協力者 InkerBot（https://github.com/InkerBot）與
+     Tao MUSE。
+
+上述標示須以使用者容易發現的方式呈現，例如：專案的 README、關於頁面、
+版權聲明區塊，或發布頁面的顯著位置。
+
+3. 禁止商業使用（Non-Commercial）
+
+不得將本軟體或其任何衍生作品，用於任何以直接或間接獲取商業利益為
+目的之用途，包括但不限於：
+
+  a. 販售本軟體或其衍生作品之副本；
+  b. 將本軟體或其衍生作品作為付費訂閱、付費會員專屬內容或付費服務
+     之全部或一部分提供；
+  c. 於散布或使用本軟體的過程中置入廣告、贊助內容或其他營利性質的
+     置入行銷藉此獲利；
+  d. 其他任何以本軟體或其衍生作品為基礎、直接或間接產生商業收益的
+     行為。
+
+若不確定特定用途是否構成商業使用，請於使用前聯絡原作者確認。
+
+4. 衍生作品（Derivative Works）
+
+在遵守第 2 條與第 3 條之前提下，得自由修改本軟體並以衍生作品形式
+散布。衍生作品仍受本授權條款拘束，亦即任何人取得該衍生作品時，
+應享有與取得本軟體時相同之權利與義務。
+
+5. 免責聲明（Disclaimer）
+
+本軟體係以「現狀」（AS IS）提供，不附帶任何明示或默示之擔保，
+包括但不限於商品性、特定用途適用性及不侵權之擔保。在任何情況下，
+作者或著作權持有人均不對因本軟體、或使用本軟體、或其他與本軟體
+相關之交易所產生之任何請求、損害或其他責任負責，無論該責任源於
+契約、侵權行為或其他法律基礎。
+
+--------------------------------------------------------------------
+English Version (governing version in case of discrepancy)
+--------------------------------------------------------------------
+
+1. Grant of Rights
+
+Subject to the conditions below, permission is hereby granted, free of
+charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to use, copy, modify, merge,
+publish, distribute, and sublicense copies of the Software, and to
+permit persons to whom the Software is furnished to do so, provided
+that the Software and any derivative works are not used for any
+commercial purpose (see Section 3).
+
+2. Attribution
+
+Any copy or derivative work of the Software, in whole or in substantial
+part, must:
+
+  a. retain this license notice in full;
+  b. clearly credit the original author, Likolisu, and include a link
+     to the source repository (https://github.com/awdrrawd/BC-AEE);
+  c. clearly credit contributors InkerBot
+     (https://github.com/InkerBot) and Tao MUSE.
+
+This attribution must be presented in a place a user would reasonably
+find it, such as a README, an "About" page, a copyright notice section,
+or a prominent location on the release page.
+
+3. Non-Commercial Use Only
+
+The Software, and any derivative work based on it, may not be used for
+any purpose intended for or directed toward direct or indirect
+commercial advantage, including but not limited to:
+
+  a. selling copies of the Software or any derivative work;
+  b. offering the Software or any derivative work as part of a paid
+     subscription, paid membership content, or any other paid service;
+  c. monetizing distribution or use of the Software through
+     advertisements, sponsorships, or other paid promotional
+     placements;
+  d. any other activity that directly or indirectly generates
+     commercial revenue based on the Software or its derivatives.
+
+If you are unsure whether a particular use qualifies as commercial,
+please contact the original author before proceeding.
+
+4. Derivative Works
+
+Subject to Sections 2 and 3, you may freely modify the Software and
+distribute it as a derivative work. Any such derivative work remains
+subject to the terms of this license — anyone who receives it must be
+granted the same rights and be subject to the same obligations as
+under this license.
+
+5. Disclaimer of Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

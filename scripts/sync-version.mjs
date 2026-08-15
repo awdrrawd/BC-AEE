@@ -1,7 +1,8 @@
 import {readFile, writeFile} from 'node:fs/promises';
 
 const packageJsonPath = new URL('../package.json', import.meta.url);
-const loaderPath = new URL('../loader.user.js', import.meta.url);
+// loader.user.js has an independent version and is bumped manually only when
+// the loader mechanism itself changes.
 const readmePath = new URL('../README.md', import.meta.url);
 
 const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
@@ -26,10 +27,6 @@ async function replaceInFile(path, replacements) {
     await writeFile(path, updated);
   }
 }
-
-await replaceInFile(loaderPath, [
-  [/^\/\/ @version .+$/m, `// @version ${version}`],
-]);
 
 await replaceInFile(readmePath, [
   [/version-.+?-purple\.svg/g, `version-${version}-purple.svg`],

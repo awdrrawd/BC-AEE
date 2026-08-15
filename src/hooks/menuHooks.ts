@@ -12,13 +12,15 @@ import {settings} from '@/core/settings';
 import {isHoverTryOnEnabled, toggleHoverTryOn} from '@/controllers/uiController';
 
 const HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn';
+const DIALOG_HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn' as DialogMenuButtonType;
 
 function hoverTryOnIcon(): string {
   return isHoverTryOnEnabled() ? 'Icons/Public.png' : 'Icons/Private.png';
 }
 
 function dialogHoverTryOnButtonX(): number {
-  return 1885 - DialogMenuButton.length * 110;
+  const index = DialogMenuButton.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
+  return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
 }
 
 function isEditablePasteTarget(event: ClipboardEvent): boolean {
@@ -157,9 +159,28 @@ export function installMenuHooks() {
   });
 
   bcAeeModSdk.hookFunction('DialogDrawTopMenu', 10, (args, next) => {
-    const result = next(args);
-    if (settings.hoverTryOn.get() && DialogMenuMode === 'items') {
+    const menu = DialogMenuButton;
+    const hoverTryOnIndex = menu.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
+    if (hoverTryOnIndex >= 0) {
+      DialogMenuButton = menu.map((button, index) => index === hoverTryOnIndex ? 'Exit' : button);
+    }
+    let result: ReturnType<typeof next>;
+    try {
+      result = next(args);
+    } finally {
+      DialogMenuButton = menu;
+    }
+    if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
       DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
+    }
+    return result;
+  });
+
+  bcAeeModSdk.hookFunction('DialogMenuButtonBuild', 10, (args, next) => {
+    const result = next(args);
+    if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && !DialogMenuButton.includes(DIALOG_HOVER_TRY_ON_BUTTON)) {
+      const activityIndex = DialogMenuButton.indexOf('Activity');
+      DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_HOVER_TRY_ON_BUTTON);
     }
     return result;
   });

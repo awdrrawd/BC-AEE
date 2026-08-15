@@ -150,6 +150,9 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('AppearanceClick', 0, (args, next) => {
+    // Clear the group-row flash while CharacterAppearanceSelection still points
+    // at the edited character. Restraint dialogs may replace it during next().
+    if (runtime.hoverCharGroup !== null) stopHoverCharHighlight();
     // Drop the hover try-on preview before BC handles the click, so its commit
     // logic (equip a cell / Accept / cancel) always acts on the real worn item
     // and a preview is never accidentally committed.

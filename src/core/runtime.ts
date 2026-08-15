@@ -21,6 +21,7 @@ export interface Runtime {
   hoverHighlightStartTime: number | null;
   hoverFlashData: HoverFlashData | null;
   hoverCharFlashData: HoverFlashData | null;
+  hoverCharCharacter: Character | null;
   hoverCharActive: boolean;
   hoverCharGroup: string | null;
   hoverCharHiddenGroup: Set<string>;
@@ -65,6 +66,7 @@ export const runtime: Runtime = {
   hoverHighlightStartTime: null,
   hoverFlashData: null,
   hoverCharFlashData: null,
+  hoverCharCharacter: null,
   hoverCharActive: false,
   hoverCharGroup: null,
   hoverCharHiddenGroup: new Set<string>(),

@@ -505,6 +505,7 @@ export function stopHoverHighlight(refresh = false) {
 export function startHoverCharHighlight(groupName: AssetGroupName) {
   const character = CharacterAppearanceSelection;
   if (!character) return;
+  runtime.hoverCharCharacter = character;
   runtime.hoverCharStartTime = performance.now();
   const item = InventoryGet(character, groupName);
   if (!item) {
@@ -541,8 +542,12 @@ function startHoverCharFallback(groupName: string) {
 }
 
 export function stopHoverCharHighlight() {
+  // Extended-item/restraint dialogs can clear CharacterAppearanceSelection before
+  // the hover ends. Keep the original target so its cached flashing canvas is rebuilt.
+  const character = runtime.hoverCharCharacter || CharacterAppearanceSelection;
   runtime.hoverCharActive = false;
   runtime.hoverCharFlashData = null;
+  runtime.hoverCharCharacter = null;
   runtime.hoverCharGroup = null;
   runtime.hoverCharStartTime = null;
   runtime.hoverCharHiddenGroup.clear();
@@ -554,7 +559,6 @@ export function stopHoverCharHighlight() {
     clearTimeout(runtime.hoverCharTimer);
     runtime.hoverCharTimer = null;
   }
-  const character = CharacterAppearanceSelection;
   if (character) CharacterLoadCanvas?.(character);
 }
 

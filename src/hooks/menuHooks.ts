@@ -45,6 +45,9 @@ export function installMenuHooks() {
 
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
+    if (CharacterAppearanceMode === '' && settings.hairCharacterPreview.get()) {
+      AppearanceMenu = AppearanceMenu.filter(button => button !== 'Character');
+    }
     if (CharacterAppearanceMode === 'Cloth' && settings.hoverTryOn.get()) {
       const randomIndex = AppearanceMenu.indexOf('WearRandom');
       if (randomIndex >= 0) AppearanceMenu[randomIndex] = HOVER_TRY_ON_BUTTON;
@@ -103,7 +106,7 @@ export function installMenuHooks() {
       drawPartsFilterBadge(partsFilterX, 25);
     }
     if (hoverTryOnIndex >= 0 && !isAppearanceOverlayActive()) {
-      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon'));
+      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
     }
     if (settings.enableAeeMenu.get()) {
       for (let index = 0; index < menu.length; index++) {
@@ -156,7 +159,7 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('DialogDrawTopMenu', 10, (args, next) => {
     const result = next(args);
     if (settings.hoverTryOn.get() && DialogMenuMode === 'items') {
-      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon'));
+      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
     }
     return result;
   });
@@ -167,5 +170,15 @@ export function installMenuHooks() {
       return;
     }
     return next(args);
+  });
+
+  // BC normally uses one global Character/CharacterOff switch for every
+  // appearance group. Keep character previews only where they are needed to
+  // open the selectable grid: front and back hair. All other groups retain the
+  // compact previous/next behavior.
+  bcAeeModSdk.hookFunction('AppearancePreviewUseCharacter', 10, (args, next) => {
+    if (!settings.hairCharacterPreview.get()) return next(args);
+    const group = args[0];
+    return !!group?.PreviewZone && (group.Name === 'HairFront' || group.Name === 'HairBack');
   });
 }

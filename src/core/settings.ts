@@ -93,6 +93,7 @@ export const settings = {
   hoverHighlight: bool('hoverHighlight', false),
   hoverHighlightChar: bool('hoverHighlightChar', false),
   hoverTryOn: bool('hoverTryOn', false),
+  hairCharacterPreview: bool('hairCharacterPreview', false),
   enableCopyPaste: bool('enableCopyPaste', false),
   hideLscgLayers: bool('hideLscgLayers', false),
   hideArousalUi: bool('hideArousalUi', false),

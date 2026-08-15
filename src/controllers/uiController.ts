@@ -448,6 +448,15 @@ export function installSettingEffects() {
       // The appearance menu may not exist while settings are changed elsewhere.
     }
   });
+  settings.hairCharacterPreview.onChange(() => {
+    try {
+      if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
+        AppearanceMenuBuild(CharacterAppearanceSelection);
+      }
+    } catch {
+      // The appearance menu may not exist while settings are changed elsewhere.
+    }
+  });
   settings.enableCopyPaste.onChange(enabled => {
     if (!enabled) clearCopyBuffer();
   });
@@ -597,7 +606,12 @@ export function applyHoverTryOn(
   }
 
   try {
-    const sourceColor = copyItemData ? (item.Color ?? asset.DefaultColor) : asset.DefaultColor;
+    const preserveWornColor = group === 'HairFront' || group === 'HairBack';
+    const sourceColor = copyItemData
+      ? (item.Color ?? asset.DefaultColor)
+      : preserveWornColor
+        ? (runtime.hoverTryOnBackup?.Color ?? asset.DefaultColor)
+        : asset.DefaultColor;
     const previewColor: ItemColor | null = typeof sourceColor === 'string'
       ? sourceColor
       : sourceColor ? [...sourceColor] : null;

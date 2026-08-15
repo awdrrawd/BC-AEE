@@ -23,7 +23,10 @@ export function SettingsTab() {
       <SettingRow label={t('settings-bc-wheel-scroll')} setting={settings.bcWheelScroll}/>
       <SettingRow label={t('settings-hover-layer-highlight')} setting={settings.hoverHighlight}/>
       <SettingRow label={t('settings-hover-item-highlight')} setting={settings.hoverHighlightChar}/>
-      <SettingRow label={t('settings-hover-tryon')} setting={settings.hoverTryOn}/>
+      <SettingRow label={t('settings-hover-tryon')} setting={settings.hoverTryOn}
+                  tooltip={t('settings-hover-tryon-tooltip')}/>
+      <SettingRow label={t('settings-hair-character-preview')} setting={settings.hairCharacterPreview}
+                  tooltip={t('settings-hair-character-preview-tooltip')}/>
       <SettingRow label={t('settings-hide-lscg-layers-panel')} setting={settings.hideLscgLayers}/>
       <SettingRow label={t('settings-hide-arousal-ui')} setting={settings.hideArousalUi}/>
     </section>

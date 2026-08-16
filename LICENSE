@@ -1,10 +1,31 @@
-Liko-AEE Non-Commercial Attribution License
-Liko-AEE 非商業姓名標示授權
+Liko-AEE License
+（GPLv3-Inspired Copyleft + Substantial-Modification Commercial Clause）
 
 Copyright (c) 2026 Likolisu
-Contributors / 協力者: InkerBot (https://github.com/InkerBot), Tao MUSE
+Contributors / 協力者: InkerBot (https://github.com/InkerBot), Tao MUSE (https://github.com/heitaoplay)
 
 Project / 專案原始倉庫: https://github.com/awdrrawd/BC-AEE
+
+--------------------------------------------------------------------
+重要聲明 · Important Notice
+--------------------------------------------------------------------
+
+本授權**並非**官方 GNU General Public License v3（GPLv3）文本。GPLv3
+第 7 條規定，「額外條款」僅限特定幾類（例如姓名標示、免責聲明調整
+等），並不允許附加「限制商業使用」或「要求修改幅度」這類條款。因此
+本授權僅是**參考 GPLv3 的著佐權（copyleft）精神**——即「散布的副本
+必須公開對應原始碼」——所自行撰寫的獨立授權文字，並非 GPLv3 本身，
+也未獲 FSF 背書，不應被稱為「GPLv3」或與其混淆。
+
+This license is **not** the official GNU General Public License v3
+(GPLv3) text. GPLv3 Section 7 restricts "additional terms" to a
+specific short list (e.g. attribution, warranty disclaimers) and does
+not permit terms that limit commercial use or require a certain degree
+of modification. This license is therefore an independently written
+license that borrows GPLv3's core copyleft principle — that conveyed
+copies must come with corresponding source code — but is not GPLv3
+itself, is not endorsed by the FSF, and should not be referred to or
+confused with "GPLv3."
 
 --------------------------------------------------------------------
 中文版（與下方英文版具同等效力；如有歧異，以下方英文版為準）
@@ -14,11 +35,23 @@ Project / 專案原始倉庫: https://github.com/awdrrawd/BC-AEE
 
 在遵守下列條件的前提下，任何人皆可免費取得本軟體與其相關文件檔案
 （以下稱「本軟體」）之副本，並被授予以下權利：使用、重製、修改、
-合併、出版、散布、再授權（sublicense）本軟體之副本，以及允許被
-提供本軟體的人為上述行為，惟不得將本軟體或其衍生作品用於商業目的
-（詳見第 3 條）。
+合併、出版、散布、再授權（sublicense）、以及販售本軟體或其衍生
+作品之副本。
 
-2. 姓名標示（Attribution）
+2. 著佐權／原始碼公開義務（Copyleft / Source Availability）
+
+任何人若將本軟體或其衍生作品之副本散布、傳遞、提供下載，或以任何
+形式使第三人得以取得可執行之副本（包括但不限於發布 UserScript、
+提供安裝連結、透過插件管理器上架等），無論該副本是否經過修改、
+無論是否用於商業用途，皆須：
+
+  a. 隨附或提供管道取得完整對應之原始碼（human-readable source
+     code），且不得對原始碼的取得設下高於取得執行檔本身的門檻；
+  b. 以本授權條款之相同條件，將該原始碼與衍生作品再授權予下游
+     使用者，使其享有與你相同的權利；
+  c. 不得增加任何進一步限制下游使用者行使本授權所賦予權利的條款。
+
+3. 姓名標示（Attribution）
 
 任何重製、修改或散布本軟體（含全部或實質部分）之副本或衍生作品時，
 皆須：
@@ -30,30 +63,53 @@ Project / 專案原始倉庫: https://github.com/awdrrawd/BC-AEE
      Tao MUSE。
 
 上述標示須以使用者容易發現的方式呈現，例如：專案的 README、關於頁面、
-版權聲明區塊，或發布頁面的顯著位置。
+版權聲明區塊，或發布頁面／商品頁面的顯著位置。
 
-3. 禁止商業使用（Non-Commercial）
+4. 商業使用之實質修改門檻（Substantial Modification for Commercial Use）
 
-不得將本軟體或其任何衍生作品，用於任何以直接或間接獲取商業利益為
-目的之用途，包括但不限於：
+若欲將本軟體或其衍生作品用於任何商業目的（包括但不限於販售、付費
+訂閱、付費會員專屬內容、置入廣告營利、作為付費服務之一部分等），
+除須遵守第 2 條之原始碼公開義務外，該衍生作品必須構成對本軟體之
+**實質修改（Substantial Modification）**，而不僅止於在原有骨架上
+做少量、次要的變動。
 
-  a. 販售本軟體或其衍生作品之副本；
-  b. 將本軟體或其衍生作品作為付費訂閱、付費會員專屬內容或付費服務
-     之全部或一部分提供；
-  c. 於散布或使用本軟體的過程中置入廣告、贊助內容或其他營利性質的
-     置入行銷藉此獲利；
-  d. 其他任何以本軟體或其衍生作品為基礎、直接或間接產生商業收益的
-     行為。
+4.1 判斷原則
 
-若不確定特定用途是否構成商業使用，請於使用前聯絡原作者確認。
+實質修改的核心判斷標準是：一般使用者或開發者是否會認為該衍生作品
+是「一個以 AEE 為基礎、但已發展出自己獨立價值與功能的新產品」，
+而非「AEE 加上一兩個小功能後拿去賣錢」。可參考但不限於以下面向：
 
-4. 衍生作品（Derivative Works）
+  a. 功能面：新增了原本不存在、具有實質工程量的核心功能或模組，
+     而非僅為既有功能的參數調整、外觀重新設計（re-skin）或簡單
+     開關切換；
+  b. 程式碼面：對核心邏輯（如圖層運算、渲染管線、資料結構、
+     控制器架構等）進行了有意義的重構或替換，而非僅修改樣式、
+     文字、變數命名或設定檔；
+  c. 整體占比：本軟體原始程式碼／邏輯占最終產品之比例，不應是
+     該產品的絕大部分或唯一賣點。
 
-在遵守第 2 條與第 3 條之前提下，得自由修改本軟體並以衍生作品形式
-散布。衍生作品仍受本授權條款拘束，亦即任何人取得該衍生作品時，
-應享有與取得本軟體時相同之權利與義務。
+4.2 不構成實質修改的範例（非窮舉）
 
-5. 免責聲明（Disclaimer）
+以下情況原則上**不**構成實質修改，不得作為商業使用之依據：
+
+  - 僅重新命名、更換圖示、調整配色或 UI 樣式；
+  - 僅翻譯文字、調整預設數值或設定選項；
+  - 僅新增一至兩項次要功能，其餘骨架與邏輯維持原樣；
+  - 僅將本軟體重新打包為不同的載入器（loader）或安裝方式；
+  - 僅移除或隱藏本授權要求之標示。
+
+4.3 不確定時
+
+若不確定特定修改是否已達到「實質修改」之門檻，請於商業化前主動
+聯絡原作者 Likolisu 確認，或改以非商業方式使用、修改與散布本軟體
+（非商業用途不受本條限制，僅須遵守第 2、3 條）。
+
+5. 衍生作品之相同條件（Same License for Derivatives）
+
+任何依本授權散布之衍生作品，皆須以**本授權之相同條款**授權予下游
+使用者，不得改用其他授權條款，亦不得移除本授權中之任一義務。
+
+6. 免責聲明（Disclaimer）
 
 本軟體係以「現狀」（AS IS）提供，不附帶任何明示或默示之擔保，
 包括但不限於商品性、特定用途適用性及不侵權之擔保。在任何情況下，
@@ -70,12 +126,28 @@ English Version (governing version in case of discrepancy)
 Subject to the conditions below, permission is hereby granted, free of
 charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to use, copy, modify, merge,
-publish, distribute, and sublicense copies of the Software, and to
-permit persons to whom the Software is furnished to do so, provided
-that the Software and any derivative works are not used for any
-commercial purpose (see Section 3).
+publish, distribute, sublicense, and sell copies of the Software or any
+derivative work.
 
-2. Attribution
+2. Copyleft / Source Availability
+
+Anyone who distributes, conveys, makes downloadable, or otherwise
+provides a third party with an executable copy of the Software or any
+derivative work — whether modified or unmodified, and whether or not
+for commercial purposes — including but not limited to publishing a
+UserScript, providing an install link, or listing it in a plugin
+manager, must:
+
+  a. provide, or provide access to, the complete corresponding
+     human-readable source code, under terms no more burdensome to
+     obtain than those for the executable copy itself;
+  b. license that source code and derivative work to downstream
+     recipients under the same terms as this license, so they receive
+     the same rights you did;
+  c. not impose any further restriction on a downstream recipient's
+     exercise of the rights granted by this license.
+
+3. Attribution
 
 Any copy or derivative work of the Software, in whole or in substantial
 part, must:
@@ -88,35 +160,68 @@ part, must:
 
 This attribution must be presented in a place a user would reasonably
 find it, such as a README, an "About" page, a copyright notice section,
-or a prominent location on the release page.
+or a prominent location on the release or product page.
 
-3. Non-Commercial Use Only
+4. Substantial Modification Required for Commercial Use
 
-The Software, and any derivative work based on it, may not be used for
-any purpose intended for or directed toward direct or indirect
-commercial advantage, including but not limited to:
+To use the Software or any derivative work for any commercial purpose
+(including but not limited to selling copies, offering it as part of a
+paid subscription or paid membership content, monetizing it through
+advertising, or including it as part of a paid service), in addition to
+the source-availability obligation in Section 2, the derivative work
+must constitute a **Substantial Modification** of the Software — not
+merely a small, cosmetic, or incremental change layered on top of the
+original skeleton.
 
-  a. selling copies of the Software or any derivative work;
-  b. offering the Software or any derivative work as part of a paid
-     subscription, paid membership content, or any other paid service;
-  c. monetizing distribution or use of the Software through
-     advertisements, sponsorships, or other paid promotional
-     placements;
-  d. any other activity that directly or indirectly generates
-     commercial revenue based on the Software or its derivatives.
+4.1 Test
 
-If you are unsure whether a particular use qualifies as commercial,
-please contact the original author before proceeding.
+The core test for a Substantial Modification is whether a reasonable
+user or developer would regard the derivative work as "a new product
+that builds on AEE but has developed its own independent value and
+functionality," rather than "AEE with one or two small features bolted
+on and sold for profit." Relevant factors include, without limitation:
 
-4. Derivative Works
+  a. Functionality: the addition of genuinely new core features or
+     modules that represent substantial engineering effort, rather than
+     parameter tweaks, re-skinning, or simple toggles on existing
+     features;
+  b. Codebase: meaningful refactoring or replacement of core logic
+     (e.g. the layer engine, rendering pipeline, data structures, or
+     controller architecture), rather than changes limited to styling,
+     copy text, variable names, or configuration files;
+  c. Overall proportion: the Software's original code/logic should not
+     constitute the overwhelming majority, or the sole selling point,
+     of the resulting product.
 
-Subject to Sections 2 and 3, you may freely modify the Software and
-distribute it as a derivative work. Any such derivative work remains
-subject to the terms of this license — anyone who receives it must be
-granted the same rights and be subject to the same obligations as
-under this license.
+4.2 Non-Exhaustive Examples That Do NOT Qualify
 
-5. Disclaimer of Warranty
+The following, without more, generally do NOT constitute a Substantial
+Modification and may not be used as the basis for commercial use:
+
+  - Renaming, re-icon-ing, or re-theming the UI;
+  - Translating text or adjusting default values/settings;
+  - Adding only one or two minor features while keeping the rest of the
+    skeleton and logic unchanged;
+  - Repackaging the Software under a different loader or install
+    method without changing its substance;
+  - Removing or hiding the attribution required by this license.
+
+4.3 When in Doubt
+
+If you are unsure whether a particular modification meets the
+Substantial Modification threshold, contact the original author,
+Likolisu, before commercializing it, or use, modify, and distribute the
+Software on a non-commercial basis instead (non-commercial use is not
+subject to this Section, but remains subject to Sections 2 and 3).
+
+5. Same License for Derivatives
+
+Any derivative work distributed under this license must be licensed to
+downstream recipients under **these same terms** — it may not be
+relicensed under different terms, and none of the obligations in this
+license may be removed.
+
+6. Disclaimer of Warranty
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF

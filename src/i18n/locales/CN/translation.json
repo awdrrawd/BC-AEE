@@ -63,7 +63,7 @@
   "settings-hover-layer-highlight": "悬停时图层闪烁（AEE面板）",
   "settings-hover-item-highlight": "悬停时衣服闪烁（右侧面板）",
   "settings-hover-tryon": "悬停试穿功能",
-  "settings-hover-tryon-tooltip": "在更衣、拘束时，新增一个试穿按钮",
+  "settings-hover-tryon-tooltip": "啟用 / 停用懸停試穿功能",
   "settings-hair-character-preview": "隐藏预览显示角色的按钮",
   "settings-hair-character-preview-tooltip": "隐藏按钮，但前后发的替换仍保留图示选择功能",
   "settings-enable-copy-paste": "衣服复制/粘贴",

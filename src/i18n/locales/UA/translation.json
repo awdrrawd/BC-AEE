@@ -63,7 +63,7 @@
   "settings-hover-layer-highlight": "Шар блимає при наведенні (панель AEE)",
   "settings-hover-item-highlight": "Одяг блимає при наведенні (права панель)",
   "settings-hover-tryon": "Приміряння при наведенні",
-  "settings-hover-tryon-tooltip": "Додає кнопку приміряння під час зміни одягу або предметів зв’язування",
+  "settings-hover-tryon-tooltip": "Увімкнути / Вимкнути функцію примірки при наведенні",
   "settings-hair-character-preview": "Приховати кнопку перегляду персонажа",
   "settings-hair-character-preview-tooltip": "Приховує кнопку, але переднє та заднє волосся й надалі можна замінювати через сітку значків",
   "settings-enable-copy-paste": "Копіювання/вставлення одягу",

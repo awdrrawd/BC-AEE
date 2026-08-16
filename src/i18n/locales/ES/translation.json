@@ -63,7 +63,7 @@
   "settings-hover-layer-highlight": "La capa parpadea al pasar el ratón (panel AEE)",
   "settings-hover-item-highlight": "La ropa parpadea al pasar el ratón (panel derecho)",
   "settings-hover-tryon": "Prueba al pasar el cursor",
-  "settings-hover-tryon-tooltip": "Añade un botón de prueba al cambiar ropa o ataduras",
+  "settings-hover-tryon-tooltip": "Activar / Desactivar la función de prueba al pasar el cursor",
   "settings-hair-character-preview": "Ocultar el botón de vista previa del personaje",
   "settings-hair-character-preview-tooltip": "Oculta el botón, pero el cabello delantero y trasero aún puede sustituirse desde la cuadrícula de iconos",
   "settings-enable-copy-paste": "Copiar/pegar ropa",

@@ -63,7 +63,7 @@
   "settings-hover-layer-highlight": "Layer flashes on hover (AEE panel)",
   "settings-hover-item-highlight": "Clothing flashes on hover (right-side panel)",
   "settings-hover-tryon": "Hover try-on feature",
-  "settings-hover-tryon-tooltip": "Adds a try-on button while changing clothes or restraints",
+  "settings-hover-tryon-tooltip": "Enable / Disable hover try-on feature",
   "settings-hair-character-preview": "Hide the character preview button",
   "settings-hair-character-preview-tooltip": "Hides the button, while front and back hair can still be replaced from the icon grid",
   "settings-enable-copy-paste": "Clothes copy/paste",

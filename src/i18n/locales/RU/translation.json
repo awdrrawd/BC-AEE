@@ -63,7 +63,7 @@
   "settings-hover-layer-highlight": "Мигание слоя при наведении (панель AEE)",
   "settings-hover-item-highlight": "Мигание одежды при наведении (правая панель)",
   "settings-hover-tryon": "Примерка при наведении",
-  "settings-hover-tryon-tooltip": "Добавляет кнопку примерки при смене одежды или связывающих предметов",
+  "settings-hover-tryon-tooltip": "Включить / Отключить функцию примерки при наведении",
   "settings-hair-character-preview": "Скрыть кнопку предпросмотра персонажа",
   "settings-hair-character-preview-tooltip": "Скрывает кнопку, но передние и задние волосы по-прежнему можно заменять через сетку значков",
   "settings-enable-copy-paste": "Копирование/вставка одежды",

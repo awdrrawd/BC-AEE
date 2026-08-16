@@ -63,7 +63,7 @@
   "settings-hover-layer-highlight": "ホバーでレイヤーが点滅（AEEパネル）",
   "settings-hover-item-highlight": "ホバーで衣服が点滅（右側パネル）",
   "settings-hover-tryon": "ホバー試着機能",
-  "settings-hover-tryon-tooltip": "着替えや拘束具の選択画面に試着ボタンを追加します",
+  "settings-hover-tryon-tooltip": "ホバー試着機能を有効／無効にする",
   "settings-hair-character-preview": "キャラクタープレビュー表示ボタンを隠す",
   "settings-hair-character-preview-tooltip": "ボタンを隠しても、前髪と後ろ髪は引き続きアイコン一覧から変更できます",
   "settings-enable-copy-paste": "衣服のコピー/貼り付け",

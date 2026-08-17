@@ -633,8 +633,22 @@ export function applyHoverTryOn(
 
   if (runtime.hoverTryOnActive && runtime.hoverTryOnGroup && runtime.hoverTryOnGroup !== group) {
     restoreTryOnGroup(character, runtime.hoverTryOnGroup, runtime.hoverTryOnBackup);
+    // The group we're leaving may have forced an active pose (e.g. a suspension
+    // restraint's SetPose). Restoring the item alone doesn't recompute pose state —
+    // only a full CharacterRefresh does — so without this the forced pose sticks
+    // around even though the previewed item is gone.
+    if (runtime.hoverTryOnRestraint) {
+      try {
+        CharacterRefresh(character, false, false);
+      } catch {
+        // Ignore transient render errors; the item swap above already succeeded.
+      }
+    }
     runtime.hoverTryOnActive = false;
+    runtime.hoverTryOnGroup = null;
+    runtime.hoverTryOnAsset = null;
     runtime.hoverTryOnBackup = null;
+    runtime.hoverTryOnRestraint = false;
   }
 
   if (!runtime.hoverTryOnActive || runtime.hoverTryOnGroup !== group) {
@@ -660,6 +674,12 @@ export function applyHoverTryOn(
     );
     if (!preview) {
       restoreTryOnGroup(character, group, runtime.hoverTryOnBackup);
+      // Nothing was actually previewed for this group, so leave no dangling
+      // "active for this group" state behind — otherwise a later call can see
+      // hoverTryOnActive === false but a stale hoverTryOnGroup/Backup pointing
+      // at a group whose item was never touched this round.
+      runtime.hoverTryOnGroup = null;
+      runtime.hoverTryOnBackup = null;
       return;
     }
     if (copyItemData && item.Property) preview.Property = CommonCloneDeep(item.Property);

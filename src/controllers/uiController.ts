@@ -1,4 +1,4 @@
-import type {AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '@/core/types';
+import type {AeeLayerOverride, AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '@/core/types';
 import {getState, mutateState} from '@/core/store';
 import {settings} from '@/core/settings';
 import {
@@ -292,20 +292,64 @@ export function stepOpacity(layerId: LayerId, delta: number) {
   setOpacity(layerId, next);
 }
 
+type EditPropertyKey = 'x' | 'y' | 'sx' | 'sy' | 'rot' | 'skx' | 'sky' | 'fcx' | 'fcy';
+
+interface EditPropertyDef {
+  /** 讀出目前值，作為 stepEditProperty 的 delta 起點 */
+  get(layerOverride: AeeLayerOverride, bx: number, by: number): number;
+  /** 套用格式化/夾範圍後的新值到 layer override */
+  apply(item: Item, idx: LayerId, value: number): void;
+}
+
+const EDIT_PROPERTIES: Record<EditPropertyKey, EditPropertyDef> = {
+  x: {
+    get: (lo, bx) => lo.DrawingLeft?.[''] ?? bx,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'DrawingLeft', {'': Math.round(v)}),
+  },
+  y: {
+    get: (lo, _bx, by) => lo.DrawingTop?.[''] ?? by,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'DrawingTop', {'': Math.round(v)}),
+  },
+  sx: {
+    get: lo => lo.ScaleX ?? 1,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'ScaleX', Math.max(0.05, +v.toFixed(2))),
+  },
+  sy: {
+    get: lo => lo.ScaleY ?? 1,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'ScaleY', Math.max(0.05, +v.toFixed(2))),
+  },
+  rot: {
+    get: lo => lo.Rotation ?? 0,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'Rotation', ((Math.round(v) % 360) + 360) % 360),
+  },
+  skx: {
+    get: lo => lo.SkewX ?? 0,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'SkewX', +v.toFixed(1)),
+  },
+  sky: {
+    get: lo => lo.SkewY ?? 0,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'SkewY', +v.toFixed(1)),
+  },
+  fcx: {
+    get: lo => lo.MirrorCopyAxisX ?? 0.5,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'MirrorCopyAxisX', clamp(+v.toFixed(2), -10, 10)),
+  },
+  fcy: {
+    get: lo => lo.MirrorCopyAxisY ?? 0.5,
+    apply: (item, idx, v) => setLayerOverride(item, idx, 'MirrorCopyAxisY', clamp(+v.toFixed(2), -10, 10)),
+  },
+};
+
+function isEditPropertyKey(ctrl: string): ctrl is EditPropertyKey {
+  return Object.prototype.hasOwnProperty.call(EDIT_PROPERTIES, ctrl);
+}
+
 export function setEditProperty(ctrl: string, rawValue: number) {
   const state = getState();
   const item = getCurrentItem();
   const idx = state.selectedLayer;
-  if (!item || idx === null || Number.isNaN(rawValue)) return;
-  if (ctrl === 'x') setLayerOverride(item, idx, 'DrawingLeft', {'': Math.round(rawValue)});
-  else if (ctrl === 'y') setLayerOverride(item, idx, 'DrawingTop', {'': Math.round(rawValue)});
-  else if (ctrl === 'sx') setLayerOverride(item, idx, 'ScaleX', Math.max(0.05, +rawValue.toFixed(2)));
-  else if (ctrl === 'sy') setLayerOverride(item, idx, 'ScaleY', Math.max(0.05, +rawValue.toFixed(2)));
-  else if (ctrl === 'rot') setLayerOverride(item, idx, 'Rotation', ((Math.round(rawValue) % 360) + 360) % 360);
-  else if (ctrl === 'skx') setLayerOverride(item, idx, 'SkewX', +rawValue.toFixed(1));
-  else if (ctrl === 'sky') setLayerOverride(item, idx, 'SkewY', +rawValue.toFixed(1));
-  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', clamp(+rawValue.toFixed(2), 0, 1));
-  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', clamp(+rawValue.toFixed(2), 0, 1));
+  if (!item || idx === null || Number.isNaN(rawValue) || !isEditPropertyKey(ctrl)) return;
+  EDIT_PROPERTIES[ctrl].apply(item, idx, rawValue);
   forceUiUpdate();
 }
 
@@ -313,18 +357,11 @@ export function stepEditProperty(ctrl: string, delta: number) {
   const state = getState();
   const item = getCurrentItem();
   const idx = state.selectedLayer;
-  if (!item || idx === null) return;
+  if (!item || idx === null || !isEditPropertyKey(ctrl)) return;
+  const def = EDIT_PROPERTIES[ctrl];
   const layerOverride = getLayerOverride(item, idx);
   const {bx, by} = getAssetBaseXY(item, idx);
-  if (ctrl === 'x') setLayerOverride(item, idx, 'DrawingLeft', {'': (layerOverride.DrawingLeft?.[''] ?? bx) + delta});
-  else if (ctrl === 'y') setLayerOverride(item, idx, 'DrawingTop', {'': (layerOverride.DrawingTop?.[''] ?? by) + delta});
-  else if (ctrl === 'sx') setLayerOverride(item, idx, 'ScaleX', Math.max(0.05, +((layerOverride.ScaleX ?? 1) + delta).toFixed(2)));
-  else if (ctrl === 'sy') setLayerOverride(item, idx, 'ScaleY', Math.max(0.05, +((layerOverride.ScaleY ?? 1) + delta).toFixed(2)));
-  else if (ctrl === 'rot') setLayerOverride(item, idx, 'Rotation', ((layerOverride.Rotation ?? 0) + delta + 360) % 360);
-  else if (ctrl === 'skx') setLayerOverride(item, idx, 'SkewX', +((layerOverride.SkewX ?? 0) + delta).toFixed(1));
-  else if (ctrl === 'sky') setLayerOverride(item, idx, 'SkewY', +((layerOverride.SkewY ?? 0) + delta).toFixed(1));
-  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', clamp(+((layerOverride.MirrorCopyAxisX ?? 0.5) + delta).toFixed(2), 0, 1));
-  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', clamp(+((layerOverride.MirrorCopyAxisY ?? 0.5) + delta).toFixed(2), 0, 1));
+  def.apply(item, idx, def.get(layerOverride, bx, by) + delta);
   forceUiUpdate();
 }
 

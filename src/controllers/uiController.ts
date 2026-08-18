@@ -485,7 +485,19 @@ export function installSettingEffects() {
       // The appearance menu may not exist while settings are changed elsewhere.
     }
   });
-  settings.hairCharacterPreview.onChange(() => {
+  settings.hairCharacterPreview.onChange(enabled => {
+    // Enabling the master switch re-activates the preview so the button shows
+    // up in the "on" state; disabling it just hides the toggle button.
+    if (enabled) settings.characterPreviewActive.set(true);
+    try {
+      if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
+        AppearanceMenuBuild(CharacterAppearanceSelection);
+      }
+    } catch {
+      // The appearance menu may not exist while settings are changed elsewhere.
+    }
+  });
+  settings.characterPreviewActive.onChange(() => {
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
         AppearanceMenuBuild(CharacterAppearanceSelection);
@@ -731,6 +743,10 @@ export function isHoverTryOnEnabled(): boolean {
 export function toggleHoverTryOn(): void {
   runtime.hoverTryOnEnabled = !runtime.hoverTryOnEnabled;
   if (!runtime.hoverTryOnEnabled) stopHoverTryOn();
+}
+
+export function toggleCharacterPreviewActive(): void {
+  settings.characterPreviewActive.set(!settings.characterPreviewActive.get());
 }
 
 function restoreTryOnGroup(character: Character, group: AssetGroupName, backup: Item | null) {

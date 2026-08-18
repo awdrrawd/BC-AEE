@@ -2,7 +2,11 @@ import type {AeeLayerOverride, CanvasRect, LayerId, LayerOverrideKey, LayerPosit
 import {runtime} from '@/core/runtime';
 import {clamp} from '@/util/math';
 
-export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Pussy', 'Head']);
+// Body groups that AEE must NOT expose transform controls for.
+// R131 opened Pussy/Penis for native layer transforms, so they are intentionally
+// NOT locked here (Penis was never in this set; Pussy removed to align with R131).
+// BodyUpper/BodyLower/Nipples/Head stay locked — official R131 still disables them.
+export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Head']);
 
 export function getCanvas(): HTMLCanvasElement | null {
   return (document.getElementById('MainCanvas') as HTMLCanvasElement | null) || document.querySelector('canvas');
@@ -86,6 +90,45 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
   const indices = layerIdx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(layerIdx, 10));
   if (runtime.itemColorChar) runtime.itemColorDirty = true;
 
+  // R131 native layer transform API. Where BC supports it (Pussy/Penis and
+  // regular item layers), persist the transform on the native property so it
+  // survives without AEE and stays compatible with BCX export. Falls back to
+  // AEE's own LayerOverrides when the native Layering API is unavailable (R130).
+  const nativeProperty = key === 'DrawingLeft' ? 'TranslationX'
+    : key === 'DrawingTop' ? 'TranslationY'
+      : key === 'ScaleX' || key === 'ScaleY' || key === 'Rotation' ? key : null;
+  if (nativeProperty) {
+    const layering = (window as unknown as {
+      Layering?: {
+        Character: Character | null;
+        UpdateProperty(item: Item, property: string, value: number, layerName?: string): void;
+      };
+    }).Layering;
+    const character = getCurrentCharacter();
+    if (layering && character) layering.Character = character;
+    const update = (index: number, layerName?: string) => {
+      const base = nativeProperty === 'TranslationX' ? getAssetBaseXY(item, String(index)).bx
+        : nativeProperty === 'TranslationY' ? getAssetBaseXY(item, String(index)).by : 0;
+      const raw = (typeof value === 'object' && value != null) ? (value as LayerPositionOverride)?.[''] : value;
+      const nativeValue = Number(raw ?? (nativeProperty.startsWith('Scale') ? 1 : 0)) - base;
+      const lo = item.Property.LayerOverrides?.[index];
+      if (lo) delete lo[key];
+      if (layering) {
+        layering.UpdateProperty(item, nativeProperty, nativeValue, layerName);
+      } else if (layerName) {
+        const property = item.Property as ItemProperties & Record<string, unknown>;
+        const layerValues = (property[`Layer${nativeProperty}`] ??= {}) as Record<string, number>;
+        layerValues[layerName] = nativeValue;
+      } else {
+        (item.Property as ItemProperties & Record<string, unknown>)[nativeProperty] = nativeValue;
+      }
+    };
+    if (layerIdx === 'all') update(0);
+    else indices.forEach(index => update(index, item.Asset?.Layer?.[index]?.Name ?? item.Asset?.Name));
+    refreshAfterLayerEdit();
+    return;
+  }
+
   if (key === 'Opacity') {
     ensureOpacityArray(item);
     indices.forEach(index => {
@@ -162,7 +205,23 @@ export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverr
   const index = idx === 'all' ? 0 : parseInt(idx, 10);
   const layerOverride = item?.Property?.LayerOverrides?.[index] || {};
   const opacity = getOpacity(item, idx) ?? 1;
-  return {...layerOverride, Opacity: opacity};
+  if (!item) return {...layerOverride, Opacity: opacity};
+  const layerName = item.Asset?.Layer?.[index]?.Name ?? item.Asset?.Name ?? '';
+  const props = item.Property ?? {};
+  const layerValue = (name: 'TranslationX' | 'TranslationY' | 'ScaleX' | 'ScaleY' | 'Rotation') =>
+    idx === 'all' ? (props[name] as number | undefined) : (props[`Layer${name}`] as Record<string, number> | undefined)?.[layerName];
+  const {bx, by} = getAssetBaseXY(item, String(index));
+  const tx = layerValue('TranslationX');
+  const ty = layerValue('TranslationY');
+  return {
+    ...layerOverride,
+    DrawingLeft: tx == null ? layerOverride.DrawingLeft : {'': bx + tx},
+    DrawingTop: ty == null ? layerOverride.DrawingTop : {'': by + ty},
+    ScaleX: layerValue('ScaleX') ?? layerOverride.ScaleX,
+    ScaleY: layerValue('ScaleY') ?? layerOverride.ScaleY,
+    Rotation: layerValue('Rotation') ?? layerOverride.Rotation,
+    Opacity: opacity,
+  };
 }
 
 function isUsableLayerLabel(text: string | undefined | null, key: string): text is string {

@@ -101,9 +101,9 @@ export interface PendingTransform {
   mirrorCopyV: boolean;
   mirrorCopyAxisX: number;
   mirrorCopyAxisY: number;
-  scaleX: number;
-  scaleY: number;
-  rotation: number;
+  scaleX?: number;
+  scaleY?: number;
+  rotation?: number;
   skewX: number;
   skewY: number;
 }

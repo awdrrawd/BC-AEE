@@ -6,7 +6,8 @@ import {MirrorButton} from '@/components/main-panel/MirrorButton';
 
 export function MirrorGroup({layerOverride}: { layerOverride: AeeLayerOverride & { Opacity: number } }) {
   return <div className="mb-2">
-    <div className="mb-1 text-xs font-bold tracking-wide text-zinc-100">{t('mirror-group-title')}</div>
+    <div className="mb-1 text-xs font-bold tracking-wide text-zinc-100">{`${t('mirror-group-title')} ⚠️`}</div>
+    <div className="mb-1 text-[10px] leading-4 text-amber-300/80">{t('experimental-feature-note')}</div>
     <div className="mb-1 grid grid-cols-2 gap-2">
       <div>
         <div

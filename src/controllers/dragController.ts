@@ -5,6 +5,7 @@ import {
   getCanvasRect,
   getCurrentItem,
   getLayerOverride,
+  isEditableAppearanceContext,
   isGroupLocked,
   setLayerOverride,
 } from '@/core/bc';
@@ -90,7 +91,16 @@ export function setRotationDragging(active: boolean) {
 
 function isAeeEditing() {
   const state = getState();
-  return !!(state.visible && (state.activeDrag || state.colorPicker.open));
+  if (!state.visible) return false;
+  if (state.activeDrag || state.colorPicker.open) return true;
+  // Also block clicks on the character whenever we're in an item-colour (dye)
+  // context — even before a drag or AEE's own colour picker has started. The
+  // dye screen still has the game's own clickable hit-regions for other
+  // body/item cells directly underneath the character canvas; without this,
+  // a click on the character while just browsing dye options (no active
+  // drag yet) can accidentally jump into a completely different item's or
+  // group's dye screen instead of doing nothing.
+  return isEditableAppearanceContext();
 }
 
 const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';
@@ -311,6 +321,23 @@ export function installDragHandlers() {
   document.addEventListener('touchstart', event => {
     if (shouldIntercept(event)) event.stopImmediatePropagation();
   }, {capture: true, passive: false});
+
+  // BC's canvas fires a native "click" event (Game.js: `canvas.addEventListener
+  // ("click", ...)` -> GameClick -> CommonClick) whenever a mousedown/pointerdown
+  // and mouseup/pointerup land on the canvas — including when the canvas holds
+  // pointer capture and the up event is retargeted back to it from anywhere on
+  // the page. That "click" is a separate, browser-generated event: stopping
+  // propagation on mousedown/mouseup above does NOT stop it from firing. Without
+  // blocking it too, dragging (e.g. dragging a colour/hue slider) and releasing
+  // the mouse over the character's body still lets this click through to
+  // CommonClick -> DialogChangeFocusToGroup -> ItemColorCancelAndExit, silently
+  // kicking the user out of the dye/colour screen mid-edit.
+  document.addEventListener('click', event => {
+    if (shouldIntercept(event)) {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+    }
+  }, true);
 }
 
 export function getLayerBaseXYForDisplay(item: Item, layerId: LayerId) {

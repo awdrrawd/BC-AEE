@@ -77,7 +77,6 @@ export function EditSection({state, layerId}: { state: AeeState; layerId: LayerI
         title={<span>{t('edit-section-skew-group-title')} <span className="cursor-help" title={t('experimental-feature-tooltip')}>⚠️</span></span>}
         dragMode="skew"
         dragLabel={t('edit-section-skew-drag-label')} activeDrag={state.activeDrag}>
-        <div className="mb-1 text-[10px] leading-4 text-amber-300/80">{t('experimental-feature-note')}</div>
         <PropRow label="X°" value={(layerOverride.SkewX ?? 0).toFixed(1)} ctrl="skx" deltas={[-5, -1, 1, 5]}/>
         <PropRow label="Y°" value={(layerOverride.SkewY ?? 0).toFixed(1)} ctrl="sky" deltas={[-5, -1, 1, 5]}/>
       </PropGroup>

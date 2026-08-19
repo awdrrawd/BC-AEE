@@ -65,9 +65,6 @@ export function installMenuHooks() {
       const randomIndex = AppearanceMenu.indexOf('WearRandom');
       if (randomIndex >= 0) AppearanceMenu[randomIndex] = HOVER_TRY_ON_BUTTON;
     }
-    // Character-preview toggle sits right next to hover try-on. When both are
-    // enabled it is inserted after the hover-try-on slot; otherwise it takes
-    // the WearRandom slot (or is prepended) so it stays adjacent.
     if (CharacterAppearanceMode === 'Cloth' && settings.hairCharacterPreview.get()) {
       const hoverIndex = AppearanceMenu.indexOf(HOVER_TRY_ON_BUTTON);
       if (hoverIndex >= 0) {
@@ -86,8 +83,6 @@ export function installMenuHooks() {
       if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'Copy', 'Paste');
       else AppearanceMenu.unshift('Copy', 'Paste');
     }
-    // Unshift in reverse of the wanted order so copy (AEE_ClearCopy) ends up
-    // ahead: final leading order is 複製 → 拘束 → 部位 → 衣櫃 → 匯出 → 匯入.
     if (isPartsFilterAvailable() && !AppearanceMenu.includes('AEE_PartsFilter')) {
       AppearanceMenu.unshift('AEE_PartsFilter');
     }
@@ -240,29 +235,22 @@ export function installMenuHooks() {
     return next(args);
   });
 
-  // BC normally uses one global Character/CharacterOff switch for every
-  // appearance group. AEE's "preview character" button force-enables the
-  // character-grid preview for the whitelist groups; every other group must
-  // fall through to the official logic (AppearanceUseCharacterInPreviewsSetting
-  // && PreviewZone) so the official Character switch keeps working. Returning
-  // false here (instead of next) silently killed the preview for all non-listed
-  // groups even when the official preview switch was on.
   bcAeeModSdk.hookFunction('AppearancePreviewUseCharacter', 10, (args, next) => {
     const group = args[0];
     if (!group?.PreviewZone) return next(args);
     const name = group.Name as string;
-    // Force character-grid previews for the original hair groups plus the
-    // extended set requested for R131: brows/eyes (Eyes/Eyes2), mouth, and the
-    // matching ECHO custom groups (left/right eye, front/back hair, stacked).
-    if (settings.characterPreviewActive.get()
-      && (name === 'HairFront' || name === 'HairBack'
-        || name === 'Eyes' || name === 'Eyes2' || name === 'Mouth'
-        || name === '左眼_Luzi' || name === '右眼_Luzi'
-        || name === '新前发_Luzi' || name === '新后发_Luzi'
-        || name === '新前发_Luzi_stack' || name === '新后发_Luzi_stack')) {
+    const isExtendedFaceGroup = name === 'HairFront' || name === 'HairBack'
+      || name === 'Eyes' || name === 'Eyes2' || name === 'Mouth' || name === 'Eyebrows'
+      || name === '左眼_Luzi' || name === '右眼_Luzi'
+      || name === '新前发_Luzi' || name === '新后发_Luzi'
+      || name === '新前发_Luzi_stack' || name === '新后发_Luzi_stack';
+    const isClothingGroup = group.Category === 'Appearance' && !!group.Clothing;
+    if (isExtendedFaceGroup) {
       return true;
     }
-    // All other groups: follow the official Character preview switch.
+    if (isClothingGroup && settings.characterPreviewActive.get()) {
+      return true;
+    }
     return next(args);
   });
 }

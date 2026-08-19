@@ -544,6 +544,18 @@ export function installSettingEffects() {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
         AppearanceMenuBuild(CharacterAppearanceSelection);
       }
+      // AppearancePreviewUseCharacter() is hooked and now reflects the new
+      // toggle state, but AppearancePreviews[] is a cache that BC only
+      // rebuilds on cloth-mode entry, page turns, or permission-mode entry.
+      // Without this, flipping the toggle while already looking at the Cloth
+      // grid has no visible effect until the next of those events fires.
+      if (
+        typeof AppearancePreviewBuild === 'function' &&
+        CharacterAppearanceMode === 'Cloth' &&
+        CharacterAppearanceSelection?.FocusGroup
+      ) {
+        AppearancePreviewBuild(CharacterAppearanceSelection, true);
+      }
     } catch {
       // The appearance menu may not exist while settings are changed elsewhere.
     }

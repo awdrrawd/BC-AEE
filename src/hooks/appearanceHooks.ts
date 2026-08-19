@@ -78,8 +78,23 @@ export function installAppearanceHooks() {
       handleHoverTryOn();
 
       markAppearanceRunStart();
-      const result = next(args);
-      markAppearanceRunEnd();
+      let result: ReturnType<typeof next>;
+      try {
+        result = next(args);
+      } catch (error) {
+        // Third-party mods (e.g. character-segment art hooks from other
+        // scripts) can throw while drawing a per-item character-grid preview
+        // — most commonly for groups AEE force-enables previews on, like
+        // Decals, that those mods don't expect to be segment-drawn this way.
+        // Without this guard the throw escapes AppearanceRun entirely and
+        // the whole appearance screen dies with an unhandled-error overlay.
+        // Swallow it and just skip the rest of this frame's draw instead.
+        console.warn('[AEE] AppearanceRun draw chain threw (suppressed):',
+          error instanceof Error ? error.message : String(error));
+        result = undefined;
+      } finally {
+        markAppearanceRunEnd();
+      }
       updateAppearanceScreenState();
       drawAboveGridIfNeeded();
       drawGroupCopyPasteButtons();

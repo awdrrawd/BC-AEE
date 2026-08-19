@@ -8,6 +8,46 @@ import {clamp} from '@/util/math';
 // BodyUpper/BodyLower/Nipples/Head stay locked — official R131 still disables them.
 export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Head']);
 
+// Hard caps for the native R131 Translation/Scale/Rotation properties, mirrored
+// from the official Layering panel (Scripts/Layering.js `_UpdateLimits` /
+// `_GetTabContents`). The base game enforces these on its own sliders — AEE must
+// match them so a drag/step/typed value can't push an item's layer transform
+// past what the game itself allows (which otherwise produces states the
+// official Layering UI can't even display correctly).
+const TRANSLATION_BOUNDS = {min: -500, max: 500};
+const SCALE_BOUNDS = {min: 0.01, max: 3.0};
+const ROTATION_BOUNDS = {min: -180, max: 180};
+// Pussy/Penis get the same tighter caps the game applies to that group alone:
+// no X movement at all, a small Y range, and a narrower uniform scale.
+const PUSSY_TRANSLATION_Y_BOUNDS = {min: -20, max: 20};
+const PUSSY_SCALE_BOUNDS = {min: 0.5, max: 1.5};
+
+/** Clamp a native transform value (already expressed as the delta/absolute value that gets
+ * written to Property.TranslationX/Y, ScaleX/Y or Rotation) to the same bounds the official
+ * R131 Layering panel enforces for that property and group. */
+function clampNativeTransform(
+  item: Item,
+  property: 'TranslationX' | 'TranslationY' | 'ScaleX' | 'ScaleY' | 'Rotation',
+  value: number,
+): number {
+  const isPussy = item.Asset?.Group?.Name === 'Pussy';
+  if (property === 'TranslationX') {
+    // The official panel doesn't expose X movement for Pussy/Penis at all.
+    return isPussy ? 0 : clamp(value, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
+  }
+  if (property === 'TranslationY') {
+    return isPussy
+      ? clamp(value, PUSSY_TRANSLATION_Y_BOUNDS.min, PUSSY_TRANSLATION_Y_BOUNDS.max)
+      : clamp(value, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
+  }
+  if (property === 'ScaleX' || property === 'ScaleY') {
+    return isPussy
+      ? clamp(value, PUSSY_SCALE_BOUNDS.min, PUSSY_SCALE_BOUNDS.max)
+      : clamp(value, SCALE_BOUNDS.min, SCALE_BOUNDS.max);
+  }
+  return clamp(value, ROTATION_BOUNDS.min, ROTATION_BOUNDS.max);
+}
+
 export function getCanvas(): HTMLCanvasElement | null {
   return (document.getElementById('MainCanvas') as HTMLCanvasElement | null) || document.querySelector('canvas');
 }
@@ -110,7 +150,11 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
       const base = nativeProperty === 'TranslationX' ? getAssetBaseXY(item, String(index)).bx
         : nativeProperty === 'TranslationY' ? getAssetBaseXY(item, String(index)).by : 0;
       const raw = (typeof value === 'object' && value != null) ? (value as LayerPositionOverride)?.[''] : value;
-      const nativeValue = Number(raw ?? (nativeProperty.startsWith('Scale') ? 1 : 0)) - base;
+      const rawValue = Number(raw ?? (nativeProperty.startsWith('Scale') ? 1 : 0)) - base;
+      // Clamp to the same hard limits the official R131 Layering panel enforces
+      // (see clampNativeTransform above) — position/scale/rotation must not
+      // exceed what the base game itself allows for this property and group.
+      const nativeValue = clampNativeTransform(item, nativeProperty, rawValue);
       const lo = item.Property.LayerOverrides?.[index];
       if (lo) delete lo[key];
       if (layering) {

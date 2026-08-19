@@ -16,6 +16,8 @@ import {
   MASK_X, IMAGE_X, SYMMETRY_X,
   TOOL_COLOR_X, TOOL_ERASER_X, TOOL_BUCKET_X, TOOL_TEXT_X, TOOL_SHAPE_X, TOOL_FILL_X, TOOL_PEN_X, TOOL_SELECT_X,
   DRAW_GROUPS, BOARD_W, BOARD_H,
+  APPEARANCE_SIZE_FRAME_X, APPEARANCE_SIZE_FRAME_W, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_H,
+  APPEARANCE_SIZE_LABEL_X, APPEARANCE_SIZE_LABEL_W, APPEARANCE_SIZE_VALUE_X, APPEARANCE_SIZE_VALUE_W,
 } from '../constants';
 import {SHAPE_TOOLS, SHAPE_EMOJI} from '../shapes';
 import {ICON} from '../icons';
@@ -32,6 +34,7 @@ import {applyToCharacter, leaveEditor, cancelEditingAndExit} from './lifecycle';
 import {commitSelection, selHandleRect} from './selection';
 import {importImage} from './imageImport';
 import {afterEdit} from './editing';
+import {targetAppearanceUsage, formatBytesK} from './appearanceSize';
 
 // Transform panel layout (from the user's DDT layout): four mode headers with
 // grouped controls beneath each.
@@ -242,6 +245,23 @@ export function slotDraw() {
 
   DrawButton(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Accept.png', t('free-draw-accept-tooltip'));
   DrawButton(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Exit.png', t('free-draw-exit-tooltip'));
+
+  drawAppearanceSizeReadout();
+}
+
+// Bottom-right readout of the target character's live serialized Appearance
+// size — not a hard limit (per design), just enough of a heads-up that
+// players notice before a big imported image tips them over BC's sync
+// ceiling. Always shown, regardless of tool/panel state.
+function drawAppearanceSizeReadout() {
+  const {used, budget} = targetAppearanceUsage();
+  const danger = used / budget >= 0.9;
+  const color = danger ? '#f87171' : 'black';
+  DrawRect(APPEARANCE_SIZE_FRAME_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_FRAME_W, APPEARANCE_SIZE_H, 'White');
+  DrawEmptyRect(APPEARANCE_SIZE_FRAME_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_FRAME_W, APPEARANCE_SIZE_H, danger ? '#f87171' : 'Black', 2);
+  DrawText(t('free-draw-appearance-size-label'), APPEARANCE_SIZE_LABEL_X + APPEARANCE_SIZE_LABEL_W / 2, APPEARANCE_SIZE_Y + APPEARANCE_SIZE_H / 2, color);
+  DrawButton(APPEARANCE_SIZE_VALUE_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_VALUE_W, APPEARANCE_SIZE_H, '', 'White', undefined, t('free-draw-appearance-size-tooltip'));
+  DrawText(`${formatBytesK(used)} / ${formatBytesK(budget)}`, APPEARANCE_SIZE_VALUE_X + APPEARANCE_SIZE_VALUE_W / 2, APPEARANCE_SIZE_Y + APPEARANCE_SIZE_H / 2, color);
 }
 
 export function slotClick() {

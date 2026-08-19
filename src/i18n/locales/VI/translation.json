@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "Kéo để chỉnh thứ tự; số càng cao càng che nhiều khi che mặt nạ (chỉ trang phục có ưu tiên thấp hơn mới bị ẩn)",
   "free-draw-bounds-label": "Ranh giới canvas",
   "free-draw-bounds-tooltip": "Hiện hoặc ẩn ranh giới vùng vẽ",
+  "free-draw-appearance-size-label": "Kích thước",
+  "free-draw-appearance-size-tooltip": "Kích thước ước tính của dữ liệu ngoại hình nhân vật. Vượt quá khoảng 180K, trò chơi có thể báo lỗi — hãy lưu ý khi nhập ảnh lớn.",
   "free-draw-accept-tooltip": "Áp dụng và thoát (giữ mọi chỉnh sửa)",
   "free-draw-exit-tooltip": "Thoát không lưu",
   "free-draw-hint": "Vẽ trực tiếp lên nhân vật; \"Di chuyển\" kéo cả hình, dùng nút cho xoay/thu phóng/lật gương; \"Mặt nạ\" dùng hình làm hình dạng để ẩn mọi thứ ngoài cơ thể",

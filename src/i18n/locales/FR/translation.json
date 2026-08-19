@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "Glisser pour ajuster l'ordre ; plus élevé couvre davantage lors du masquage (seuls les vêtements de priorité inférieure sont masqués)",
   "free-draw-bounds-label": "Limite du canevas",
   "free-draw-bounds-tooltip": "Afficher ou masquer la limite de la zone de dessin",
+  "free-draw-appearance-size-label": "Taille",
+  "free-draw-appearance-size-tooltip": "Taille estim\u00e9e des donn\u00e9es d'apparence de votre personnage. Au-del\u00e0 d'environ 180K, le jeu peut g\u00e9n\u00e9rer une erreur \u2014 attention en important de grandes images.",
   "free-draw-accept-tooltip": "Appliquer et quitter (conserver toutes les modifications)",
   "free-draw-exit-tooltip": "Quitter sans enregistrer",
   "free-draw-hint": "Dessiner directement sur le personnage ; « Déplacer » fait glisser tout le dessin, les boutons pour pivoter/redimensionner/miroir ; « Masque » utilise le dessin comme forme pour masquer tout ce qui dépasse du corps",

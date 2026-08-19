@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "Ziehen, um die Reihenfolge anzupassen; höher deckt beim Maskieren mehr ab (nur Kleidung mit niedrigerer Priorität wird verborgen)",
   "free-draw-bounds-label": "Leinwandgrenze",
   "free-draw-bounds-tooltip": "Grenze des Zeichenbereichs ein- oder ausblenden",
+  "free-draw-appearance-size-label": "Gr\u00f6\u00dfe",
+  "free-draw-appearance-size-tooltip": "Gesch\u00e4tzte Gr\u00f6\u00dfe der Appearance-Daten deines Charakters. Ab etwa 180K kann das Spiel einen Fehler ausl\u00f6sen \u2014 beim Importieren gro\u00dfer Bilder beachten.",
   "free-draw-accept-tooltip": "Übernehmen und beenden (alle Änderungen behalten)",
   "free-draw-exit-tooltip": "Ohne Speichern beenden",
   "free-draw-hint": "Direkt auf dem Charakter zeichnen; „Verschieben“ zieht das ganze Bild, Tasten für Drehen/Skalieren/Spiegeln; „Maske“ nutzt das Bild als Form, um alles außerhalb des Körpers zu verbergen",

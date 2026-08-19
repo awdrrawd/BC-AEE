@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "ドラッグで順位を調整；数値が高いほどマスク時に多く覆う（優先度がそれより低い衣装のみ隠れる）",
   "free-draw-bounds-label": "キャンバス境界",
   "free-draw-bounds-tooltip": "描画可能なキャンバス境界を表示または非表示にします",
+  "free-draw-appearance-size-label": "サイズ",
+  "free-draw-appearance-size-tooltip": "現在の外見データの推定サイズです。約180Kを超えるとゲーム側でエラーになることがあります。大きな画像を読み込む際はご注意ください。",
   "free-draw-accept-tooltip": "適用して終了（今回の編集を保存）",
   "free-draw-exit-tooltip": "保存せずに終了",
   "free-draw-hint": "キャラクターに直接描画；「移動」で絵全体をドラッグ、回転/拡大縮小/反転はボタンで；「マスク」は絵を形として体以外を隠す",

@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "Drag to adjust order; higher covers more when masking (only clothing with lower priority is hidden)",
   "free-draw-bounds-label": "Canvas boundary",
   "free-draw-bounds-tooltip": "Show or hide the drawable canvas boundary",
+  "free-draw-appearance-size-label": "Size",
+  "free-draw-appearance-size-tooltip": "Estimated size of your character's Appearance data. The game can error out above roughly 180K \u2014 keep this in mind when importing large images.",
   "free-draw-accept-tooltip": "Apply and exit (keep all edits)",
   "free-draw-exit-tooltip": "Exit without saving",
   "free-draw-hint": "Draw directly on the character; \"Move\" drags the whole drawing, use the buttons for rotate/scale/mirror; \"Mask\" uses the drawing as a shape to hide everything outside the body",

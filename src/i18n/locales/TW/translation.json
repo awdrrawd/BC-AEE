@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "拖曳調整順位；數字越高，開遮罩時能蓋住越多（優先權比它低的衣物才會被隱藏）",
   "free-draw-bounds-label": "畫布邊界",
   "free-draw-bounds-tooltip": "顯示或隱藏可繪製畫布的邊界",
+  "free-draw-appearance-size-label": "容量",
+  "free-draw-appearance-size-tooltip": "目前外觀資料的估計大小。超過約 180K 時遊戲端可能會報錯，匯入大圖片時請留意。",
   "free-draw-accept-tooltip": "套用並退出（保留這次所有編輯）",
   "free-draw-exit-tooltip": "不儲存，直接退出",
   "free-draw-hint": "直接在角色身上繪圖；「位移」可拖曳整張圖，旋轉/縮放/鏡射用按鈕；「遮罩」把圖當形狀隱藏身體以外",

@@ -420,6 +420,8 @@
   "free-draw-priority-tooltip": "드래그하여 순위 조정; 값이 높을수록 마스크 시 더 많이 덮음 (우선순위가 더 낮은 의상만 숨겨짐)",
   "free-draw-bounds-label": "캔버스 경계",
   "free-draw-bounds-tooltip": "그릴 수 있는 캔버스 경계를 표시하거나 숨깁니다",
+  "free-draw-appearance-size-label": "용량",
+  "free-draw-appearance-size-tooltip": "현재 외형 데이터의 예상 크기입니다. 약 180K를 초과하면 게임에서 오류가 발생할 수 있습니다. 큰 이미지를 가져올 때 주의하세요.",
   "free-draw-accept-tooltip": "적용하고 종료 (이번 편집 저장)",
   "free-draw-exit-tooltip": "저장하지 않고 종료",
   "free-draw-hint": "캐릭터에 직접 그리기; 「이동」으로 그림 전체를 드래그, 회전/크기/반전은 버튼으로; 「마스크」는 그림을 형태로 사용해 몸 바깥을 숨김",

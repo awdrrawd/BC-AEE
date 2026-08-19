@@ -241,21 +241,28 @@ export function installMenuHooks() {
   });
 
   // BC normally uses one global Character/CharacterOff switch for every
-  // appearance group. Keep character previews only where they are needed to
-  // open the selectable grid: front and back hair. All other groups retain the
-  // compact previous/next behavior.
+  // appearance group. AEE's "preview character" button force-enables the
+  // character-grid preview for the whitelist groups; every other group must
+  // fall through to the official logic (AppearanceUseCharacterInPreviewsSetting
+  // && PreviewZone) so the official Character switch keeps working. Returning
+  // false here (instead of next) silently killed the preview for all non-listed
+  // groups even when the official preview switch was on.
   bcAeeModSdk.hookFunction('AppearancePreviewUseCharacter', 10, (args, next) => {
-    if (!settings.characterPreviewActive.get()) return next(args);
     const group = args[0];
     if (!group?.PreviewZone) return next(args);
     const name = group.Name as string;
-    // Keep character-grid previews for the original hair groups plus the
+    // Force character-grid previews for the original hair groups plus the
     // extended set requested for R131: brows/eyes (Eyes/Eyes2), mouth, and the
     // matching ECHO custom groups (left/right eye, front/back hair, stacked).
-    return name === 'HairFront' || name === 'HairBack'
-      || name === 'Eyes' || name === 'Eyes2' || name === 'Mouth'
-      || name === '左眼_Luzi' || name === '右眼_Luzi'
-      || name === '新前发_Luzi' || name === '新后发_Luzi'
-      || name === '新前发_Luzi_stack' || name === '新后发_Luzi_stack';
+    if (settings.characterPreviewActive.get()
+      && (name === 'HairFront' || name === 'HairBack'
+        || name === 'Eyes' || name === 'Eyes2' || name === 'Mouth'
+        || name === '左眼_Luzi' || name === '右眼_Luzi'
+        || name === '新前发_Luzi' || name === '新后发_Luzi'
+        || name === '新前发_Luzi_stack' || name === '新后发_Luzi_stack')) {
+      return true;
+    }
+    // All other groups: follow the official Character preview switch.
+    return next(args);
   });
 }

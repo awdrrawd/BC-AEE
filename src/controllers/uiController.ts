@@ -393,10 +393,30 @@ export function resetEditProperty(ctrl: string) {
   const indices = idx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(idx, 10));
 
   if (ctrl === 'x' || ctrl === 'y') {
+    // Reset position back to the asset base. Delete BOTH the private
+    // LayerOverrides entry and the native R131 TranslationX/TranslationY (stored
+    // per layer as Property.LayerTranslationX[layerName] or at item level as
+    // Property.TranslationX when the whole item was dragged). Deleting only the
+    // private override left the native offset in place after a canvas drag
+    // (which now writes the native property), making the reset/undo button
+    // appear to do nothing.
     const key = ctrl === 'x' ? 'DrawingLeft' : 'DrawingTop';
-    indices.forEach(index => {
-      if (item.Property?.LayerOverrides?.[index]) delete item.Property.LayerOverrides[index][key];
-    });
+    const nativeKey = ctrl === 'x' ? 'TranslationX' : 'TranslationY';
+    const property = item.Property as (ItemProperties & Record<string, unknown>) | undefined;
+    if (property) {
+      if (idx === 'all') {
+        delete property[nativeKey];
+      } else {
+        indices.forEach(index => {
+          const layerName = item.Asset?.Layer?.[index]?.Name;
+          if (item.Property?.LayerOverrides?.[index]) delete item.Property.LayerOverrides[index][key];
+          if (layerName) {
+            const layerValues = property[`Layer${nativeKey}`];
+            if (layerValues && typeof layerValues === 'object') delete (layerValues as Record<string, number>)[layerName];
+          }
+        });
+      }
+    }
     refreshAfterLayerEdit();
   } else if (ctrl === 'op') {
     ensureOpacityArray(item);

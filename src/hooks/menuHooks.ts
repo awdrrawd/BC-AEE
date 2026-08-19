@@ -16,6 +16,17 @@ const DIALOG_HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn' as DialogMenuButtonType;
 const CHARACTER_PREVIEW_BUTTON = 'AEE_CharacterPreview';
 const DIALOG_CHARACTER_PREVIEW_BUTTON = 'AEE_CharacterPreview' as DialogMenuButtonType;
 
+// Groups that always get the character-grid preview, regardless of the
+// characterPreviewActive toggle (which only gates regular clothing groups).
+// Covers hair, eyes, eyebrows, mouth, and their ECHO-renamed equivalents.
+const EXTENDED_FACE_PREVIEW_GROUPS = new Set([
+  'HairFront', 'HairBack',
+  'Eyes', 'Eyes2', 'Eyebrows', 'Mouth',
+  '左眼_Luzi', '右眼_Luzi',
+  '新前发_Luzi', '新后发_Luzi',
+  '新前发_Luzi_stack', '新后发_Luzi_stack',
+]);
+
 function hoverTryOnIcon(): string {
   return isHoverTryOnEnabled() ? 'Icons/Public.png' : 'Icons/Private.png';
 }
@@ -238,12 +249,7 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('AppearancePreviewUseCharacter', 10, (args, next) => {
     const group = args[0];
     if (!group?.PreviewZone) return next(args);
-    const name = group.Name as string;
-    const isExtendedFaceGroup = name === 'HairFront' || name === 'HairBack'
-      || name === 'Eyes' || name === 'Eyes2' || name === 'Mouth' || name === 'Eyebrows'
-      || name === '左眼_Luzi' || name === '右眼_Luzi'
-      || name === '新前发_Luzi' || name === '新后发_Luzi'
-      || name === '新前发_Luzi_stack' || name === '新后发_Luzi_stack';
+    const isExtendedFaceGroup = EXTENDED_FACE_PREVIEW_GROUPS.has(group.Name as string);
     const isClothingGroup = group.Category === 'Appearance' && !!group.Clothing;
     if (isExtendedFaceGroup) {
       return true;

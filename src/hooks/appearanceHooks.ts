@@ -15,6 +15,7 @@ import {closeImportDialog} from '@/controllers/importExportController';
 import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
 import {resetPartsFilterMode, withFilteredGroups} from '@/controllers/partsFilterController';
 import {clearHideRestraints, withRestraintsHidden} from '@/controllers/hideRestraintsController';
+import {closeLayerManagerPanel} from '@/controllers/layerManagerController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -37,6 +38,7 @@ export function installAppearanceHooks() {
       stopHoverCharHighlight();
       stopHoverTryOn(false);
       closeImportDialog();
+      closeLayerManagerPanel();
       // Leaving the screen is the only automatic way hiding turns off — refresh
       // the character we were editing so its restraints draw again.
       clearHideRestraints(transition.previous.selection);

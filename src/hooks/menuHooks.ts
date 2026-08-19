@@ -5,6 +5,7 @@ import {clearCopyBuffer, drawCopyBufferPreview, isAppearanceOverlayActive, isCop
 import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
 import {cyclePartsFilterMode, drawPartsFilterBadge, isPartsFilterAvailable, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
+import {isLayerManagerAvailable, LAYER_MANAGER_ICON, layerManagerTooltip, openLayerManagerPanel} from '@/controllers/layerManagerController';
 import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, isHideRestraintsAvailable, toggleHideRestraints} from '@/controllers/hideRestraintsController';
 import {t} from '@/i18n/i18n';
 import {enterWardrobeScreen} from '@/hooks/wardrobeHooks';
@@ -33,18 +34,6 @@ function hoverTryOnIcon(): string {
 
 function characterPreviewIcon(): string {
   return settings.characterPreviewActive.get() ? 'Icons/Character.png' : 'Icons/CharacterOff.png';
-}
-
-// The character-grid preview only ever renders for clothing groups (see the
-// AppearancePreviewUseCharacter hook below), so the dialog toggle button is
-// useless — and confusing — while browsing an Item-category group (e.g.
-// restraints, toys). Keep the button hidden in that case.
-function isDialogFocusItemCategory(): boolean {
-  try {
-    return CharacterGetCurrent?.()?.FocusGroup?.Category === 'Item';
-  } catch {
-    return false;
-  }
 }
 
 function dialogHoverTryOnButtonX(): number {
@@ -115,6 +104,13 @@ export function installMenuHooks() {
     if (settings.enableCopyPaste.get() && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
       AppearanceMenu.unshift('AEE_ClearCopy');
     }
+    if (isLayerManagerAvailable() && !AppearanceMenu.includes('AEE_LayerManager')) {
+      // Inserted immediately to the LEFT of the parts-filter button (i.e. at
+      // its current index, pushing it one slot right) — or at the front if
+      // parts-filter isn't shown, so it's still the leftmost AEE button.
+      const partsFilterIndex = AppearanceMenu.indexOf('AEE_PartsFilter');
+      AppearanceMenu.splice(partsFilterIndex >= 0 ? partsFilterIndex : 0, 0, 'AEE_LayerManager');
+    }
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuDraw', 10, (args, next) => {
@@ -122,13 +118,14 @@ export function installMenuHooks() {
     const clearCopyIndex = menu.indexOf('AEE_ClearCopy');
     const partsFilterIndex = menu.indexOf('AEE_PartsFilter');
     const hideRestraintsIndex = menu.indexOf('AEE_HideRestraints');
+    const layerManagerIndex = menu.indexOf('AEE_LayerManager');
     const hoverTryOnIndex = menu.indexOf(HOVER_TRY_ON_BUTTON);
     const charPreviewIndex = menu.indexOf(CHARACTER_PREVIEW_BUTTON);
-    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0 && hoverTryOnIndex < 0 && charPreviewIndex < 0) {
+    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0 && layerManagerIndex < 0 && hoverTryOnIndex < 0 && charPreviewIndex < 0) {
       next(args);
     } else {
       AppearanceMenu = menu.map((button, index) =>
-        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex || index === hoverTryOnIndex || index === charPreviewIndex ? 'Copy' : button));
+        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex || index === layerManagerIndex || index === hoverTryOnIndex || index === charPreviewIndex ? 'Copy' : button));
       try {
         next(args);
       } finally {
@@ -144,6 +141,10 @@ export function installMenuHooks() {
     if (hideRestraintsIndex >= 0 && !isAppearanceOverlayActive()) {
       const hideRestraintsX = x + 117 * hideRestraintsIndex;
       DrawButton(hideRestraintsX, 25, 90, 90, '', isHideRestraintsActive() ? '#FFB0B0' : 'White', hideRestraintsIcon(), hideRestraintsTooltip());
+    }
+    if (layerManagerIndex >= 0 && !isAppearanceOverlayActive()) {
+      const layerManagerX = x + 117 * layerManagerIndex;
+      DrawButton(layerManagerX, 25, 90, 90, '', 'White', LAYER_MANAGER_ICON, layerManagerTooltip());
     }
     if (partsFilterIndex >= 0 && !isAppearanceOverlayActive()) {
       const partsFilterX = x + 117 * partsFilterIndex;
@@ -196,6 +197,10 @@ export function installMenuHooks() {
         toggleHideRestraints();
         return;
       }
+      if (AppearanceMenu[index] === 'AEE_LayerManager' && !isAppearanceOverlayActive()) {
+        openLayerManagerPanel();
+        return;
+      }
       if (AppearanceMenu[index] === HOVER_TRY_ON_BUTTON && !isAppearanceOverlayActive()) {
         toggleHoverTryOn();
         return;
@@ -227,7 +232,7 @@ export function installMenuHooks() {
     if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
       DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
     }
-    if (charPreviewIndex >= 0 && settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && !isDialogFocusItemCategory()) {
+    if (charPreviewIndex >= 0 && settings.hairCharacterPreview.get() && DialogMenuMode === 'items') {
       DrawButton(dialogCharacterPreviewButtonX(), 15, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
     }
     return result;
@@ -239,17 +244,9 @@ export function installMenuHooks() {
       const activityIndex = DialogMenuButton.indexOf('Activity');
       DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_HOVER_TRY_ON_BUTTON);
     }
-    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && !isDialogFocusItemCategory()) {
-      if (!DialogMenuButton.includes(DIALOG_CHARACTER_PREVIEW_BUTTON)) {
-        const activityIndex = DialogMenuButton.indexOf('Activity');
-        DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_CHARACTER_PREVIEW_BUTTON);
-      }
-    } else {
-      // Switched into (or opened straight onto) an Item-category group after
-      // the button was already inserted for a prior clothing group — pull it
-      // back out rather than leaving a dead button in the row.
-      const staleIndex = DialogMenuButton.indexOf(DIALOG_CHARACTER_PREVIEW_BUTTON);
-      if (staleIndex >= 0) DialogMenuButton.splice(staleIndex, 1);
+    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && !DialogMenuButton.includes(DIALOG_CHARACTER_PREVIEW_BUTTON)) {
+      const activityIndex = DialogMenuButton.indexOf('Activity');
+      DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_CHARACTER_PREVIEW_BUTTON);
     }
     return result;
   });
@@ -259,7 +256,7 @@ export function installMenuHooks() {
       toggleHoverTryOn();
       return;
     }
-    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && !isDialogFocusItemCategory() && MouseIn(dialogCharacterPreviewButtonX(), 15, 90, 90)) {
+    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && MouseIn(dialogCharacterPreviewButtonX(), 15, 90, 90)) {
       toggleCharacterPreviewActive();
       return;
     }

@@ -64,6 +64,12 @@ const initialState: AeeState = {
     hideSubOpen: false,
   },
   importDialog: null,
+  layerManager: {
+    open: false,
+    target: null,
+    search: '',
+    filterMode: 'all',
+  },
 };
 
 const store = createExternalStore(initialState);
@@ -98,6 +104,7 @@ function structuredCloneShallow(value: AeeState): AeeState {
     pose: {...value.pose},
     charControl: {...value.charControl},
     importDialog: value.importDialog,
+    layerManager: {...value.layerManager},
   };
 }
 

@@ -32,6 +32,7 @@ export type SettingKey =
   | 'enablePartsFilter';
 
 export type PartsFilterMode = 'all' | 'has' | 'empty';
+export type LayerManagerFilterMode = 'all' | 'custom' | 'default';
 export type EditControl =
   | 'x'
   | 'y'
@@ -215,6 +216,17 @@ export interface TransformOverlayState {
   top?: number;
 }
 
+export interface LayerManagerState {
+  open: boolean;
+  /** Snapshot of who the panel is editing (the appearance-screen selection at the moment it was opened). */
+  target: Character | null;
+  search: string;
+  filterMode: LayerManagerFilterMode;
+  /** Panel position within canvasRect, in real screen pixels. Unset until the user first drags it. */
+  left?: number;
+  top?: number;
+}
+
 export interface AeeState {
   version: string;
   visible: boolean;
@@ -243,6 +255,7 @@ export interface AeeState {
   pose: PoseState;
   charControl: CharControlState;
   importDialog: ImportDiffDialog | null;
+  layerManager: LayerManagerState;
 }
 
 export type WardrobeSettingsTab = 'general' | 'background' | 'appearance' | 'panels';

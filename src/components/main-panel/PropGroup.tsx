@@ -3,7 +3,7 @@ import type {DragMode} from '@/core/types';
 import {DragCheck} from '@/components/main-panel/DragCheck';
 
 export function PropGroup({title, dragMode, dragLabel, activeDrag, children}: {
-  title: string;
+  title: ReactNode;
   dragMode: Exclude<DragMode, null>;
   dragLabel: string;
   activeDrag: DragMode;

@@ -1,13 +1,11 @@
 import type {LayerId} from '@/core/types';
 import {
-  ensureLayerOverrides,
   getAssetBaseXY,
   getCanvas,
   getCanvasRect,
   getCurrentItem,
-  getLayerGroupMembers,
   getLayerOverride,
-  refreshAfterLayerEdit,
+  isGroupLocked,
   setLayerOverride,
 } from '@/core/bc';
 import {getState} from '@/core/store';
@@ -141,6 +139,9 @@ function shouldIntercept(event: Event): boolean {
 function canStartCanvasDrag(event: MouseEvent | PointerEvent) {
   const state = getState();
   if (!state.activeDrag || state.activeDrag === 'rot' || state.selectedLayer === null) return false;
+  // Locked body parts (official FixedPosition) must not be dragged on canvas,
+  // even if a drag mode was left active before switching to the locked part.
+  if (isGroupLocked(state.selectedLayer)) return false;
   const canvas = getCanvas();
   if (!canvas) return false;
   const rect = canvas.getBoundingClientRect();
@@ -207,18 +208,15 @@ function moveXyDrag(event: MouseEvent) {
   const sy = (canvas.height || 1000) / rect.height;
   const dx = (event.clientX - xyDragState.startX) * sx;
   const dy = (event.clientY - xyDragState.startY) * sy;
-  ensureLayerOverrides(item);
-  const count = item.Asset?.Layer?.length || 1;
-  const indices = xyDragState.layerId === 'all'
-    ? Array.from({length: count}, (_, index) => index)
-    : getLayerGroupMembers(item, parseInt(xyDragState.layerId, 10));
-  indices.forEach(index => {
-    const layerOverride = item.Property.LayerOverrides[index] || {};
-    layerOverride.DrawingLeft = {'': Math.round(xyDragState.origX + (xyDragState.flipX ? -dx : dx))};
-    layerOverride.DrawingTop = {'': Math.round(xyDragState.origY + (xyDragState.flipY ? -dy : dy))};
-    item.Property.LayerOverrides[index] = layerOverride;
-  });
-  refreshAfterLayerEdit();
+  const nextX = Math.round(xyDragState.origX + (xyDragState.flipX ? -dx : dx));
+  const nextY = Math.round(xyDragState.origY + (xyDragState.flipY ? -dy : dy));
+  // Route through setLayerOverride so the offset lands on the native R131
+  // TranslationX/TranslationY property (which BC draws from), instead of the
+  // private LayerOverrides. Writing LayerOverrides directly made a canvas drag
+  // invisible whenever a slider had already set a native position: the native
+  // value won the draw and the drag was ignored.
+  setLayerOverride(item, xyDragState.layerId, 'DrawingLeft', {'': nextX});
+  setLayerOverride(item, xyDragState.layerId, 'DrawingTop', {'': nextY});
   forceUiUpdate();
 }
 

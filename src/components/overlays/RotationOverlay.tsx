@@ -1,6 +1,6 @@
 import type {MouseEvent as ReactMouseEvent} from 'react';
 import type {AeeState} from '@/core/types';
-import {getLayerOverride} from '@/core/bc';
+import {getLayerOverride, isGroupLocked} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {setEditProperty} from '@/controllers/uiController';
 import {setRotationDragging} from '@/controllers/dragController';
@@ -11,6 +11,8 @@ const ROT_RADIUS = 60;
 
 export function RotationOverlay({state}: { state: AeeState }) {
   if (!state.rotationOverlayOpen || !state.canvasRect || !state.item || state.selectedLayer === null) return null;
+  // Locked body parts (official FixedPosition) must not be rotated on canvas.
+  if (isGroupLocked(state.selectedLayer)) return null;
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const rotation = layerOverride.Rotation ?? 0;
   const cx = state.canvasRect.width * ROT_CX_PCT;

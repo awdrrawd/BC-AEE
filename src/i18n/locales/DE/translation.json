@@ -428,5 +428,6 @@
   "free-draw-image-tainted": "Die Pixel dieses Bildes sind nicht lesbar; Import abgebrochen",
   "free-draw-image-placed": "Ziehen zum Verschieben, blaue Ecke zum Skalieren. Klick außerhalb oder Übernehmen fügt es in die Zeichnung ein",
   "free-draw-text-prompt": "Zu zeichnenden Text eingeben:",
-  "color-picker-eyedropper-taint": "Farbaufnahme nicht möglich: Die Leinwand ist durch ein Cross-Origin-Bild verunreinigt – Seite neu laden und erneut versuchen."
+  "color-picker-eyedropper-taint": "Farbaufnahme nicht möglich: Die Leinwand ist durch ein Cross-Origin-Bild verunreinigt – Seite neu laden und erneut versuchen.",
+  "experimental-feature-tooltip": "Dies ist eine AEE-Erweiterung. Nutzer ohne AEE sehen den Bearbeitungseffekt nicht."
 }

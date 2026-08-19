@@ -411,9 +411,20 @@ export function getCurrentGroupName() {
   return getCurrentItem()?.Asset?.Group?.Name ?? null;
 }
 
-export function isGroupLocked() {
+export function isGroupLocked(layerId?: LayerId): boolean {
   const groupName = getCurrentGroupName();
-  return groupName ? LOCKED_GROUPS.has(groupName) : false;
+  if (groupName && LOCKED_GROUPS.has(groupName)) return true;
+  // R131 official mechanism: Asset/Layer FixedPosition flags decide whether a
+  // part can be adjusted (CommonDraw.js applies a fixed-position offset for
+  // these). Align with it so AEE enforces the same restrictions as the game
+  // (e.g. body parts locked, eyes resizable).
+  const item = getCurrentItem();
+  if (item?.Asset?.FixedPosition) return true;
+  if (layerId && layerId !== 'all') {
+    const layer = item?.Asset?.Layer?.[parseInt(layerId, 10)];
+    if (layer?.FixedPosition) return true;
+  }
+  return false;
 }
 
 export function clampPriority(value: number) {

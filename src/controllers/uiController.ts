@@ -12,6 +12,7 @@ import {
   getLayerGroupMembers,
   getLayerOverride,
   getOpacity,
+  isGroupLocked,
   refreshAfterLayerEdit,
   refreshCurrentCharacter,
   setLayerColor,
@@ -98,6 +99,8 @@ export function movePartsPanel(left: number, top: number) {
 export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: OverlayAnchor) {
   const item = getCurrentItem();
   if (!item) return;
+  // Locked body parts (official FixedPosition) must not expose transform tools.
+  if (isGroupLocked(getState().selectedLayer)) return;
   syncCanvasRect();
   const current = getState();
   const nextMode = current.transformOverlay.mode === mode ? null : mode;
@@ -130,6 +133,8 @@ export function moveTransformOverlay(left: number, top: number) {
 }
 
 export function setActiveDrag(mode: DragMode) {
+  // Locked body parts (official FixedPosition) must not start canvas drags.
+  if (mode && isGroupLocked(getState().selectedLayer)) return;
   const next = getState().activeDrag === mode ? null : mode;
   mutateState(draft => {
     draft.activeDrag = next;
@@ -320,7 +325,13 @@ const EDIT_PROPERTIES: Record<EditPropertyKey, EditPropertyDef> = {
   },
   rot: {
     get: lo => lo.Rotation ?? 0,
-    apply: (item, idx, v) => setLayerOverride(item, idx, 'Rotation', ((Math.round(v) % 360) + 360) % 360),
+    // BC native Rotation is [-180, 180] with hard clamping (not wrapping), so a
+    // naive [0, 360) mapping makes 181..359 all clamp to 180. Normalize to the
+    // [-180, 180] range instead: 181 -> -179, 359 -> -1, giving full 360° spin.
+    apply: (item, idx, v) => {
+      const n = ((Math.round(v) % 360) + 360) % 360;
+      setLayerOverride(item, idx, 'Rotation', n > 180 ? n - 360 : n);
+    },
   },
   skx: {
     get: lo => lo.SkewX ?? 0,
@@ -349,6 +360,8 @@ export function setEditProperty(ctrl: string, rawValue: number) {
   const item = getCurrentItem();
   const idx = state.selectedLayer;
   if (!item || idx === null || Number.isNaN(rawValue) || !isEditPropertyKey(ctrl)) return;
+  // Locked body parts (official FixedPosition) must not be transformed.
+  if (isGroupLocked(idx)) return;
   EDIT_PROPERTIES[ctrl].apply(item, idx, rawValue);
   forceUiUpdate();
 }
@@ -358,6 +371,8 @@ export function stepEditProperty(ctrl: string, delta: number) {
   const item = getCurrentItem();
   const idx = state.selectedLayer;
   if (!item || idx === null || !isEditPropertyKey(ctrl)) return;
+  // Locked body parts (official FixedPosition) must not be transformed.
+  if (isGroupLocked(idx)) return;
   const def = EDIT_PROPERTIES[ctrl];
   const layerOverride = getLayerOverride(item, idx);
   const {bx, by} = getAssetBaseXY(item, idx);
@@ -370,6 +385,9 @@ export function resetEditProperty(ctrl: string) {
   const item = getCurrentItem();
   const idx = state.selectedLayer;
   if (!item || idx === null) return;
+  // Locked body parts (official FixedPosition) must not be transformed; opacity
+  // ('op') stays editable everywhere.
+  if (ctrl !== 'op' && isGroupLocked(idx)) return;
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
   const indices = idx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(idx, 10));
@@ -405,6 +423,8 @@ export function toggleMirror(key: 'FlipX' | 'FlipY' | 'MirrorCopy' | 'MirrorCopy
   const state = getState();
   const item = getCurrentItem();
   if (!item || state.selectedLayer === null) return;
+  // Locked body parts (official FixedPosition) must not be mirrored.
+  if (isGroupLocked(state.selectedLayer)) return;
   const layerOverride = getLayerOverride(item, state.selectedLayer);
   setLayerOverride(item, state.selectedLayer, key, !layerOverride[key]);
   forceUiUpdate();
@@ -414,6 +434,8 @@ export function resetSelectedTransforms() {
   const state = getState();
   const item = getCurrentItem();
   if (!item || state.selectedLayer === null) return;
+  // Locked body parts (official FixedPosition) must not reset transforms.
+  if (isGroupLocked(state.selectedLayer)) return;
   resetEditProperty('x');
   resetEditProperty('y');
   setLayerOverride(item, state.selectedLayer, 'ScaleX', 1);

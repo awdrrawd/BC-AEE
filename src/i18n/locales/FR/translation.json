@@ -428,5 +428,6 @@
   "free-draw-image-tainted": "Les pixels de cette image sont illisibles ; import annulé",
   "free-draw-image-placed": "Glissez pour déplacer, tirez le coin bleu pour redimensionner. Cliquez à l'extérieur ou Valider pour la fusionner au dessin",
   "free-draw-text-prompt": "Saisir le texte à dessiner :",
-  "color-picker-eyedropper-taint": "Impossible de prélever : la toile est corrompue par une image cross-origin — recharge la page et réessaie."
+  "color-picker-eyedropper-taint": "Impossible de prélever : la toile est corrompue par une image cross-origin — recharge la page et réessaie.",
+  "experimental-feature-tooltip": "Ceci est une extension AEE. Les utilisateurs sans AEE installé ne verront pas l'effet de modification."
 }

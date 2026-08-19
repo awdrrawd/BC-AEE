@@ -428,5 +428,6 @@
   "free-draw-image-tainted": "That image's pixels can't be read; import cancelled",
   "free-draw-image-placed": "Drag to move, drag the blue corner to resize. Click outside or Accept to merge it into the drawing",
   "free-draw-text-prompt": "Enter the text to draw:",
-  "color-picker-eyedropper-taint": "Can't pick: the canvas is tainted by a cross-origin image — reload the page and retry."
+  "color-picker-eyedropper-taint": "Can't pick: the canvas is tainted by a cross-origin image — reload the page and retry.",
+  "experimental-feature-tooltip": "This feature is an AEE extension. Users without AEE installed won't see the edit effect."
 }

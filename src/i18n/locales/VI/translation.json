@@ -428,5 +428,6 @@
   "free-draw-image-tainted": "Không thể đọc điểm ảnh của ảnh này; đã hủy nhập",
   "free-draw-image-placed": "Kéo để di chuyển, kéo góc xanh để đổi kích thước. Bấm ra ngoài hoặc Áp dụng để hợp nhất vào bản vẽ",
   "free-draw-text-prompt": "Nhập văn bản cần vẽ:",
-  "color-picker-eyedropper-taint": "Không thể lấy màu: khung vẽ bị nhiễm bởi ảnh khác nguồn — hãy tải lại trang rồi thử lại."
+  "color-picker-eyedropper-taint": "Không thể lấy màu: khung vẽ bị nhiễm bởi ảnh khác nguồn — hãy tải lại trang rồi thử lại.",
+  "experimental-feature-tooltip": "Tính năng này là tính năng mở rộng của AEE. Người dùng chưa cài AEE sẽ không thấy hiệu quả chỉnh sửa."
 }

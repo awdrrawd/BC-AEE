@@ -93,7 +93,12 @@ export const settings = {
   hoverHighlight: bool('hoverHighlight', false),
   hoverHighlightChar: bool('hoverHighlightChar', false),
   hoverTryOn: bool('hoverTryOn', false),
+  // Master switch: when ON, the character-preview toggle button is shown next
+  // to hover-try-on. The in-game button toggles `characterPreviewActive`.
   hairCharacterPreview: bool('hairCharacterPreview', false),
+  // Actual preview on/off state, flipped by the in-game toggle button so the
+  // button can stay visible (and re-enabled) regardless of the preview state.
+  characterPreviewActive: bool('characterPreviewActive', true),
   enableCopyPaste: bool('enableCopyPaste', false),
   hideLscgLayers: bool('hideLscgLayers', false),
   hideArousalUi: bool('hideArousalUi', false),

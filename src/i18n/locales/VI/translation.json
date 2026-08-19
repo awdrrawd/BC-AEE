@@ -41,6 +41,7 @@
   "edit-section-skew-group-title": "Nghiêng",
   "edit-section-skew-drag-label": "Kéo",
   "mirror-group-title": "Lật gương",
+  "experimental-feature-note": "Đây là tính năng mở rộng của AEE. Người dùng chưa cài AEE sẽ không thấy các chỉnh sửa này.",
   "mirror-group-mode-title": "Lật gương",
   "mirror-group-mode-horizontal-button": "Ngang",
   "mirror-group-mode-vertical-button": "Dọc",
@@ -65,6 +66,7 @@
   "settings-hover-tryon": "Tính năng thử đồ khi rê chuột",
   "settings-hover-tryon-tooltip": "Bật / Tắt tính năng thử đồ khi di chuột",
   "settings-hair-character-preview": "Ẩn nút xem trước nhân vật",
+  "settings-character-preview-tooltip": "Xem trước nhân vật (mở rộng AEE): hiển thị lưới chọn được cho các nhóm đã chọn",
   "settings-hair-character-preview-tooltip": "Ẩn nút nhưng tóc trước và tóc sau vẫn có thể được thay từ lưới biểu tượng",
   "settings-enable-copy-paste": "Sao chép/dán trang phục",
   "copy-item-tooltip": "Sao chép món đồ này (kèm mọi cài đặt)",
@@ -426,5 +428,6 @@
   "free-draw-image-tainted": "Không thể đọc điểm ảnh của ảnh này; đã hủy nhập",
   "free-draw-image-placed": "Kéo để di chuyển, kéo góc xanh để đổi kích thước. Bấm ra ngoài hoặc Áp dụng để hợp nhất vào bản vẽ",
   "free-draw-text-prompt": "Nhập văn bản cần vẽ:",
-  "color-picker-eyedropper-taint": "Không thể lấy màu: khung vẽ bị nhiễm bởi ảnh khác nguồn — hãy tải lại trang rồi thử lại."
+  "color-picker-eyedropper-taint": "Không thể lấy màu: khung vẽ bị nhiễm bởi ảnh khác nguồn — hãy tải lại trang rồi thử lại.",
+  "experimental-feature-tooltip": "Tính năng này là tính năng mở rộng của AEE. Người dùng chưa cài AEE sẽ không thấy hiệu quả chỉnh sửa."
 }

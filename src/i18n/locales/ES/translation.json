@@ -41,6 +41,7 @@
   "edit-section-skew-group-title": "Sesgar",
   "edit-section-skew-drag-label": "Arrastrar",
   "mirror-group-title": "Reflejar",
+  "experimental-feature-note": "Esta es una función de extensión de AEE. Quienes no tengan AEE instalado no verán estas ediciones.",
   "mirror-group-mode-title": "Reflejar",
   "mirror-group-mode-horizontal-button": "Horiz.",
   "mirror-group-mode-vertical-button": "Vert.",
@@ -65,6 +66,7 @@
   "settings-hover-tryon": "Prueba al pasar el cursor",
   "settings-hover-tryon-tooltip": "Activar / Desactivar la función de prueba al pasar el cursor",
   "settings-hair-character-preview": "Ocultar el botón de vista previa del personaje",
+  "settings-character-preview-tooltip": "Vista previa del personaje (extensión AEE): muestra una cuadrícula seleccionable para los grupos elegidos",
   "settings-hair-character-preview-tooltip": "Oculta el botón, pero el cabello delantero y trasero aún puede sustituirse desde la cuadrícula de iconos",
   "settings-enable-copy-paste": "Copiar/pegar ropa",
   "copy-item-tooltip": "Copiar este artículo (con todos los ajustes)",
@@ -426,5 +428,6 @@
   "free-draw-image-tainted": "No se pueden leer los píxeles de esta imagen; importación cancelada",
   "free-draw-image-placed": "Arrastra para mover, tira de la esquina azul para redimensionar. Haz clic fuera o Aceptar para fusionarla en el dibujo",
   "free-draw-text-prompt": "Introduce el texto a dibujar:",
-  "color-picker-eyedropper-taint": "No se puede seleccionar: el lienzo está contaminado por una imagen de origen cruzado; recarga la página e inténtalo de nuevo."
+  "color-picker-eyedropper-taint": "No se puede seleccionar: el lienzo está contaminado por una imagen de origen cruzado; recarga la página e inténtalo de nuevo.",
+  "experimental-feature-tooltip": "Esta función es una extensión de AEE. Quienes no tengan AEE instalado no verán el efecto de la edición."
 }

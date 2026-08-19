@@ -41,6 +41,7 @@
   "edit-section-skew-group-title": "傾斜",
   "edit-section-skew-drag-label": "拖移",
   "mirror-group-title": "鏡射",
+  "experimental-feature-note": "此為 AEE 拓展功能，未安裝 AEE 的使用者看不到編輯效果",
   "mirror-group-mode-title": "鏡射",
   "mirror-group-mode-horizontal-button": "水平",
   "mirror-group-mode-vertical-button": "垂直",
@@ -65,6 +66,7 @@
   "settings-hover-tryon": "懸停試穿功能",
   "settings-hover-tryon-tooltip": "啟用 / 停用懸停試穿功能",
   "settings-hair-character-preview": "隱藏預覽顯示角色的按鈕",
+  "settings-character-preview-tooltip": "預覽角色（AEE 拓展）：開啟後可在所選部位用角色網格預覽",
   "settings-hair-character-preview-tooltip": "隱藏按鈕但前後髮的替換仍維持圖示替換功能",
   "settings-enable-copy-paste": "衣服複製/貼上",
   "copy-item-tooltip": "複製此服裝（含所有設定）",
@@ -426,5 +428,6 @@
   "free-draw-image-tainted": "這張圖片無法讀取像素，已取消匯入",
   "free-draw-image-placed": "拖曳可移動、拉右下角藍點可縮放；點畫布外或按套用即合併成畫布的一部分",
   "free-draw-text-prompt": "輸入要畫上的文字：",
-  "color-picker-eyedropper-taint": "無法取色：畫布已被跨來源圖片污染，請重新整理頁面後再試"
+  "color-picker-eyedropper-taint": "無法取色：畫布已被跨來源圖片污染，請重新整理頁面後再試",
+  "experimental-feature-tooltip": "該功能屬於AEE拓展功能，沒安裝的用戶看不到編輯效果"
 }

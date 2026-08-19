@@ -2,7 +2,51 @@ import type {AeeLayerOverride, CanvasRect, LayerId, LayerOverrideKey, LayerPosit
 import {runtime} from '@/core/runtime';
 import {clamp} from '@/util/math';
 
-export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Pussy', 'Head']);
+// Body groups that AEE must NOT expose transform controls for.
+// R131 opened Pussy/Penis for native layer transforms, so they are intentionally
+// NOT locked here (Penis was never in this set; Pussy removed to align with R131).
+// BodyUpper/BodyLower/Nipples/Head stay locked — official R131 still disables them.
+export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Head']);
+
+// Hard caps for the native R131 Translation/Scale/Rotation properties, mirrored
+// from the official Layering panel (Scripts/Layering.js `_UpdateLimits` /
+// `_GetTabContents`). The base game enforces these on its own sliders — AEE must
+// match them so a drag/step/typed value can't push an item's layer transform
+// past what the game itself allows (which otherwise produces states the
+// official Layering UI can't even display correctly).
+const TRANSLATION_BOUNDS = {min: -500, max: 500};
+const SCALE_BOUNDS = {min: 0.01, max: 3.0};
+const ROTATION_BOUNDS = {min: -180, max: 180};
+// Pussy/Penis get the same tighter caps the game applies to that group alone:
+// no X movement at all, a small Y range, and a narrower uniform scale.
+const PUSSY_TRANSLATION_Y_BOUNDS = {min: -20, max: 20};
+const PUSSY_SCALE_BOUNDS = {min: 0.5, max: 1.5};
+
+/** Clamp a native transform value (already expressed as the delta/absolute value that gets
+ * written to Property.TranslationX/Y, ScaleX/Y or Rotation) to the same bounds the official
+ * R131 Layering panel enforces for that property and group. */
+function clampNativeTransform(
+  item: Item,
+  property: 'TranslationX' | 'TranslationY' | 'ScaleX' | 'ScaleY' | 'Rotation',
+  value: number,
+): number {
+  const isPussy = item.Asset?.Group?.Name === 'Pussy';
+  if (property === 'TranslationX') {
+    // The official panel doesn't expose X movement for Pussy/Penis at all.
+    return isPussy ? 0 : clamp(value, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
+  }
+  if (property === 'TranslationY') {
+    return isPussy
+      ? clamp(value, PUSSY_TRANSLATION_Y_BOUNDS.min, PUSSY_TRANSLATION_Y_BOUNDS.max)
+      : clamp(value, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
+  }
+  if (property === 'ScaleX' || property === 'ScaleY') {
+    return isPussy
+      ? clamp(value, PUSSY_SCALE_BOUNDS.min, PUSSY_SCALE_BOUNDS.max)
+      : clamp(value, SCALE_BOUNDS.min, SCALE_BOUNDS.max);
+  }
+  return clamp(value, ROTATION_BOUNDS.min, ROTATION_BOUNDS.max);
+}
 
 export function getCanvas(): HTMLCanvasElement | null {
   return (document.getElementById('MainCanvas') as HTMLCanvasElement | null) || document.querySelector('canvas');
@@ -86,6 +130,49 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
   const indices = layerIdx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(layerIdx, 10));
   if (runtime.itemColorChar) runtime.itemColorDirty = true;
 
+  // R131 native layer transform API. Where BC supports it (Pussy/Penis and
+  // regular item layers), persist the transform on the native property so it
+  // survives without AEE and stays compatible with BCX export. Falls back to
+  // AEE's own LayerOverrides when the native Layering API is unavailable (R130).
+  const nativeProperty = key === 'DrawingLeft' ? 'TranslationX'
+    : key === 'DrawingTop' ? 'TranslationY'
+      : key === 'ScaleX' || key === 'ScaleY' || key === 'Rotation' ? key : null;
+  if (nativeProperty) {
+    const layering = (window as unknown as {
+      Layering?: {
+        Character: Character | null;
+        UpdateProperty(item: Item, property: string, value: number, layerName?: string): void;
+      };
+    }).Layering;
+    const character = getCurrentCharacter();
+    if (layering && character) layering.Character = character;
+    const update = (index: number, layerName?: string) => {
+      const base = nativeProperty === 'TranslationX' ? getAssetBaseXY(item, String(index)).bx
+        : nativeProperty === 'TranslationY' ? getAssetBaseXY(item, String(index)).by : 0;
+      const raw = (typeof value === 'object' && value != null) ? (value as LayerPositionOverride)?.[''] : value;
+      const rawValue = Number(raw ?? (nativeProperty.startsWith('Scale') ? 1 : 0)) - base;
+      // Clamp to the same hard limits the official R131 Layering panel enforces
+      // (see clampNativeTransform above) — position/scale/rotation must not
+      // exceed what the base game itself allows for this property and group.
+      const nativeValue = clampNativeTransform(item, nativeProperty, rawValue);
+      const lo = item.Property.LayerOverrides?.[index];
+      if (lo) delete lo[key];
+      if (layering) {
+        layering.UpdateProperty(item, nativeProperty, nativeValue, layerName);
+      } else if (layerName) {
+        const property = item.Property as ItemProperties & Record<string, unknown>;
+        const layerValues = (property[`Layer${nativeProperty}`] ??= {}) as Record<string, number>;
+        layerValues[layerName] = nativeValue;
+      } else {
+        (item.Property as ItemProperties & Record<string, unknown>)[nativeProperty] = nativeValue;
+      }
+    };
+    if (layerIdx === 'all') update(0);
+    else indices.forEach(index => update(index, item.Asset?.Layer?.[index]?.Name ?? item.Asset?.Name));
+    refreshAfterLayerEdit();
+    return;
+  }
+
   if (key === 'Opacity') {
     ensureOpacityArray(item);
     indices.forEach(index => {
@@ -162,7 +249,23 @@ export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverr
   const index = idx === 'all' ? 0 : parseInt(idx, 10);
   const layerOverride = item?.Property?.LayerOverrides?.[index] || {};
   const opacity = getOpacity(item, idx) ?? 1;
-  return {...layerOverride, Opacity: opacity};
+  if (!item) return {...layerOverride, Opacity: opacity};
+  const layerName = item.Asset?.Layer?.[index]?.Name ?? item.Asset?.Name ?? '';
+  const props = item.Property ?? {};
+  const layerValue = (name: 'TranslationX' | 'TranslationY' | 'ScaleX' | 'ScaleY' | 'Rotation') =>
+    idx === 'all' ? (props[name] as number | undefined) : (props[`Layer${name}`] as Record<string, number> | undefined)?.[layerName];
+  const {bx, by} = getAssetBaseXY(item, String(index));
+  const tx = layerValue('TranslationX');
+  const ty = layerValue('TranslationY');
+  return {
+    ...layerOverride,
+    DrawingLeft: tx == null ? layerOverride.DrawingLeft : {'': bx + tx},
+    DrawingTop: ty == null ? layerOverride.DrawingTop : {'': by + ty},
+    ScaleX: layerValue('ScaleX') ?? layerOverride.ScaleX,
+    ScaleY: layerValue('ScaleY') ?? layerOverride.ScaleY,
+    Rotation: layerValue('Rotation') ?? layerOverride.Rotation,
+    Opacity: opacity,
+  };
 }
 
 function isUsableLayerLabel(text: string | undefined | null, key: string): text is string {
@@ -352,9 +455,20 @@ export function getCurrentGroupName() {
   return getCurrentItem()?.Asset?.Group?.Name ?? null;
 }
 
-export function isGroupLocked() {
+export function isGroupLocked(layerId?: LayerId): boolean {
   const groupName = getCurrentGroupName();
-  return groupName ? LOCKED_GROUPS.has(groupName) : false;
+  if (groupName && LOCKED_GROUPS.has(groupName)) return true;
+  // R131 official mechanism: Asset/Layer FixedPosition flags decide whether a
+  // part can be adjusted (CommonDraw.js applies a fixed-position offset for
+  // these). Align with it so AEE enforces the same restrictions as the game
+  // (e.g. body parts locked, eyes resizable).
+  const item = getCurrentItem();
+  if (item?.Asset?.FixedPosition) return true;
+  if (layerId && layerId !== 'all') {
+    const layer = item?.Asset?.Layer?.[parseInt(layerId, 10)];
+    if (layer?.FixedPosition) return true;
+  }
+  return false;
 }
 
 export function clampPriority(value: number) {

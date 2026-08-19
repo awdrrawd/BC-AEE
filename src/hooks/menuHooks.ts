@@ -9,17 +9,39 @@ import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, isHid
 import {t} from '@/i18n/i18n';
 import {enterWardrobeScreen} from '@/hooks/wardrobeHooks';
 import {settings} from '@/core/settings';
-import {isHoverTryOnEnabled, toggleHoverTryOn} from '@/controllers/uiController';
+import {isHoverTryOnEnabled, toggleHoverTryOn, toggleCharacterPreviewActive} from '@/controllers/uiController';
 
 const HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn';
 const DIALOG_HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn' as DialogMenuButtonType;
+const CHARACTER_PREVIEW_BUTTON = 'AEE_CharacterPreview';
+const DIALOG_CHARACTER_PREVIEW_BUTTON = 'AEE_CharacterPreview' as DialogMenuButtonType;
+
+// Groups that always get the character-grid preview, regardless of the
+// characterPreviewActive toggle (which only gates regular clothing groups).
+// Covers hair, eyes, eyebrows, mouth, and their ECHO-renamed equivalents.
+const EXTENDED_FACE_PREVIEW_GROUPS = new Set([
+  'HairFront', 'HairBack',
+  'Eyes', 'Eyes2', 'Eyebrows', 'Mouth',
+  '左眼_Luzi', '右眼_Luzi',
+  '新前发_Luzi', '新后发_Luzi',
+  '新前发_Luzi_stack', '新后发_Luzi_stack',
+]);
 
 function hoverTryOnIcon(): string {
   return isHoverTryOnEnabled() ? 'Icons/Public.png' : 'Icons/Private.png';
 }
 
+function characterPreviewIcon(): string {
+  return settings.characterPreviewActive.get() ? 'Icons/Character.png' : 'Icons/CharacterOff.png';
+}
+
 function dialogHoverTryOnButtonX(): number {
   const index = DialogMenuButton.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
+  return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
+}
+
+function dialogCharacterPreviewButtonX(): number {
+  const index = DialogMenuButton.indexOf(DIALOG_CHARACTER_PREVIEW_BUTTON);
   return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
 }
 
@@ -54,6 +76,16 @@ export function installMenuHooks() {
       const randomIndex = AppearanceMenu.indexOf('WearRandom');
       if (randomIndex >= 0) AppearanceMenu[randomIndex] = HOVER_TRY_ON_BUTTON;
     }
+    if (CharacterAppearanceMode === 'Cloth' && settings.hairCharacterPreview.get()) {
+      const hoverIndex = AppearanceMenu.indexOf(HOVER_TRY_ON_BUTTON);
+      if (hoverIndex >= 0) {
+        AppearanceMenu.splice(hoverIndex + 1, 0, CHARACTER_PREVIEW_BUTTON);
+      } else {
+        const randomIndex = AppearanceMenu.indexOf('WearRandom');
+        if (randomIndex >= 0) AppearanceMenu[randomIndex] = CHARACTER_PREVIEW_BUTTON;
+        else AppearanceMenu.unshift(CHARACTER_PREVIEW_BUTTON);
+      }
+    }
     if (CharacterAppearanceMode !== '') return;
     if (settings.enableAeeMenu.get()) {
       AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
@@ -62,8 +94,6 @@ export function installMenuHooks() {
       if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'Copy', 'Paste');
       else AppearanceMenu.unshift('Copy', 'Paste');
     }
-    // Unshift in reverse of the wanted order so copy (AEE_ClearCopy) ends up
-    // ahead: final leading order is 複製 → 拘束 → 部位 → 衣櫃 → 匯出 → 匯入.
     if (isPartsFilterAvailable() && !AppearanceMenu.includes('AEE_PartsFilter')) {
       AppearanceMenu.unshift('AEE_PartsFilter');
     }
@@ -81,11 +111,12 @@ export function installMenuHooks() {
     const partsFilterIndex = menu.indexOf('AEE_PartsFilter');
     const hideRestraintsIndex = menu.indexOf('AEE_HideRestraints');
     const hoverTryOnIndex = menu.indexOf(HOVER_TRY_ON_BUTTON);
-    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0 && hoverTryOnIndex < 0) {
+    const charPreviewIndex = menu.indexOf(CHARACTER_PREVIEW_BUTTON);
+    if (clearCopyIndex < 0 && partsFilterIndex < 0 && hideRestraintsIndex < 0 && hoverTryOnIndex < 0 && charPreviewIndex < 0) {
       next(args);
     } else {
       AppearanceMenu = menu.map((button, index) =>
-        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex || index === hoverTryOnIndex ? 'Copy' : button));
+        (index === clearCopyIndex || index === partsFilterIndex || index === hideRestraintsIndex || index === hoverTryOnIndex || index === charPreviewIndex ? 'Copy' : button));
       try {
         next(args);
       } finally {
@@ -109,6 +140,9 @@ export function installMenuHooks() {
     }
     if (hoverTryOnIndex >= 0 && !isAppearanceOverlayActive()) {
       DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
+    }
+    if (charPreviewIndex >= 0 && !isAppearanceOverlayActive()) {
+      DrawButton(x + 117 * charPreviewIndex, 25, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
     }
     if (settings.enableAeeMenu.get()) {
       for (let index = 0; index < menu.length; index++) {
@@ -154,6 +188,10 @@ export function installMenuHooks() {
         toggleHoverTryOn();
         return;
       }
+      if (AppearanceMenu[index] === CHARACTER_PREVIEW_BUTTON && !isAppearanceOverlayActive()) {
+        toggleCharacterPreviewActive();
+        return;
+      }
     }
     return next(args);
   });
@@ -161,8 +199,12 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('DialogDrawTopMenu', 10, (args, next) => {
     const menu = DialogMenuButton;
     const hoverTryOnIndex = menu.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
+    const charPreviewIndex = menu.indexOf(DIALOG_CHARACTER_PREVIEW_BUTTON);
     if (hoverTryOnIndex >= 0) {
       DialogMenuButton = menu.map((button, index) => index === hoverTryOnIndex ? 'Exit' : button);
+    }
+    if (charPreviewIndex >= 0) {
+      DialogMenuButton = menu.map((button, index) => index === charPreviewIndex ? 'Exit' : button);
     }
     let result: ReturnType<typeof next>;
     try {
@@ -173,6 +215,9 @@ export function installMenuHooks() {
     if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
       DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
     }
+    if (charPreviewIndex >= 0 && settings.hairCharacterPreview.get() && DialogMenuMode === 'items') {
+      DrawButton(dialogCharacterPreviewButtonX(), 15, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
+    }
     return result;
   });
 
@@ -182,6 +227,10 @@ export function installMenuHooks() {
       const activityIndex = DialogMenuButton.indexOf('Activity');
       DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_HOVER_TRY_ON_BUTTON);
     }
+    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && !DialogMenuButton.includes(DIALOG_CHARACTER_PREVIEW_BUTTON)) {
+      const activityIndex = DialogMenuButton.indexOf('Activity');
+      DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_CHARACTER_PREVIEW_BUTTON);
+    }
     return result;
   });
 
@@ -190,16 +239,24 @@ export function installMenuHooks() {
       toggleHoverTryOn();
       return;
     }
+    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && MouseIn(dialogCharacterPreviewButtonX(), 15, 90, 90)) {
+      toggleCharacterPreviewActive();
+      return;
+    }
     return next(args);
   });
 
-  // BC normally uses one global Character/CharacterOff switch for every
-  // appearance group. Keep character previews only where they are needed to
-  // open the selectable grid: front and back hair. All other groups retain the
-  // compact previous/next behavior.
   bcAeeModSdk.hookFunction('AppearancePreviewUseCharacter', 10, (args, next) => {
-    if (!settings.hairCharacterPreview.get()) return next(args);
     const group = args[0];
-    return !!group?.PreviewZone && (group.Name === 'HairFront' || group.Name === 'HairBack');
+    if (!group?.PreviewZone) return next(args);
+    const isExtendedFaceGroup = EXTENDED_FACE_PREVIEW_GROUPS.has(group.Name as string);
+    const isClothingGroup = group.Category === 'Appearance' && !!group.Clothing;
+    if (isExtendedFaceGroup) {
+      return true;
+    }
+    if (isClothingGroup && settings.characterPreviewActive.get()) {
+      return true;
+    }
+    return next(args);
   });
 }

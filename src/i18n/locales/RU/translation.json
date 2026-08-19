@@ -41,6 +41,7 @@
   "edit-section-skew-group-title": "Наклон",
   "edit-section-skew-drag-label": "Перетаск.",
   "mirror-group-title": "Зеркало",
+  "experimental-feature-note": "Это расширение AEE. Пользователи без установленного AEE не увидят эти правки.",
   "mirror-group-mode-title": "Зеркало",
   "mirror-group-mode-horizontal-button": "Гориз.",
   "mirror-group-mode-vertical-button": "Верт.",
@@ -65,6 +66,7 @@
   "settings-hover-tryon": "Примерка при наведении",
   "settings-hover-tryon-tooltip": "Включить / Отключить функцию примерки при наведении",
   "settings-hair-character-preview": "Скрыть кнопку предпросмотра персонажа",
+  "settings-character-preview-tooltip": "Предпросмотр персонажа (расширение AEE): показывает выбираемую сетку для выбранных групп",
   "settings-hair-character-preview-tooltip": "Скрывает кнопку, но передние и задние волосы по-прежнему можно заменять через сетку значков",
   "settings-enable-copy-paste": "Копирование/вставка одежды",
   "copy-item-tooltip": "Копировать предмет (со всеми настройками)",
@@ -426,5 +428,6 @@
   "free-draw-image-tainted": "Пиксели этого изображения недоступны; импорт отменён",
   "free-draw-image-placed": "Перетаскивайте для перемещения, тяните синий угол для масштаба. Щелчок вне холста или «Принять» вплавит её в рисунок",
   "free-draw-text-prompt": "Введите текст для рисования:",
-  "color-picker-eyedropper-taint": "Не удаётся взять цвет: холст испорчен изображением с другого источника — перезагрузите страницу и повторите."
+  "color-picker-eyedropper-taint": "Не удаётся взять цвет: холст испорчен изображением с другого источника — перезагрузите страницу и повторите.",
+  "experimental-feature-tooltip": "Это расширение AEE. Пользователи без установленного AEE не увидят эффект правки."
 }

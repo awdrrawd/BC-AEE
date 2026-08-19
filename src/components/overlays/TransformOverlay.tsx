@@ -1,5 +1,5 @@
 import type {AeeState} from '@/core/types';
-import {getAssetBaseXY, getLayerOverride} from '@/core/bc';
+import {getAssetBaseXY, getLayerOverride, isGroupLocked} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {
   closeTransformOverlay,
@@ -17,6 +17,8 @@ import {getSelectedLayerLabel} from '@/components/overlays/getSelectedLayerLabel
 export function TransformOverlay({state}: { state: AeeState }) {
   const mode = state.transformOverlay.mode;
   if (!mode || !state.canvasRect || !state.item || state.selectedLayer === null) return null;
+  // Locked body parts (official FixedPosition) must not expose transform tools.
+  if (isGroupLocked(state.selectedLayer)) return null;
 
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const base = getAssetBaseXY(state.item, state.selectedLayer);

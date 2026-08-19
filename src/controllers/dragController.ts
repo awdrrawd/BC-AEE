@@ -1,13 +1,12 @@
 import type {LayerId} from '@/core/types';
 import {
-  ensureLayerOverrides,
   getAssetBaseXY,
   getCanvas,
   getCanvasRect,
   getCurrentItem,
-  getLayerGroupMembers,
   getLayerOverride,
-  refreshAfterLayerEdit,
+  isEditableAppearanceContext,
+  isGroupLocked,
   setLayerOverride,
 } from '@/core/bc';
 import {getState} from '@/core/store';
@@ -92,7 +91,16 @@ export function setRotationDragging(active: boolean) {
 
 function isAeeEditing() {
   const state = getState();
-  return !!(state.visible && (state.activeDrag || state.colorPicker.open));
+  if (!state.visible) return false;
+  if (state.activeDrag || state.colorPicker.open) return true;
+  // Also block clicks on the character whenever we're in an item-colour (dye)
+  // context — even before a drag or AEE's own colour picker has started. The
+  // dye screen still has the game's own clickable hit-regions for other
+  // body/item cells directly underneath the character canvas; without this,
+  // a click on the character while just browsing dye options (no active
+  // drag yet) can accidentally jump into a completely different item's or
+  // group's dye screen instead of doing nothing.
+  return isEditableAppearanceContext();
 }
 
 const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';
@@ -141,6 +149,9 @@ function shouldIntercept(event: Event): boolean {
 function canStartCanvasDrag(event: MouseEvent | PointerEvent) {
   const state = getState();
   if (!state.activeDrag || state.activeDrag === 'rot' || state.selectedLayer === null) return false;
+  // Locked body parts (official FixedPosition) must not be dragged on canvas,
+  // even if a drag mode was left active before switching to the locked part.
+  if (isGroupLocked(state.selectedLayer)) return false;
   const canvas = getCanvas();
   if (!canvas) return false;
   const rect = canvas.getBoundingClientRect();
@@ -207,18 +218,15 @@ function moveXyDrag(event: MouseEvent) {
   const sy = (canvas.height || 1000) / rect.height;
   const dx = (event.clientX - xyDragState.startX) * sx;
   const dy = (event.clientY - xyDragState.startY) * sy;
-  ensureLayerOverrides(item);
-  const count = item.Asset?.Layer?.length || 1;
-  const indices = xyDragState.layerId === 'all'
-    ? Array.from({length: count}, (_, index) => index)
-    : getLayerGroupMembers(item, parseInt(xyDragState.layerId, 10));
-  indices.forEach(index => {
-    const layerOverride = item.Property.LayerOverrides[index] || {};
-    layerOverride.DrawingLeft = {'': Math.round(xyDragState.origX + (xyDragState.flipX ? -dx : dx))};
-    layerOverride.DrawingTop = {'': Math.round(xyDragState.origY + (xyDragState.flipY ? -dy : dy))};
-    item.Property.LayerOverrides[index] = layerOverride;
-  });
-  refreshAfterLayerEdit();
+  const nextX = Math.round(xyDragState.origX + (xyDragState.flipX ? -dx : dx));
+  const nextY = Math.round(xyDragState.origY + (xyDragState.flipY ? -dy : dy));
+  // Route through setLayerOverride so the offset lands on the native R131
+  // TranslationX/TranslationY property (which BC draws from), instead of the
+  // private LayerOverrides. Writing LayerOverrides directly made a canvas drag
+  // invisible whenever a slider had already set a native position: the native
+  // value won the draw and the drag was ignored.
+  setLayerOverride(item, xyDragState.layerId, 'DrawingLeft', {'': nextX});
+  setLayerOverride(item, xyDragState.layerId, 'DrawingTop', {'': nextY});
   forceUiUpdate();
 }
 
@@ -313,6 +321,23 @@ export function installDragHandlers() {
   document.addEventListener('touchstart', event => {
     if (shouldIntercept(event)) event.stopImmediatePropagation();
   }, {capture: true, passive: false});
+
+  // BC's canvas fires a native "click" event (Game.js: `canvas.addEventListener
+  // ("click", ...)` -> GameClick -> CommonClick) whenever a mousedown/pointerdown
+  // and mouseup/pointerup land on the canvas — including when the canvas holds
+  // pointer capture and the up event is retargeted back to it from anywhere on
+  // the page. That "click" is a separate, browser-generated event: stopping
+  // propagation on mousedown/mouseup above does NOT stop it from firing. Without
+  // blocking it too, dragging (e.g. dragging a colour/hue slider) and releasing
+  // the mouse over the character's body still lets this click through to
+  // CommonClick -> DialogChangeFocusToGroup -> ItemColorCancelAndExit, silently
+  // kicking the user out of the dye/colour screen mid-edit.
+  document.addEventListener('click', event => {
+    if (shouldIntercept(event)) {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+    }
+  }, true);
 }
 
 export function getLayerBaseXYForDisplay(item: Item, layerId: LayerId) {

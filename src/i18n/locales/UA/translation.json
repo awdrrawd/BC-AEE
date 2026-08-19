@@ -41,6 +41,7 @@
   "edit-section-skew-group-title": "Нахил",
   "edit-section-skew-drag-label": "Тягнути",
   "mirror-group-title": "Дзеркало",
+  "experimental-feature-note": "Це розширення AEE. Користувачі без встановленого AEE не побачать ці зміни.",
   "mirror-group-mode-title": "Дзеркало",
   "mirror-group-mode-horizontal-button": "Гориз.",
   "mirror-group-mode-vertical-button": "Верт.",
@@ -65,6 +66,7 @@
   "settings-hover-tryon": "Приміряння при наведенні",
   "settings-hover-tryon-tooltip": "Увімкнути / Вимкнути функцію примірки при наведенні",
   "settings-hair-character-preview": "Приховати кнопку перегляду персонажа",
+  "settings-character-preview-tooltip": "Перегляд персонажа (розширення AEE): показує сітку вибору для вибраних груп",
   "settings-hair-character-preview-tooltip": "Приховує кнопку, але переднє та заднє волосся й надалі можна замінювати через сітку значків",
   "settings-enable-copy-paste": "Копіювання/вставлення одягу",
   "copy-item-tooltip": "Копіювати предмет (з усіма налаштуваннями)",
@@ -426,5 +428,6 @@
   "free-draw-image-tainted": "Пікселі цього зображення недоступні; імпорт скасовано",
   "free-draw-image-placed": "Перетягуйте, щоб перемістити, тягніть синій кут, щоб змінити розмір. Клік поза полотном або «Застосувати» вплавить його в малюнок",
   "free-draw-text-prompt": "Введіть текст для малювання:",
-  "color-picker-eyedropper-taint": "Не вдається взяти колір: полотно зіпсоване зображенням з іншого джерела — перезавантажте сторінку та спробуйте знову."
+  "color-picker-eyedropper-taint": "Не вдається взяти колір: полотно зіпсоване зображенням з іншого джерела — перезавантажте сторінку та спробуйте знову.",
+  "experimental-feature-tooltip": "Це розширення AEE. Користувачі без встановленого AEE не побачать ефект редагування."
 }

@@ -41,6 +41,7 @@
   "edit-section-skew-group-title": "Neigung",
   "edit-section-skew-drag-label": "Ziehen",
   "mirror-group-title": "Spiegeln",
+  "experimental-feature-note": "Dies ist eine AEE-Erweiterung. Nutzer ohne AEE sehen diese Bearbeitungen nicht.",
   "mirror-group-mode-title": "Spiegeln",
   "mirror-group-mode-horizontal-button": "Horiz.",
   "mirror-group-mode-vertical-button": "Vert.",
@@ -65,6 +66,7 @@
   "settings-hover-tryon": "Hover-Anprobe",
   "settings-hover-tryon-tooltip": "Hover-Anprobe aktivieren / deaktivieren",
   "settings-hair-character-preview": "Schaltfläche für Charaktervorschau ausblenden",
+  "settings-character-preview-tooltip": "Charaktervorschau (AEE-Erweiterung): zeigt ein auswählbares Raster für die gewählten Gruppen",
   "settings-hair-character-preview-tooltip": "Blendet die Schaltfläche aus; Vorder- und Hinterhaar können weiterhin über die Symbolübersicht ersetzt werden",
   "settings-enable-copy-paste": "Kleidung kopieren/einfügen",
   "copy-item-tooltip": "Dieses Item kopieren (mit allen Einstellungen)",
@@ -426,5 +428,6 @@
   "free-draw-image-tainted": "Die Pixel dieses Bildes sind nicht lesbar; Import abgebrochen",
   "free-draw-image-placed": "Ziehen zum Verschieben, blaue Ecke zum Skalieren. Klick außerhalb oder Übernehmen fügt es in die Zeichnung ein",
   "free-draw-text-prompt": "Zu zeichnenden Text eingeben:",
-  "color-picker-eyedropper-taint": "Farbaufnahme nicht möglich: Die Leinwand ist durch ein Cross-Origin-Bild verunreinigt – Seite neu laden und erneut versuchen."
+  "color-picker-eyedropper-taint": "Farbaufnahme nicht möglich: Die Leinwand ist durch ein Cross-Origin-Bild verunreinigt – Seite neu laden und erneut versuchen.",
+  "experimental-feature-tooltip": "Dies ist eine AEE-Erweiterung. Nutzer ohne AEE sehen den Bearbeitungseffekt nicht."
 }

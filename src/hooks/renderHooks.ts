@@ -29,6 +29,37 @@ function resolveDrawLayerIndex(currentAppearance: Item, rawName: string): number
 export function installRenderHooks() {
   installWebGlPrototypePatch();
 
+  // GLDrawImage is the stable boundary where BC now owns translation, rotation
+  // and scaling natively (R131). Flip is applied by negating its scale options;
+  // the remaining skew (and the scoped mirror copy) are handled by the WebGL
+  // matrix patch, gated on activeSkewTransform set here for the duration of the
+  // single image draw instead of guessing which global matrix calls belong to
+  // the current appearance layer.
+  bcAeeModSdk.hookFunction('GLDrawImage', 1, (args, next) => {
+    const transform = runtime.pendingTransform;
+    if (!transform) return next(args);
+
+    const options = {...((args[4] as Record<string, unknown> | undefined) ?? {})};
+    const scaleX = typeof options.ScaleX === 'number' ? options.ScaleX : 1;
+    const scaleY = typeof options.ScaleY === 'number' ? options.ScaleY : 1;
+    if (transform.flipX) options.ScaleX = -scaleX;
+    if (transform.flipY) options.ScaleY = -scaleY;
+    args[4] = options;
+
+    runtime.activeSkewTransform = transform;
+    runtime.pendingTransformApplied++;
+    try {
+      return next(args);
+    } finally {
+      runtime.activeSkewTransform = null;
+      // CommonDraw emits the normal and blink image consecutively for a layer.
+      if (runtime.pendingTransformApplied >= 2) {
+        runtime.pendingTransform = null;
+        runtime.pendingTransformApplied = 0;
+      }
+    }
+  });
+
   bcAeeModSdk.hookFunction('CommonDrawResolveLayerColor', 0, (args, next) => {
     const item = args[1];
     const layer = args[2];
@@ -85,8 +116,7 @@ export function installRenderHooks() {
     character?.Appearance?.forEach(item => {
       const layerOverrides = item.Property?.LayerOverrides;
       const needsTransform = Array.isArray(layerOverrides) && layerOverrides.some((layerOverride: AeeLayerOverride | undefined) => layerOverride
-        && (layerOverride.DrawingLeft != null || layerOverride.DrawingTop != null || layerOverride.Rotation != null
-          || layerOverride.ScaleX != null || layerOverride.ScaleY != null || layerOverride.SkewX != null || layerOverride.SkewY != null
+        && (layerOverride.SkewX != null || layerOverride.SkewY != null
           || layerOverride.FlipX || layerOverride.FlipY || layerOverride.MirrorCopy || layerOverride.MirrorCopyV));
       const needsFlash = item === runtime.hoverFlashData?.item || item === runtime.hoverCharFlashData?.item;
       if (needsTransform || needsFlash) {
@@ -119,7 +149,6 @@ export function installRenderHooks() {
         const layerOverride = currentAppearance.Property?.LayerOverrides?.[layerIdx];
         if (layerOverride) {
           const hasTransform = layerOverride.FlipX || layerOverride.FlipY || layerOverride.MirrorCopy || layerOverride.MirrorCopyV
-            || layerOverride.ScaleX != null || layerOverride.ScaleY != null || layerOverride.Rotation != null
             || layerOverride.SkewX != null || layerOverride.SkewY != null;
           if (hasTransform) {
             runtime.pendingTransform = {
@@ -129,9 +158,6 @@ export function installRenderHooks() {
               mirrorCopyV: !!layerOverride.MirrorCopyV,
               mirrorCopyAxisX: layerOverride.MirrorCopyAxisX ?? 0.5,
               mirrorCopyAxisY: layerOverride.MirrorCopyAxisY ?? 0.5,
-              scaleX: layerOverride.ScaleX ?? 1,
-              scaleY: layerOverride.ScaleY ?? 1,
-              rotation: layerOverride.Rotation ?? 0,
               skewX: layerOverride.SkewX ?? 0,
               skewY: layerOverride.SkewY ?? 0,
             };
@@ -152,8 +178,12 @@ export function installRenderHooks() {
       if (layerIdx >= 0) {
         const layerOverride = property?.LayerOverrides?.[layerIdx];
         if (layerOverride) {
-          const dx = layerOverride.DrawingLeft?.[''];
-          const dy = layerOverride.DrawingTop?.[''];
+          const layerName = currentAppearance.Asset?.Layer?.[layerIdx]?.Name ?? currentAppearance.Asset?.Name ?? '';
+          const p = property as (ItemProperties & Record<string, unknown>) | undefined;
+          const nativeTx = (p?.LayerTranslationX as Record<string, number> | undefined)?.[layerName];
+          const nativeTy = (p?.LayerTranslationY as Record<string, number> | undefined)?.[layerName];
+          const dx = nativeTx == null && (p?.TranslationX as number | undefined) == null ? layerOverride.DrawingLeft?.[''] : null;
+          const dy = nativeTy == null && (p?.TranslationY as number | undefined) == null ? layerOverride.DrawingTop?.[''] : null;
           if (dx != null && ret.X == null) ret.X = dx;
           if (dy != null && ret.Y == null) ret.Y = dy + CanvasUpperOverflow;
         }
@@ -183,31 +213,10 @@ function installWebGlPrototypePatch() {
   runtime.originalDrawArrays = WebGL2RenderingContext.prototype.drawArrays;
 
   WebGL2RenderingContext.prototype.uniformMatrix4fv = function (location, transpose, data) {
-    if (data instanceof Float32Array && data.length === 16 && runtime.pendingTransform) {
-      const transformData = runtime.pendingTransform;
-      runtime.pendingTransformApplied++;
-      if (runtime.pendingTransformApplied >= 2) {
-        runtime.pendingTransform = null;
-        runtime.pendingTransformApplied = 0;
-      }
+    if (data instanceof Float32Array && data.length === 16 && runtime.activeSkewTransform) {
+      const transformData = runtime.activeSkewTransform;
 
       const matrix = new Float32Array(data);
-      if (transformData.rotation !== 0 || transformData.scaleX !== 1 || transformData.scaleY !== 1) {
-        const old0 = matrix[0], old1 = matrix[1], old4 = matrix[4], old5 = matrix[5];
-        const rad = -transformData.rotation * Math.PI / 180;
-        const cos = Math.cos(rad), sin = Math.sin(rad);
-        const sx = Math.sqrt(old0 ** 2 + old1 ** 2) * transformData.scaleX;
-        const sy = Math.sqrt(old4 ** 2 + old5 ** 2) * transformData.scaleY;
-        const sgx = old0 < 0 ? -1 : 1;
-        const sgy = old5 < 0 ? -1 : 1;
-        matrix[0] = cos * sx * sgx;
-        matrix[1] = sin * sx * sgx;
-        matrix[4] = -sin * sy * sgy;
-        matrix[5] = cos * sy * sgy;
-        matrix[12] -= 0.5 * (matrix[0] + matrix[4] - old0 - old4);
-        matrix[13] -= 0.5 * (matrix[1] + matrix[5] - old1 - old5);
-      }
-
       if (transformData.skewX !== 0 || transformData.skewY !== 0) {
         const bx0 = matrix[0], by0 = matrix[1], bx4 = matrix[4], by5 = matrix[5];
         if (transformData.skewX !== 0) {
@@ -224,19 +233,6 @@ function installWebGlPrototypePatch() {
           matrix[12] -= 0.5 * ty * bx4;
           matrix[13] -= 0.5 * ty * by5;
         }
-      }
-
-      if (transformData.flipX) {
-        matrix[12] += matrix[0];
-        matrix[13] += matrix[1];
-        matrix[0] = -matrix[0];
-        matrix[1] = -matrix[1];
-      }
-      if (transformData.flipY) {
-        matrix[12] += matrix[4];
-        matrix[13] += matrix[5];
-        matrix[4] = -matrix[4];
-        matrix[5] = -matrix[5];
       }
 
       if (transformData.mirrorCopy || transformData.mirrorCopyV) {

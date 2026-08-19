@@ -37,6 +37,7 @@ export interface Runtime {
   hoverTryOnCharacter: Character | null;
   pendingTransform: PendingTransform | null;
   pendingTransformApplied: number;
+  activeSkewTransform: PendingTransform | null;
   mirrorCopyFlags: MirrorCopyFlags | null;
   lastMatrixData: Float32Array | null;
   lastMatrixLocation: WebGLUniformLocation | null;
@@ -85,6 +86,7 @@ export const runtime: Runtime = {
   hoverTryOnCharacter: null,
   pendingTransform: null,
   pendingTransformApplied: 0,
+  activeSkewTransform: null,
   mirrorCopyFlags: null,
   lastMatrixData: null,
   lastMatrixLocation: null,

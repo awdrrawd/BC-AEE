@@ -12,6 +12,7 @@ import {
   getLayerGroupMembers,
   getLayerOverride,
   getOpacity,
+  isGroupLocked,
   refreshAfterLayerEdit,
   refreshCurrentCharacter,
   setLayerColor,
@@ -98,6 +99,8 @@ export function movePartsPanel(left: number, top: number) {
 export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: OverlayAnchor) {
   const item = getCurrentItem();
   if (!item) return;
+  // Locked body parts (official FixedPosition) must not expose transform tools.
+  if (isGroupLocked(getState().selectedLayer)) return;
   syncCanvasRect();
   const current = getState();
   const nextMode = current.transformOverlay.mode === mode ? null : mode;
@@ -130,6 +133,8 @@ export function moveTransformOverlay(left: number, top: number) {
 }
 
 export function setActiveDrag(mode: DragMode) {
+  // Locked body parts (official FixedPosition) must not start canvas drags.
+  if (mode && isGroupLocked(getState().selectedLayer)) return;
   const next = getState().activeDrag === mode ? null : mode;
   mutateState(draft => {
     draft.activeDrag = next;
@@ -320,7 +325,13 @@ const EDIT_PROPERTIES: Record<EditPropertyKey, EditPropertyDef> = {
   },
   rot: {
     get: lo => lo.Rotation ?? 0,
-    apply: (item, idx, v) => setLayerOverride(item, idx, 'Rotation', ((Math.round(v) % 360) + 360) % 360),
+    // BC native Rotation is [-180, 180] with hard clamping (not wrapping), so a
+    // naive [0, 360) mapping makes 181..359 all clamp to 180. Normalize to the
+    // [-180, 180] range instead: 181 -> -179, 359 -> -1, giving full 360° spin.
+    apply: (item, idx, v) => {
+      const n = ((Math.round(v) % 360) + 360) % 360;
+      setLayerOverride(item, idx, 'Rotation', n > 180 ? n - 360 : n);
+    },
   },
   skx: {
     get: lo => lo.SkewX ?? 0,
@@ -349,6 +360,8 @@ export function setEditProperty(ctrl: string, rawValue: number) {
   const item = getCurrentItem();
   const idx = state.selectedLayer;
   if (!item || idx === null || Number.isNaN(rawValue) || !isEditPropertyKey(ctrl)) return;
+  // Locked body parts (official FixedPosition) must not be transformed.
+  if (isGroupLocked(idx)) return;
   EDIT_PROPERTIES[ctrl].apply(item, idx, rawValue);
   forceUiUpdate();
 }
@@ -358,6 +371,8 @@ export function stepEditProperty(ctrl: string, delta: number) {
   const item = getCurrentItem();
   const idx = state.selectedLayer;
   if (!item || idx === null || !isEditPropertyKey(ctrl)) return;
+  // Locked body parts (official FixedPosition) must not be transformed.
+  if (isGroupLocked(idx)) return;
   const def = EDIT_PROPERTIES[ctrl];
   const layerOverride = getLayerOverride(item, idx);
   const {bx, by} = getAssetBaseXY(item, idx);
@@ -370,15 +385,38 @@ export function resetEditProperty(ctrl: string) {
   const item = getCurrentItem();
   const idx = state.selectedLayer;
   if (!item || idx === null) return;
+  // Locked body parts (official FixedPosition) must not be transformed; opacity
+  // ('op') stays editable everywhere.
+  if (ctrl !== 'op' && isGroupLocked(idx)) return;
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
   const indices = idx === 'all' ? Array.from({length: count}, (_, index) => index) : getLayerGroupMembers(item, parseInt(idx, 10));
 
   if (ctrl === 'x' || ctrl === 'y') {
+    // Reset position back to the asset base. Delete BOTH the private
+    // LayerOverrides entry and the native R131 TranslationX/TranslationY (stored
+    // per layer as Property.LayerTranslationX[layerName] or at item level as
+    // Property.TranslationX when the whole item was dragged). Deleting only the
+    // private override left the native offset in place after a canvas drag
+    // (which now writes the native property), making the reset/undo button
+    // appear to do nothing.
     const key = ctrl === 'x' ? 'DrawingLeft' : 'DrawingTop';
-    indices.forEach(index => {
-      if (item.Property?.LayerOverrides?.[index]) delete item.Property.LayerOverrides[index][key];
-    });
+    const nativeKey = ctrl === 'x' ? 'TranslationX' : 'TranslationY';
+    const property = item.Property as (ItemProperties & Record<string, unknown>) | undefined;
+    if (property) {
+      if (idx === 'all') {
+        delete property[nativeKey];
+      } else {
+        indices.forEach(index => {
+          const layerName = item.Asset?.Layer?.[index]?.Name;
+          if (item.Property?.LayerOverrides?.[index]) delete item.Property.LayerOverrides[index][key];
+          if (layerName) {
+            const layerValues = property[`Layer${nativeKey}`];
+            if (layerValues && typeof layerValues === 'object') delete (layerValues as Record<string, number>)[layerName];
+          }
+        });
+      }
+    }
     refreshAfterLayerEdit();
   } else if (ctrl === 'op') {
     ensureOpacityArray(item);
@@ -405,6 +443,8 @@ export function toggleMirror(key: 'FlipX' | 'FlipY' | 'MirrorCopy' | 'MirrorCopy
   const state = getState();
   const item = getCurrentItem();
   if (!item || state.selectedLayer === null) return;
+  // Locked body parts (official FixedPosition) must not be mirrored.
+  if (isGroupLocked(state.selectedLayer)) return;
   const layerOverride = getLayerOverride(item, state.selectedLayer);
   setLayerOverride(item, state.selectedLayer, key, !layerOverride[key]);
   forceUiUpdate();
@@ -414,6 +454,8 @@ export function resetSelectedTransforms() {
   const state = getState();
   const item = getCurrentItem();
   if (!item || state.selectedLayer === null) return;
+  // Locked body parts (official FixedPosition) must not reset transforms.
+  if (isGroupLocked(state.selectedLayer)) return;
   resetEditProperty('x');
   resetEditProperty('y');
   setLayerOverride(item, state.selectedLayer, 'ScaleX', 1);
@@ -485,10 +527,34 @@ export function installSettingEffects() {
       // The appearance menu may not exist while settings are changed elsewhere.
     }
   });
-  settings.hairCharacterPreview.onChange(() => {
+  settings.hairCharacterPreview.onChange(enabled => {
+    // Enabling the master switch re-activates the preview so the button shows
+    // up in the "on" state; disabling it just hides the toggle button.
+    if (enabled) settings.characterPreviewActive.set(true);
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
         AppearanceMenuBuild(CharacterAppearanceSelection);
+      }
+    } catch {
+      // The appearance menu may not exist while settings are changed elsewhere.
+    }
+  });
+  settings.characterPreviewActive.onChange(() => {
+    try {
+      if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
+        AppearanceMenuBuild(CharacterAppearanceSelection);
+      }
+      // AppearancePreviewUseCharacter() is hooked and now reflects the new
+      // toggle state, but AppearancePreviews[] is a cache that BC only
+      // rebuilds on cloth-mode entry, page turns, or permission-mode entry.
+      // Without this, flipping the toggle while already looking at the Cloth
+      // grid has no visible effect until the next of those events fires.
+      if (
+        typeof AppearancePreviewBuild === 'function' &&
+        CharacterAppearanceMode === 'Cloth' &&
+        CharacterAppearanceSelection?.FocusGroup
+      ) {
+        AppearancePreviewBuild(CharacterAppearanceSelection, true);
       }
     } catch {
       // The appearance menu may not exist while settings are changed elsewhere.
@@ -731,6 +797,10 @@ export function isHoverTryOnEnabled(): boolean {
 export function toggleHoverTryOn(): void {
   runtime.hoverTryOnEnabled = !runtime.hoverTryOnEnabled;
   if (!runtime.hoverTryOnEnabled) stopHoverTryOn();
+}
+
+export function toggleCharacterPreviewActive(): void {
+  settings.characterPreviewActive.set(!settings.characterPreviewActive.get());
 }
 
 function restoreTryOnGroup(character: Character, group: AssetGroupName, backup: Item | null) {

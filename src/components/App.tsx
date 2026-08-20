@@ -13,6 +13,7 @@ import {PromptDialog} from '@/components/ui/PromptDialog';
 import {ItemFontPanelHost} from '@/components/main-panel/ItemFontPanel';
 import {LayerManagerPanel} from '@/components/layer-manager/LayerManagerPanel';
 import {uiThemeVariables} from '@/core/theme';
+import {FreeDrawLibraryPanel} from '@/components/free-draw/FreeDrawLibraryPanel';
 
 export function App() {
   const state = useAeeStore();
@@ -29,6 +30,7 @@ export function App() {
     <ImportDialog state={state}/>
     <ItemFontPanelHost canvasRect={state.canvasRect}/>
     <LayerManagerPanel state={state}/>
+    <FreeDrawLibraryPanel/>
     {prompt && !wardrobe.active
       ? <div className="fixed inset-0 z-1000005"><PromptDialog prompt={prompt} scale="panel"/></div>
       : null}

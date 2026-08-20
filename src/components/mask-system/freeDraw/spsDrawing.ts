@@ -2,13 +2,14 @@ import {readSpsPublic, SPS_ORIGIN, writeSpsPublic} from '@/core/sps';
 import type {AnyProps} from './types';
 import {PROP_SPS_KEY} from '../constants';
 
-const KEY = 'liko-aee:freedraw/1';
+const LEGACY_KEY = 'liko-aee:freedraw/1';
+const activeKey = (slot: number) => `liko-aee:FreeDraw/${slot + 1}`;
+const transferKey = (slot: number) => `liko-aee:FreeDrawTransfer/${slot + 1}`;
 const MAGIC = new TextEncoder().encode('AEEFD1');
 const SLOT_LIMIT = 3_300_000;
-const TOTAL_LIMIT = 9_900_000;
 const HEADER_SIZE = MAGIC.length + 3 * (1 + 32 + 4);
 
-export interface SpsDrawRef {o: number; s: number; r: string; m: string; u: string}
+export interface SpsDrawRef {o: number; s: number; r: string; m: string; u: string; v?: 2 | 3}
 interface Entry {mime: string; hash: Uint8Array; data: Uint8Array}
 
 const empty = (): Entry => ({mime: '', hash: new Uint8Array(32), data: new Uint8Array()});
@@ -19,7 +20,8 @@ export function readDrawRef(props: AnyProps | undefined): SpsDrawRef | null {
   const ref = props?.[PROP_SPS_KEY] as Partial<SpsDrawRef> | undefined;
   return ref && typeof ref.o === 'number' && Number.isInteger(ref.s) && ref.s >= 0 && ref.s < 3 &&
     typeof ref.r === 'string' && typeof ref.u === 'string'
-    ? {o: ref.o, s: ref.s, r: ref.r, m: typeof ref.m === 'string' ? ref.m : 'image/png', u: ref.u} : null;
+    ? {o: ref.o, s: ref.s, r: ref.r, m: typeof ref.m === 'string' ? ref.m : 'image/png', u: ref.u,
+      ...(ref.v === 2 || ref.v === 3 ? {v: ref.v} : {})} : null;
 }
 
 function decode(buffer: ArrayBuffer | null): Entry[] {
@@ -41,23 +43,6 @@ function decode(buffer: ArrayBuffer | null): Entry[] {
   return entries;
 }
 
-function encode(entries: Entry[]): ArrayBuffer {
-  const total = entries.reduce((sum, entry) => sum + entry.data.byteLength, 0);
-  if (total > TOTAL_LIMIT) throw new Error('freedraw_total_too_large');
-  const output = new Uint8Array(HEADER_SIZE + total);
-  output.set(MAGIC);
-  const view = new DataView(output.buffer);
-  let header = MAGIC.length;
-  let dataOffset = HEADER_SIZE;
-  for (const entry of entries) {
-    output[header++] = entry.mime === 'image/webp' ? 2 : entry.data.length ? 1 : 0;
-    output.set(entry.hash, header); header += 32;
-    view.setUint32(header, entry.data.byteLength, true); header += 4;
-    output.set(entry.data, dataOffset); dataOffset += entry.data.byteLength;
-  }
-  return output.buffer;
-}
-
 const hex = (bytes: Uint8Array) => [...bytes].map(value => value.toString(16).padStart(2, '0')).join('');
 
 function refreshCharacters() {
@@ -74,10 +59,9 @@ export function cachedSpsDrawUrl(props: AnyProps | undefined): string | null {
   const hit = cache.get(id);
   if (hit) return hit;
   if (!pending.has(id)) {
-    const work = readSpsPublic(ref.o, KEY, ref.r).then(buffer => {
-      const entry = decode(buffer)[ref.s];
-      if (!entry.data.length || hex(entry.hash) !== ref.r) return null;
-      const url = URL.createObjectURL(new Blob([entry.data], {type: entry.mime || ref.m}));
+    const work = downloadSpsDrawing(ref).then(blob => {
+      if (!blob) return null;
+      const url = URL.createObjectURL(blob);
       cache.set(id, url);
       refreshCharacters();
       return url;
@@ -95,22 +79,37 @@ export async function resolveSpsDrawUrl(props: AnyProps | undefined): Promise<st
   return pending.get(`${ref.o}:${ref.s}:${ref.r}`) ?? cache.get(`${ref.o}:${ref.s}:${ref.r}`) ?? null;
 }
 
+export async function downloadSpsDrawing(ref: SpsDrawRef): Promise<Blob | null> {
+  if (ref.v === 2 || ref.v === 3) {
+    const buffer = await readSpsPublic(ref.o, ref.v === 3 ? transferKey(ref.s) : activeKey(ref.s), ref.r);
+    if (!buffer) return null;
+    const data = new Uint8Array(buffer);
+    const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+    return hex(hash) === ref.r ? new Blob([data], {type: ref.m}) : null;
+  }
+  const entry = decode(await readSpsPublic(ref.o, LEGACY_KEY, ref.r))[ref.s];
+  return entry.data.length && hex(entry.hash) === ref.r
+    ? new Blob([entry.data], {type: entry.mime || ref.m}) : null;
+}
+
 function canvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('canvas_encode_failed')), 'image/png'));
 }
 
-export async function uploadSpsDrawing(slot: number, canvas: HTMLCanvasElement): Promise<SpsDrawRef> {
+export async function uploadSpsBlob(slot: number, blob: Blob, transfer = false): Promise<SpsDrawRef> {
   if (typeof Player?.MemberNumber !== 'number') throw new Error('not_logged_in');
-  const blob = await canvasBlob(canvas);
   if (blob.size > SLOT_LIMIT) throw new Error('freedraw_image_too_large');
   const data = new Uint8Array(await blob.arrayBuffer());
   const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
-  const current = decode(await readSpsPublic(Player.MemberNumber, KEY));
-  current[slot] = {mime: blob.type || 'image/png', hash, data};
-  await writeSpsPublic(KEY, encode(current));
   const revision = hex(hash);
-  const url = `${SPS_ORIGIN}/public/data/${Player.MemberNumber}/${KEY}`;
+  const key = transfer ? transferKey(slot) : activeKey(slot);
+  await writeSpsPublic(key, blob);
+  const url = `${SPS_ORIGIN}/public/data/${Player.MemberNumber}/${key}`;
   const objectUrl = URL.createObjectURL(blob);
   cache.set(`${Player.MemberNumber}:${slot}:${revision}`, objectUrl);
-  return {o: Player.MemberNumber, s: slot, r: revision, m: blob.type || 'image/png', u: url};
+  return {o: Player.MemberNumber, s: slot, r: revision, m: blob.type || 'image/png', u: url, v: transfer ? 3 : 2};
+}
+
+export async function uploadSpsDrawing(slot: number, canvas: HTMLCanvasElement, transfer = false): Promise<SpsDrawRef> {
+  return uploadSpsBlob(slot, await canvasBlob(canvas), transfer);
 }

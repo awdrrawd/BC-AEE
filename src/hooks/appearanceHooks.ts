@@ -26,6 +26,7 @@ import {
   updateAppearanceScreenState,
 } from '@/core/appearanceScreenMachine';
 import {settings} from '@/core/settings';
+import {syncCurrentContext} from '@/core/context';
 
 export function installAppearanceHooks() {
   installDialogHoverTryOnHandlers();
@@ -166,6 +167,21 @@ export function installAppearanceHooks() {
   bcAeeModSdk.hookFunction('CommonSetScreen', 1, (args, next) => {
     updateAppearanceScreenState();
     return observeAppearanceScreenState(next(args));
+  });
+
+  // Non-colourable modular assets (BC Plushie, ECHO 玩偶) never call
+  // ItemColor. Their extended dialog is therefore their only safe AEE entry
+  // point. Normal panel display no longer intercepts BC/ECHO clicks; only an
+  // explicitly active drag/rotation/eyedropper gesture does that.
+  bcAeeModSdk.hookFunction('DialogDraw', 0, (args, next) => {
+    if (DialogMenuMode === 'extended' && DialogFocusItem) syncCurrentContext();
+    return next(args);
+  });
+
+  bcAeeModSdk.hookFunction('DialogLeaveFocusItem', 0, (args, next) => {
+    const result = next(args);
+    syncCurrentContext();
+    return result;
   });
 
   bcAeeModSdk.hookFunction('AppearanceClick', 0, (args, next) => {

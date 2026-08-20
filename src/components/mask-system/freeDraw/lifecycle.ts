@@ -14,6 +14,8 @@ import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 import {safeCurrentCharacter} from './currentCharacter';
+import {APPEARANCE_SIZE_BUDGET, projectedAppearanceBytes} from './appearanceSize';
+import {showToast} from '@/util/toast';
 
 function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
@@ -196,13 +198,23 @@ export function cancelEditingAndExit() {
   leaveEditor();
 }
 
-export function applyToCharacter() {
+export function applyToCharacter(): boolean {
   commitSelection(); // defensive: make sure the saved PNG includes the floating piece
-  if (!A) return;
+  if (!A) return false;
   const C = safeCurrentCharacter();
-  if (!C) return;
+  if (!C) return false;
   const item = findSlotItem(C, A) || InventoryGet(C, A.group);
-  if (!item) return;
+  if (!item) return false;
+
+  // Check the exact current canvas before mutating Property or asking BC to
+  // queue AccountUpdate. Keep the editor open so the player can undo, clear,
+  // shrink an imported image, or cancel without creating an oversized state.
+  if (projectedAppearanceBytes() >= APPEARANCE_SIZE_BUDGET) {
+    const reason = t('free-draw-size-blocked');
+    DialogExtendedMessage = reason;
+    showToast(reason, {color: '#f87171', duration: 5000});
+    return false;
+  }
 
   const dataUrl = A.canvas.toDataURL('image/png');
   const compressed = typeof LZString !== 'undefined' ? LZString.compressToBase64(dataUrl) : dataUrl;
@@ -222,4 +234,5 @@ export function applyToCharacter() {
   invalidateSlot(A);
   CharacterRefresh(C, true, false); // Push=true → persist to account DB (self only)
   syncCharacterToRoom(C, ...slotSyncGroups(A)); // broadcast board (+ mask/vis) to the room
+  return true;
 }

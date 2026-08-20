@@ -30,6 +30,7 @@ export function MainPanel({state}: { state: AeeState }) {
               style={{
                 left: rect.left, top: rect.top, width: rect.width, height: rect.height,
                 opacity: dimForEyedropper ? 0.12 : 1,
+                zIndex: 999998,
                 transition: 'opacity 0.15s ease',
               }}>
     <div className="pointer-events-none absolute left-0 top-0 h-full overflow-hidden"

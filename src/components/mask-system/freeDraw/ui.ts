@@ -250,18 +250,29 @@ export function slotDraw() {
 }
 
 // Bottom-right readout of the target character's live serialized Appearance
-// size — not a hard limit (per design), just enough of a heads-up that
-// players notice before a big imported image tips them over BC's sync
-// ceiling. Always shown, regardless of tool/panel state.
+// size. Accept is blocked at the hard limit; this readout lets the player
+// correct the drawing before trying to save. Always shown.
 function drawAppearanceSizeReadout() {
   const {used, budget} = targetAppearanceUsage();
-  const danger = used / budget >= 0.9;
+  const ratio = Math.min(1, used / budget);
+  const danger = ratio >= 0.9;
   const color = danger ? '#f87171' : 'black';
   DrawRect(APPEARANCE_SIZE_FRAME_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_FRAME_W, APPEARANCE_SIZE_H, 'White');
   DrawEmptyRect(APPEARANCE_SIZE_FRAME_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_FRAME_W, APPEARANCE_SIZE_H, danger ? '#f87171' : 'Black', 2);
-  DrawText(t('free-draw-appearance-size-label'), APPEARANCE_SIZE_LABEL_X + APPEARANCE_SIZE_LABEL_W / 2, APPEARANCE_SIZE_Y + APPEARANCE_SIZE_H / 2, color);
-  DrawButton(APPEARANCE_SIZE_VALUE_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_VALUE_W, APPEARANCE_SIZE_H, '', 'White', undefined, t('free-draw-appearance-size-tooltip'));
-  DrawText(`${formatBytesK(used)} / ${formatBytesK(budget)}`, APPEARANCE_SIZE_VALUE_X + APPEARANCE_SIZE_VALUE_W / 2, APPEARANCE_SIZE_Y + APPEARANCE_SIZE_H / 2, color);
+  MainCanvas.save();
+  MainCanvas.font = CommonGetFont(30);
+  DrawText(t('free-draw-size-title'), APPEARANCE_SIZE_LABEL_X + APPEARANCE_SIZE_LABEL_W / 2, APPEARANCE_SIZE_Y + 20, color);
+  MainCanvas.restore();
+  DrawButton(APPEARANCE_SIZE_VALUE_X, APPEARANCE_SIZE_Y, APPEARANCE_SIZE_VALUE_W, APPEARANCE_SIZE_H, '', 'White', undefined, t(danger ? 'free-draw-size-danger-tooltip' : 'free-draw-size-tooltip'));
+  const barX = APPEARANCE_SIZE_VALUE_X + 5;
+  const barY = APPEARANCE_SIZE_Y + APPEARANCE_SIZE_H - 11;
+  const barW = APPEARANCE_SIZE_VALUE_W - 10;
+  DrawRect(barX, barY, barW, 6, '#d4d4d8');
+  DrawRect(barX, barY, barW * ratio, 6, danger ? '#ef4444' : '#4CAF50');
+  MainCanvas.save();
+  MainCanvas.font = CommonGetFont(22);
+  DrawText(`${formatBytesK(used)} / ${formatBytesK(budget)}`, APPEARANCE_SIZE_VALUE_X + APPEARANCE_SIZE_VALUE_W / 2, APPEARANCE_SIZE_Y + 18, color);
+  MainCanvas.restore();
 }
 
 export function slotClick() {
@@ -277,7 +288,7 @@ export function slotClick() {
   // the toolbar/side-panel chrome outside the board — e.g. so pressing Undo or
   // switching tools doesn't act on a stale floating piece.
   if (!inBoardArea(MouseX, MouseY)) commitSelection();
-  if (MouseIn(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { applyToCharacter(); leaveEditor(); return; }
+  if (MouseIn(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { if (applyToCharacter()) leaveEditor(); return; }
   if (MouseIn(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H)) { cancelEditingAndExit(); return; }
 
   if (MouseIn(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H)) { toggleSlotMask(); return; }

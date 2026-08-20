@@ -3,8 +3,8 @@
 // ChatRoomCharacterUpdate byte ceiling rejects the sync — the error players
 // hit most often after importing a large image into a drawing board, since a
 // detailed drawing inflates the compressed PNG stored in the item's
-// Property.CustomDraw. We don't block it (per design), just surface the
-// number so there's some psychological pressure before it happens.
+// Property.CustomDraw. The editor surfaces the number live and the Accept
+// action blocks when the projected payload reaches the server ceiling.
 //
 // The currently-open slot hasn't written its canvas back to Property yet
 // (that only happens on Accept — see applyToCharacter in lifecycle.ts), so a
@@ -20,8 +20,7 @@ import {safeCurrentCharacter} from './currentCharacter';
 
 // Mirrors the ~180KB ceiling BC's server enforces on the serialized payload
 // that carries Appearance — past this, saving/broadcasting starts throwing
-// instead of going through. Not exposed as a hard block here; see the
-// module-level note above.
+// instead of going through.
 export const APPEARANCE_SIZE_BUDGET = 180000;
 
 function projectedAppearance(C: Character): readonly Item[] {
@@ -45,6 +44,12 @@ function measure(C: Character): number {
   } catch {
     return 0;
   }
+}
+
+/** Recalculate immediately (Accept must not rely on the throttled UI value). */
+export function projectedAppearanceBytes(): number {
+  const C = safeCurrentCharacter();
+  return C ? measure(C) : 0;
 }
 
 // toDataURL() re-encodes the whole board canvas, so this isn't quite free —

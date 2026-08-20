@@ -33,6 +33,7 @@ export type SettingKey =
 
 export type PartsFilterMode = 'all' | 'has' | 'empty';
 export type LayerManagerFilterMode = 'all' | 'custom' | 'default';
+export type LayerManagerSortDirection = 'asc' | 'desc';
 export type EditControl =
   | 'x'
   | 'y'
@@ -222,6 +223,7 @@ export interface LayerManagerState {
   target: Character | null;
   search: string;
   filterMode: LayerManagerFilterMode;
+  sortDirection: LayerManagerSortDirection;
   /** Panel position within canvasRect, in real screen pixels. Unset until the user first drags it. */
   left?: number;
   top?: number;

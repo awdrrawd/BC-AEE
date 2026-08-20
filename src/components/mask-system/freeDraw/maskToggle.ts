@@ -4,7 +4,7 @@
 // and broadcasting worn-item changes to the room.
 
 import type {AnyProps, Slot} from './types';
-import {VIS_SLOTS, PROP_KEY, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
+import {VIS_SLOTS, PROP_KEY, PROP_SPS_KEY, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
 import {A, invalidateSlot, findSlotItem} from './slots';
 import {safeCurrentCharacter} from './currentCharacter';
 
@@ -96,7 +96,8 @@ export function syncVisCompanion(C: Character | null, slot: Slot, liveHasDraw?: 
   // During an edit the slot canvas may already contain pixels while the saved
   // DrawingBoard property is still empty. The live override makes the Vis layer
   // available immediately for priority preview without persisting the drawing.
-  const hasDraw = liveHasDraw ?? !!(board?.Property as AnyProps | undefined)?.[PROP_KEY];
+  const props = board?.Property as AnyProps | undefined;
+  const hasDraw = liveHasDraw ?? !!(props?.[PROP_KEY] || props?.[PROP_SPS_KEY]);
   // Visible drawing and masking are mutually exclusive presentations of the
   // same shape. In mask mode the stroke itself must disappear, otherwise it
   // paints directly over the cut-out area and makes the mask look ineffective.

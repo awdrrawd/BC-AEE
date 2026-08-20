@@ -12,6 +12,8 @@ import {LRUCache} from '../lruCache';
 import {slots, A, slotComposite, findSlotItem} from './slots';
 import {isSlotMasked} from './maskToggle';
 import {safeCurrentCharacter} from './currentCharacter';
+import {settings} from '@/core/settings';
+import {cachedSpsDrawUrl} from './spsDrawing';
 
 // Mask companion shape. During a GL build it must be the BUILDING character's
 // drawing (so remote players get their own mask). While locally editing this
@@ -19,15 +21,17 @@ import {safeCurrentCharacter} from './currentCharacter';
 // that character's Property.CustomDraw (built by renderOverlay).
 slots.forEach((slot) => {
   const drawingImage = () => {
+    if (!settings.enableFreeDraw.get()) return TRANSPARENT_DATAURL;
     const cur = safeCurrentCharacter();
     const C = getBuildingChar() || cur;
     if (A === slot && C === cur) return slotComposite(slot); // live during local edit
     const item = C ? findSlotItem(C, slot) : null;
     const p = item?.Property as AnyProps | undefined;
     const compressed = p?.[PROP_KEY] as string | undefined;
-    if (!compressed) return TRANSPARENT_DATAURL;
+    const source = compressed || cachedSpsDrawUrl(p);
+    if (!source) return TRANSPARENT_DATAURL;
     const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
-    return getOrBuildMaskComposite(compressed, offX, offY) ?? TRANSPARENT_DATAURL;
+    return getOrBuildMaskComposite(source, offX, offY) ?? TRANSPARENT_DATAURL;
   };
   MaskImageProviders[slot.maskAsset] = drawingImage;
   // Vis and Mask are mutually exclusive worn states, so the same source can be
@@ -113,6 +117,7 @@ function getOrBuildMaskComposite(compressed: string, offX: number, offY: number)
 }
 
 export function renderOverlay(C: Character | null) {
+  if (!settings.enableFreeDraw.get()) return;
   if (!C || !Array.isArray(C.Appearance)) return;
   const cur = safeCurrentCharacter();
   for (const slot of slots) {
@@ -120,15 +125,16 @@ export function renderOverlay(C: Character | null) {
     if (!item) continue;
     const p = item.Property as AnyProps | undefined;
     const compressed = p?.[PROP_KEY] as string | undefined;
+    const source = compressed || cachedSpsDrawUrl(p);
     const offX = (p?.OffsetX as number) || 0, offY = (p?.OffsetY as number) || 0;
     const editingThis = (A === slot && C === cur);
 
     // Build this character's mask-shape composite (needed by the mask provider,
     // for masked characters too). Skip while locally editing (live shape used).
-    if (compressed && !editingThis) {
-      const img = getOverlayImage(compressed);
+    if (source && !editingThis) {
+      const img = getOverlayImage(source);
       if (img.complete && img.naturalWidth) {
-        const fresh = ensureMaskComposite(compressed, offX, offY, img);
+        const fresh = ensureMaskComposite(source, offX, offY, img);
         if (fresh && isSlotMasked(C, slot) && typeof CharacterLoadCanvas === 'function') {
           setTimeout(() => { try { CharacterLoadCanvas(C); } catch { /* ignore */ } }, 0); // rebuild now the shape exists
         }

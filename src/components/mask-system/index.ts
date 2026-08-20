@@ -5,7 +5,8 @@
 import bcAeeModSdk from '@/modsdk';
 import {installImagePatch, bustMaskTexture} from './masking';
 import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
-import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames} from './freeDraw';
+import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames, setFreeDrawAvailability} from './freeDraw';
+import {settings} from '@/core/settings';
 import {installMaskTranslations} from './translations';
 import {installPeerDetection, isAeeMember} from './peers';
 import {SG_MASK_GROUP, SG_ASSET, DRAW_GROUPS, DRAW_ASSET} from './constants';
@@ -181,11 +182,13 @@ function tryHookAppearanceSync(): boolean {
 }
 
 function registerAll(): boolean {
-  let ok = registerFreeDrawGroups();
+  const freeDrawEnabled = settings.enableFreeDraw.get();
+  let ok = freeDrawEnabled ? registerFreeDrawGroups() : true;
+  setFreeDrawAvailability(freeDrawEnabled);
   ok = registerSingleGlove() && ok;
   // Registration early-returns once the assets exist, so re-apply the display
   // names every pass — this relabels the menu after a UI-language switch.
-  applyFreeDrawNames();
+  if (freeDrawEnabled) applyFreeDrawNames();
   applySingleGloveNames();
   return ok;
 }
@@ -206,8 +209,10 @@ function tryHookDrawCharacter(): boolean {
       const [C, X, Y, Zoom, IsHeightResizeAllowed] = args;
       cacheDrawArgs(C, X, Y, Zoom, IsHeightResizeAllowed);
       reconcileSingleGlove(C);
-      syncSlots(C);
-      renderOverlay(C);
+      if (settings.enableFreeDraw.get()) {
+        syncSlots(C);
+        renderOverlay(C);
+      }
     } catch (e) {
       console.error('[AEE Mask] DrawCharacter 後處理例外：', e);
     }
@@ -222,6 +227,17 @@ export function installMaskSystem() {
   started = true;
 
   installMaskTranslations(); // supply labels for our groups/assets/options
+
+  settings.enableFreeDraw.onChange(enabled => {
+    if (enabled) registerFreeDrawGroups();
+    setFreeDrawAvailability(enabled);
+    try {
+      if (typeof CharacterLoadCanvas === 'function') {
+        CharacterLoadCanvas(Player);
+        for (const C of ChatRoomCharacter ?? []) CharacterLoadCanvas(C);
+      }
+    } catch { /* character lists are not always ready on login */ }
+  });
 
 
   // BC assets / draw functions may not be ready the instant the bundle loads;

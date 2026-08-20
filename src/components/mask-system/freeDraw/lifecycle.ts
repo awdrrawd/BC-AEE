@@ -3,7 +3,7 @@
 // transforms into the character's Property on accept.
 
 import type {AnyProps, Slot} from './types';
-import {PROP_KEY, BOARD_W, BOARD_H} from '../constants';
+import {PROP_KEY, PROP_SPS_KEY, BOARD_W, BOARD_H} from '../constants';
 import {A, setActiveSlot, slots, invalidateSlot, findSlotItem} from './slots';
 import {State, resetSelection} from './editorState';
 import {
@@ -14,29 +14,36 @@ import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 import {safeCurrentCharacter} from './currentCharacter';
-import {APPEARANCE_SIZE_BUDGET, projectedAppearanceBytes} from './appearanceSize';
+import {readDrawRef, resolveSpsDrawUrl, uploadSpsDrawing} from './spsDrawing';
 import {showToast} from '@/util/toast';
 
-function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
+async function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
   const compressed = p ? (p[PROP_KEY] as string | undefined) : undefined;
+  const remote = readDrawRef(p ?? undefined);
   // Exact content identity: PNG/LZ payloads share long prefixes, so a short
   // prefix plus length can alias two different drawings and retain stale pixels.
-  const sig = compressed || '';
-  if (slot._loadedSig === sig) return Promise.resolve();
+  const sig = compressed || (remote ? `sps:${remote.o}:${remote.s}:${remote.r}` : '');
+  if (slot._loadedSig === sig) return;
   if (slot._loadingSig === sig && slot._loadPromise) return slot._loadPromise;
   const token = (slot._loadToken ?? 0) + 1;
   slot._loadToken = token;
   slot.offsetX = (p?.OffsetX as number) || 0;
   slot.offsetY = (p?.OffsetY as number) || 0;
-  if (!compressed) {
+  if (!compressed && !remote) {
     slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
     invalidateSlot(slot);
     slot._loadedSig = sig;
-    return Promise.resolve();
+    return;
   }
-  const dataUrl = typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed;
   slot._loadingSig = sig;
+  const dataUrl = compressed
+    ? (typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed)
+    : await resolveSpsDrawUrl(p ?? undefined);
+  if (!dataUrl || slot._loadToken !== token) {
+    slot._loadingSig = undefined;
+    return;
+  }
   const promise = new Promise<void>(resolve => {
     const img = new Image();
     img.onload = () => {
@@ -198,33 +205,42 @@ export function cancelEditingAndExit() {
   leaveEditor();
 }
 
-export function applyToCharacter(): boolean {
+export async function applyToCharacter(): Promise<boolean> {
   commitSelection(); // defensive: make sure the saved PNG includes the floating piece
-  if (!A) return false;
+  if (!A || A.loading) return false;
   const C = safeCurrentCharacter();
   if (!C) return false;
   const item = findSlotItem(C, A) || InventoryGet(C, A.group);
   if (!item) return false;
 
-  // Check the exact current canvas before mutating Property or asking BC to
-  // queue AccountUpdate. Keep the editor open so the player can undo, clear,
-  // shrink an imported image, or cancel without creating an oversized state.
-  if (projectedAppearanceBytes() >= APPEARANCE_SIZE_BUDGET) {
-    const reason = t('free-draw-size-blocked');
+  A.loading = true;
+  const uploadingMessage = t('free-draw-sps-uploading');
+  DialogExtendedMessage = uploadingMessage;
+  showToast(uploadingMessage, {duration: 5000});
+  let ref;
+  try {
+    ref = await uploadSpsDrawing(A.index, A.canvas);
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to upload free drawing to SPS', error);
+    const reason = t(error instanceof Error && error.message === 'freedraw_image_too_large'
+      ? 'free-draw-sps-too-large' : 'free-draw-sps-upload-failed');
     DialogExtendedMessage = reason;
     showToast(reason, {color: '#f87171', duration: 5000});
+    A.loading = false;
     return false;
   }
-
-  const dataUrl = A.canvas.toDataURL('image/png');
-  const compressed = typeof LZString !== 'undefined' ? LZString.compressToBase64(dataUrl) : dataUrl;
   if (!CommonIsObject(item.Property)) item.Property = {};
   const p = item.Property as AnyProps;
-  p[PROP_KEY] = compressed;
+  delete p[PROP_KEY];
+  p[PROP_SPS_KEY] = ref;
   p.OffsetX = A.offsetX;
   p.OffsetY = A.offsetY;
   p[PROP_MASK_PRIO] = A.maskPriority;
-  A._loadedSig = compressed;
+  A._loadedSig = `sps:${ref.o}:${ref.s}:${ref.r}`;
+  A.loading = false;
+  const uploadedMessage = t('free-draw-sps-uploaded');
+  DialogExtendedMessage = uploadedMessage;
+  showToast(uploadedMessage);
 
   // Ensure the visible companion (VIS_SLOTS) reflects the new drawing on THIS
   // character before we broadcast — syncSlots only runs for the local player, so

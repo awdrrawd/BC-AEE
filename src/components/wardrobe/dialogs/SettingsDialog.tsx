@@ -7,12 +7,14 @@ import {GeneralTab} from '@/components/wardrobe/dialogs/GeneralTab';
 import {BackgroundTab} from '@/components/wardrobe/dialogs/BackgroundTab';
 import {AppearanceTab} from '@/components/wardrobe/dialogs/AppearanceTab';
 import {PanelLayoutTab} from '@/components/wardrobe/dialogs/PanelLayoutTab';
+import {StorageTab} from '@/components/wardrobe/dialogs/StorageTab';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
 import {setBackdropPreview} from '@/core/dialogs';
 
 const TABS: Array<{ id: WardrobeSettingsTab; labelKey: string }> = [
   {id: 'general', labelKey: 'wardrobe-settings-general'},
+  {id: 'storage', labelKey: 'wardrobe-settings-storage'},
   {id: 'background', labelKey: 'wardrobe-settings-background'},
   {id: 'appearance', labelKey: 'wardrobe-settings-appearance'},
   {id: 'panels', labelKey: 'wardrobe-settings-panels'},
@@ -47,7 +49,7 @@ export function SettingsDialog({onClose}: { onClose: () => void }) {
     <div className="mx-auto mb-4 flex shrink-0 gap-1.5 rounded-full border border-white/8 bg-black/35 p-1">
       {TABS.map(entry => <Button density="stage"
                                  key={entry.id}
-                                 className="h-[42px] w-[160px] rounded-full"
+                                 className="h-[42px] w-[140px] rounded-full"
                                  selected={tab === entry.id}
                                  onClick={() => setTab(entry.id)}
       >{t(entry.labelKey)}</Button>)}
@@ -57,6 +59,7 @@ export function SettingsDialog({onClose}: { onClose: () => void }) {
 
     <div className="aee-scroll mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
       {tab === 'general' ? <GeneralTab/>
+        : tab === 'storage' ? <StorageTab/>
         : tab === 'background' ? <BackgroundTab/>
           : tab === 'panels' ? <PanelLayoutTab/>
             : <AppearanceTab theme={theme}/>}

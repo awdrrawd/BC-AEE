@@ -15,6 +15,8 @@ export function SettingsTab() {
       <SettingRow label={t('settings-appearance-view-control')} setting={settings.showCharCtrl}/>
       <SettingRow label={t('settings-replace-bc-color-picker')} setting={settings.useAeeColorPicker}/>
       <SettingRow label={t('settings-enable-wardrobe')} setting={settings.enableWardrobe}/>
+      <SettingRow label={t('settings-enable-free-draw')} setting={settings.enableFreeDraw}
+                  tooltip={t('settings-enable-free-draw-tooltip')}/>
       <SettingRow label={t('settings-enable-button-replacement')} setting={settings.enableAeeMenu}/>
       <SettingRow label={t('settings-paste-import')} setting={settings.pasteImport}/>
       <SettingRow label={t('settings-enable-copy-paste')} setting={settings.enableCopyPaste}/>

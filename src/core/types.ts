@@ -260,10 +260,10 @@ export interface AeeState {
   layerManager: LayerManagerState;
 }
 
-export type WardrobeSettingsTab = 'general' | 'background' | 'appearance' | 'panels';
+export type WardrobeSettingsTab = 'general' | 'storage' | 'background' | 'appearance' | 'panels';
 export type WardrobeSortMode = 'default' | 'name' | 'favorite' | 'occupied';
 export type WardrobeFilter = string | null;
-export type WardrobeSourceId = 'online' | 'local';
+export type WardrobeSourceId = 'online' | 'local' | 'sps';
 
 export interface WardrobeSlotMeta {
   favorite: boolean;

@@ -14,8 +14,13 @@ import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 import {safeCurrentCharacter} from './currentCharacter';
-import {readDrawRef, resolveSpsDrawUrl, uploadSpsDrawing} from './spsDrawing';
+import {downloadSpsDrawing, readDrawRef, resolveSpsDrawUrl, uploadSpsBlob, uploadSpsDrawing} from './spsDrawing';
 import {showToast} from '@/util/toast';
+import {askConfirm} from '@/core/prompts';
+import {
+  APPEARANCE_UPLOAD_BYTES, canvasEmbeddedData,
+  formatBytesK, projectedAppearanceBytes,
+} from './appearanceSize';
 
 async function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Promise<void> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
@@ -75,6 +80,37 @@ async function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null): Prom
   return promise;
 }
 
+const adopting = new Set<string>();
+const adoptionRetryAt = new Map<string, number>();
+
+async function adoptForeignDrawing(slot: Slot, item: Item): Promise<void> {
+  const ref = readDrawRef(item.Property as AnyProps | undefined);
+  const owner = Player?.MemberNumber;
+  if (!ref || typeof owner !== 'number' || ref.o === owner) return;
+  const id = `${ref.o}:${ref.s}:${ref.r}`;
+  if (adopting.has(id) || (adoptionRetryAt.get(id) ?? 0) > Date.now()) return;
+  adopting.add(id);
+  try {
+    const blob = await downloadSpsDrawing(ref);
+    if (!blob) throw new Error('missing_foreign_drawing');
+    const ownRef = await uploadSpsBlob(slot.index, blob);
+    const current = readDrawRef(item.Property as AnyProps | undefined);
+    if (!current || current.o !== ref.o || current.r !== ref.r) return;
+    if (!CommonIsObject(item.Property)) item.Property = {};
+    (item.Property as AnyProps)[PROP_SPS_KEY] = ownRef;
+    delete (item.Property as AnyProps)[PROP_KEY];
+    slot._loadedSig = `sps:${ownRef.o}:${ownRef.s}:${ownRef.r}`;
+    CharacterRefresh(Player, true, false);
+    syncCharacterToRoom(Player, ...slotSyncGroups(slot));
+    adoptionRetryAt.delete(id);
+    showToast(t('free-draw-sps-adopted'));
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to adopt another player\'s SPS drawing', error);
+    adoptionRetryAt.set(id, Date.now() + 60_000);
+    showToast(t('free-draw-sps-adopt-failed'), {color: '#f87171', duration: 5000});
+  } finally { adopting.delete(id); }
+}
+
 // Keep the LOCAL player's board canvases current (they feed the editor + the
 // mask-companion shape). Remote characters render via renderOverlay from their
 // own Property, so we don't thrash the shared slot canvas with their drawings.
@@ -83,7 +119,10 @@ export function syncSlots(C: Character | null) {
   let priorityChanged = false;
   for (const slot of slots) {
     const item = findSlotItem(C, slot);
-    if (item) ensureSlotCanvasFromProperty(slot, item);
+    if (item) {
+      void ensureSlotCanvasFromProperty(slot, item);
+      void adoptForeignDrawing(slot, item);
+    }
     // Keep the remembered priority + the worn companion's OverridePriority in
     // sync (e.g. after a relog restored the board but a fresh companion). Skip
     // the slot being edited — this runs every frame, and reloading its stored
@@ -213,35 +252,53 @@ export async function applyToCharacter(): Promise<boolean> {
   const item = findSlotItem(C, A) || InventoryGet(C, A.group);
   if (!item) return false;
 
-  A.loading = true;
-  const uploadingMessage = t('free-draw-sps-uploading');
-  DialogExtendedMessage = uploadingMessage;
-  showToast(uploadingMessage, {duration: 5000});
-  let ref;
-  try {
-    ref = await uploadSpsDrawing(A.index, A.canvas);
-  } catch (error) {
-    console.warn('🐈‍⬛ [AEE] Failed to upload free drawing to SPS', error);
-    const reason = t(error instanceof Error && error.message === 'freedraw_image_too_large'
-      ? 'free-draw-sps-too-large' : 'free-draw-sps-upload-failed');
-    DialogExtendedMessage = reason;
+  let compressed: string;
+  try { compressed = canvasEmbeddedData(A.canvas); }
+  catch {
+    const reason = t('free-draw-save-encode-failed');
     showToast(reason, {color: '#f87171', duration: 5000});
-    A.loading = false;
     return false;
   }
+  const projected = projectedAppearanceBytes(compressed);
+  let useSps = State.useSps;
+  if (!useSps && projected >= APPEARANCE_UPLOAD_BYTES) {
+    useSps = await askConfirm(t('free-draw-size-upload-prompt', {size: formatBytesK(projected)}));
+    if (!useSps) return false;
+  }
+
   if (!CommonIsObject(item.Property)) item.Property = {};
   const p = item.Property as AnyProps;
-  delete p[PROP_KEY];
-  p[PROP_SPS_KEY] = ref;
+  if (useSps) {
+    A.loading = true;
+    const uploadingMessage = t('free-draw-sps-uploading');
+    DialogExtendedMessage = uploadingMessage;
+    showToast(uploadingMessage, {duration: 5000});
+    try {
+      const ref = await uploadSpsDrawing(A.index, A.canvas, C !== Player);
+      delete p[PROP_KEY];
+      p[PROP_SPS_KEY] = ref;
+      A._loadedSig = `sps:${ref.o}:${ref.s}:${ref.r}`;
+    } catch (error) {
+      console.warn('🐈‍⬛ [AEE] Failed to upload free drawing to SPS', error);
+      const reason = t(error instanceof Error && error.message === 'freedraw_image_too_large'
+        ? 'free-draw-sps-too-large' : 'free-draw-sps-upload-failed');
+      DialogExtendedMessage = reason;
+      showToast(reason, {color: '#f87171', duration: 5000});
+      A.loading = false;
+      return false;
+    }
+    A.loading = false;
+    const uploadedMessage = t('free-draw-sps-uploaded');
+    DialogExtendedMessage = uploadedMessage;
+    showToast(uploadedMessage);
+  } else {
+    p[PROP_KEY] = compressed;
+    delete p[PROP_SPS_KEY];
+    A._loadedSig = compressed;
+  }
   p.OffsetX = A.offsetX;
   p.OffsetY = A.offsetY;
   p[PROP_MASK_PRIO] = A.maskPriority;
-  A._loadedSig = `sps:${ref.o}:${ref.s}:${ref.r}`;
-  A.loading = false;
-  const uploadedMessage = t('free-draw-sps-uploaded');
-  DialogExtendedMessage = uploadedMessage;
-  showToast(uploadedMessage);
-
   // Ensure the visible companion (VIS_SLOTS) reflects the new drawing on THIS
   // character before we broadcast — syncSlots only runs for the local player, so
   // when editing someone else nothing would otherwise wear/remove it on them.

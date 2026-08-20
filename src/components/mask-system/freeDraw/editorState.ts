@@ -31,6 +31,9 @@ export const State = {
   priorityPreview: false,
   // Editor-only view preference; never serialized into the worn item.
   showBounds: false,
+  // Upload is opt-in. It is also offered when the projected AccountUpdate
+  // reaches the 160K safety threshold.
+  useSps: false,
   dragging: false,
   dragStartCX: 0, dragStartCY: 0, dragStartOffsetX: 0, dragStartOffsetY: 0,
   // Pen/eraser stroke smoothing: quadratic curve through consecutive

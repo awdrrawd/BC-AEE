@@ -62,6 +62,7 @@ export function onPointerDown(evt: PointerEvent) {
     return;
   }
   if (!inBoardArea(cx, cy)) return;
+  try { MainCanvas.canvas.setPointerCapture(evt.pointerId); } catch { /* unsupported/lost pointer */ }
   const local = toLocal(cx, cy);
 
   // Move mode: drag the whole drawing (offset), don't draw.
@@ -114,6 +115,15 @@ export function onPointerDown(evt: PointerEvent) {
     State.lastPoint = local;
     State.lastMid = local;
     scratchCtx.clearRect(0, 0, BOARD_W, BOARD_H); // fresh stroke layer
+    // A click/tap without movement is still a real stroke. Explicitly paint
+    // its round cap; a zero-length canvas path is not rendered consistently.
+    const radius = Math.max(0.25, State.thickness * pressureOf(evt) / 2);
+    scratchCtx.fillStyle = State.tool === 'eraser' ? '#000000' : State.color;
+    withSymmetry(scratchCtx, () => {
+      scratchCtx.beginPath();
+      scratchCtx.arc(local[0], local[1], radius, 0, Math.PI * 2);
+      scratchCtx.fill();
+    });
   } else {
     State.snapshotBeforeShape = A.ctx.getImageData(0, 0, BOARD_W, BOARD_H);
   }
@@ -243,6 +253,7 @@ export function onPointerUp(evt: PointerEvent) {
     State.snapshotBeforeShape = null;
   }
   afterEdit();
+  try { MainCanvas.canvas.releasePointerCapture(evt.pointerId); } catch { /* already released */ }
 }
 
 function cancelPointerInteraction(evt: PointerEvent) {
@@ -265,6 +276,7 @@ let listenersAttached = false;
 export function attachListeners() {
   if (listenersAttached) return;
   listenersAttached = true;
+  MainCanvas.canvas.style.touchAction = 'none';
   // Pointer Events (not separate mouse+touch handlers) so mouse, touch, and
   // pen all go through the same code path, and so onPointerMove can call
   // evt.getCoalescedEvents() for smoother fast strokes (see strokeSegmentTo).

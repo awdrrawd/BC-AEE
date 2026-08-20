@@ -1,6 +1,6 @@
 import {ArrowRightLeft, X} from 'lucide-react';
 import {t} from '@/i18n/i18n';
-import {setWardrobeSource, toggleReorderMode} from '@/controllers/wardrobeController';
+import {cycleWardrobeSource, toggleReorderMode} from '@/controllers/wardrobeController';
 import {isOutfitListCollapsed} from '@/controllers/outfitsController';
 import type {WardrobeState} from '@/core/wardrobeStore';
 import {FilterBar} from '@/components/wardrobe/FilterBar';
@@ -23,8 +23,8 @@ export function Toolbar({state, layout}: { state: WardrobeState; layout: string[
   >
     {showSourceToggle ? <Button density="stage"
             className="h-full w-36 shrink-0"
-            onClick={() => setWardrobeSource(state.source === 'local' ? 'online' : 'local')}
-    >{state.source === 'local' ? t('wardrobe-local') : t('wardrobe-online')}</Button> : null}
+            onClick={cycleWardrobeSource}
+    >{t(`wardrobe-${state.source}`)}</Button> : null}
 
     <FilterBar activeFilter={state.activeFilter}/>
     <SortDropdown sortMode={state.sortMode}/>

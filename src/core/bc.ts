@@ -74,6 +74,7 @@ export function getCanvasRect(): CanvasRect | null {
 }
 
 export function getCurrentItem(): Item | null {
+  if (DialogMenuMode === 'extended' && DialogFocusItem) return DialogFocusItem;
   if (CharacterAppearanceMode === 'Color' && CharacterAppearanceSelection && CharacterAppearanceColorPickerGroupName) {
     return InventoryGet(CharacterAppearanceSelection, CharacterAppearanceColorPickerGroupName) ?? null;
   }
@@ -81,12 +82,18 @@ export function getCurrentItem(): Item | null {
 }
 
 export function getCurrentGroup(): string | null {
-  if (CharacterAppearanceColorPickerGroupName) return CharacterAppearanceColorPickerGroupName;
+  if (DialogMenuMode === 'extended' && DialogFocusItem) return DialogFocusItem.Asset?.Group?.Name || null;
+  if (CharacterAppearanceMode === 'Color' && CharacterAppearanceSelection && CharacterAppearanceColorPickerGroupName) {
+    return CharacterAppearanceColorPickerGroupName;
+  }
   if (runtime.itemColorItem) return runtime.itemColorItem.Asset?.Group?.Name || null;
   return null;
 }
 
 export function getCurrentCharacter(): Character | null {
+  if (DialogMenuMode === 'extended' && DialogFocusItem) {
+    try { return CharacterGetCurrent() || null; } catch { return null; }
+  }
   return CharacterAppearanceSelection || runtime.itemColorChar || null;
 }
 
@@ -100,7 +107,15 @@ export function isEditableAppearanceContext() {
   const mode = getAppearanceMode();
   const wardrobeColor = mode === 'Color';
   const itemColor = !!runtime.itemColorItem;
-  return !!item && !!group && (wardrobeColor || itemColor);
+  // Assets such as BC Plushie and ECHO 玩偶 explicitly have no colourable
+  // layers, so ItemColor can never be their entry point. Their modular
+  // extended dialog is still a valid AEE transform/layer-editing context.
+  const extendedItem = DialogMenuMode === 'extended'
+    && DialogFocusItem === item
+    && item?.Asset?.Name !== 'DrawingBoard'
+    && !String(group).startsWith('ItemCanvas')
+    && (item?.Asset?.Layer?.length ?? 0) > 0;
+  return !!item && !!group && (wardrobeColor || itemColor || extendedItem);
 }
 
 export function ensureLayerOverrides(item: Item | null) {
@@ -455,20 +470,18 @@ export function getCurrentGroupName() {
   return getCurrentItem()?.Asset?.Group?.Name ?? null;
 }
 
-export function isGroupLocked(layerId?: LayerId): boolean {
+export function isGroupLocked(_layerId?: LayerId): boolean {
+  void _layerId; // retained for the existing per-layer caller API
   const groupName = getCurrentGroupName();
   if (groupName && LOCKED_GROUPS.has(groupName)) return true;
-  // R131 official mechanism: Asset/Layer FixedPosition flags decide whether a
-  // part can be adjusted (CommonDraw.js applies a fixed-position offset for
-  // these). Align with it so AEE enforces the same restrictions as the game
-  // (e.g. body parts locked, eyes resizable).
+  // Match R131 Layering._IsBlacklisted/_GetTabContents. FixedPosition controls
+  // how an image is anchored while drawing; it is NOT a Layering permission.
+  // Treating it as one locked several newly-adjustable R131 items in AEE.
   const item = getCurrentItem();
-  if (item?.Asset?.FixedPosition) return true;
-  if (layerId && layerId !== 'all') {
-    const layer = item?.Asset?.Layer?.[parseInt(layerId, 10)];
-    if (layer?.FixedPosition) return true;
-  }
-  return false;
+  const group = item?.Asset?.Group;
+  if (!group || !item.Asset) return false;
+  const isPussy = group.Name === 'Pussy';
+  return (!!groupName && !group.AllowNone && !isPussy) || !!item.Asset.DynamicAfterDraw;
 }
 
 export function clampPriority(value: number) {

@@ -5,7 +5,6 @@ import {
   getCanvasRect,
   getCurrentItem,
   getLayerOverride,
-  isEditableAppearanceContext,
   isGroupLocked,
   setLayerOverride,
 } from '@/core/bc';
@@ -92,15 +91,11 @@ export function setRotationDragging(active: boolean) {
 function isAeeEditing() {
   const state = getState();
   if (!state.visible) return false;
-  if (state.activeDrag || state.colorPicker.open) return true;
-  // Also block clicks on the character whenever we're in an item-colour (dye)
-  // context — even before a drag or AEE's own colour picker has started. The
-  // dye screen still has the game's own clickable hit-regions for other
-  // body/item cells directly underneath the character canvas; without this,
-  // a click on the character while just browsing dye options (no active
-  // drag yet) can accidentally jump into a completely different item's or
-  // group's dye screen instead of doing nothing.
-  return isEditableAppearanceContext();
+  // Merely showing AEE must never disable BC/ECHO controls underneath it.
+  // Intercept the game canvas only while an AEE gesture explicitly owns it.
+  // Ordinary colour-picker use is confined to AEE's own DOM; only its
+  // eyedropper intentionally captures the rest of the screen.
+  return !!(state.activeDrag || state.colorPicker.eyedropperActive || rotationDragging);
 }
 
 const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';

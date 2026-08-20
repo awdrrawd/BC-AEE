@@ -24,7 +24,7 @@ import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {settings} from '@/core/settings';
 import {getState, mutateState} from '@/core/store';
 import {clampPanelPosition} from '@/core/overlay';
-import type {LayerManagerFilterMode} from '@/core/types';
+import type {LayerManagerFilterMode, LayerManagerSortDirection} from '@/core/types';
 
 export const LAYER_MANAGER_ICON = 'Icons/Layering.png';
 export const LAYER_MANAGER_PANEL_WIDTH = 560;
@@ -56,6 +56,7 @@ export interface LayerRow {
   partLabel: string;
   /** The key setLayerPriority() must use to address this exact layer. */
   effectiveKey: string;
+  layerIndex: number;
   /** The asset's built-in priority for this layer, absent any override. */
   layerDefault: number;
   /** What actually gets drawn with right now (override, if any, else default). */
@@ -89,7 +90,7 @@ export function buildLayerRows(C: Character): LayerRow[] {
     const groupName = asset.Group?.Name ?? '';
     const groupLabel = asset.Group?.Description || groupName;
     const itemLabel = asset.Description || asset.Name;
-    for (const layer of asset.Layer) {
+    for (const [layerIndex, layer] of asset.Layer.entries()) {
       const effectiveKey = layer.Name ?? '';
       rows.push({
         id: `${groupName}::${effectiveKey}`,
@@ -99,6 +100,7 @@ export function buildLayerRows(C: Character): LayerRow[] {
         itemLabel,
         partLabel: layer.Name || asset.Name,
         effectiveKey,
+        layerIndex,
         layerDefault: layer.Priority,
         priority: effectivePriority(op, layer.Name, layer.Priority),
         isCustom: hasOverride(op, layer.Name),
@@ -207,6 +209,28 @@ export function setLayerManagerFilterMode(mode: LayerManagerFilterMode) {
   mutateState(draft => {
     draft.layerManager.filterMode = mode;
   });
+}
+
+export function toggleLayerManagerSortDirection() {
+  mutateState(draft => {
+    draft.layerManager.sortDirection = draft.layerManager.sortDirection === 'asc' ? 'desc' : 'asc';
+  });
+}
+
+export function sortLayerRows(rows: LayerRow[], direction: LayerManagerSortDirection): LayerRow[] {
+  return direction === 'asc' ? rows : [...rows].reverse();
+}
+
+/** Open BC's colour screen for the row's worn item when it has colourable layers. */
+export function openLayerRowColor(target: Character, row: LayerRow): boolean {
+  const colorable = row.item.Asset?.Layer?.some(layer => !layer.CopyLayerColor && layer.AllowColorize && !layer.HideColoring);
+  if (!colorable || typeof AppearanceItemColor !== 'function') return false;
+  closeLayerManagerPanel();
+  const group = row.item.Asset.Group;
+  if (group) target.FocusGroup = group as AssetItemGroup;
+  const mode = CharacterAppearanceMode;
+  AppearanceItemColor(target, row.item, row.groupName as AssetGroupName, mode === 'Wardrobe' || mode === 'Cloth' || mode === 'Color' ? mode : '');
+  return true;
 }
 
 export function moveLayerManagerPanel(left: number, top: number) {

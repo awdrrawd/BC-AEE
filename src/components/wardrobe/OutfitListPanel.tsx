@@ -20,6 +20,7 @@ import {SearchField} from '@/components/wardrobe/SearchField';
 import {useStage} from '@/components/wardrobe/stageContext';
 import {Button} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
+import {settings, useSetting} from '@/core/settings';
 
 const DRAG_SLOP = 6;
 const EDGE_BAND = 40;    // screen px from the list's top/bottom that triggers auto-scroll while dragging
@@ -27,6 +28,7 @@ const SCROLL_STEP = 14;  // px per tick
 const SCROLL_MS = 30;
 
 export function OutfitListPanel({state}: { state: WardrobeState }) {
+  const spsEnabled = useSetting(settings.wardrobeSpsEnabled);
   const slots = useMemo(
     () => getOccupiedSlots(state.sortMode),
     // dataVersion re-reads the occupied slots after any wardrobe change.
@@ -193,12 +195,17 @@ export function OutfitListPanel({state}: { state: WardrobeState }) {
               className="flex-1"
               selected={state.source === 'online'}
               onClick={() => setWardrobeSource('online')}
-      >{t('wardrobe-online')}</Button>
+      >{t('wardrobe-source-online-short')}</Button>
       <Button density="stage"
               className="flex-1"
               selected={state.source === 'local'}
               onClick={() => setWardrobeSource('local')}
-      >{t('wardrobe-local')}</Button>
+      >{t('wardrobe-source-local-short')}</Button>
+      {spsEnabled ? <Button density="stage"
+              className="flex-1"
+              selected={state.source === 'sps'}
+              onClick={() => setWardrobeSource('sps')}
+      >SPS</Button> : null}
     </div>
 
     <div

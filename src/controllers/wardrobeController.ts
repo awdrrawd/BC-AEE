@@ -23,9 +23,13 @@ export function installWardrobeSettingEffects() {
   const resizesWardrobe = [
     settings.wardrobeExtended,
     settings.wardrobeShared,
+    settings.wardrobeSpsEnabled,
   ];
   resizesWardrobe.forEach(setting => setting.onChange(() => reloadWardrobeData()));
   resizesWardrobe.forEach(setting => setting.onChange(() => bumpWardrobeData()));
+  settings.wardrobeSpsEnabled.onChange(enabled => {
+    if (!enabled && getWardrobeState().source === 'sps') setWardrobeSource('online');
+  });
 }
 
 function applyTheme(theme: UiTheme) {
@@ -139,10 +143,19 @@ export function setSearch(search: string) {
 }
 
 export function setWardrobeSource(source: WardrobeSourceId) {
+  if (source === 'sps' && !settings.wardrobeSpsEnabled.get()) return;
   if (source === getWardrobeState().source) return;
   settings.wardrobeSource.set(source);
   setWardrobeState({source, selection: -1, name: targetCharacterName(), editing: false, offset: 0, reorderMode: false, reorderFirst: -1});
   bumpWardrobeData();
+  if (source === 'sps') reloadWardrobeData();
+}
+
+export function cycleWardrobeSource() {
+  const order: WardrobeSourceId[] = settings.wardrobeSpsEnabled.get()
+    ? ['online', 'local', 'sps'] : ['online', 'local'];
+  const current = order.indexOf(getWardrobeState().source);
+  setWardrobeSource(order[(current + 1) % order.length]);
 }
 
 export function setFilter(activeFilter: WardrobeFilter) {

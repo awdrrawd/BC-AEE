@@ -33,6 +33,7 @@ export type SettingKey =
 
 export type PartsFilterMode = 'all' | 'has' | 'empty';
 export type LayerManagerFilterMode = 'all' | 'custom' | 'default';
+export type LayerManagerSortDirection = 'asc' | 'desc';
 export type EditControl =
   | 'x'
   | 'y'
@@ -222,6 +223,7 @@ export interface LayerManagerState {
   target: Character | null;
   search: string;
   filterMode: LayerManagerFilterMode;
+  sortDirection: LayerManagerSortDirection;
   /** Panel position within canvasRect, in real screen pixels. Unset until the user first drags it. */
   left?: number;
   top?: number;
@@ -258,10 +260,10 @@ export interface AeeState {
   layerManager: LayerManagerState;
 }
 
-export type WardrobeSettingsTab = 'general' | 'background' | 'appearance' | 'panels';
+export type WardrobeSettingsTab = 'general' | 'storage' | 'background' | 'appearance' | 'panels';
 export type WardrobeSortMode = 'default' | 'name' | 'favorite' | 'occupied';
 export type WardrobeFilter = string | null;
-export type WardrobeSourceId = 'online' | 'local';
+export type WardrobeSourceId = 'online' | 'local' | 'sps';
 
 export interface WardrobeSlotMeta {
   favorite: boolean;

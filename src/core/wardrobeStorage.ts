@@ -2,10 +2,14 @@ import {settings} from '@/core/settings';
 import type {WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
 import {bumpWardrobeData, getWardrobeState} from '@/core/wardrobeStore';
 import {type LocalWardrobeRecord, readLocalWardrobeRecord, writeLocalWardrobeRecord} from '@/core/wardrobeDb';
+import {listSpsKeys, readSpsText, SPS_WARDROBE_PREFIX, writeSpsText} from '@/core/sps';
+import {showToast} from '@/util/toast';
+import {t} from '@/i18n/i18n';
 
 const DEFAULT_WARDROBE_SIZE = 24;
 const EXPANDED_WARDROBE_SIZE = 96;
 const LOCAL_WARDROBE_SIZE = 288;
+const SPS_WARDROBE_CHUNK_SIZE = 300;
 
 const CUSTOM_BG_KEY = 'liko-aee-wardrobe-bg';
 const LOCAL_WARDROBE_PREFIX = 'liko-aee-wardrobe-local:';
@@ -288,8 +292,110 @@ const localSource: WardrobeSource = {
   reload: reloadLocalWardrobe,
 };
 
+// SPS is asynchronous, while the wardrobe UI deliberately consumes a synchronous source.
+// Keep a memory mirror and refresh it when the source is opened; writes upload a complete,
+// versioned snapshot so a failed request never corrupts the currently visible wardrobe.
+const spsOutfits: ItemBundle[][] = Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => []);
+const spsNames: string[] = Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => '');
+let spsLoadToken = 0;
+
+interface StoredSpsWardrobe {
+  version: 1;
+  outfits: unknown[];
+  names: unknown[];
+}
+
+async function loadSpsWardrobe() {
+  const token = ++spsLoadToken;
+  try {
+    const keys = await listSpsKeys();
+    const chunks = keys
+      .filter(key => key.startsWith(SPS_WARDROBE_PREFIX))
+      .map(key => Number(key.slice(SPS_WARDROBE_PREFIX.length)))
+      .filter(index => Number.isInteger(index) && index > 0)
+      .sort((a, b) => a - b);
+    const chunkCount = Math.max(1, chunks.at(-1) ?? 1);
+    const texts = await Promise.all(Array.from({length: chunkCount}, (_, index) =>
+      readSpsText(`${SPS_WARDROBE_PREFIX}${index + 1}`)));
+    if (token !== spsLoadToken) return;
+    resetSpsArrays(chunkCount * SPS_WARDROBE_CHUNK_SIZE);
+    texts.forEach((text, index) => {
+      if (text === null) return;
+      const parsed = JSON.parse(text) as Partial<StoredSpsWardrobe>;
+      fillSpsChunk(index, Array.isArray(parsed.outfits) ? parsed.outfits : [], Array.isArray(parsed.names) ? parsed.names : []);
+    });
+    growSpsIfFull();
+    bumpWardrobeData();
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to load the SPS wardrobe', error);
+    showToast(t('wardrobe-toast-sps-load-failed'), {color: '#f87171'});
+  }
+}
+
+function resetSpsArrays(size: number) {
+  spsOutfits.length = size;
+  spsNames.length = size;
+  for (let index = 0; index < size; index++) {
+    spsOutfits[index] = [];
+    spsNames[index] = '';
+  }
+}
+
+function fillSpsChunk(chunk: number, outfits: readonly unknown[], names: readonly unknown[]) {
+  const offset = chunk * SPS_WARDROBE_CHUNK_SIZE;
+  for (let local = 0; local < SPS_WARDROBE_CHUNK_SIZE; local++) {
+    const outfit = outfits[local];
+    spsOutfits[offset + local] = Array.isArray(outfit) && outfit.every(isBundleEntry) ? outfit as ItemBundle[] : [];
+    spsNames[offset + local] = typeof names[local] === 'string' ? names[local] as string : '';
+  }
+}
+
+function growSpsIfFull() {
+  const lastChunkStart = spsOutfits.length - SPS_WARDROBE_CHUNK_SIZE;
+  if (spsOutfits.slice(lastChunkStart).every(outfit => outfit.length > 0)) {
+    spsOutfits.push(...Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => []));
+    spsNames.push(...Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => ''));
+  }
+}
+
+function persistSps(indices: readonly number[]): boolean {
+  const chunks = [...new Set(indices.map(index => Math.floor(index / SPS_WARDROBE_CHUNK_SIZE)))];
+  const uploads = chunks.map(chunk => {
+    const start = chunk * SPS_WARDROBE_CHUNK_SIZE;
+    const payload = JSON.stringify({
+      version: 1,
+      outfits: spsOutfits.slice(start, start + SPS_WARDROBE_CHUNK_SIZE),
+      names: spsNames.slice(start, start + SPS_WARDROBE_CHUNK_SIZE),
+    } satisfies StoredSpsWardrobe);
+    return writeSpsText(`${SPS_WARDROBE_PREFIX}${chunk + 1}`, payload);
+  });
+  void Promise.all(uploads)
+    .then(() => { bumpWardrobeData(); showToast(t('wardrobe-toast-sps-synced')); })
+    .catch(error => {
+      console.warn('🐈‍⬛ [AEE] Failed to save the SPS wardrobe', error);
+      showToast(t('wardrobe-toast-sps-save-failed'), {color: '#f87171'});
+    });
+  return true;
+}
+
+const spsSource: WardrobeSource = {
+  id: 'sps',
+  size: () => spsOutfits.length,
+  outfitAt: index => spsOutfits[index] ?? [],
+  nameAt: index => spsNames[index] ?? '',
+  writeSlot(index, outfit, name) {
+    if (index < 0 || index >= spsOutfits.length) return;
+    spsOutfits[index] = outfit;
+    spsNames[index] = name;
+    growSpsIfFull();
+  },
+  swap(a, b) { swapSlots(this, a, b); },
+  persist: persistSps,
+  reload() { void loadSpsWardrobe(); },
+};
+
 export function wardrobeSourceById(id: WardrobeSourceId): WardrobeSource {
-  return id === 'online' ? onlineSource : localSource;
+  return id === 'online' ? onlineSource : id === 'sps' ? spsSource : localSource;
 }
 
 export function activeWardrobeSource(): WardrobeSource {
@@ -316,6 +422,7 @@ export function reloadWardrobeData() {
   onlineSource.reload();
   migrateLegacyExtensionWardrobe();
   localSource.reload();
+  if (settings.wardrobeSpsEnabled.get()) spsSource.reload();
 }
 
 /**

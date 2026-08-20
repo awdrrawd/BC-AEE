@@ -102,6 +102,7 @@ export const MPRIO_MIN = 0, MPRIO_MAX = 99;
 // ---- Free-draw ×3 ---------------------------------------------------------
 export const DRAW_ASSET = 'DrawingBoard';
 export const PROP_KEY = 'CustomDraw';
+export const PROP_SPS_KEY = 'CustomDrawSPS';
 export const SLOT_COUNT = 3;
 export const DRAW_GROUPS = (['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3'] as unknown) as AssetGroupName[];
 
@@ -152,15 +153,6 @@ export const MPRIO_BAR_X = 1615, MPRIO_BAR_W = 360;
 // while the shape picker is open — the picker overlays y=290..780.
 export const BOUNDS_X = MPRIO_FRAME_X, BOUNDS_W = MPRIO_FRAME_W;
 export const BOUNDS_Y = 560, BOUNDS_H = 50;
-
-// Appearance-size readout, bottom-right corner. Always visible (unlike the
-// panel above it, it doesn't hide for the shape picker — the picker's tallest
-// layout tops out at y=780, well clear of this row) so it stays a live
-// reference no matter what tool/panel is open. See freeDraw/appearanceSize.ts.
-export const APPEARANCE_SIZE_FRAME_X = MPRIO_FRAME_X, APPEARANCE_SIZE_FRAME_W = MPRIO_FRAME_W;
-export const APPEARANCE_SIZE_Y = 930, APPEARANCE_SIZE_H = 50;
-export const APPEARANCE_SIZE_LABEL_X = MPRIO_LABEL_X, APPEARANCE_SIZE_LABEL_W = MPRIO_LABEL_W;
-export const APPEARANCE_SIZE_VALUE_X = MPRIO_BAR_X, APPEARANCE_SIZE_VALUE_W = MPRIO_BAR_W;
 
 // Toolbar button states. Two deliberately different colours, because they mean
 // two different things: cyan marks the ONE tool currently selected (exclusive,

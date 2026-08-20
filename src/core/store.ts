@@ -69,6 +69,7 @@ const initialState: AeeState = {
     target: null,
     search: '',
     filterMode: 'all',
+    sortDirection: 'asc',
   },
 };
 

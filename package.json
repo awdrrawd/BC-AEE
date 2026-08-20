@@ -1,7 +1,7 @@
 {
   "name": "bc-aee",
   "private": true,
-  "version": "0.8.10",
+  "version": "0.8.11",
   "type": "module",
   "scripts": {
     "predev": "node scripts/sync-version.mjs",
@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bc-studio/oauth-core": "^0.1.2",
     "i18next": "^26.3.1",
     "lucide-react": "^1.24.0",
     "react": "^19.1.0",

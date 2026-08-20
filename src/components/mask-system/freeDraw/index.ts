@@ -34,15 +34,22 @@ import {slotLoad, slotExit, slotInit, syncSlots} from './lifecycle';
 import {slotDraw, slotClick, onKeyDown} from './ui';
 import {renderOverlay} from './overlay';
 import {cacheDrawArgs} from './geometry';
-import {registerFreeDrawGroups, applyFreeDrawNames} from './registration';
+import {registerFreeDrawGroups, applyFreeDrawNames, setFreeDrawAvailability} from './registration';
+import {settings} from '@/core/settings';
 
-export {registerFreeDrawGroups, applyFreeDrawNames, syncSlots, cacheDrawArgs, renderOverlay};
+export {registerFreeDrawGroups, applyFreeDrawNames, setFreeDrawAvailability, syncSlots, cacheDrawArgs, renderOverlay};
 
 export function installFreeDrawCallbacks() {
   const g = globalThis as unknown as Record<string, unknown>;
   for (let i = 0; i < SLOT_COUNT; i++) {
     const prefix = `Inventory${DRAW_GROUPS[i]}${DRAW_ASSET}`;
-    g[`${prefix}Load`] = () => { try { slotLoad(i); } catch (e) { console.error('[AEE Mask] Load 錯誤：', e); } };
+    g[`${prefix}Load`] = () => {
+      if (!settings.enableFreeDraw.get()) {
+        if (typeof DialogLeaveFocusItem === 'function') DialogLeaveFocusItem();
+        return;
+      }
+      try { slotLoad(i); } catch (e) { console.error('[AEE Mask] Load 錯誤：', e); }
+    };
     g[`${prefix}Draw`] = () => { try { slotDraw(); } catch (e) { console.error('[AEE Mask] Draw 錯誤：', e); } };
     g[`${prefix}Click`] = () => { try { slotClick(); } catch (e) { console.error('[AEE Mask] Click 錯誤：', e); } };
     g[`${prefix}Exit`] = () => { try { slotExit(); } catch (e) { console.error('[AEE Mask] Exit 錯誤：', e); } };

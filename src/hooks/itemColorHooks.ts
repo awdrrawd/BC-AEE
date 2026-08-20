@@ -18,6 +18,12 @@ export function installItemColorHooks() {
   bcAeeModSdk.hookFunction('ItemColorDraw', 0, (args, next) => {
     if (args[0]) runtime.itemColorChar = args[0];
     if (args[0] && args[1]) runtime.itemColorItem = InventoryGet(args[0], args[1]);
+    // R131 ItemColorLoad is asynchronous. Another screen-state update can run
+    // while it awaits translation/color-picker resources and clear AEE's
+    // context. ItemColorDraw is the authoritative point where the colour UI is
+    // actually active, so repair the panel once when its item/context is stale.
+    const state = getState();
+    if (runtime.itemColorItem && (!state.visible || state.item !== runtime.itemColorItem)) syncCurrentContext();
     handleItemColorHover();
     return next(args);
   });

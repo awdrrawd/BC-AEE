@@ -149,3 +149,13 @@ export function registerFreeDrawGroups(): boolean {
   for (const i of VIS_SLOTS) ok = registerVisGroup(i) && ok;
   return ok;
 }
+
+/** Hides the editor entry without deleting worn data, so re-enabling is lossless. */
+export function setFreeDrawAvailability(enabled: boolean) {
+  for (let i = 0; i < SLOT_COUNT; i++) {
+    const group = AssetGroupGet(FAMILY, DRAW_GROUPS[i]) as unknown as {AllowCustomize?: boolean} | null;
+    if (group) group.AllowCustomize = enabled;
+    const asset = AssetGet(FAMILY, DRAW_GROUPS[i], DRAW_ASSET) as unknown as {AlwaysInteract?: boolean} | null;
+    if (asset) asset.AlwaysInteract = enabled;
+  }
+}

@@ -110,6 +110,7 @@ export const settings = {
   enableLayerManager: bool('enableLayerManager', false),
   enableHideRestraints: bool('enableHideRestraints', false),
   enableWardrobe: bool('enableWardrobe', false),
+  enableFreeDraw: bool('enableFreeDraw', true),
   // Item (TextItem) font: 'default' = no override, otherwise a fonts.ts font id.
   itemFont: value('itemFont', 'default'),
   // Apply other players' shared item-font choices (needs the font locally). Off by default.
@@ -140,6 +141,7 @@ export const settings = {
 
   wardrobeExtended: bool('wardrobeExtended', true),
   wardrobeShared: bool('wardrobeSharedAcrossAccounts', false),
+  wardrobeSpsEnabled: bool('wardrobeSpsEnabled', false),
   wardrobeSource: value<WardrobeSourceId>('wardrobeSource', 'online'),
   wardrobeMetaMigrated: bool('wardrobeMetaMigrated', false),
   wardrobeFbcMigrated: bool('wardrobeFbcMigrated', false),

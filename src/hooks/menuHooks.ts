@@ -1,12 +1,12 @@
 import bcAeeModSdk from '@/modsdk';
 
-import {exportBcxAppearance, importBcxAppearanceWithCategory, importBcxFromText} from '@/controllers/importExportController';
+import {importBcxFromText} from '@/controllers/importExportController';
 import {clearCopyBuffer, drawCopyBufferPreview, isAppearanceOverlayActive, isCopyActive} from '@/controllers/copyPasteController';
 import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
-import {cyclePartsFilterMode, drawPartsFilterBadge, isPartsFilterAvailable, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
-import {isLayerManagerAvailable, LAYER_MANAGER_ICON, layerManagerTooltip, openLayerManagerPanel} from '@/controllers/layerManagerController';
-import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, isHideRestraintsAvailable, toggleHideRestraints} from '@/controllers/hideRestraintsController';
+import {cyclePartsFilterMode, drawPartsFilterBadge, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
+import {LAYER_MANAGER_ICON, layerManagerTooltip, openLayerManagerPanel} from '@/controllers/layerManagerController';
+import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, toggleHideRestraints} from '@/controllers/hideRestraintsController';
 import {t} from '@/i18n/i18n';
 import {enterWardrobeScreen} from '@/hooks/wardrobeHooks';
 import {settings} from '@/core/settings';
@@ -15,7 +15,6 @@ import {isHoverTryOnEnabled, toggleHoverTryOn, toggleCharacterPreviewActive} fro
 const HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn';
 const DIALOG_HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn' as DialogMenuButtonType;
 const CHARACTER_PREVIEW_BUTTON = 'AEE_CharacterPreview';
-const DIALOG_CHARACTER_PREVIEW_BUTTON = 'AEE_CharacterPreview' as DialogMenuButtonType;
 
 // Groups that always get the character-grid preview, regardless of the
 // characterPreviewActive toggle (which only gates regular clothing groups).
@@ -38,11 +37,6 @@ function characterPreviewIcon(): string {
 
 function dialogHoverTryOnButtonX(): number {
   const index = DialogMenuButton.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
-  return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
-}
-
-function dialogCharacterPreviewButtonX(): number {
-  const index = DialogMenuButton.indexOf(DIALOG_CHARACTER_PREVIEW_BUTTON);
   return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
 }
 
@@ -87,29 +81,15 @@ export function installMenuHooks() {
         else AppearanceMenu.unshift(CHARACTER_PREVIEW_BUTTON);
       }
     }
+    if (settings.hideUnnecessaryAppearanceButtons.get()) {
+      const hidden = new Set(['WearRandom', 'Random', 'Copy', 'Paste', 'Character']);
+      AppearanceMenu = AppearanceMenu.filter(button => !hidden.has(button));
+    }
     if (CharacterAppearanceMode !== '') return;
-    if (settings.enableAeeMenu.get()) {
-      AppearanceMenu = AppearanceMenu.filter((button) => button !== 'WearRandom' && button !== 'Random');
-      AppearanceMenu = AppearanceMenu.filter((button) => button !== 'Copy' && button !== 'Paste');
-      const wardrobeIndex = AppearanceMenu.findIndex((button) => button === 'Wardrobe' || button === 'WardrobeDisabled');
-      if (wardrobeIndex >= 0) AppearanceMenu.splice(wardrobeIndex + 1, 0, 'Copy', 'Paste');
-      else AppearanceMenu.unshift('Copy', 'Paste');
-    }
-    if (isPartsFilterAvailable() && !AppearanceMenu.includes('AEE_PartsFilter')) {
-      AppearanceMenu.unshift('AEE_PartsFilter');
-    }
-    if (isHideRestraintsAvailable() && !AppearanceMenu.includes('AEE_HideRestraints')) {
-      AppearanceMenu.unshift('AEE_HideRestraints');
-    }
+    // Appearance management actions now live in the DOM side toolbar. Keep
+    // BC's native top menu untouched so those five AEE buttons are not added.
     if (settings.enableCopyPaste.get() && isCopyActive() && !isAppearanceOverlayActive() && !AppearanceMenu.includes('AEE_ClearCopy')) {
       AppearanceMenu.unshift('AEE_ClearCopy');
-    }
-    if (isLayerManagerAvailable() && !AppearanceMenu.includes('AEE_LayerManager')) {
-      // Inserted immediately to the LEFT of the parts-filter button (i.e. at
-      // its current index, pushing it one slot right) — or at the front if
-      // parts-filter isn't shown, so it's still the leftmost AEE button.
-      const partsFilterIndex = AppearanceMenu.indexOf('AEE_PartsFilter');
-      AppearanceMenu.splice(partsFilterIndex >= 0 ? partsFilterIndex : 0, 0, 'AEE_LayerManager');
     }
   });
 
@@ -157,16 +137,6 @@ export function installMenuHooks() {
     if (charPreviewIndex >= 0 && !isAppearanceOverlayActive()) {
       DrawButton(x + 117 * charPreviewIndex, 25, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
     }
-    if (settings.enableAeeMenu.get()) {
-      for (let index = 0; index < menu.length; index++) {
-        if (menu[index] === 'Copy') {
-          DrawButton(x + 117 * index, 25, 90, 90, '', 'White', 'Icons/Copy.png', t('menu-export-tooltip'));
-        }
-        if (menu[index] === 'Paste') {
-          DrawButton(x + 117 * index, 25, 90, 90, '', 'White', 'Icons/Paste.png', t('menu-import-tooltip'));
-        }
-      }
-    }
   });
 
   bcAeeModSdk.hookFunction('AppearanceMenuClick', 10, (args, next) => {
@@ -175,14 +145,6 @@ export function installMenuHooks() {
       if (!MouseXIn(x + 117 * index, 90)) continue;
       if (settings.enableWardrobe.get() && AppearanceMenu[index] === 'Wardrobe') {
         enterWardrobeScreen();
-        return;
-      }
-      if (settings.enableAeeMenu.get() && AppearanceMenu[index] === 'Copy') {
-        exportBcxAppearance(CharacterAppearanceSelection);
-        return;
-      }
-      if (settings.enableAeeMenu.get() && AppearanceMenu[index] === 'Paste') {
-        importBcxAppearanceWithCategory(CharacterAppearanceSelection);
         return;
       }
       if (AppearanceMenu[index] === 'AEE_ClearCopy' && !isAppearanceOverlayActive()) {
@@ -216,12 +178,8 @@ export function installMenuHooks() {
   bcAeeModSdk.hookFunction('DialogDrawTopMenu', 10, (args, next) => {
     const menu = DialogMenuButton;
     const hoverTryOnIndex = menu.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
-    const charPreviewIndex = menu.indexOf(DIALOG_CHARACTER_PREVIEW_BUTTON);
     if (hoverTryOnIndex >= 0) {
       DialogMenuButton = menu.map((button, index) => index === hoverTryOnIndex ? 'Exit' : button);
-    }
-    if (charPreviewIndex >= 0) {
-      DialogMenuButton = menu.map((button, index) => index === charPreviewIndex ? 'Exit' : button);
     }
     let result: ReturnType<typeof next>;
     try {
@@ -232,9 +190,6 @@ export function installMenuHooks() {
     if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
       DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
     }
-    if (charPreviewIndex >= 0 && settings.hairCharacterPreview.get() && DialogMenuMode === 'items') {
-      DrawButton(dialogCharacterPreviewButtonX(), 15, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
-    }
     return result;
   });
 
@@ -244,20 +199,12 @@ export function installMenuHooks() {
       const activityIndex = DialogMenuButton.indexOf('Activity');
       DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_HOVER_TRY_ON_BUTTON);
     }
-    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && !DialogMenuButton.includes(DIALOG_CHARACTER_PREVIEW_BUTTON)) {
-      const activityIndex = DialogMenuButton.indexOf('Activity');
-      DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_CHARACTER_PREVIEW_BUTTON);
-    }
     return result;
   });
 
   bcAeeModSdk.hookFunction('DialogClick', 10, (args, next) => {
     if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && MouseIn(dialogHoverTryOnButtonX(), 15, 90, 90)) {
       toggleHoverTryOn();
-      return;
-    }
-    if (settings.hairCharacterPreview.get() && DialogMenuMode === 'items' && MouseIn(dialogCharacterPreviewButtonX(), 15, 90, 90)) {
-      toggleCharacterPreviewActive();
       return;
     }
     return next(args);

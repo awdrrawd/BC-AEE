@@ -1,6 +1,8 @@
 export type AeeTab = 'edit' | 'opacity' | 'layers' | 'settings';
+export type ToolbarLayoutMode = 'neat' | 'free';
+export type EditToolMode = 'parts' | 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | 'opacity' | 'layers' | 'settings' | null;
 export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | null;
-export type TransformOverlayMode = Exclude<DragMode, null>;
+export type TransformOverlayMode = Exclude<DragMode, null> | 'mirror';
 export type LayerId = 'all' | string;
 export type UnknownFunction = (...args: unknown[]) => unknown;
 export type LayerOverrideKey =
@@ -26,6 +28,7 @@ export type SettingKey =
   | 'hideLscgLayers'
   | 'showCharCtrl'
   | 'enableAeeMenu'
+  | 'hideUnnecessaryAppearanceButtons'
   | 'useAeeColorPicker'
   | 'pasteImport'
   | 'bcWheelScroll'
@@ -158,6 +161,7 @@ export interface ImportDiffDialog {
   character: Character;
   diffs: ImportDiff[];
   originalAppearance: string;
+  originalBundle: ItemBundle[];
 }
 
 export interface BgState {
@@ -219,6 +223,7 @@ export interface TransformOverlayState {
 
 export interface LayerManagerState {
   open: boolean;
+  closing: boolean;
   /** Snapshot of who the panel is editing (the appearance-screen selection at the moment it was opened). */
   target: Character | null;
   search: string;
@@ -236,6 +241,11 @@ export interface AeeState {
   tab: AeeTab;
   selectedLayer: LayerId | null;
   collapsed: boolean;
+  toolbarHovered: boolean;
+  toolbarPinned: boolean;
+  toolbarLayout: ToolbarLayoutMode;
+  editTool: EditToolMode;
+  editTools: EditToolMode[];
   activeDrag: DragMode;
   scaleLock: boolean;
   partsOpen: boolean;

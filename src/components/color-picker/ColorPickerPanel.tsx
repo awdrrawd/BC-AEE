@@ -3,7 +3,6 @@ import type {AeeState} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {
   closeColorPicker,
-  moveColorPicker,
   previewColorPickerValue,
   setColorPickerCollapsed,
   setColorPickerValue,
@@ -20,7 +19,24 @@ import {ToolButton} from '@/components/color-picker/ToolButton';
 import {Track} from '@/components/color-picker/Track';
 import {Button, IconButton} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
-import {ChevronLeft, ChevronRight, Clipboard, Copy, Pipette} from 'lucide-react';
+import {ChevronRight, Clipboard, Copy, Pipette} from 'lucide-react';
+import type {SavedColor} from '@/components/color-picker/types';
+
+const RECENT_COLORS_KEY = 'liko-aee-recent-colors';
+const DEFAULT_QUICK_COLORS: SavedColor[] = [
+  '#FFFFFF', '#000000', '#FF3B30', '#FF9500', '#FFCC00',
+  '#34C759', '#00C7BE', '#007AFF', '#5856D6', '#AF52DE',
+  '#8E8E93', '#A2845E',
+].map(hex => ({...hexToHsv(hex), a: 255}));
+
+function loadRecentColors(): (SavedColor | null)[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECENT_COLORS_KEY) || '[]') as SavedColor[];
+    return [...parsed.slice(0, 12), ...Array<SavedColor | null>(12).fill(null)].slice(0, 12);
+  } catch {
+    return Array<SavedColor | null>(12).fill(null);
+  }
+}
 
 const BC_HEADING_GAP = 4;
 const BC_HEADING_VIEWPORT_MARGIN = 8;
@@ -75,7 +91,6 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const picker = state.colorPicker;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
   const svDragRef = useRef<number | null>(null);
   const svThumbRef = useRef<HTMLDivElement>(null);
   const hsvRef = useRef(hexToHsv(picker.hex));
@@ -86,13 +101,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const [hsv, setHsvState] = useState(() => hsvRef.current);
   const [alpha, setAlpha] = useState(Math.round(picker.opacityPct / 100 * 255));
   const [rule, setRule] = useState('complementary');
-  const [saved, setSaved] = useState(() => Array.from({length: 18}, (_, index) => ({
-    h: (index * 20) % 360,
-    s: 45,
-    v: 80,
-    a: 255
-  })));
-  const [selectedSaved, setSelectedSaved] = useState(0);
+  const [recent, setRecent] = useState<(SavedColor | null)[]>(loadRecentColors);
   const [cardSize, setCardSize] = useState<{ w: number; h: number } | null>(null);
   const previewOnlyRef = useRef(false);
   const lastAppliedColorRef = useRef<{ hex: string; opacityPct: number; preview: boolean } | null>(null);
@@ -112,18 +121,18 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     && hsv.v === initialHsvRef.current.v
     && alpha === initialAlphaRef.current;
   const rect = state.canvasRect;
-  const defaultLeft = rect ? rect.left + rect.width * 0.66 : window.innerWidth * 0.6;
+  const defaultLeft = rect ? rect.left + rect.width * 0.65 : window.innerWidth * 0.65;
   const defaultTop = rect ? rect.top + rect.height * 0.2 : window.innerHeight * 0.2;
 
-  const scale = rect && rect.width > 1 ? Math.max(0.45, (rect.width * 0.33) / 500) : 1;
+  const availableWidth = Math.max(1, (rect?.right ?? window.innerWidth) - defaultLeft);
+  const scale = availableWidth / 750;
   const top = picker.top ?? defaultTop;
   const toggleW = 24;
-  const fw = cardSize?.w ?? 500 * scale;
+  const fw = cardSize?.w ?? 750 * scale;
   const fh = cardSize?.h ?? 0;
   const collapsed = picker.bcMode && picker.collapsed;
   const dockRight = rect?.right ?? window.innerWidth;
-  const bcDefaultLeft = Math.max(0, dockRight - fw);
-  const left = picker.left ?? (picker.bcMode ? bcDefaultLeft : defaultLeft);
+  const left = picker.left ?? defaultLeft;
 
   const eyedropping = picker.eyedropperActive;
   const dimStyle = {
@@ -361,37 +370,14 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     if (label === 'A') setAlpha(Math.round(clamp(value, 0, 100) / 100 * 255));
   };
 
+  const panelHeight = rect ? Math.max(1, rect.bottom - top) * 0.97 / scale : undefined;
   const cardEl = (
     <div ref={cardRef} style={{zoom: scale}}>
-      <Panel className="w-125 gap-2 p-3 text-sm">
-        <div
-          className="cursor-grab select-none text-[11px] font-bold uppercase tracking-[0.12em] text-(--aee-accent) active:cursor-grabbing"
-          onPointerDown={event => {
-            event.preventDefault();
-            event.currentTarget.setPointerCapture(event.pointerId);
-            dragRef.current = {pointerId: event.pointerId, sx: event.clientX, sy: event.clientY, left, top};
-          }}
-          onPointerMove={event => {
-            if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
-            moveColorPicker(dragRef.current.left + event.clientX - dragRef.current.sx, dragRef.current.top + event.clientY - dragRef.current.sy);
-          }}
-          onPointerUp={event => {
-            if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-            dragRef.current = null;
-          }}
-          onPointerCancel={event => {
-            if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
-          }}
-          onLostPointerCapture={event => {
-            if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
-          }}
-        >- {t('color-picker-panel-title').toUpperCase()} -
-        </div>
-        <div className="flex items-start gap-2">
-          <div className="flex shrink-0 flex-col gap-1.5 pt-1">
+      <Panel className="aee-scroll w-[750px] justify-between gap-3 overflow-y-auto p-4 text-lg" style={{height: panelHeight, borderWidth: '2px'}}>
+        <div className="flex items-start gap-3">
+          <div className="flex shrink-0 flex-col gap-2 pt-1">
             <ToolButton title={t('color-picker-tool-copy-title')}
-                        onClick={() => navigator.clipboard?.writeText(hex + (alpha < 255 ? alpha.toString(16).padStart(2, '0') : ''))}><Copy className="h-4 w-4"/></ToolButton>
+                        onClick={() => navigator.clipboard?.writeText(hex + (alpha < 255 ? alpha.toString(16).padStart(2, '0') : ''))}><Copy className="h-6 w-6"/></ToolButton>
             <ToolButton title={t('color-picker-tool-paste-title')}
                         onClick={() => navigator.clipboard?.readText().then(text => {
                           const trimmed = text.trim();
@@ -399,43 +385,43 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
                             setHsv(hexToHsv(trimmed.slice(0, 7)));
                             if (trimmed.length === 9) setAlpha(parseInt(trimmed.slice(7), 16));
                           }
-                        })}><Clipboard className="h-4 w-4"/></ToolButton>
+                        })}><Clipboard className="h-6 w-6"/></ToolButton>
             <ToolButton title={t('color-picker-tool-eyedropper-title')}
                         onClick={() => setEyedropperActive(true)}><Pipette
-                                                                        className="h-4 w-4"/></ToolButton>
+                                                                        className="h-6 w-6"/></ToolButton>
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1">
             <div
-              className="relative h-25 w-25 overflow-hidden rounded-lg border border-zinc-700 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-size-[10px_10px]">
+              className="relative h-[120px] w-[120px] overflow-hidden rounded-lg border border-zinc-700 bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-size-[10px_10px]">
               <span className="absolute inset-0" style={{background: hsvaString(hsv.h, hsv.s, hsv.v, alpha)}}/>
             </div>
-            <div className="font-mono text-[11px] text-zinc-400">{isAtDefault ? 'Default' : hex}</div>
+            <div className="font-mono text-[17px] text-zinc-400">{isAtDefault ? 'Default' : hex}</div>
             <div className="flex gap-1">
               <input
-                className="w-18.5 rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-(--aee-accent)"
+                className="h-9 w-[78px] rounded border border-zinc-700 bg-transparent px-2 font-mono text-[17px] text-zinc-100 outline-none focus:border-(--aee-accent)"
                 value={hex} onChange={event => {
                 const value = event.target.value.trim();
                 if (/^#[0-9a-fA-F]{6}$/.test(value)) setHsv(hexToHsv(value));
               }}/>
               <input
-                className="w-11.5 rounded border border-zinc-700 bg-transparent px-1 py-0.5 font-mono text-xs text-zinc-100 outline-none focus:border-(--aee-accent)"
+                className="h-9 w-[54px] rounded border border-zinc-700 bg-transparent px-2 font-mono text-[17px] text-zinc-100 outline-none focus:border-(--aee-accent)"
                 value={`${alphaPct}%`} onChange={event => {
                 const n = parseInt(event.target.value.replace('%', ''), 10);
                 if (!Number.isNaN(n)) setAlpha(Math.round(clamp(n, 0, 100) / 100 * 255));
               }}/>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-zinc-400">
+            <div className="flex items-center gap-1 text-[15px] text-zinc-400">
               <span>R</span><span className="w-6 font-mono text-zinc-100">{String(rgb[0]).padStart(3, '0')}</span>
               <span>G</span><span className="w-6 font-mono text-zinc-100">{String(rgb[1]).padStart(3, '0')}</span>
               <span>B</span><span className="w-6 font-mono text-zinc-100">{String(rgb[2]).padStart(3, '0')}</span>
             </div>
           </div>
-          <div className="relative ml-0.5 h-35 w-65 shrink-0">
+          <div className="relative ml-0.5 h-[180px] w-[500px] shrink-0">
             <canvas
               ref={canvasRef}
               className="block h-full w-full cursor-crosshair select-none touch-none rounded-lg border border-zinc-700 [-webkit-user-drag:none]"
-              width={260}
-              height={140}
+              width={500}
+              height={180}
               draggable={false}
               onDragStart={event => event.preventDefault()}
               onPointerDown={startSvPick}
@@ -489,14 +475,14 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
         <div className="h-px bg-zinc-800"/>
         <div className="flex items-center gap-2">
           <span
-            className="shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-harmony-section-label')}</span>
+            className="shrink-0 text-[17px] uppercase tracking-wide text-zinc-400">{t('color-picker-harmony-section-label')}</span>
           <div className="flex flex-1 gap-1 overflow-x-auto">
             {['complementary', 'triadic', 'analogous', 'split', 'tetradic'].map(name =>
               <HarmonyRuleButton key={name} name={name} active={rule === name} onClick={() => setRule(name)}/>
             )}
           </div>
         </div>
-        <div className="flex h-8 gap-1">
+        <div className="flex h-12 gap-2">
           {harmony.map(([h, s, v]) => {
             const sw = hsvToHex(h, s, v);
             return <ColorSwatch key={`${h}-${s}-${v}`} color={sw}
@@ -506,44 +492,47 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
         </div>
         <div className="flex items-center gap-1">
           <span
-            className="w-12 shrink-0 text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-shades-section-label')}</span>
+            className="w-16 shrink-0 text-[17px] uppercase tracking-wide text-zinc-400">{t('color-picker-shades-section-label')}</span>
           {shades.map(([h, s, v]) =>
             <ColorSwatch key={`${h}-${s}-${v}`} color={hsvToHex(h, s, v)}
-                         className="h-6 flex-1 rounded border border-zinc-700 hover:border-teal-300"
+                         className="h-10 flex-1 rounded border border-zinc-700 hover:border-teal-300"
                          onClick={() => setHsv({h, s, v})}/>
           )}
         </div>
         <div className="h-px bg-zinc-800"/>
         <div className="flex items-center gap-2">
           <span
-            className="text-[11px] uppercase tracking-wide text-zinc-400">{t('color-picker-saved-section-label')}</span>
+            className="text-[17px] uppercase tracking-wide text-zinc-400">{t('color-picker-saved-section-label')}</span>
           <span className="flex-1"/>
-          <Button className="min-h-0 rounded-full px-2 py-0.5 text-[11px]"
-                  onClick={() => setSaved(items => items.map((item, index) =>
-                    index === selectedSaved ? {...hsv, a: alpha} : item))}>
+          <Button className="min-h-9 rounded-full px-4 py-1 text-[17px]"
+                  onClick={() => setRecent(items => {
+                    const nextColor = {...hsv, a: alpha};
+                    const next = [nextColor, ...items.filter(item => item && hsvaString(item.h, item.s, item.v, item.a) !== hsvaString(nextColor.h, nextColor.s, nextColor.v, nextColor.a))].slice(0, 12) as (SavedColor | null)[];
+                    while (next.length < 12) next.push(null);
+                    localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next.filter(Boolean)));
+                    return next;
+                  })}>
             {t('color-picker-save-button')}
           </Button>
-          <Button className="min-h-0 rounded-full px-2 py-0.5 text-[11px]"
-                  onClick={() => setSaved(items => items.map((item, index) =>
-                    index === selectedSaved ? {h: 0, s: 0, v: 100, a: 255} : item))}>
+          <Button className="min-h-9 rounded-full px-4 py-1 text-[17px]"
+                  onClick={() => {
+                    const empty = Array<SavedColor | null>(12).fill(null);
+                    setRecent(empty);
+                    localStorage.removeItem(RECENT_COLORS_KEY);
+                  }}>
             {t('color-picker-clear-button')}
           </Button>
         </div>
-        <div className="grid grid-cols-9 gap-1">{saved.slice(0, 9).map((item, index) =>
-          <SavedCell key={index} item={item} selected={selectedSaved === index} onClick={() => {
-            setSelectedSaved(index);
+        <div className="flex gap-1">{DEFAULT_QUICK_COLORS.map((item, index) =>
+          <SavedCell key={index} item={item} onClick={() => {
             setHsv({h: item.h, s: item.s, v: item.v});
             setAlpha(item.a);
           }}/>
         )}</div>
-        <div className="grid grid-cols-9 gap-1">{saved.slice(9).map((item, index) =>
-          <SavedCell key={index + 9} item={item} selected={selectedSaved === index + 9} onClick={() => {
-            setSelectedSaved(index + 9);
-            setHsv({
-              h: item.h,
-              s: item.s,
-              v: item.v
-            });
+        <div className="flex gap-1">{recent.map((item, index) =>
+          <SavedCell key={index} item={item} onClick={() => {
+            if (!item) return;
+            setHsv({h: item.h, s: item.s, v: item.v});
             setAlpha(item.a);
           }}/>
         )}</div>
@@ -569,21 +558,20 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
 
   return <>
     {eyedropperLayer}
-    <div
-      className={`pointer-events-none fixed z-1000002 ${collapsed ? 'overflow-hidden' : ''}`}
-      style={{top, left: left - toggleW, width: toggleW + fw, height: collapsed ? fh : 'auto', ...dimStyle}}
-    >
-      <div
-        className="flex items-center"
-        style={{transform: collapsed ? `translateX(${fw}px)` : 'translateX(0)', transition: 'transform 0.35s ease'}}
-      >
-        <IconButton
-          className="pointer-events-auto h-12 w-6 rounded-l-md rounded-r-none border-r-0"
-          icon={collapsed ? <ChevronLeft className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
-          aria-label={t('color-picker-panel-title')}
-          onClick={() => setColorPickerCollapsed(!picker.collapsed)}/>
-        <div className={collapsed ? 'pointer-events-none' : 'pointer-events-auto'}>{cardEl}</div>
+    <div className="pointer-events-none fixed z-1000002"
+         style={{top, left: left - toggleW, width: toggleW + fw, transform: collapsed ? `translateX(${fw + toggleW}px)` : 'translateX(0)', opacity: dimStyle.opacity, pointerEvents: dimStyle.pointerEvents, transition: 'transform .35s ease-in-out, opacity .15s ease'}}>
+      <div className="flex items-center">
+        <IconButton className="pointer-events-auto h-12 w-6 rounded-l-md rounded-r-none border-r-0"
+                    icon={<ChevronRight className="h-4 w-4"/>} aria-label={t('color-picker-panel-title')}
+                    onClick={() => setColorPickerCollapsed(true)}/>
+        <div className="pointer-events-auto">{cardEl}</div>
       </div>
     </div>
+    <button type="button"
+      className={`pointer-events-auto fixed z-1000003 w-[10px] border-0 p-0 transition-opacity duration-200 ${collapsed ? 'aee-toolbar-glow opacity-100' : 'pointer-events-none opacity-0'}`}
+      style={{top, left: dockRight - 10, height: Math.min(rect?.height ? rect.height * 0.9 : 500, fh || 500)}}
+      onPointerEnter={() => setColorPickerCollapsed(false)}
+      onClick={() => setColorPickerCollapsed(false)}
+      aria-label={t('color-picker-panel-title')}/>
   </>;
 }

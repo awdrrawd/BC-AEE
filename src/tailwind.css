@@ -63,12 +63,57 @@
 .aee-scroll {
     scrollbar-width: thin;
     scrollbar-color: var(--aee-accent) rgba(0, 0, 0, 0.55);
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+}
+
+.aee-scroll.aee-drag-scrolling {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.aee-toolbar-side,
+.aee-toolbar-side * {
+    -webkit-user-drag: none;
 }
 
 .aee-scroll::-webkit-scrollbar { width: 10px; }
 .aee-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.55); }
 .aee-scroll::-webkit-scrollbar-thumb { background: var(--aee-accent-65); border-radius: 4px; }
 .aee-scroll::-webkit-scrollbar-thumb:hover { background: var(--aee-accent); }
+
+.aee-tall-range::-webkit-slider-runnable-track {
+    height: 5px;
+    border-radius: 999px;
+    background: #050505;
+}
+
+.aee-tall-range::-webkit-slider-thumb {
+    width: 25px;
+    height: 25px;
+    margin-top: -10px;
+    appearance: none;
+    border: 2px solid var(--aee-accent);
+    border-radius: 50%;
+    background: var(--aee-accent);
+    box-shadow: 0 0 5px var(--aee-accent-55);
+}
+
+.aee-tall-range::-moz-range-track {
+    height: 5px;
+    border-radius: 999px;
+    background: #050505;
+}
+
+.aee-tall-range::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    box-sizing: border-box;
+    border: 2px solid var(--aee-accent);
+    border-radius: 50%;
+    background: var(--aee-accent);
+    box-shadow: 0 0 5px var(--aee-accent-55);
+}
 
 .aee-wave-text {
     background: linear-gradient(
@@ -124,4 +169,81 @@
         @apply select-text;
     }
 
+}
+@keyframes aee-toolbar-stream {
+  0%, 100% { background-position: 0 0; filter: brightness(.85); }
+  50% { background-position: 0 180px; filter: brightness(1.35); }
+}
+
+@keyframes aee-layer-manager-enter {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.aee-layer-manager-enter {
+  animation: aee-layer-manager-enter .32s ease-out both;
+}
+
+.aee-layer-manager-exit {
+  animation: aee-layer-manager-enter .28s ease-in reverse both;
+}
+
+.aee-toolbar-stream {
+  background: linear-gradient(180deg, transparent 0%, var(--aee-accent) 42%, white 50%, var(--aee-accent) 58%, transparent 100%);
+  background-size: 100% 220px;
+  animation: aee-toolbar-stream 2.4s linear infinite;
+  box-shadow: 0 0 12px var(--aee-accent);
+}
+
+.aee-toolbar-glow {
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--aee-accent) 70%, #bff) 50%, transparent 100%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--aee-accent) 75%, #9ff);
+}
+
+@keyframes aee-view-panel-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.aee-view-panel-enter {
+  animation: aee-view-panel-fade .25s ease-out both;
+}
+
+.aee-view-panel-exit {
+  animation: aee-view-panel-fade .25s ease-in reverse both;
+  pointer-events: none;
+}
+
+@keyframes aee-control-enter {
+  from { transform: translateX(-100%); opacity: .4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.aee-control-enter {
+  animation: aee-control-enter .24s ease-out both;
+}
+
+.aee-control .text-xs {
+  font-size: 24px;
+  line-height: 1.35;
+}
+
+.aee-control .text-sm {
+  font-size: 26px;
+  line-height: 1.35;
+}
+
+.aee-control .text-\[11px\] {
+  font-size: 23px;
+  line-height: 1.35;
+}
+
+.aee-control button,
+.aee-control input:not([type='range']),
+.aee-control select {
+  min-height: 30px;
+  font-size: 24px;
+  height: auto;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }

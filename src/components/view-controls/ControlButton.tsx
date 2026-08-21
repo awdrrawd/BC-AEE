@@ -9,7 +9,7 @@ export function ControlButton({active, label, icon, onClick}: {
 }) {
 
   return <button
-    className={`relative h-13 w-13 shrink-0 overflow-hidden rounded-lg border-0 bg-transparent p-0 pointer-events-auto ${active ? '[&_.aee-frame]:brightness-125 [&_.aee-frame]:hue-rotate-160' : ''}`}
+    className={`relative h-13 w-13 shrink-0 overflow-hidden rounded-lg border-0 bg-transparent p-0 ${active ? '[&_.aee-frame]:brightness-125 [&_.aee-frame]:hue-rotate-160' : ''}`}
     title={label} onClick={onClick}>
     <span className="aee-frame pointer-events-none absolute inset-0"
           style={CTRL_FRAME_STYLE}/>

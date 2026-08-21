@@ -8,10 +8,10 @@ export interface OverlayAnchor {
   height: number;
 }
 
-export const TOOL_PANEL_WIDTH = 240;
-export const TOOL_PANEL_MIN_HEIGHT = 120;
-export const PARTS_PANEL_WIDTH = 208;
-export const PARTS_PANEL_MIN_HEIGHT = 100;
+export const TOOL_PANEL_WIDTH = 360;
+export const TOOL_PANEL_MIN_HEIGHT = 180;
+export const PARTS_PANEL_WIDTH = 374;
+export const PARTS_PANEL_MIN_HEIGHT = 300;
 export const OVERLAY_MARGIN = 8;
 
 export function getElementOverlayAnchor(element: Element): OverlayAnchor {

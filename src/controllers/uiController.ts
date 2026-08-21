@@ -1,4 +1,4 @@
-import type {AeeLayerOverride, AeeState, AeeTab, DragMode, LayerId, TransformOverlayMode} from '@/core/types';
+import type {AeeLayerOverride, AeeState, AeeTab, DragMode, EditToolMode, LayerId, ToolbarLayoutMode, TransformOverlayMode} from '@/core/types';
 import {getState, mutateState} from '@/core/store';
 import {settings} from '@/core/settings';
 import {
@@ -20,8 +20,8 @@ import {
 } from '@/core/bc';
 import {runtime} from '@/core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '@/core/context';
-import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {clearCopyBuffer} from '@/controllers/copyPasteController';
+import {loadAppearanceQuickSettings, saveAppearanceQuickSetting} from '@/core/appearanceQuickSettings';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
@@ -48,6 +48,8 @@ export function selectLayer(layerId: LayerId) {
   stopHoverHighlight(true);
   mutateState(draft => {
     draft.selectedLayer = layerId;
+    if (draft.editTools.length === 0) draft.editTools.push('xy');
+    if (!draft.editTool) draft.editTool = 'xy';
   });
 }
 
@@ -80,10 +82,19 @@ export function togglePartsOpen(open?: boolean, anchor?: OverlayAnchor) {
   const nextOpen = open ?? !current.partsOpen;
   mutateState(draft => {
     draft.partsOpen = nextOpen;
-    if (nextOpen && anchor && draft.canvasRect) {
-      const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH, PARTS_PANEL_MIN_HEIGHT);
-      draft.partsLeft = pos.left;
-      draft.partsTop = pos.top;
+    if (nextOpen && draft.canvasRect) {
+      const scale = draft.canvasRect.width / 2000;
+      if (draft.toolbarLayout === 'neat') {
+        draft.partsLeft = (80 + 350 + 12) * scale;
+        draft.partsTop = 80 * scale;
+      } else if (anchor) {
+        const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH * scale, PARTS_PANEL_MIN_HEIGHT * scale);
+        draft.partsLeft = pos.left;
+        draft.partsTop = pos.top;
+      } else {
+        draft.partsLeft = Math.max(8, (draft.canvasRect.width - PARTS_PANEL_WIDTH * scale) / 2);
+        draft.partsTop = Math.max(8, (draft.canvasRect.height - PARTS_PANEL_MIN_HEIGHT * scale) / 2);
+      }
     }
   });
 }
@@ -510,6 +521,7 @@ export function resetPriority(layerId: LayerId) {
 }
 
 export function installSettingEffects() {
+  loadAppearanceQuickSettings();
   settings.hoverHighlight.onChange(enabled => {
     if (!enabled) stopHoverHighlight(true);
   });
@@ -564,12 +576,6 @@ export function installSettingEffects() {
     if (!enabled) clearCopyBuffer();
   });
   settings.hideLscgLayers.onChange(hidden => applyLscgLayersVisibility(hidden));
-  settings.showCharCtrl.onChange(shown => {
-    updateAppearanceScreenState();
-    mutateState(draft => {
-      draft.charControl.visible = shown && isInAppearanceScreen();
-    });
-  });
 }
 
 export function applyLscgLayersVisibility(value = settings.hideLscgLayers.get()) {
@@ -796,11 +802,14 @@ export function isHoverTryOnEnabled(): boolean {
 
 export function toggleHoverTryOn(): void {
   runtime.hoverTryOnEnabled = !runtime.hoverTryOnEnabled;
+  saveAppearanceQuickSetting('hoverTryOnEnabled', runtime.hoverTryOnEnabled);
   if (!runtime.hoverTryOnEnabled) stopHoverTryOn();
 }
 
 export function toggleCharacterPreviewActive(): void {
-  settings.characterPreviewActive.set(!settings.characterPreviewActive.get());
+  const active = !settings.characterPreviewActive.get();
+  settings.characterPreviewActive.set(active);
+  saveAppearanceQuickSetting('characterPreviewActive', active);
 }
 
 function restoreTryOnGroup(character: Character, group: AssetGroupName, backup: Item | null) {
@@ -857,4 +866,74 @@ export function readOpacityPct(item: Item, layerId: LayerId) {
 function getAssetDrawingPriority(asset: Asset | undefined) {
   const value = (asset as AssetPriority | undefined)?.DrawingPriority;
   return typeof value === 'number' ? value : 0;
+}
+
+export function setToolbarHovered(hovered: boolean) {
+  mutateState(draft => { draft.toolbarHovered = hovered; });
+}
+
+export function setToolbarPinned(pinned: boolean) {
+  mutateState(draft => { draft.toolbarPinned = pinned; });
+}
+
+export function setToolbarLayout(layout: ToolbarLayoutMode) {
+  mutateState(draft => {
+    draft.toolbarLayout = layout;
+    draft.transformOverlay.mode = null;
+    draft.opacityOverlay.open = false;
+    if (layout === 'neat' && !draft.editTool) draft.editTool = 'xy';
+  });
+}
+
+export function selectEditTool(tool: EditToolMode, anchor?: OverlayAnchor) {
+  const state = getState();
+  if (tool === 'parts') {
+    togglePartsOpen(undefined, anchor);
+    return;
+  }
+  if (tool === 'opacity') {
+    if (state.toolbarLayout === 'free') {
+      mutateState(draft => { draft.editTool = 'opacity'; });
+      openOpacityOverlay(anchor);
+    }
+    else mutateState(draft => { draft.editTool = draft.editTool === 'opacity' ? null : 'opacity'; });
+    return;
+  }
+  if (tool === 'layers' || tool === 'settings') {
+    mutateState(draft => { draft.editTool = draft.editTool === tool ? null : tool; });
+    return;
+  }
+  if (tool === 'xy' || tool === 'rot' || tool === 'scale' || tool === 'skew' || tool === 'mirror') {
+    if (state.toolbarLayout === 'free') {
+      mutateState(draft => { draft.editTool = tool; });
+      toggleTransformOverlay(tool, anchor);
+    }
+    else toggleNeatTool(tool);
+    return;
+  }
+  mutateState(draft => { draft.editTool = draft.editTool === tool ? null : tool; });
+}
+
+function toggleNeatTool(tool: EditToolMode) {
+  if (!tool) return;
+  mutateState(draft => {
+    const index = draft.editTools.indexOf(tool);
+    if (index >= 0) draft.editTools.splice(index, 1);
+    else draft.editTools.push(tool);
+    draft.editTool = tool;
+  });
+}
+
+export function leaveSelectedPart() {
+  stopHoverHighlight(true);
+  mutateState(draft => {
+    draft.selectedLayer = null;
+    draft.editTool = null;
+    draft.editTools = [];
+    draft.activeDrag = null;
+    draft.rotationOverlayOpen = false;
+    draft.transformOverlay.mode = null;
+    draft.opacityOverlay.open = false;
+  });
+  hideTouchBlocker();
 }

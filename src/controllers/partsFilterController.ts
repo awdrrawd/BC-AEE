@@ -2,7 +2,6 @@ import {getState, mutateState} from '@/core/store';
 import type {PartsFilterMode} from '@/core/types';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {t} from '@/i18n/i18n';
-import {settings} from '@/core/settings';
 
 const PARTS_FILTER_ICON = 'Icons/Dress.png';
 
@@ -41,7 +40,7 @@ function isGroupsScreen(): boolean {
 }
 
 export function isPartsFilterAvailable(): boolean {
-  return settings.enablePartsFilter.get() && isGroupsScreen();
+  return isGroupsScreen();
 }
 
 function groupHasItem(character: Character, group: AssetGroup): boolean {

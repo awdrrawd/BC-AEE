@@ -21,7 +21,6 @@
 import {t} from '@/i18n/i18n';
 import {syncCharacterToRoom} from '@/components/mask-system/freeDraw/maskToggle';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
-import {settings} from '@/core/settings';
 import {getState, mutateState} from '@/core/store';
 import {clampPanelPosition} from '@/core/overlay';
 import type {LayerManagerFilterMode, LayerManagerSortDirection} from '@/core/types';
@@ -37,7 +36,7 @@ function isGroupsScreen(): boolean {
 }
 
 export function isLayerManagerAvailable(): boolean {
-  return settings.enableLayerManager.get() && isGroupsScreen();
+  return isGroupsScreen();
 }
 
 export function layerManagerTooltip(): string {
@@ -180,13 +179,27 @@ export function openLayerManagerPanel() {
   const target = CharacterAppearanceSelection ?? Player;
   mutateState(draft => {
     draft.layerManager.open = true;
+    draft.layerManager.closing = false;
     draft.layerManager.target = target;
   });
+}
+
+export function toggleLayerManagerPanel() {
+  if (getState().layerManager.open) requestCloseLayerManagerPanel();
+  else openLayerManagerPanel();
+}
+
+export function requestCloseLayerManagerPanel() {
+  const state = getState().layerManager;
+  if (!state.open || state.closing) return;
+  mutateState(draft => { draft.layerManager.closing = true; });
+  window.setTimeout(closeLayerManagerPanel, 280);
 }
 
 export function closeLayerManagerPanel() {
   mutateState(draft => {
     draft.layerManager.open = false;
+    draft.layerManager.closing = false;
   });
 }
 

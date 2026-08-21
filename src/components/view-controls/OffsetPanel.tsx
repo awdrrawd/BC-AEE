@@ -20,8 +20,10 @@ import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {Panel} from '@/components/ui/Panel';
 import {clamp} from '@/util/math';
 import {settings, useSetting} from '@/core/settings';
+import {useAnimatedPresence} from '@/components/view-controls/useAnimatedPresence';
 
 export function OffsetPanel({state}: { state: AeeState }) {
+  const presence = useAnimatedPresence(state.offset.open);
   const charOffsetX = useSetting(settings.charOffsetX);
   const charOffsetY = useSetting(settings.charOffsetY);
   const charScale = useSetting(settings.charScale);
@@ -77,7 +79,7 @@ export function OffsetPanel({state}: { state: AeeState }) {
     setMinimapThumbPosition(charOffsetX, charOffsetY);
   }, [charOffsetX, charOffsetY]);
 
-  if (!state.offset.open || !state.canvasRect) return null;
+  if (!presence.mounted || !state.canvasRect) return null;
   const left = state.offset.left ?? state.canvasRect.left + state.canvasRect.width * 0.4;
   const top = state.offset.top ?? state.canvasRect.top + state.canvasRect.height * 0.3;
   const mmX = clamp(((charOffsetX + 700) / 1500) * 100, 2, 98);
@@ -103,10 +105,10 @@ export function OffsetPanel({state}: { state: AeeState }) {
   };
 
   return <Panel
-    className="fixed z-999993 w-64"
-    style={{left, top}}>
+    className={`${presence.closing ? 'aee-view-panel-exit' : 'aee-view-panel-enter'} fixed z-999993 w-64`}
+    style={{left, top, transform: `scale(${state.canvasRect!.width / 2000 * 1.5})`, transformOrigin: 'top left'}}>
     <div
-      className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
+      className="flex min-h-[42px] cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {
         if ((event.target as HTMLElement).closest('button')) return;
         event.preventDefault();
@@ -132,12 +134,12 @@ export function OffsetPanel({state}: { state: AeeState }) {
       <span
         className="text-[11px] font-bold uppercase text-(--aee-accent)">⟳ {t('offset-panel-title')}</span>
       <div className="flex gap-1">
-        <IconButton icon={state.offset.collapsed ? <ChevronUp className="h-3 w-3"/> : <ChevronDown className="h-3 w-3"/>}
+        <IconButton className="h-[25px] w-[35px]" icon={state.offset.collapsed ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
                     aria-label={t('offset-panel-title')} onClick={toggleOffsetCollapsed}/>
-        <Button iconOnly className="h-7 w-7" aria-label={t('offset-panel-title')}
+        <Button iconOnly className="h-[25px] w-[35px]" aria-label={t('offset-panel-title')}
                 onClick={() => resetOffset('all')}>↺</Button>
-        <IconButton tone="danger" icon={<X className="h-3.5 w-3.5"/>}
-                    aria-label={t('offset-panel-title')} onClick={() => toggleOffsetPanel(false)}/>
+        <button type="button" className="h-[25px] w-[35px] rounded border border-red-800 bg-red-950/60 p-0 text-red-200 transition hover:border-red-300 hover:bg-red-900"
+                aria-label={t('offset-panel-title')} onClick={() => toggleOffsetPanel(false)}><X className="mx-auto h-4 w-4"/></button>
       </div>
     </div>
     <div className="bg-zinc-950 px-2.5 pt-2">
@@ -151,7 +153,7 @@ export function OffsetPanel({state}: { state: AeeState }) {
       <div
         className="mt-1 text-center text-[9px] tracking-wide text-zinc-600">{t('offset-panel-minimap-help')}</div>
     </div>
-    <div className={`${state.offset.collapsed ? 'hidden' : 'flex'} flex-col gap-2 px-3 py-2.5`}>
+    <div className={`flex flex-col gap-2 overflow-hidden px-3 transition-[max-height,opacity,padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${state.offset.collapsed ? 'max-h-0 py-0 opacity-0' : 'max-h-[500px] py-2.5 opacity-100'}`}>
       <OffsetSlider label={t('offset-panel-x-slider-label')} min={-700} max={800} step={10} value={charOffsetX}
                     display={(charOffsetX > 0 ? '+' : '') + charOffsetX} onChange={setOffsetX}
                     onReset={() => resetOffset('x')}/>

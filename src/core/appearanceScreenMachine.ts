@@ -1,5 +1,4 @@
 import {runtime} from '@/core/runtime';
-import {settings} from '@/core/settings';
 
 export type AppearanceScreenMode = '' | 'Wardrobe' | 'Cloth' | 'Color' | 'Permissions';
 export type ItemColorSubMode = ItemColorMode | null;
@@ -106,7 +105,7 @@ export function isInAppearanceScreen() {
 }
 
 export function shouldShowAppearanceViewControl() {
-  return snapshot.inAppearance && settings.showCharCtrl.get();
+  return snapshot.inAppearance;
 }
 
 export function markAppearanceRunStart() {

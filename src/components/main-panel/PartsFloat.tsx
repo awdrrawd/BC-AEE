@@ -15,7 +15,7 @@ export function PartsFloat({state}: { state: AeeState }) {
     title={t('parts-float-title')}
     onClose={() => togglePartsOpen(false)}
     onMove={movePartsPanel}
-    className="max-h-64 min-h-20"
+    className="max-h-[512px] min-h-[160px]"
     bodyClassName="min-h-0 flex-1 overflow-y-auto p-1.5"
   >
     <LayerList item={state.item} selectedLayer={state.selectedLayer}/>

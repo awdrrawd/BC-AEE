@@ -1,11 +1,12 @@
 import type {ReactNode} from 'react';
 import cn from '@/util/cn';
 
-type SwitchSize = 'sm' | 'md';
+type SwitchSize = 'sm' | 'md' | 'lg';
 
 const sizes: Record<SwitchSize, { track: string; thumb: string; offset: number }> = {
   sm: {track: 'h-[18px] w-[34px]', thumb: 'h-3.5 w-3.5', offset: 16},
   md: {track: 'h-5 w-9', thumb: 'h-4 w-4', offset: 16},
+  lg: {track: 'h-[23px] w-[43px]', thumb: 'h-[18px] w-[18px]', offset: 20},
 };
 
 export function Switch({checked, onChange, ariaLabel, size = 'sm', disabled = false, className, children}: {

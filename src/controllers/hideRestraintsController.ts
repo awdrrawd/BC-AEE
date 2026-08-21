@@ -2,7 +2,6 @@ import {runtime} from '@/core/runtime';
 import {t} from '@/i18n/i18n';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
-import {settings} from '@/core/settings';
 
 const HIDE_RESTRAINTS_ICON = 'Icons/Kidnap.png';
 
@@ -11,7 +10,7 @@ function isGroupsScreen(): boolean {
 }
 
 export function isHideRestraintsAvailable(): boolean {
-  return settings.enableHideRestraints.get() && isGroupsScreen();
+  return isGroupsScreen();
 }
 
 export function isHideRestraintsActive(): boolean {

@@ -3,6 +3,7 @@ import type {LayerId} from '@/core/types';
 import {getPriorityValue, resetPriority, setPriority, stepPriority} from '@/controllers/uiController';
 import {RangeInput} from '@/components/main-panel/RangeInput';
 import {useHoldRepeat} from '@/components/ui/useHoldRepeat';
+import {tallRangeClass} from '@/components/main-panel/styles';
 
 export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerId; name: ReactNode }) {
   const priority = getPriorityValue(item, layerId);
@@ -31,9 +32,9 @@ export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerI
       </div>
     </div>
     <div className="relative flex items-center">
-      <RangeInput min={-99} max={99} step={1} value={priority.current} onChange={next => setPriority(layerId, next)}/>
+      <RangeInput className={tallRangeClass} min={-99} max={99} step={1} value={priority.current} onChange={next => setPriority(layerId, next)}/>
       <span
-        className="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded bg-[var(--aee-accent-55)]"/>
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
     </div>
   </div>;
 }

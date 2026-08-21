@@ -3,12 +3,9 @@ import {t} from '@/i18n/i18n';
 import {forceUiUpdate} from '@/core/context';
 import {
   buildLayerRows,
-  closeLayerManagerPanel,
+  requestCloseLayerManagerPanel,
   filterLayerRows,
-  LAYER_MANAGER_PANEL_WIDTH,
-  LAYER_MANAGER_PANEL_MIN_HEIGHT,
   type LayerRow,
-  moveLayerManagerPanel,
   resetLayerPriority,
   openLayerRowColor,
   sortLayerRows,
@@ -18,9 +15,8 @@ import {
   toggleLayerManagerSortDirection,
 } from '@/controllers/layerManagerController';
 import type {LayerManagerFilterMode} from '@/core/types';
-import {clampPanelPosition} from '@/core/overlay';
-import {FloatingPanel} from '@/components/FloatingPanel';
 import {Button} from '@/components/ui/Button';
+import {Panel} from '@/components/ui/Panel';
 import {TextInput} from '@/components/ui/Fields';
 import {ArrowDown, ArrowUp} from 'lucide-react';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
@@ -30,9 +26,6 @@ const FILTER_MODES: LayerManagerFilterMode[] = ['all', 'custom', 'default'];
 // Default spot the panel opens at (before the user ever drags it): upper
 // portion of the canvas, off to one side so the character underneath isn't
 // immediately covered — the user drags it wherever suits their outfit.
-const DEFAULT_LEFT_FRAC = 0.06;
-const DEFAULT_TOP_FRAC = 0.06;
-
 function LayerManagerRow({row, target}: { row: LayerRow; target: Character }) {
   const commit = (raw: string) => {
     const parsed = Number.parseInt(raw, 10);
@@ -95,29 +88,18 @@ export function LayerManagerPanel({state}: { state: AeeState }) {
   // render is cheap for a per-character layer count and always correct.
   const rows = buildLayerRows(target);
   const filtered = sortLayerRows(filterLayerRows(rows, lm.search, lm.filterMode), lm.sortDirection);
+  const close = () => {
+    stopHoverHighlight(true);
+    requestCloseLayerManagerPanel();
+  };
 
-  const defaultPos = clampPanelPosition(
-    canvasRect.width * DEFAULT_LEFT_FRAC,
-    canvasRect.height * DEFAULT_TOP_FRAC,
-    canvasRect,
-    LAYER_MANAGER_PANEL_WIDTH,
-    LAYER_MANAGER_PANEL_MIN_HEIGHT,
-  );
-  const left = lm.left ?? defaultPos.left;
-  const top = lm.top ?? defaultPos.top;
-
-  return <FloatingPanel
-    canvasRect={canvasRect}
-    left={left}
-    top={top}
-    width={LAYER_MANAGER_PANEL_WIDTH}
-    title={t('layer-manager-title')}
-    subtitle={`${filtered.length} / ${rows.length}`}
-    onClose={() => { stopHoverHighlight(true); closeLayerManagerPanel(); }}
-    onMove={moveLayerManagerPanel}
-    className="max-h-[80%]"
-    bodyClassName="flex min-h-0 flex-1 flex-col gap-0 p-0"
-  >
+  return <div className="fixed z-1000002 pointer-events-none" style={{left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height}}>
+    <Panel className={`${lm.closing ? 'aee-layer-manager-exit' : 'aee-layer-manager-enter'} pointer-events-auto absolute bottom-0 right-0 top-0 flex w-[40%] min-w-[420px] flex-col rounded-none border-y-0 border-r-0`}>
+      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-3">
+        <span className="min-w-0 flex-1 truncate text-sm font-bold text-(--aee-accent)">{t('layer-manager-title')}</span>
+        <button className="h-[25px] w-[35px] rounded border border-red-800 bg-red-950/60 text-red-200 transition hover:border-red-300 hover:bg-red-900"
+                onClick={close}>×</button>
+      </div>
     <div className="flex shrink-0 items-center gap-2 border-b border-zinc-800 px-3 py-2">
       <TextInput
         type="text"
@@ -147,5 +129,9 @@ export function LayerManagerPanel({state}: { state: AeeState }) {
         ? <div className="p-6 text-center text-sm text-zinc-500">{t('layer-manager-no-results')}</div>
         : filtered.map(row => <LayerManagerRow key={row.id} row={row} target={target}/>)}
     </div>
-  </FloatingPanel>;
+    <div className="shrink-0 border-t border-zinc-700 bg-zinc-950 px-3 py-2 text-center text-xs text-zinc-400">
+      {t('layer-manager-total-count', {filtered: filtered.length, total: rows.length})}
+    </div>
+    </Panel>
+  </div>;
 }

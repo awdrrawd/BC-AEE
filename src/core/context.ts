@@ -11,6 +11,8 @@ function closeContextOverlays(draft: ReturnType<typeof getState>) {
   draft.rotationOverlayOpen = false;
   draft.opacityOverlay.open = false;
   draft.transformOverlay.mode = null;
+  draft.editTool = null;
+  draft.editTools = [];
 }
 
 export function syncCanvasRect() {
@@ -43,6 +45,8 @@ export function syncCurrentContext() {
       draft.selectedLayer = null;
       draft.partsOpen = false;
       closeContextOverlays(draft);
+      draft.editTool = 'xy';
+      draft.editTools = ['xy'];
     }
   });
 

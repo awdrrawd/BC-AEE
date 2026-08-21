@@ -13,6 +13,7 @@ import {FloatingPanel} from '@/components/FloatingPanel';
 import {Button} from '@/components/ui/Button';
 import {SliderRow} from '@/components/overlays/SliderRow';
 import {getSelectedLayerLabel} from '@/components/overlays/getSelectedLayerLabel';
+import {MirrorGroup} from '@/components/main-panel/MirrorGroup';
 
 export function TransformOverlay({state}: { state: AeeState }) {
   const mode = state.transformOverlay.mode;
@@ -39,7 +40,9 @@ export function TransformOverlay({state}: { state: AeeState }) {
       ? t('transform-overlay-rotation-title')
       : mode === 'scale'
         ? t('transform-overlay-scale-title')
-        : t('transform-overlay-skew-title');
+        : mode === 'skew'
+          ? t('transform-overlay-skew-title')
+          : t('mirror-group-title');
 
   const setScale = (ctrl: 'sx' | 'sy', value: number) => {
     const next = Math.max(0.05, value);
@@ -66,9 +69,12 @@ export function TransformOverlay({state}: { state: AeeState }) {
     } else if (mode === 'scale') {
       resetEditProperty('sx');
       resetEditProperty('sy');
-    } else {
+    } else if (mode === 'skew') {
       resetEditProperty('skx');
       resetEditProperty('sky');
+    } else {
+      resetEditProperty('fcx');
+      resetEditProperty('fcy');
     }
   };
 
@@ -109,10 +115,11 @@ export function TransformOverlay({state}: { state: AeeState }) {
       <SliderRow label="Y°" value={skewY} min={Math.min(-60, skewY - 15)} max={Math.max(60, skewY + 15)} step={0.1}
                  display={`${skewY.toFixed(1)}°`} onChange={value => setEditProperty('sky', value)}/>
     </> : null}
+    {mode === 'mirror' ? <MirrorGroup layerOverride={layerOverride}/> : null}
     <div className="mt-1 flex items-center gap-1.5 border-t border-zinc-800 pt-2">
-      <Button className="h-7 flex-1" selected={activeDrag} onClick={() => setActiveDrag(mode)}>
+      {mode !== 'mirror' ? <Button className="h-7 flex-1" selected={activeDrag} onClick={() => setActiveDrag(mode)}>
         {activeDrag ? t('transform-overlay-canvas-drag-active-button') : t('transform-overlay-canvas-drag-button')}
-      </Button>
+      </Button> : <div className="flex-1"/>}
       <Button className="h-7" tone="danger" onClick={resetMode}>
         {t('transform-overlay-reset-button')}
       </Button>

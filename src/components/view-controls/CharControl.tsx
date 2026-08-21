@@ -8,7 +8,6 @@ import {
   moveCharControl,
   toggleBgSubOpen,
   toggleCharControlOpen,
-  toggleExpandDirection,
   toggleGridBg,
   toggleHide,
   toggleHideSubOpen,
@@ -16,11 +15,9 @@ import {
   toggleOffsetPanel,
   togglePoseWindow,
   toggleSolidBg,
-  toggleSubDirection,
 } from '@/controllers/viewController';
 import {openBgSettings} from '@/controllers/backgroundController';
 import {ControlButton} from '@/components/view-controls/ControlButton';
-import {DirectionButton} from '@/components/view-controls/DirectionButton';
 import {Accessibility, Eye, EyeOff, Grid3x3, Image as ImageIcon, Move, PersonStanding, Settings, User} from 'lucide-react';
 import {settings, useSetting} from '@/core/settings';
 
@@ -31,8 +28,6 @@ export function CharControl({state}: { state: AeeState }) {
   const charOffsetX = useSetting(settings.charOffsetX);
   const charOffsetY = useSetting(settings.charOffsetY);
   const charScale = useSetting(settings.charScale);
-  const ctrlExpandUp = useSetting(settings.ctrlExpandUp);
-  const ctrlSubLeft = useSetting(settings.ctrlSubLeft);
   const hideCloseup = useSetting(settings.hideCloseup);
   const hideFullbody = useSetting(settings.hideFullbody);
   const drag = useRef<{
@@ -45,12 +40,10 @@ export function CharControl({state}: { state: AeeState }) {
   } | null>(null);
   const left = state.charControl.left ?? state.canvasRect!.width * 0.01;
   const top = state.charControl.top ?? state.canvasRect!.height * 0.87;
-  const expandedStyle = ctrlExpandUp
-    ? {left: 0, bottom: CTRL_BTN_SIZE + 8, flexDirection: 'column-reverse' as const}
-    : {left: 0, top: CTRL_BTN_SIZE + 8, flexDirection: 'column' as const};
-  const subSide = ctrlSubLeft
-    ? {right: CTRL_BTN_SIZE + 6, left: 'auto', flexDirection: 'row-reverse' as const}
-    : {left: CTRL_BTN_SIZE + 6, right: 'auto', flexDirection: 'row' as const};
+  // The side-toolbar version always grows upward and to the right. Direction
+  // controls were removed so the layout is stable at every canvas scale.
+  const expandedStyle = {left: 0, bottom: CTRL_BTN_SIZE + 8, flexDirection: 'column-reverse' as const};
+  const subSide = {left: CTRL_BTN_SIZE + 6, right: 'auto', flexDirection: 'row' as const};
 
   return <div className="fixed z-999995 pointer-events-none overflow-visible" style={{
     left: state.canvasRect!.left,
@@ -133,10 +126,6 @@ export function CharControl({state}: { state: AeeState }) {
             <ControlButton active={hideCloseup} label={t('char-control-hide-closeup-button')}
                            icon={<User className="h-full w-full"/>} onClick={() => toggleHide('closeup')}/>
           </div>
-        </div>
-        <div className="flex gap-0.5 pointer-events-auto">
-          <DirectionButton direction={ctrlExpandUp ? 'up' : 'down'} onClick={toggleExpandDirection}/>
-          <DirectionButton direction={ctrlSubLeft ? 'left' : 'right'} onClick={toggleSubDirection}/>
         </div>
       </div>
     </div>

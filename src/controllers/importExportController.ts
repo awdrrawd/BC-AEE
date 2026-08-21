@@ -60,7 +60,7 @@ export async function importBcxFromText(character: Character, rawText: string) {
     }
     const originalAppearance = CharacterAppearanceStringify(character);
     mutateState(draft => {
-      draft.importDialog = {character, diffs, originalAppearance};
+      draft.importDialog = {character, diffs, originalAppearance, originalBundle: bundleAppearance(character.Appearance)};
     });
     return;
   }

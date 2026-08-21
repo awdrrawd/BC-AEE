@@ -14,6 +14,7 @@ import {ItemFontPanelHost} from '@/components/main-panel/ItemFontPanel';
 import {LayerManagerPanel} from '@/components/layer-manager/LayerManagerPanel';
 import {uiThemeVariables} from '@/core/theme';
 import {FreeDrawLibraryPanel} from '@/components/free-draw/FreeDrawLibraryPanel';
+import {ToolbarSide} from '@/components/ToolbarSide';
 
 export function App() {
   const state = useAeeStore();
@@ -21,6 +22,7 @@ export function App() {
   const prompt = usePrompt();
   return <div className="contents" style={uiThemeVariables(wardrobe.theme)}>
     <WardrobeScreen state={wardrobe}/>
+    <ToolbarSide state={state}/>
     <MainPanel state={state}/>
     <TransformOverlay state={state}/>
     <OpacityOverlay state={state}/>

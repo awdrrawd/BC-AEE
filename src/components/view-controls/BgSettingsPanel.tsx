@@ -17,7 +17,7 @@ import {
 } from '@/controllers/backgroundController';
 import {BgSection} from '@/components/view-controls/BgSection';
 import {ColorSwatch, TextInput} from '@/components/ui/Fields';
-import {Button, IconButton} from '@/components/ui/Button';
+import {Button} from '@/components/ui/Button';
 import {X} from 'lucide-react';
 import {Panel} from '@/components/ui/Panel';
 import {NumberInput} from '@/components/main-panel/NumberInput';
@@ -44,9 +44,9 @@ export function BgSettingsPanel({state}: { state: AeeState }) {
 
   return <div className="fixed z-999992 overflow-visible">
     <Panel className="fixed w-90"
-           style={{left, top}}>
+           style={{left, top, transform: `scale(${state.canvasRect!.width / 2000 * 1.75})`, transformOrigin: 'top left'}}>
       <div
-        className="flex cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-3 py-2 active:cursor-grabbing"
+        className="flex min-h-[42px] cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-3 py-2 active:cursor-grabbing"
         onPointerDown={event => {
           if ((event.target as HTMLElement).closest('button')) return;
           event.preventDefault();
@@ -71,8 +71,8 @@ export function BgSettingsPanel({state}: { state: AeeState }) {
       >
         <span
           className="text-[13px] font-bold uppercase text-[var(--aee-accent)]">{t('background-settings-panel-title')}</span>
-        <IconButton icon={<X className="h-3.5 w-3.5"/>}
-                    aria-label={t('background-settings-panel-title')} onClick={() => openBgSettings(false)}/>
+        <button type="button" className="h-[25px] w-[35px] rounded border border-red-800 bg-red-950/60 p-0 text-red-200 transition hover:border-red-300 hover:bg-red-900"
+                aria-label={t('background-settings-panel-title')} onClick={() => openBgSettings(false)}><X className="mx-auto h-4 w-4"/></button>
       </div>
       <div className="flex flex-col gap-2.5 p-3">
         <BgSection title={t('background-settings-solid-section-title')} enabled={bgEnabled} onChange={setBgEnabled}>

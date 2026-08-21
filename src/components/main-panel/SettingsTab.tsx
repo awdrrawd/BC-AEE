@@ -12,18 +12,13 @@ export function SettingsTab() {
       <ItemFontSelect/>
       <SettingRow label={t('settings-load-others-font-label')} setting={settings.loadOthersFont}
                   tooltip={t('settings-load-others-font-tooltip')}/>
-      <SettingRow label={t('settings-appearance-view-control')} setting={settings.showCharCtrl}/>
+      <SettingRow label={t('settings-toolbar-always-visible')} setting={settings.toolbarAlwaysVisible}/>
       <SettingRow label={t('settings-replace-bc-color-picker')} setting={settings.useAeeColorPicker}/>
       <SettingRow label={t('settings-enable-wardrobe')} setting={settings.enableWardrobe}/>
       <SettingRow label={t('settings-enable-free-draw')} setting={settings.enableFreeDraw}
                   tooltip={t('settings-enable-free-draw-tooltip')}/>
-      <SettingRow label={t('settings-enable-button-replacement')} setting={settings.enableAeeMenu}/>
       <SettingRow label={t('settings-paste-import')} setting={settings.pasteImport}/>
       <SettingRow label={t('settings-enable-copy-paste')} setting={settings.enableCopyPaste}/>
-      <SettingRow label={t('settings-parts-filter')} setting={settings.enablePartsFilter}/>
-      <SettingRow label={t('settings-layer-manager')} setting={settings.enableLayerManager}
-                  tooltip={t('settings-layer-manager-tooltip')}/>
-      <SettingRow label={t('settings-hide-restraints')} setting={settings.enableHideRestraints}/>
       <SettingRow label={t('settings-bc-wheel-scroll')} setting={settings.bcWheelScroll}/>
       <SettingRow label={t('settings-hover-layer-highlight')} setting={settings.hoverHighlight}/>
       <SettingRow label={t('settings-hover-item-highlight')} setting={settings.hoverHighlightChar}/>
@@ -31,6 +26,8 @@ export function SettingsTab() {
                   tooltip={t('settings-hover-tryon-tooltip')}/>
       <SettingRow label={t('settings-hair-character-preview')} setting={settings.hairCharacterPreview}
                   tooltip={t('settings-hair-character-preview-tooltip')}/>
+      <SettingRow label={t('settings-hide-unnecessary-appearance-buttons')} setting={settings.hideUnnecessaryAppearanceButtons}
+                  tooltip={t('settings-hide-unnecessary-appearance-buttons-tooltip')}/>
       <SettingRow label={t('settings-hide-lscg-layers-panel')} setting={settings.hideLscgLayers}/>
       <SettingRow label={t('settings-hide-arousal-ui')} setting={settings.hideArousalUi}/>
     </section>

@@ -94,10 +94,10 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
     }
   };
 
-  return <div className="flex items-center gap-2">
-    <span className="w-4 shrink-0 text-right text-[11px] text-zinc-400">{label}</span>
+  return <div className="flex min-h-8 items-center gap-3">
+    <span className="w-5 shrink-0 text-right text-[17px] text-zinc-400">{label}</span>
     <div
-      className="relative h-3.5 flex-1 cursor-pointer select-none touch-none rounded-full border border-zinc-700 [-webkit-user-drag:none]"
+      className="relative h-5 flex-1 cursor-pointer select-none touch-none rounded-full border border-zinc-700 [-webkit-user-drag:none]"
       style={{background: bg}}
       draggable={false}
       onDragStart={event => event.preventDefault()}
@@ -110,7 +110,7 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
       {overlay ? <div className="absolute inset-0 rounded-full" style={{background: overlay}}/> : null}
       <div
         ref={thumbRef}
-        className="absolute top-1/2 h-4.5 w-4.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
+        className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent"
         style={{
           left: `${pct * 100}%`,
           border: '3px solid #fff',
@@ -121,7 +121,7 @@ export const Track = memo(function Track({label, value, max, bg, overlay, inputV
     </div>
     <input
       ref={trackInputRef}
-      className="w-10 shrink-0 border-b border-zinc-700 bg-transparent px-0.5 text-right font-mono text-[11px] text-zinc-100 outline-none focus:border-(--aee-accent)"
+      className="w-14 shrink-0 border-b border-zinc-700 bg-transparent px-1 text-right font-mono text-[17px] text-zinc-100 outline-none focus:border-(--aee-accent)"
       defaultValue={inputValue}
       onBlur={event => {
         const n = parseInt(event.target.value.replace('%', ''), 10);

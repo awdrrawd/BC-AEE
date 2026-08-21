@@ -41,12 +41,15 @@ function previewFamily(id: string): string | undefined {
 function panelGeometry(rect: CanvasRect | null) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const width = rect ? clamp(rect.width * 0.27, 200, 320) : 300;
-  const maxHeight = rect ? clamp(rect.height * 0.85, 240, 600) : Math.min(vh - 16, 560);
-  const rawLeft = rect ? rect.left + rect.width * 0.30 : (vw - width) / 2;
-  const rawTop = rect ? rect.top + Math.max(0, (rect.height - maxHeight) / 2) : (vh - maxHeight) / 2;
-  const left = clamp(rawLeft, 8, Math.max(8, vw - width - 8));
-  const top = clamp(rawTop, 8, Math.max(8, vh - maxHeight - 8));
+  const scale = rect ? rect.width / 2000 : 1;
+  const width = 370;
+  const maxHeight = 750;
+  const physicalWidth = width * scale;
+  const physicalHeight = maxHeight * scale;
+  const rawLeft = rect ? rect.left + 592 * scale : (vw - physicalWidth) / 2;
+  const rawTop = rect ? rect.top + 80 * scale : (vh - physicalHeight) / 2;
+  const left = clamp(rawLeft, 8, Math.max(8, vw - physicalWidth - 8));
+  const top = clamp(rawTop, 8, Math.max(8, vh - physicalHeight - 8));
   return {width, maxHeight, left, top};
 }
 
@@ -112,15 +115,16 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
           className={`h-1.5 w-1.5 shrink-0 rounded-full ${loaded ? 'bg-(--aee-accent)' : 'bg-zinc-600'}`}
           title={loaded ? t('settings-item-font-loaded-tooltip') : undefined}
         />}
-        <span className="truncate text-[13px]">{label}</span>
+        <span className="truncate text-[24px]">{label}</span>
       </span>
-      {size !== undefined && <span className="shrink-0 font-mono text-[10px] text-zinc-400">{formatFontSize(size)}</span>}
+      {size !== undefined && <span className="shrink-0 font-mono text-[18px] text-zinc-400">{formatFontSize(size)}</span>}
     </button>;
   };
 
   return <Panel
-    className="fixed z-999999 pointer-events-auto"
-    style={{left: pos.left, top: pos.top, width, maxHeight}}
+    data-aee-font-panel="true"
+    className="aee-control fixed z-999999 pointer-events-auto"
+    style={{left: pos.left, top: pos.top, width, maxHeight, transform: `scale(${canvasRect.width / 2000})`, transformOrigin: 'top left'}}
   >
     <div
       className="flex shrink-0 cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-3 py-2 active:cursor-grabbing"
@@ -149,8 +153,8 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
         if (drag.current?.pointerId === event.pointerId) drag.current = null;
       }}
     >
-      <span className="text-[13px] font-bold uppercase text-(--aee-accent)">{t('settings-item-font-label')}</span>
-      <IconButton icon={<X className="h-3.5 w-3.5"/>} aria-label={t('settings-item-font-label')} onClick={onClose}/>
+      <span className="text-[24px] font-bold uppercase text-(--aee-accent)">{t('settings-item-font-label')}</span>
+      <IconButton className="h-10 w-10" icon={<X className="h-6 w-6"/>} aria-label={t('settings-item-font-label')} onClick={onClose}/>
     </div>
 
     <div className="flex shrink-0 flex-col gap-1.5 border-b border-zinc-800 p-3">
@@ -158,10 +162,10 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
         value={sample}
         onChange={event => setSample(event.target.value)}
         placeholder={t('settings-item-font-preview-placeholder')}
-        className="h-7 rounded-(--aee-panel-radius) border border-(--aee-accent-55) bg-(--aee-field-bg) px-2 text-xs text-(--aee-text-strong) caret-(--aee-accent) outline-none placeholder:text-white/35 focus:border-(--aee-accent)"
+        className="h-11 rounded-(--aee-panel-radius) border border-(--aee-accent-55) bg-(--aee-field-bg) px-3 text-[24px] text-(--aee-text-strong) caret-(--aee-accent) outline-none placeholder:text-white/35 focus:border-(--aee-accent)"
       />
       <div
-        className="min-h-14 break-words rounded-(--aee-panel-radius) border border-zinc-800 bg-black/25 px-2 py-1.5 text-[22px] leading-tight text-(--aee-text-strong)"
+        className="min-h-20 break-words rounded-(--aee-panel-radius) border border-zinc-800 bg-black/25 px-3 py-2 text-[28px] leading-tight text-(--aee-text-strong)"
         style={{fontFamily: family}}
       >
         {sample || <span className="text-zinc-600">{t('settings-item-font-preview')}</span>}
@@ -172,14 +176,14 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
       <div className="flex flex-col gap-0.5">
         {row(DEFAULT_FONT_ID, t('settings-item-font-default'))}
       </div>
-      <div className="mt-2 mb-0.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+      <div className="mt-3 mb-1 px-2 text-[20px] font-semibold uppercase tracking-wide text-zinc-500">
         {t('settings-item-font-system-group')}
       </div>
       <div className="flex flex-col gap-0.5">
         {SYSTEM_FONTS.map(font => row(font.id, font.name))}
       </div>
       {CUSTOM_FONTS.length > 0 && <>
-        <div className="mt-2 mb-0.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+        <div className="mt-3 mb-1 px-2 text-[20px] font-semibold uppercase tracking-wide text-zinc-500">
           {t('settings-item-font-custom-group')}
         </div>
         <div className="flex flex-col gap-0.5">

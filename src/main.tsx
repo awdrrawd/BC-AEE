@@ -6,6 +6,7 @@ import {setShadowRoot} from "@/shadow-style.ts";
 import {installAeeHooks} from "@/hooks";
 import {App} from "@/components/App";
 import {AEE_ALREADY_LOADED} from "@/core/version";
+import {installDragScroll} from '@/core/dragScroll';
 
 const main: {
   shadowRoot?: ShadowRoot,
@@ -36,6 +37,7 @@ if (AEE_ALREADY_LOADED) {
     main.root = document.createElement('div');
     main.root.dataset.aeeRoot = 'true';
     main.shadowRoot.appendChild(main.root);
+    installDragScroll(main.root);
 
     createRoot(main.root).render(
       <StrictMode>

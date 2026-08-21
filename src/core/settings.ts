@@ -90,6 +90,7 @@ function value<T>(key: string, fallback: T) {
 }
 
 export const settings = {
+  toolbarAlwaysVisible: bool('toolbarAlwaysVisible', true),
   hoverHighlight: bool('hoverHighlight', false),
   hoverHighlightChar: bool('hoverHighlightChar', false),
   hoverTryOn: bool('hoverTryOn', false),
@@ -103,6 +104,7 @@ export const settings = {
   hideLscgLayers: bool('hideLscgLayers', false),
   hideArousalUi: bool('hideArousalUi', false),
   enableAeeMenu: bool('enableAeeMenu', false),
+  hideUnnecessaryAppearanceButtons: bool('hideUnnecessaryAppearanceButtons', false),
   useAeeColorPicker: bool('useAeeColorPicker', false),
   pasteImport: bool('pasteImport', false),
   bcWheelScroll: bool('bcWheelScroll', false),

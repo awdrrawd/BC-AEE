@@ -12,7 +12,7 @@ export function SettingToggle({label, checked, onChange, density = 'compact', cl
 }) {
   return <div className={cn('flex w-full items-center justify-between gap-4', className)} title={tooltip ?? label}>
     <span
-      className={cn('min-w-0 truncate text-[var(--aee-text)]', density === 'stage' ? 'text-[24px]' : 'text-xs')}>{label}</span>
-    <Switch checked={checked} onChange={onChange} ariaLabel={label} size={density === 'stage' ? 'md' : 'sm'}/>
+      className={cn('min-w-0 whitespace-normal break-words text-[var(--aee-text)]', density === 'stage' ? 'text-[24px]' : 'text-xs')}>{label}</span>
+    <Switch checked={checked} onChange={onChange} ariaLabel={label} size={density === 'stage' ? 'md' : 'lg'}/>
   </div>;
 }

@@ -181,9 +181,26 @@ export function commitImport(
 }
 
 export function cancelImport(dialog: ImportDiffDialog) {
-  CharacterAppearanceRestore(dialog.character, dialog.originalAppearance);
-  CharacterRefresh(dialog.character, false);
-  closeImportDialog();
+  try {
+    // CharacterAppearanceRestore is normally enough, but it can leave groups
+    // introduced by the live preview behind on some game versions. Rebuild
+    // from the independent deep bundle captured before previewing so Cancel
+    // is an exact rollback rather than merely closing the picker.
+    CharacterAppearanceRestore(dialog.character, dialog.originalAppearance);
+    const originalItems = dialog.originalBundle
+      .map(entry => itemFromBundle(dialog.character, entry))
+      .filter((item): item is Item => item !== null);
+    dialog.character.Appearance = originalItems;
+    CharacterRefresh(dialog.character, false);
+  } catch (error) {
+    console.error('[AEE] Failed to cancel appearance import:', error);
+    // Keep the native snapshot as a final fallback if bundle reconstruction
+    // failed partway through.
+    CharacterAppearanceRestore(dialog.character, dialog.originalAppearance);
+    CharacterRefresh(dialog.character, false);
+  } finally {
+    closeImportDialog();
+  }
 }
 
 export function closeImportDialog() {

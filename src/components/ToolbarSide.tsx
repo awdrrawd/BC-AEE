@@ -194,8 +194,8 @@ export function ToolbarSide({state}: {state: AeeState}) {
         </Panel>
       </div>
       <ToolbarViewFlyout state={state} open={state.charControl.open}/>
-      {editing && state.activeDrag ? <div className="pointer-events-none absolute top-0 font-bold text-white" style={{left: 1000, transform: 'translateX(-50%)'}}>
-        <div className="rounded-b-lg border border-t-0 border-(--aee-accent-35) bg-black/75 px-5 py-2 text-[18px] shadow-lg">{dragLabel(state.activeDrag)}</div>
+      {editing && state.activeDrag ? <div className="pointer-events-none absolute top-0 w-max font-bold" style={{left: 1000, transform: 'translateX(-50%)'}}>
+        <div className="w-max whitespace-nowrap rounded-b-lg border-2 border-t-0 border-(--aee-accent) bg-(--aee-control-bg) px-6 py-2 text-[28px] leading-none text-(--aee-accent) shadow-[0_0_12px_var(--aee-accent-55)] [writing-mode:horizontal-tb]">{dragLabel(state.activeDrag)}</div>
       </div> : null}
     </div>
   </div>;

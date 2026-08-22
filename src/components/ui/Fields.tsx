@@ -3,6 +3,7 @@ import {
   type ReactElement, type ReactNode, useEffect, useRef, useState,
 } from 'react';
 import cn from '@/util/cn';
+import {installDragScroll} from '@/core/dragScroll';
 import {Check, ChevronDown} from 'lucide-react';
 
 type FieldDensity = 'compact' | 'stage';
@@ -39,6 +40,7 @@ export function Select({density = 'compact', className, children, value, onValue
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
   const options = Children.toArray(children)
     .filter((child): child is ReactElement<OptionHTMLAttributes<HTMLOptionElement> & {'data-color'?: string}> => isValidElement(child) && child.type === 'option')
     .map(child => ({
@@ -57,6 +59,18 @@ export function Select({density = 'compact', className, children, value, onValue
     };
     document.addEventListener('pointerdown', close, true);
     return () => document.removeEventListener('pointerdown', close, true);
+  }, [open]);
+
+  // The dropdown is its own small scrollable panel, popped open above whatever
+  // panel it lives in (settings list, layer manager, etc.). Relying solely on
+  // the host panel's own scroll-container being wired up for press-and-drag
+  // scrolling means this list inherits that panel's state, which for a few
+  // panels is currently unfinished (see docs/known-issues.md) and would leave
+  // the list draggable only via the native scrollbar. Installing drag-scroll
+  // directly on the listbox itself makes it work everywhere, unconditionally.
+  useEffect(() => {
+    if (!open || !listboxRef.current) return;
+    return installDragScroll(listboxRef.current);
   }, [open]);
 
   const move = (delta: number) => {
@@ -95,9 +109,9 @@ export function Select({density = 'compact', className, children, value, onValue
       <span className="min-w-0 flex-1 truncate">{selected?.label}</span>
       <ChevronDown className={cn('h-4 w-4 shrink-0 text-(--aee-accent) transition-transform', open && 'rotate-180')}/>
     </button>
-    {open ? <div role="listbox" aria-label={ariaLabel}
+    {open ? <div ref={listboxRef} role="listbox" aria-label={ariaLabel}
       className={cn(
-        'aee-pop-in absolute right-0 top-[calc(100%+4px)] z-1000010 max-h-72 min-w-[calc(100%+100px)] overflow-y-auto rounded-(--aee-panel-radius) border-2 border-(--aee-accent-55) bg-(--aee-panel-bg) p-1 shadow-(--aee-panel-shadow)',
+        'aee-pop-in aee-scroll absolute right-0 top-[calc(100%+4px)] z-1000010 max-h-72 min-w-[calc(100%+100px)] overflow-y-auto rounded-(--aee-panel-radius) border-2 border-(--aee-accent-55) bg-(--aee-panel-bg) p-1 shadow-(--aee-panel-shadow)',
         density === 'stage' ? 'text-[20px]' : 'text-xs',
       )}>
       {options.map(option => <button key={option.value} type="button" role="option"

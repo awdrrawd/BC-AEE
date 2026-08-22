@@ -78,7 +78,7 @@
   "import-dialog-total-count": "Ausgewählt {selected} / Gesamt {total}",
   "layer-manager-total-count": "Angezeigt {filtered} / Gesamt {total}",
   "settings-hide-unnecessary-appearance-buttons": "Unnötige Schaltflächen ausblenden",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Blendet die ursprünglichen Schaltflächen für Zufallsoutfit, Kleidung kopieren, Einfügen und Zufallscharakter aus.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Blendet die ursprünglichen Schaltflächen für Zufallsoutfit, Kleidung kopieren und Einfügen aus.",
   "settings-replace-bc-color-picker": "Standard-Farbwähler ersetzen",
   "settings-hover-layer-highlight": "Ebene blinkt bei Hover (AEE-Panel)",
   "settings-hover-item-highlight": "Kleidung blinkt bei Hover (rechtes Panel)",

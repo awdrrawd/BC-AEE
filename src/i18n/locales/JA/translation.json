@@ -78,7 +78,7 @@
   "import-dialog-total-count": "選択 {selected} / 合計 {total}",
   "layer-manager-total-count": "表示 {filtered} / 合計 {total}",
   "settings-hide-unnecessary-appearance-buttons": "不要なボタンを非表示",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "元のランダム衣装、衣装コピー、貼り付け、ランダムキャラクターボタンを非表示にします。",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "元のランダム衣装、衣装コピー、貼り付けボタンを非表示にします。",
   "settings-replace-bc-color-picker": "デフォルトのカラーピッカーを置き換える",
   "settings-hover-layer-highlight": "ホバーでレイヤーが点滅（AEEパネル）",
   "settings-hover-item-highlight": "ホバーで衣服が点滅（右側パネル）",

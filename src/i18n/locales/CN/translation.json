@@ -513,5 +513,5 @@
   "import-dialog-total-count": "已选 {selected}／总数 {total}",
   "layer-manager-total-count": "显示 {filtered}／总数 {total}",
   "settings-hide-unnecessary-appearance-buttons": "隐藏不必要按钮",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "隐藏原版的随机服装、服装复制、粘贴与随机角色按钮。"
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "隐藏原版的随机服装、服装复制与粘贴按钮。"
 }

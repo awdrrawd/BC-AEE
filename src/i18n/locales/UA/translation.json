@@ -78,7 +78,7 @@
   "import-dialog-total-count": "Вибрано {selected} / Усього {total}",
   "layer-manager-total-count": "Показано {filtered} / Усього {total}",
   "settings-hide-unnecessary-appearance-buttons": "Приховати непотрібні кнопки",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Приховує стандартні кнопки випадкового вбрання, копіювання одягу, вставлення та випадкового персонажа.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Приховує стандартні кнопки випадкового вбрання, копіювання одягу та вставлення.",
   "settings-replace-bc-color-picker": "Замінити стандартний вибір кольору",
   "settings-hover-layer-highlight": "Шар блимає при наведенні (панель AEE)",
   "settings-hover-item-highlight": "Одяг блимає при наведенні (права панель)",

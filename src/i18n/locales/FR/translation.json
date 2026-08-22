@@ -78,7 +78,7 @@
   "import-dialog-total-count": "Sélectionnés {selected} / Total {total}",
   "layer-manager-total-count": "Affichés {filtered} / Total {total}",
   "settings-hide-unnecessary-appearance-buttons": "Masquer les boutons inutiles",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Masque les boutons d’origine de tenue aléatoire, copie de vêtements, collage et personnage aléatoire.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Masque les boutons d’origine de tenue aléatoire, copie de vêtements et collage.",
   "settings-replace-bc-color-picker": "Remplacer le sélecteur de couleur par défaut",
   "settings-hover-layer-highlight": "Le calque clignote au survol (panneau AEE)",
   "settings-hover-item-highlight": "L'habit clignote au survol (panneau de droite)",

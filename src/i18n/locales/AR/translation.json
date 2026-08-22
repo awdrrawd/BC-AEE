@@ -78,7 +78,7 @@
   "import-dialog-total-count": "المحدد {selected} / الإجمالي {total}",
   "layer-manager-total-count": "المعروض {filtered} / الإجمالي {total}",
   "settings-hide-unnecessary-appearance-buttons": "إخفاء الأزرار غير الضرورية",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "إخفاء أزرار الزي العشوائي ونسخ الملابس واللصق والشخصية العشوائية الأصلية.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "إخفاء أزرار الزي العشوائي ونسخ الملابس واللصق الأصلية.",
   "settings-replace-bc-color-picker": "استبدال منتقي الألوان الافتراضي",
   "settings-hover-layer-highlight": "وميض الطبقة عند التمرير (لوحة AEE)",
   "settings-hover-item-highlight": "وميض الملابس عند التمرير (اللوحة اليمنى)",

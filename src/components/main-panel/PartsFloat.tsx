@@ -16,7 +16,7 @@ export function PartsFloat({state}: { state: AeeState }) {
     onClose={() => togglePartsOpen(false)}
     onMove={movePartsPanel}
     className="max-h-[512px] min-h-[160px]"
-    bodyClassName="min-h-0 flex-1 overflow-y-auto p-1.5"
+    bodyClassName="aee-scroll min-h-0 flex-1 overflow-y-auto p-1.5"
   >
     <LayerList item={state.item} selectedLayer={state.selectedLayer}/>
   </FloatingPanel>;

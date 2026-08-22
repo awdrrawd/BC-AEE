@@ -78,7 +78,7 @@
   "import-dialog-total-count": "Выбрано {selected} / Всего {total}",
   "layer-manager-total-count": "Показано {filtered} / Всего {total}",
   "settings-hide-unnecessary-appearance-buttons": "Скрыть ненужные кнопки",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Скрывает исходные кнопки случайного наряда, копирования одежды, вставки и случайного персонажа.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Скрывает исходные кнопки случайного наряда, копирования одежды и вставки.",
   "settings-replace-bc-color-picker": "Заменить стандартный выбор цвета",
   "settings-hover-layer-highlight": "Мигание слоя при наведении (панель AEE)",
   "settings-hover-item-highlight": "Мигание одежды при наведении (правая панель)",

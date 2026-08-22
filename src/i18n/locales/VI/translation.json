@@ -78,7 +78,7 @@
   "import-dialog-total-count": "Đã chọn {selected} / Tổng {total}",
   "layer-manager-total-count": "Hiển thị {filtered} / Tổng {total}",
   "settings-hide-unnecessary-appearance-buttons": "Ẩn các nút không cần thiết",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Ẩn các nút trang phục ngẫu nhiên, sao chép trang phục, dán và nhân vật ngẫu nhiên mặc định.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Ẩn các nút trang phục ngẫu nhiên, sao chép trang phục và dán mặc định.",
   "settings-replace-bc-color-picker": "Thay bảng chọn màu mặc định",
   "settings-hover-layer-highlight": "Lớp nhấp nháy khi rê chuột (bảng AEE)",
   "settings-hover-item-highlight": "Trang phục nhấp nháy khi rê chuột (bảng bên phải)",

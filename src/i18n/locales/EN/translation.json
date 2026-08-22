@@ -513,5 +513,5 @@
   "import-dialog-total-count": "Selected {selected} / Total {total}",
   "layer-manager-total-count": "Showing {filtered} / Total {total}",
   "settings-hide-unnecessary-appearance-buttons": "Hide unnecessary buttons",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Hide the original random outfit, clothing copy, paste, and random character buttons."
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Hide the original random outfit, clothing copy, and paste buttons."
 }

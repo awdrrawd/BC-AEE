@@ -78,7 +78,7 @@
   "import-dialog-total-count": "Seleccionados {selected} / Total {total}",
   "layer-manager-total-count": "Mostrando {filtered} / Total {total}",
   "settings-hide-unnecessary-appearance-buttons": "Ocultar botones innecesarios",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Oculta los botones originales de atuendo aleatorio, copiar ropa, pegar y personaje aleatorio.",
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Oculta los botones originales de atuendo aleatorio, copiar ropa y pegar.",
   "settings-replace-bc-color-picker": "Reemplazar el selector de color predeterminado",
   "settings-hover-layer-highlight": "La capa parpadea al pasar el ratón (panel AEE)",
   "settings-hover-item-highlight": "La ropa parpadea al pasar el ratón (panel derecho)",

@@ -82,7 +82,7 @@ export function installMenuHooks() {
       }
     }
     if (settings.hideUnnecessaryAppearanceButtons.get()) {
-      const hidden = new Set(['WearRandom', 'Random', 'Copy', 'Paste', 'Character']);
+      const hidden = new Set(['WearRandom', 'Random', 'Copy', 'Paste']);
       AppearanceMenu = AppearanceMenu.filter(button => !hidden.has(button));
     }
     if (CharacterAppearanceMode !== '') return;
@@ -211,6 +211,11 @@ export function installMenuHooks() {
   });
 
   bcAeeModSdk.hookFunction('AppearancePreviewUseCharacter', 10, (args, next) => {
+    // Leave BC's native Character/CharacterOff toggle authoritative unless the
+    // AEE replacement preview control is enabled. Otherwise the always-on face
+    // previews below would force characters to remain visible after BC's native
+    // toggle has been switched off.
+    if (!settings.hairCharacterPreview.get()) return next(args);
     const group = args[0];
     if (!group?.PreviewZone) return next(args);
     const isExtendedFaceGroup = EXTENDED_FACE_PREVIEW_GROUPS.has(group.Name as string);

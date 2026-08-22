@@ -319,7 +319,7 @@ function drawLabelSide(
     MainCanvas.fillStyle = 'rgba(9,9,15,0.88)';
     MainCanvas.fillRect(x, y, width, height);
     MainCanvas.strokeRect(x, y, width, height);
-    MainCanvas.fillStyle = accent;
+    MainCanvas.fillStyle = '#FFFFFF';
     MainCanvas.textAlign = 'left';
     MainCanvas.fillText(row.label, x + 12, y + height / 2);
     layerLabels.push({index: row.index, x, y, w: width, h: height});

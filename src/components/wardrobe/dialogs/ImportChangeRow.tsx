@@ -70,8 +70,8 @@ export function ImportChangeRow({entry, index, focused, onFocus, onToggle, onRet
         density="stage"
         className="w-70 text-[18px]"
         value={entry.target}
-        aria-label={t('wardrobe-import-target-label')}
-        onChange={event => onRetarget(Number(event.currentTarget.value))}
+        ariaLabel={t('wardrobe-import-target-label')}
+        onValueChange={value => onRetarget(Number(value))}
       >
         <option value={-1}>{t('wardrobe-import-no-target')}</option>
         {Array.from({length: activeWardrobeSource().size()}, (_, slot) => <option key={slot} value={slot}>{slotLabel(slot)}</option>)}

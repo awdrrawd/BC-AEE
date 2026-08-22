@@ -27,6 +27,38 @@ import {
 } from '@/core/appearanceScreenMachine';
 import {settings} from '@/core/settings';
 import {syncCurrentContext} from '@/core/context';
+import {
+  captureAppearanceDraw,
+  captureAppearanceImage,
+  commitAppearancePickerFrame,
+  drawAppearancePickerOutline,
+  handleAppearancePickerClick,
+  isLayerPickerLabelPoint,
+  invalidateAppearancePicker,
+} from '@/controllers/appearancePickerController';
+
+const EDIT_BUTTON_SCALE = 0.7;
+let compactBackNextDepth = 0;
+let compactEditButtons: Array<{x: number; y: number; w: number; h: number; originalX: number}> = [];
+
+function compactEditButtonRect(x: number, y: number, width: number) {
+  if (!runtime.inAppearanceRun || !getState().visible || y < 120
+    || x < 1000 || x + width > 2000 || width < 250) return null;
+  const nextWidth = width * EDIT_BUTTON_SCALE;
+  return {x: x + width - nextWidth, width: nextWidth};
+}
+
+function expandedEditButtonMouseX(x: number, y: number) {
+  if (!getState().visible || y < 120) return x;
+  const hit = compactEditButtons.find(rect => x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h);
+  return hit ? hit.originalX + (x - hit.x) / EDIT_BUTTON_SCALE : x;
+}
+
+function withExpandedEditMouseX<T>(fn: () => T): T {
+  const original = MouseX;
+  MouseX = expandedEditButtonMouseX(MouseX, MouseY);
+  try { return fn(); } finally { MouseX = original; }
+}
 
 export function installAppearanceHooks() {
   installDialogHoverTryOnHandlers();
@@ -71,7 +103,43 @@ export function installAppearanceHooks() {
     return next(args);
   });
 
+  // Detailed labels are painted on MainCanvas, above BC's own group buttons.
+  // Consume them at the dispatcher boundary so no lower screen handler or
+  // third-party AppearanceClick hook can act on the button underneath.
+  bcAeeModSdk.hookFunction('GameClick', 200, (args, next) => {
+    if (CurrentScreen === 'Appearance' && isLayerPickerLabelPoint() && handleAppearancePickerClick()) return;
+    return next(args);
+  });
+
+  // Only compact BC controls while an item is actively being edited/dyed.
+  // The normal Appearance group/replacement list is deliberately untouched.
+  bcAeeModSdk.hookFunction('DrawBackNextButton', 50, (args, next) => {
+    const compact = compactEditButtonRect(args[0], args[1], args[2]);
+    if (!compact) return next(args);
+    const nextArgs = [...args] as typeof args;
+    nextArgs[0] = compact.x;
+    nextArgs[2] = compact.width;
+    compactEditButtons.push({x: compact.x, y: args[1], w: compact.width, h: args[3], originalX: args[0]});
+    compactBackNextDepth++;
+    try {
+      return next(nextArgs);
+    } finally {
+      compactBackNextDepth--;
+    }
+  });
+  bcAeeModSdk.hookFunction('DrawButton', 50, (args, next) => {
+    if (compactBackNextDepth) return next(args);
+    const compact = compactEditButtonRect(args[0], args[1], args[2]);
+    if (!compact) return next(args);
+    const nextArgs = [...args] as typeof args;
+    nextArgs[0] = compact.x;
+    nextArgs[2] = compact.width;
+    compactEditButtons.push({x: compact.x, y: args[1], w: compact.width, h: args[3], originalX: args[0]});
+    return next(nextArgs);
+  });
+
   bcAeeModSdk.hookFunction('AppearanceRun', 1, (args, next) => {
+    compactEditButtons = [];
     updateAppearanceScreenState();
     if (shouldShowAppearanceViewControl()) setCharControlVisible(true);
     syncAfterBcRender();
@@ -101,6 +169,8 @@ export function installAppearanceHooks() {
       updateAppearanceScreenState();
       drawAboveGridIfNeeded();
       drawGroupCopyPasteButtons();
+      commitAppearancePickerFrame();
+      drawAppearancePickerOutline();
       return result;
     });
   });
@@ -127,15 +197,28 @@ export function installAppearanceHooks() {
         nextArgs[1] = args[1] + offsetX;
         nextArgs[2] = args[2] + offsetY;
         nextArgs[3] = args[3] * settings.charScale.get();
+        captureAppearanceDraw(character, nextArgs[1], nextArgs[2], nextArgs[3], nextArgs[4]);
         return next(nextArgs);
       }
+      captureAppearanceDraw(character, args[1], args[2], args[3], args[4]);
       return next(args);
     }
     return next(args);
   });
 
   bcAeeModSdk.hookFunction('CharacterLoadCanvas', 5, (args, next) => {
+    if (args[0] === CharacterAppearanceSelection) invalidateAppearancePicker();
     return withRestraintsHidden(args[0], () => next(args));
+  });
+
+  bcAeeModSdk.hookFunction('GLDrawImage', 2, (args, next) => {
+    captureAppearanceImage(args[0], args[2], args[3], args[4]);
+    return next(args);
+  });
+
+  bcAeeModSdk.hookFunction('DrawImageCanvas', 2, (args, next) => {
+    captureAppearanceImage(args[0], args[2], args[3], args[4]);
+    return next(args);
   });
 
   bcAeeModSdk.hookFunction('AppearanceLoad', 1, (args, next) => {
@@ -184,7 +267,7 @@ export function installAppearanceHooks() {
     return result;
   });
 
-  bcAeeModSdk.hookFunction('AppearanceClick', 0, (args, next) => {
+  bcAeeModSdk.hookFunction('AppearanceClick', 100, (args, next) => {
     // Clear the group-row flash while CharacterAppearanceSelection still points
     // at the edited character. Restraint dialogs may replace it during next().
     if (runtime.hoverCharGroup !== null) stopHoverCharHighlight();
@@ -193,28 +276,30 @@ export function installAppearanceHooks() {
     // and a preview is never accidentally committed.
     // Restraints also need their pose/effects rebuilt before an extended dialog opens.
     stopHoverTryOn(runtime.hoverTryOnRestraint);
-    return withFilteredGroups(() => {
-      // Our copy/paste column lives left of BC's row buttons; if it was clicked,
-      // handle it and stop BC from also processing the click.
-      if (handleGroupCopyPasteClick()) return;
-      if (isEditingBody()) {
-        const mode = CharacterAppearanceMode ?? '';
-        if (mode === 'Color' || mode === 'Cloth' || mode === 'Permissions') return next(args);
-        if (MouseY > 90) return;
-      }
-      return next(args);
-    });
+    if (handleAppearancePickerClick()) return;
+    return withExpandedEditMouseX(() => withFilteredGroups(() => {
+        // Our copy/paste column lives left of BC's row buttons; if it was clicked,
+        // handle it and stop BC from also processing the click.
+        if (handleGroupCopyPasteClick()) return;
+        if (isEditingBody()) {
+          const mode = CharacterAppearanceMode ?? '';
+          if (mode === 'Color' || mode === 'Cloth' || mode === 'Permissions') return next(args);
+          if (MouseY > 90) return;
+        }
+        return next(args);
+      }));
   });
 
-  bcAeeModSdk.hookFunction('CommonClick', 0, (args, next) => {
+  bcAeeModSdk.hookFunction('CommonClick', 100, (args, next) => {
+    if (handleAppearancePickerClick()) return;
     if (isEditingBody() && isBodyClick()) return;
-    return next(args);
+    return withExpandedEditMouseX(() => next(args));
   });
 
   bcAeeModSdk.hookFunction('DialogClick', 0, (args, next) => {
     if (runtime.hoverTryOnActive && runtime.hoverTryOnRestraint) stopHoverTryOn(true);
     if (isEditingBody() && isBodyClick()) return;
-    return next(args);
+    return withExpandedEditMouseX(() => next(args));
   });
 
   bcAeeModSdk.hookFunction('AppearancePreviewCleanup', 0, (args, next) => {
@@ -279,6 +364,10 @@ function installDialogHoverTryOnHandlers() {
 }
 
 function handleHoverCharHighlight(isAppearance: boolean) {
+  if (isLayerPickerLabelPoint()) {
+    if (runtime.hoverCharGroup !== null) stopHoverCharHighlight();
+    return;
+  }
   if (settings.hoverHighlightChar.get() && isAppearance && CharacterAppearanceMode === '') {
     let hoveredGroup: AssetGroupName | null = null;
     const mouseX = MouseX;

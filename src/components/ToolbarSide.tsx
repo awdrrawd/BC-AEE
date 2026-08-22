@@ -4,6 +4,7 @@ import {getAppearanceScreenSnapshot} from '@/core/appearanceScreenMachine';
 import {getElementOverlayAnchor} from '@/core/overlay';
 import {
   leaveSelectedPart,
+  cycleLayerPickerMode,
   openLayerColorPicker,
   resetSelectedTransforms,
   selectEditTool,
@@ -187,7 +188,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
           <div className="relative flex h-[52px] shrink-0 items-center justify-center border-b border-zinc-700 bg-zinc-950/80">
             <span className="aee-wave-text text-[26px] font-bold">AEE v{state.version}</span>
           </div>
-          <div className="aee-scroll min-h-0 flex-1 touch-pan-y overscroll-contain overflow-y-auto"
+          <div className="aee-scroll min-h-0 flex-1 overscroll-contain overflow-y-auto"
                style={{WebkitOverflowScrolling: 'touch'}}>
             {panelOpen ? controlContent : controlContentRef.current}
           </div>
@@ -275,6 +276,7 @@ function ControlPage({title, children}: {title: string; children: ReactNode}) {
 }
 
 function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState; managePanel: ManagePanel; setManagePanel: (panel: ManagePanel) => void}) {
+  const appearancePick = useSetting(settings.appearancePick);
   return <>
     <div className="flex flex-col gap-[7px]">
       <ToolButton title={t('menu-export-tooltip')} icon={<Upload/>} onClick={() => exportBcxAppearance(CharacterAppearanceSelection)}/>
@@ -284,6 +286,9 @@ function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState;
                   activeTone={state.partsFilterMode === 'empty' ? 'orange' : 'purple'}
                   icon={<GameIcon src={partsFilterIcon()}/>} onClick={() => cyclePartsFilterMode()}/>
       <ToolButton title={hideRestraintsTooltip()} active={isHideRestraintsActive()} icon={<GameIcon src={hideRestraintsIcon()}/>} onClick={() => toggleHideRestraints()}/>
+      {CurrentScreen === 'Appearance' ?
+        <ToolButton title={t('settings-appearance-pick')} active={appearancePick}
+                    icon={<GameIcon src="Icons/Public.png"/>} onClick={() => settings.appearancePick.toggle()}/> : null}
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
@@ -300,6 +305,9 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
   return <>
     <div className="flex flex-col gap-[7px]">
       <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<SvgIcon src={partIcon}/>} onClick={openTool('parts')}/>
+      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)}
+                  active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
+                  icon={<GameIcon src="Icons/Public.png"/>} onClick={() => cycleLayerPickerMode()}/>
       {selected ? <>
         <ToolButton title={t('toggle-bar-position-button-title')} selected={selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
         <ToolButton title={t('toggle-bar-rotation-button-title')} selected={selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>

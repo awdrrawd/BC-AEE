@@ -269,7 +269,7 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
           </div> : null}
 
           {bgMode === 'image' ? <Select density="stage" className="w-full" value={bgPath}
-                                        onChange={event => setBgPath(event.currentTarget.value)}>
+                                        ariaLabel={t('wardrobe-photo-bg-image')} onValueChange={setBgPath}>
             {initial.options.map(option => <option key={option.value} value={option.value}>
               {option.label}
             </option>)}

@@ -38,7 +38,6 @@ if (AEE_ALREADY_LOADED) {
     main.root.dataset.aeeRoot = 'true';
     main.shadowRoot.appendChild(main.root);
     installDragScroll(main.root);
-
     createRoot(main.root).render(
       <StrictMode>
         <App/>

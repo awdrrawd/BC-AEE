@@ -8,7 +8,8 @@ export function LanguageSelect() {
     <span className="text-xs text-zinc-300">{t('settings-language-label')}</span>
     <Select
       value={value}
-      onChange={event => setUiLanguage(event.target.value)}
+      onValueChange={setUiLanguage}
+      ariaLabel={t('settings-language-label')}
       style={{fontFamily: LANG_FLAG_FONT}}
     >
       <option value="">{t('settings-language-auto')}</option>

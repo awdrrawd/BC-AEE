@@ -578,6 +578,16 @@ export function installSettingEffects() {
   settings.hideLscgLayers.onChange(hidden => applyLscgLayersVisibility(hidden));
 }
 
+export function cycleLayerPickerMode() {
+  const order = ['off', 'normal', 'detail'] as const;
+  let nextMode = settings.layerPickerMode.get();
+  mutateState(draft => {
+    nextMode = order[(order.indexOf(draft.layerPickerMode) + 1) % order.length];
+    draft.layerPickerMode = nextMode;
+  });
+  settings.layerPickerMode.set(nextMode);
+}
+
 export function applyLscgLayersVisibility(value = settings.hideLscgLayers.get()) {
   const el = document.getElementById('lscg-layers');
   if (!el) return;

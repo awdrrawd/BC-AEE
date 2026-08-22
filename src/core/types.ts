@@ -1,5 +1,6 @@
 export type AeeTab = 'edit' | 'opacity' | 'layers' | 'settings';
 export type ToolbarLayoutMode = 'neat' | 'free';
+export type LayerPickerMode = 'off' | 'normal' | 'detail';
 export type EditToolMode = 'parts' | 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | 'opacity' | 'layers' | 'settings' | null;
 export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | null;
 export type TransformOverlayMode = Exclude<DragMode, null> | 'mirror';
@@ -244,6 +245,7 @@ export interface AeeState {
   toolbarHovered: boolean;
   toolbarPinned: boolean;
   toolbarLayout: ToolbarLayoutMode;
+  layerPickerMode: LayerPickerMode;
   editTool: EditToolMode;
   editTools: EditToolMode[];
   activeDrag: DragMode;

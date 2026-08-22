@@ -4,6 +4,7 @@ import {LanguageSelect} from '@/components/main-panel/LanguageSelect';
 import {ItemFontSelect} from '@/components/main-panel/ItemFontSelect';
 import {SettingRow} from '@/components/ui/SettingRow';
 import {settings} from '@/core/settings';
+import {HoverOutlineSelect} from '@/components/main-panel/HoverOutlineSelect';
 
 export function SettingsTab() {
   return <>
@@ -20,8 +21,9 @@ export function SettingsTab() {
       <SettingRow label={t('settings-paste-import')} setting={settings.pasteImport}/>
       <SettingRow label={t('settings-enable-copy-paste')} setting={settings.enableCopyPaste}/>
       <SettingRow label={t('settings-bc-wheel-scroll')} setting={settings.bcWheelScroll}/>
-      <SettingRow label={t('settings-hover-layer-highlight')} setting={settings.hoverHighlight}/>
       <SettingRow label={t('settings-hover-item-highlight')} setting={settings.hoverHighlightChar}/>
+      <HoverOutlineSelect/>
+      <SettingRow label={t('settings-hover-layer-highlight')} setting={settings.hoverHighlight}/>
       <SettingRow label={t('settings-hover-tryon')} setting={settings.hoverTryOn}
                   tooltip={t('settings-hover-tryon-tooltip')}/>
       <SettingRow label={t('settings-hair-character-preview')} setting={settings.hairCharacterPreview}

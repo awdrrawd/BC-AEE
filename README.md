@@ -166,6 +166,18 @@ Offset and opacity features do not depend on LSCG and are more stable.
 
 ---
 
+## 🙏 技術來源 · Technical Credits
+
+服裝懸停輪廓與畫布拾取功能的 alpha 遮罩、像素命中、重疊部件輪換，以及 Canvas 合成描邊技術，參考並改寫自 **XinLian132243 / BCMod** 的服裝優化實作。倉庫：<https://github.com/XinLian132243/BCMod/tree/master>
+
+The hover-outline and canvas-picking implementation—alpha masks, pixel hit-testing, overlapping-item cycling, and composited canvas outlines—was adapted from the clothing optimization work in **XinLian132243 / BCMod**. Repository: <https://github.com/XinLian132243/BCMod/tree/master>
+
+本倉庫保留了技術參考檔 `BC_LianDressOptimizationSource.user.js` 與整理文件 `服装悬停外框与拾取功能实现说明.md`，便於追溯實作來源。
+
+The reference source and implementation notes are retained in this repository for provenance and review.
+
+---
+
 ## 📄 授權 · License
 
 MIT License © Likolisu

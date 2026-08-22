@@ -15,6 +15,7 @@ const initialState: AeeState = {
   toolbarHovered: false,
   toolbarPinned: false,
   toolbarLayout: 'neat',
+  layerPickerMode: settings.layerPickerMode.get(),
   editTool: 'xy',
   editTools: ['xy'],
   activeDrag: null,

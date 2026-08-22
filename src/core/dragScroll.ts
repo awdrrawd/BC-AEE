@@ -7,8 +7,7 @@ type DragState = {
   dragging: boolean;
 };
 
-/** Adds mouse/pen drag scrolling to every AEE scroll area. Touch keeps its
- * native kinetic scrolling; clicks are cancelled only after a real drag. */
+/** Restores the original AEE mouse/pen drag scrolling behavior. */
 export function installDragScroll(root: HTMLElement): () => void {
   let drag: DragState | null = null;
   let suppressArea: HTMLElement | null = null;
@@ -18,17 +17,8 @@ export function installDragScroll(root: HTMLElement): () => void {
     const target = event.target instanceof Element ? event.target : null;
     const area = target?.closest<HTMLElement>('.aee-scroll');
     if (!area || area.scrollHeight <= area.clientHeight + 1) return;
-    // Sliders need their horizontal gesture. All other rows and buttons may
-    // be used as a scroll-grab surface; their click is suppressed after drag.
     if (target.closest('input[type="range"], textarea, select, [contenteditable="true"]')) return;
-    drag = {
-      area,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startScrollTop: area.scrollTop,
-      dragging: false,
-    };
+    drag = {area, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startScrollTop: area.scrollTop, dragging: false};
   };
 
   const onPointerMove = (event: PointerEvent) => {
@@ -39,7 +29,7 @@ export function installDragScroll(root: HTMLElement): () => void {
       if (Math.abs(dy) < 6 || Math.abs(dy) <= Math.abs(dx)) return;
       drag.dragging = true;
       drag.area.classList.add('aee-drag-scrolling');
-      try { drag.area.setPointerCapture(event.pointerId); } catch { /* detached during a screen change */ }
+      try { drag.area.setPointerCapture(event.pointerId); } catch { /* detached during screen change */ }
     }
     event.preventDefault();
     drag.area.scrollTop = drag.startScrollTop - dy;
@@ -52,9 +42,7 @@ export function installDragScroll(root: HTMLElement): () => void {
     finished.area.classList.remove('aee-drag-scrolling');
     if (!finished.dragging) return;
     suppressArea = finished.area;
-    window.setTimeout(() => {
-      if (suppressArea === finished.area) suppressArea = null;
-    }, 0);
+    window.setTimeout(() => { if (suppressArea === finished.area) suppressArea = null; }, 0);
   };
 
   const suppressDraggedClick = (event: MouseEvent) => {

@@ -1,6 +1,6 @@
 import {useSyncExternalStore} from 'react';
 import type {UiStyle} from '@/core/theme';
-import type {WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
+import type {LayerPickerMode, WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
 
 const STORAGE_KEY = 'liko-aee-settings';
 
@@ -8,6 +8,8 @@ export interface CtrlPos {
   left: number;
   top: number;
 }
+
+export type HoverOutlineColor = 'off' | 'theme' | 'gold' | 'sapphire' | 'emerald' | 'rose' | 'amethyst' | 'iris' | 'crimson' | 'cyan' | 'custom';
 
 class SettingsStore {
   private values: Record<string, unknown>;
@@ -93,6 +95,10 @@ export const settings = {
   toolbarAlwaysVisible: bool('toolbarAlwaysVisible', true),
   hoverHighlight: bool('hoverHighlight', false),
   hoverHighlightChar: bool('hoverHighlightChar', false),
+  hoverOutlineColor: value<HoverOutlineColor>('hoverOutlineColor', 'off'),
+  hoverOutlineCustomColor: value('hoverOutlineCustomColor', '#a78bfa'),
+  appearancePick: bool('appearancePick', false),
+  layerPickerMode: value<LayerPickerMode>('layerPickerMode', 'off'),
   hoverTryOn: bool('hoverTryOn', false),
   // Master switch: when ON, the character-preview toggle button is shown next
   // to hover-try-on. The in-game button toggles `characterPreviewActive`.

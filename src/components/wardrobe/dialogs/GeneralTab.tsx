@@ -23,7 +23,8 @@ export function GeneralTab() {
       <Select
         density="stage"
         value={language}
-        onChange={event => setUiLanguage(event.currentTarget.value)}
+        onValueChange={setUiLanguage}
+        ariaLabel={t('wardrobe-language')}
         className="w-50"
         style={{fontFamily: LANG_FLAG_FONT}}
       >

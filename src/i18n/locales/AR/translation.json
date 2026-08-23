@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "اختيار الجزء: مفصل",
   "import-dialog-management-title": "إدارة استيراد المظهر",
   "import-dialog-clothing-management": "إدارة الملابس",
+  "import-dialog-column-part": "الجزء",
+  "import-dialog-column-change": "التغيير",
   "import-dialog-total-count": "المحدد {selected} / الإجمالي {total}",
   "layer-manager-total-count": "المعروض {filtered} / الإجمالي {total}",
   "settings-hide-unnecessary-appearance-buttons": "إخفاء الأزرار غير الضرورية",

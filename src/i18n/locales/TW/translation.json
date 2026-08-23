@@ -510,6 +510,8 @@
   "toolbar-layer-picker-detail": "部件拾取：詳細",
   "import-dialog-management-title": "外觀匯入管理",
   "import-dialog-clothing-management": "服裝管理",
+  "import-dialog-column-part": "部位",
+  "import-dialog-column-change": "服裝變化",
   "import-dialog-total-count": "已選 {selected}／總數 {total}",
   "layer-manager-total-count": "顯示 {filtered}／總數 {total}",
   "settings-hide-unnecessary-appearance-buttons": "隱藏不必要按鈕",

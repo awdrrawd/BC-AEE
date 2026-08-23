@@ -510,6 +510,8 @@
   "toolbar-layer-picker-detail": "Part picker: Detailed",
   "import-dialog-management-title": "Appearance Import Management",
   "import-dialog-clothing-management": "Clothing Management",
+  "import-dialog-column-part": "Part",
+  "import-dialog-column-change": "Change",
   "import-dialog-total-count": "Selected {selected} / Total {total}",
   "layer-manager-total-count": "Showing {filtered} / Total {total}",
   "settings-hide-unnecessary-appearance-buttons": "Hide unnecessary buttons",

@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "Chọn bộ phận: Chi tiết",
   "import-dialog-management-title": "Quản lý nhập ngoại hình",
   "import-dialog-clothing-management": "Quản lý trang phục",
+  "import-dialog-column-part": "Vị trí",
+  "import-dialog-column-change": "Thay đổi",
   "import-dialog-total-count": "Đã chọn {selected} / Tổng {total}",
   "layer-manager-total-count": "Hiển thị {filtered} / Tổng {total}",
   "settings-hide-unnecessary-appearance-buttons": "Ẩn các nút không cần thiết",

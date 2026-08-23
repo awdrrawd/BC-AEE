@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "Вибір частини: детальний",
   "import-dialog-management-title": "Керування імпортом зовнішності",
   "import-dialog-clothing-management": "Керування одягом",
+  "import-dialog-column-part": "Частина",
+  "import-dialog-column-change": "Зміна",
   "import-dialog-total-count": "Вибрано {selected} / Усього {total}",
   "layer-manager-total-count": "Показано {filtered} / Усього {total}",
   "settings-hide-unnecessary-appearance-buttons": "Приховати непотрібні кнопки",

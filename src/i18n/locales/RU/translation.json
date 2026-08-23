@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "Выбор части: подробный",
   "import-dialog-management-title": "Управление импортом внешности",
   "import-dialog-clothing-management": "Управление одеждой",
+  "import-dialog-column-part": "Часть",
+  "import-dialog-column-change": "Изменение",
   "import-dialog-total-count": "Выбрано {selected} / Всего {total}",
   "layer-manager-total-count": "Показано {filtered} / Всего {total}",
   "settings-hide-unnecessary-appearance-buttons": "Скрыть ненужные кнопки",

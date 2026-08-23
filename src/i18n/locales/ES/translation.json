@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "Selector de partes: Detallado",
   "import-dialog-management-title": "Gestión de importación de apariencia",
   "import-dialog-clothing-management": "Gestión de ropa",
+  "import-dialog-column-part": "Zona",
+  "import-dialog-column-change": "Cambio",
   "import-dialog-total-count": "Seleccionados {selected} / Total {total}",
   "layer-manager-total-count": "Mostrando {filtered} / Total {total}",
   "settings-hide-unnecessary-appearance-buttons": "Ocultar botones innecesarios",

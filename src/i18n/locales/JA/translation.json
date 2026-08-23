@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "部品選択：詳細",
   "import-dialog-management-title": "外見インポート管理",
   "import-dialog-clothing-management": "衣装管理",
+  "import-dialog-column-part": "部位",
+  "import-dialog-column-change": "変更内容",
   "import-dialog-total-count": "選択 {selected} / 合計 {total}",
   "layer-manager-total-count": "表示 {filtered} / 合計 {total}",
   "settings-hide-unnecessary-appearance-buttons": "不要なボタンを非表示",

@@ -75,6 +75,8 @@
   "toolbar-layer-picker-detail": "Teil-Auswahl: Detailliert",
   "import-dialog-management-title": "Aussehen-Importverwaltung",
   "import-dialog-clothing-management": "Kleidungsverwaltung",
+  "import-dialog-column-part": "Bereich",
+  "import-dialog-column-change": "Änderung",
   "import-dialog-total-count": "Ausgewählt {selected} / Gesamt {total}",
   "layer-manager-total-count": "Angezeigt {filtered} / Gesamt {total}",
   "settings-hide-unnecessary-appearance-buttons": "Unnötige Schaltflächen ausblenden",

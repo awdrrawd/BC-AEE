@@ -60,6 +60,17 @@ function withExpandedEditMouseX<T>(fn: () => T): T {
   try { return fn(); } finally { MouseX = original; }
 }
 
+function pointerEventCanvasPoint(event: PointerEvent | undefined): {x: number; y: number} | null {
+  if (!event) return null;
+  const canvas = document.getElementById('MainCanvas') as HTMLCanvasElement | null;
+  const rect = canvas?.getBoundingClientRect();
+  if (!canvas || !rect || rect.width <= 0 || rect.height <= 0) return null;
+  return {
+    x: (event.clientX - rect.left) * canvas.width / rect.width,
+    y: (event.clientY - rect.top) * canvas.height / rect.height,
+  };
+}
+
 export function installAppearanceHooks() {
   installDialogHoverTryOnHandlers();
   onAppearanceScreenTransition(transition => {
@@ -107,7 +118,10 @@ export function installAppearanceHooks() {
   // Consume them at the dispatcher boundary so no lower screen handler or
   // third-party AppearanceClick hook can act on the button underneath.
   bcAeeModSdk.hookFunction('GameClick', 200, (args, next) => {
-    if (CurrentScreen === 'Appearance' && isLayerPickerLabelPoint() && handleAppearancePickerClick()) return;
+    const point = pointerEventCanvasPoint(args[0]);
+    const x = point?.x ?? MouseX;
+    const y = point?.y ?? MouseY;
+    if (CurrentScreen === 'Appearance' && isLayerPickerLabelPoint(x, y) && handleAppearancePickerClick(x, y)) return;
     return next(args);
   });
 

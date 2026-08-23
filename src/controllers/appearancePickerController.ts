@@ -100,7 +100,10 @@ export function invalidateAppearancePicker() {
   frame.clear();
   layerCaptures.clear();
   layerFrame.clear();
-  layerLabels = [];
+  // Keep the hit boxes for labels that are still visible on MainCanvas until
+  // the next picker draw replaces them. Hover highlighting rebuilds the
+  // character canvas repeatedly; clearing the boxes here created a window in
+  // which a visible label could not be clicked and made selection feel random.
   hovered = null;
 }
 

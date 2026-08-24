@@ -8,6 +8,7 @@ export interface WardrobeMigrationPart {
   group: AssetGroupName;
   name: string;
   layers: number;
+  supportsAee: boolean;
   supportsLscg: boolean;
 }
 
@@ -38,24 +39,67 @@ function legacyNumber(value: unknown): number | null {
   return null;
 }
 
-function legacyKeys(override: Record<string, unknown>): LegacyTransform[] {
-  return (['DrawingLeft', 'DrawingTop', 'ScaleX', 'ScaleY', 'Rotation'] as LegacyTransform[])
-    .filter(key => legacyNumber(override[key]) !== null);
+function nativeLayerValue(property: Record<string, unknown>, key: string, layerName: string): number | null {
+  const values = property[`Layer${key}`];
+  if (!values || typeof values !== 'object') return null;
+  const value = (values as Record<string, unknown>)[layerName];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function inspectPart(entry: ItemBundle, bundleIndex: number): WardrobeMigrationPart | null {
-  const overrides = entry.Property?.LayerOverrides;
-  if (!Array.isArray(overrides)) return null;
-  let layers = 0;
-  let supportsLscg = false;
-  for (const raw of overrides) {
-    if (!raw || typeof raw !== 'object') continue;
-    const keys = legacyKeys(raw as unknown as Record<string, unknown>);
-    if (!keys.length) continue;
-    layers++;
-    if (keys.includes('DrawingLeft') || keys.includes('DrawingTop')) supportsLscg = true;
+function itemValue(property: Record<string, unknown>, key: string): number | null {
+  const value = property[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function differs(a: number, b: number): boolean {
+  return Math.abs(a - b) > 0.0001;
+}
+
+function layerNeedsMode(entry: ItemBundle, asset: Asset, index: number, mode: Exclude<WardrobeMigrationMode, 'none'>): boolean {
+  const property = entry.Property as (ItemProperties & Record<string, unknown>) | undefined;
+  const override = property?.LayerOverrides?.[index] as unknown as Record<string, unknown> | undefined;
+  if (!property || !override) return false;
+  const layer = asset.Layer?.[index];
+  const layerName = layer?.Name ?? asset.Name;
+  const left = legacyNumber(override.DrawingLeft);
+  const top = legacyNumber(override.DrawingTop);
+  if (mode === 'lscg') {
+    const nativeX = layerBase(layer?.DrawingLeft) + (itemValue(property, 'TranslationX') ?? 0)
+      + (nativeLayerValue(property, 'TranslationX', layerName) ?? 0);
+    const nativeY = layerBase(layer?.DrawingTop) + (itemValue(property, 'TranslationY') ?? 0)
+      + (nativeLayerValue(property, 'TranslationY', layerName) ?? 0);
+    return (left !== null && differs(left, nativeX)) || (top !== null && differs(top, nativeY));
   }
-  return layers ? {bundleIndex, group: entry.Group, name: entry.Name, layers, supportsLscg} : null;
+
+  // AEE's legacy position fallback did not run when either native translation existed.
+  const aeeX = left !== null && itemValue(property, 'TranslationX') === null
+    && nativeLayerValue(property, 'TranslationX', layerName) === null
+    && differs(left, layerBase(layer?.DrawingLeft));
+  const aeeY = top !== null && itemValue(property, 'TranslationY') === null
+    && nativeLayerValue(property, 'TranslationY', layerName) === null
+    && differs(top, layerBase(layer?.DrawingTop));
+  const scaleX = legacyNumber(override.ScaleX);
+  const scaleY = legacyNumber(override.ScaleY);
+  const rotation = legacyNumber(override.Rotation);
+  return aeeX || aeeY || (scaleX !== null && differs(scaleX, 1))
+    || (scaleY !== null && differs(scaleY, 1)) || (rotation !== null && differs(rotation, 0));
+}
+
+function inspectPart(entry: ItemBundle, bundleIndex: number, family: IAssetFamily): WardrobeMigrationPart | null {
+  const overrides = entry.Property?.LayerOverrides;
+  const asset = AssetGet(family, entry.Group, entry.Name);
+  if (!Array.isArray(overrides) || !asset) return null;
+  let layers = 0;
+  let supportsAee = false;
+  let supportsLscg = false;
+  for (let index = 0; index < overrides.length; index++) {
+    const aee = layerNeedsMode(entry, asset, index, 'aee');
+    const lscg = layerNeedsMode(entry, asset, index, 'lscg');
+    if (aee || lscg) layers++;
+    supportsAee ||= aee;
+    supportsLscg ||= lscg;
+  }
+  return layers ? {bundleIndex, group: entry.Group, name: entry.Name, layers, supportsAee, supportsLscg} : null;
 }
 
 function migrateEntry(entry: ItemBundle, family: IAssetFamily, mode: Exclude<WardrobeMigrationMode, 'none'>): boolean {
@@ -71,18 +115,38 @@ function migrateEntry(entry: ItemBundle, family: IAssetFamily, mode: Exclude<War
     const override = rawOverride as unknown as Record<string, unknown>;
     const layer = asset.Layer?.[index];
     const layerName = layer?.Name ?? asset.Name;
+    if (!layerNeedsMode(entry, asset, index, mode)) return;
     const nativeValues: Array<[LegacyTransform, string, number]> = [];
     const left = legacyNumber(override.DrawingLeft);
     const top = legacyNumber(override.DrawingTop);
-    if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft)]);
-    if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop)]);
+    const itemX = itemValue(property, 'TranslationX') ?? 0;
+    const itemY = itemValue(property, 'TranslationY') ?? 0;
+    if (mode === 'lscg') {
+      if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft) - itemX]);
+      if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop) - itemY]);
+    } else {
+      if (left !== null && itemValue(property, 'TranslationX') === null
+        && nativeLayerValue(property, 'TranslationX', layerName) === null) {
+        nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft)]);
+      }
+      if (top !== null && itemValue(property, 'TranslationY') === null
+        && nativeLayerValue(property, 'TranslationY', layerName) === null) {
+        nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop)]);
+      }
+    }
     if (mode === 'aee') {
       const scaleX = legacyNumber(override.ScaleX);
       const scaleY = legacyNumber(override.ScaleY);
       const rotation = legacyNumber(override.Rotation);
-      if (scaleX !== null) nativeValues.push(['ScaleX', 'ScaleX', scaleX]);
-      if (scaleY !== null) nativeValues.push(['ScaleY', 'ScaleY', scaleY]);
-      if (rotation !== null) nativeValues.push(['Rotation', 'Rotation', rotation]);
+      if (scaleX !== null && differs(scaleX, 1)) nativeValues.push([
+        'ScaleX', 'ScaleX', (nativeLayerValue(property, 'ScaleX', layerName) ?? 1) * scaleX,
+      ]);
+      if (scaleY !== null && differs(scaleY, 1)) nativeValues.push([
+        'ScaleY', 'ScaleY', (nativeLayerValue(property, 'ScaleY', layerName) ?? 1) * scaleY,
+      ]);
+      if (rotation !== null && differs(rotation, 0)) nativeValues.push([
+        'Rotation', 'Rotation', rotation - (itemValue(property, 'Rotation') ?? 0),
+      ]);
     }
     for (const [legacyKey, nativeKey, value] of nativeValues) {
       const propertyKey = `Layer${nativeKey}`;
@@ -90,7 +154,7 @@ function migrateEntry(entry: ItemBundle, family: IAssetFamily, mode: Exclude<War
       const values = existing && typeof existing === 'object'
         ? existing as Record<string, number>
         : (property[propertyKey] = {}) as Record<string, number>;
-      if (values[layerName] == null) values[layerName] = value;
+      values[layerName] = value;
       delete override[legacyKey];
       changed = true;
     }
@@ -117,7 +181,7 @@ export function scanWardrobeMigration(source: WardrobeSource, family: IAssetFami
     const before = source.outfitAt(index);
     if (!before.length) continue;
     const parts = before.flatMap((entry, bundleIndex) => {
-      const part = inspectPart(entry, bundleIndex);
+      const part = inspectPart(entry, bundleIndex, family);
       return part ? [part] : [];
     });
     if (!parts.length) continue;

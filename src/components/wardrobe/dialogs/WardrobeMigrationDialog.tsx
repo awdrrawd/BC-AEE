@@ -45,7 +45,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   const spsEnabled = settings.wardrobeSpsEnabled.get();
 
   const modeOf = (slot: WardrobeMigrationSlot, part: WardrobeMigrationPart) =>
-    choices[partKey(slot.index, part)] ?? 'aee';
+    choices[partKey(slot.index, part)] ?? (part.supportsAee ? 'aee' : 'lscg');
   const chosenParts = slots.reduce((count, slot) =>
     count + slot.parts.filter(part => modeOf(slot, part) !== 'none').length, 0);
   const chosenOutfits = slots.filter(slot => slot.parts.some(part => modeOf(slot, part) !== 'none')).length;
@@ -66,7 +66,10 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   const setSlotMode = (slot: WardrobeMigrationSlot, mode: WardrobeMigrationMode) =>
     setChoices(previous => {
       const next = {...previous};
-      for (const part of slot.parts) next[partKey(slot.index, part)] = mode === 'lscg' && !part.supportsLscg ? 'none' : mode;
+      for (const part of slot.parts) {
+        const supported = mode === 'none' || (mode === 'aee' ? part.supportsAee : part.supportsLscg);
+        next[partKey(slot.index, part)] = supported ? mode : 'none';
+      }
       return next;
     });
   const toggleExpanded = (index: number) => setExpanded(previous => {
@@ -174,7 +177,7 @@ function MigrationSlotRow({slot, focused, open, modeOf, onFocus, onToggle, onPar
           <span className="truncate text-left text-[25px] leading-none text-zinc-200">{asset?.Description ?? part.name}</span>
           {MODES.map(mode => <label key={mode} className="flex cursor-pointer justify-center">
             <input type="radio" name={`migration-${slot.index}-${part.bundleIndex}`} checked={modeOf(part) === mode}
-                   disabled={mode === 'lscg' && !part.supportsLscg}
+                   disabled={(mode === 'aee' && !part.supportsAee) || (mode === 'lscg' && !part.supportsLscg)}
                    onChange={() => onPartMode(part, mode)} className="h-4 w-4 accent-(--aee-accent)"/>
           </label>)}
           <span className="text-[24px] leading-none text-white">{part.layers}</span>

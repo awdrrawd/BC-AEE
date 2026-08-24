@@ -24,9 +24,12 @@ type BCGLContext = (WebGL2RenderingContext | WebGLRenderingContext) & {
 };
 
 let LastGL: BCGLContext | null = null;
-// Re-hook on every install: bcModSdk allowReplace drops old hooks, so use a
-// module-local flag rather than a persistent window flag.
-let imagePatchInstalled = false;
+// BC draw functions may become available at different points during startup.
+// Track each hook independently so one early function cannot make us skip the
+// other two permanently.
+let glLoadImageHooked = false;
+let drawGetImageHooked = false;
+let glAppearanceBuildHooked = false;
 
 function transparentPx(): string {
   const c = document.createElement('canvas');
@@ -198,23 +201,26 @@ let buildingChar: Character | null = null;
 export function getBuildingChar(): Character | null { return buildingChar; }
 
 export function installImagePatch(): boolean {
-  if (imagePatchInstalled) return true;
-  if (typeof GLDrawLoadImage !== 'function') return false;
-
-  bcAeeModSdk.hookFunction('GLDrawLoadImage', 10, glLoadImageHook as never);
-  if (typeof DrawGetImage === 'function') bcAeeModSdk.hookFunction('DrawGetImage', 10, drawGetImageHook as never);
+  if (!glLoadImageHooked && typeof GLDrawLoadImage === 'function') {
+    bcAeeModSdk.hookFunction('GLDrawLoadImage', 10, glLoadImageHook as never);
+    glLoadImageHooked = true;
+  }
+  if (!drawGetImageHooked && typeof DrawGetImage === 'function') {
+    bcAeeModSdk.hookFunction('DrawGetImage', 10, drawGetImageHook as never);
+    drawGetImageHooked = true;
+  }
   // Track the character being built; for characters that use our masks, force a
   // per-character re-combine (source textures stay cached → no flicker).
-  if (typeof GLDrawAppearanceBuild === 'function') {
+  if (!glAppearanceBuildHooked && typeof GLDrawAppearanceBuild === 'function') {
     bcAeeModSdk.hookFunction('GLDrawAppearanceBuild', 6, (args, next) => {
       const C = (args as unknown as [Character])[0] ?? null;
       buildingChar = C;
       if (characterUsesOurMasks(C)) clearMaskCaches();
       try { return next(args); } finally { buildingChar = null; }
     });
+    glAppearanceBuildHooked = true;
   }
-  imagePatchInstalled = true;
-  return true;
+  return glLoadImageHooked && drawGetImageHooked && glAppearanceBuildHooked;
 }
 
 // Force a mask re-combine after content changed (edit / glove switch). Source

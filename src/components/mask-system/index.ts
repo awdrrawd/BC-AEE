@@ -260,14 +260,14 @@ export function installMaskSystem() {
     tryHookSanitize();
     tryHookAssetReload();
     tryHookAppearanceSync();
-    installPeerDetection(); // idempotent; learns which room members run AEE
+    const peerDetectionReady = installPeerDetection(); // idempotent; learns which room members run AEE
 
     if (patch && registered && !callbacksInstalled) {
       callbacksInstalled = true;
       installFreeDrawCallbacks();
     }
     if (patch && registered && drawHooked && sanitizeHooked && callbacksInstalled
-      && assetReloadHooked && appearanceSyncHooked) {
+      && assetReloadHooked && appearanceSyncHooked && peerDetectionReady) {
       clearInterval(timer);
     }
   }, MASK_INSTALL_RETRY_MS);

@@ -50,9 +50,9 @@ function pruneToRoom() {
 let installed = false;
 let lastAnnounce = 0;
 
-export function installPeerDetection() {
-  if (installed) return;
-  if (typeof ChatRoomMessage !== 'function' || typeof ChatRoomSync !== 'function') return;
+export function installPeerDetection(): boolean {
+  if (installed) return true;
+  if (typeof ChatRoomMessage !== 'function' || typeof ChatRoomSync !== 'function') return false;
   installed = true;
 
   // Listen for our hidden handshake. Record the sender; reply ONLY to a fresh
@@ -89,4 +89,5 @@ export function installPeerDetection() {
   // again, so announce once now.
   lastAnnounce = Date.now();
   setTimeout(() => sendHidden(HELLO), MASK_PEER_ANNOUNCE_DELAY_MS);
+  return true;
 }

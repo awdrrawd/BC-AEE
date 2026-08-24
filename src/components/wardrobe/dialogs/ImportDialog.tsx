@@ -60,6 +60,8 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
     </header>
 
     <div className="flex min-h-0 flex-1 gap-5">
+      <ImportPreviewPane entry={focused} index={focus}/>
+
       <section className="flex min-h-0 flex-1 flex-col gap-2">
         <div className="flex shrink-0 items-center gap-3">
           <h2 className="flex-1 text-[24px] text-white">{t('wardrobe-import-changes', {n: entries.length})}</h2>
@@ -92,8 +94,6 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
             : <p className="m-auto px-6 text-center text-[22px] text-zinc-500">{t('wardrobe-import-empty')}</p>}
         </div>
       </section>
-
-      <ImportPreviewPane entry={focused} index={focus}/>
     </div>
 
     <Button density="stage"

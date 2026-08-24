@@ -1,4 +1,4 @@
-import {Save, Shirt, SquareX} from 'lucide-react';
+import {DatabaseBackup, Save, Shirt, SquareX} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 
@@ -18,6 +18,7 @@ import {showToast} from '@/util/toast';
 import {getTargetCharacter, type WardrobeState} from '@/core/wardrobeStore';
 import {ExportDialog} from '@/components/wardrobe/dialogs/ExportDialog';
 import {ImportDialog} from '@/components/wardrobe/dialogs/ImportDialog';
+import {WardrobeMigrationDialog} from '@/components/wardrobe/dialogs/WardrobeMigrationDialog';
 import {OutfitEditForm} from '@/components/wardrobe/OutfitEditForm';
 import {OutfitNameField} from '@/components/wardrobe/OutfitNameField';
 import {TagRow} from '@/components/wardrobe/TagRow';
@@ -122,5 +123,11 @@ export function ManagePanel({state}: { state: WardrobeState }) {
       onExport={() => openDialog(close => <ExportDialog onClose={close}/>)}
       onImportFile={file => void importFromFile(file)}
     />
+
+    <Button density="stage" className="h-10 shrink-0"
+            onClick={() => openDialog(close => <WardrobeMigrationDialog onClose={close}/>)}
+            icon={<DatabaseBackup className="h-5 w-5"/>}>
+      {t('wardrobe-migration-entry')}
+    </Button>
   </Panel>;
 }

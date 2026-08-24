@@ -1,6 +1,6 @@
 import type {PendingImport, WardrobeSlotMeta} from '@/core/types';
 import {decodeBundles} from '@/util/appearanceBundle';
-import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
+import {activeWardrobeSource, getSlotMeta, type WardrobeSource} from '@/core/wardrobeStorage';
 
 const FILE_FORMAT = 'aee-wardrobe';
 const FILE_VERSION = 1;
@@ -30,8 +30,7 @@ function isOutfit(value: unknown): value is ItemBundle[] {
   return Array.isArray(value) && value.length > 0 && value.every(isBundle);
 }
 
-export function collectWardrobeSlots(): WardrobeFileSlot[] {
-  const source = activeWardrobeSource();
+export function collectWardrobeSlots(source: WardrobeSource = activeWardrobeSource()): WardrobeFileSlot[] {
   const slots: WardrobeFileSlot[] = [];
   for (let index = 0; index < source.size(); index++) {
     const outfit = source.outfitAt(index);
@@ -58,10 +57,18 @@ export function buildWardrobeFile(slots: WardrobeFileSlot[]): WardrobeFile {
   };
 }
 
-export function wardrobeFileName(): string {
+export function wardrobeFileName(sourceId?: string): string {
   const date = new Date().toISOString().slice(0, 10);
   const player = (Player?.Name ?? 'player').replace(/[^\w-]/g, '') || 'player';
-  return `aee-wardrobe-${player}-${date}.json`;
+  const source = sourceId ? `-${sourceId}` : '';
+  return `aee-wardrobe-${player}${source}-${date}.json`;
+}
+
+export function backupWardrobeSource(source: WardrobeSource): number {
+  const slots = collectWardrobeSlots(source);
+  if (!slots.length) return 0;
+  downloadJson(wardrobeFileName(`${source.id}-backup`), JSON.stringify(buildWardrobeFile(slots), null, 2));
+  return slots.length;
 }
 
 export function downloadBlob(fileName: string, blob: Blob) {

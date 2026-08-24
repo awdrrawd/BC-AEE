@@ -6,14 +6,14 @@ import {entryStatus, outfitLabel, slotLabel} from '@/components/wardrobe/dialogs
 import {CharacterPreview} from '@/components/wardrobe/CharacterPreview';
 
 export function ImportPreviewPane({entry, index}: { entry: ImportEntry | null; index: number }) {
-  return <section className="flex w-160 shrink-0 flex-col gap-2">
+  return <section className="flex w-245 shrink-0 flex-col gap-2">
     <h2 className="shrink-0 text-center text-[24px] text-white">{t('wardrobe-import-preview')}</h2>
 
     <div className="aee-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-xl border border-white/20 p-3">
       {!entry
         ? <p className="m-auto px-6 text-center text-[22px] text-zinc-500">{t('wardrobe-import-preview-hint')}</p>
         : <>
-          <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
+          <div className="relative grid min-h-0 flex-1 grid-cols-2 gap-3">
             <PreviewCard
               title={t('wardrobe-import-before')}
               subtitle={entry.target < 0 ? t('wardrobe-import-no-target') : slotLabel(entry.target)}
@@ -26,6 +26,7 @@ export function ImportPreviewPane({entry, index}: { entry: ImportEntry | null; i
               highlight={entryStatus(entry) !== 'skip'}
               dimmed={entryStatus(entry) === 'skip'}
             />
+            <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-(--aee-accent-55) bg-zinc-950/90 px-2 py-1 text-xl text-(--aee-accent)">➤</span>
           </div>
 
           {entry.pending.meta?.tags.length ? <div className="flex shrink-0 flex-wrap gap-1.5">
@@ -58,6 +59,7 @@ function PreviewCard({title, subtitle, appearance, highlight = false, dimmed = f
       <div className="truncate text-[18px] text-zinc-500">{subtitle}</div>
     </div>
 
-    <CharacterPreview appearance={appearance} className="min-h-0 flex-1"/>
+    <CharacterPreview appearance={appearance}
+                      className="min-h-0 min-w-0 flex-1 overflow-hidden [&>canvas]:block [&>canvas]:max-h-full [&>canvas]:max-w-full [&>canvas]:object-contain"/>
   </div>;
 }

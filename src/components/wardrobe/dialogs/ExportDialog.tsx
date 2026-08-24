@@ -43,6 +43,16 @@ export function ExportDialog({onClose}: { onClose: () => void }) {
     </header>
 
     <div className="flex min-h-0 flex-1 gap-5">
+      <section className="flex w-245 shrink-0 flex-col gap-2">
+        <h2 className="shrink-0 text-center text-[24px] text-white">{t('wardrobe-import-preview')}</h2>
+        <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-white/20 bg-black/30">
+          {focused
+            ? <CharacterPreview appearance={focused.outfit}
+                                className="min-h-0 min-w-0 flex-1 overflow-hidden [&>canvas]:block [&>canvas]:max-h-full [&>canvas]:max-w-full [&>canvas]:object-contain"/>
+            : <p className="m-auto px-6 text-center text-[22px] text-zinc-500">{t('wardrobe-import-preview-hint')}</p>}
+        </div>
+      </section>
+
       <section className="flex min-h-0 flex-1 flex-col gap-2">
         <h2 className="shrink-0 text-[24px] text-white">{t('wardrobe-export-list', {n: selected.size})}</h2>
 
@@ -76,15 +86,6 @@ export function ExportDialog({onClose}: { onClose: () => void }) {
               </div>;
             })
             : <p className="m-auto px-6 text-center text-[22px] text-zinc-500">{t('wardrobe-toast-file-empty')}</p>}
-        </div>
-      </section>
-
-      <section className="flex w-160 shrink-0 flex-col gap-2">
-        <h2 className="shrink-0 text-center text-[24px] text-white">{t('wardrobe-import-preview')}</h2>
-        <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-white/20 bg-black/30">
-          {focused
-            ? <CharacterPreview appearance={focused.outfit} className="min-h-0 flex-1"/>
-            : <p className="m-auto px-6 text-center text-[22px] text-zinc-500">{t('wardrobe-import-preview-hint')}</p>}
         </div>
       </section>
     </div>

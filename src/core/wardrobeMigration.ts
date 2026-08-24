@@ -21,13 +21,30 @@ export interface WardrobeMigrationSlot {
   parts: WardrobeMigrationPart[];
 }
 
-function layerBase(value: unknown): number {
+function poseDefault(value: unknown): number {
   if (typeof value === 'number') return value;
   if (value && typeof value === 'object') {
     const raw = (value as Record<string, unknown>)[''];
     if (typeof raw === 'number') return raw;
   }
   return 0;
+}
+
+/** Mirrors BC R131 PropertyLayerOrigin.resolveLayer for the default pose. */
+function resolvedLayerBase(
+  layer: AssetLayer | undefined,
+  property: Record<string, unknown>,
+  field: 'DrawingLeft' | 'DrawingTop',
+): number {
+  if (!layer) return 0;
+  const base = poseDefault(layer[field]);
+  const extended = property[field];
+  if (!extended || typeof extended !== 'object') return base;
+  const values = extended as Record<string, unknown>;
+  const layerName = layer.Name ?? '';
+  if (values[layerName]) return poseDefault(values[layerName]);
+  const relative = values.ASSET_OVERRIDE;
+  return relative ? base + poseDefault(relative) : base;
 }
 
 function legacyNumber(value: unknown): number | null {
@@ -60,13 +77,14 @@ function layerNeedsMode(entry: ItemBundle, asset: Asset, index: number, mode: Ex
   const override = property?.LayerOverrides?.[index] as unknown as Record<string, unknown> | undefined;
   if (!property || !override) return false;
   const layer = asset.Layer?.[index];
+  if (!layer) return false; // stale override from an older asset-layer layout
   const layerName = layer?.Name ?? asset.Name;
   const left = legacyNumber(override.DrawingLeft);
   const top = legacyNumber(override.DrawingTop);
   if (mode === 'lscg') {
-    const nativeX = layerBase(layer?.DrawingLeft) + (itemValue(property, 'TranslationX') ?? 0)
+    const nativeX = resolvedLayerBase(layer, property, 'DrawingLeft') + (itemValue(property, 'TranslationX') ?? 0)
       + (nativeLayerValue(property, 'TranslationX', layerName) ?? 0);
-    const nativeY = layerBase(layer?.DrawingTop) + (itemValue(property, 'TranslationY') ?? 0)
+    const nativeY = resolvedLayerBase(layer, property, 'DrawingTop') + (itemValue(property, 'TranslationY') ?? 0)
       + (nativeLayerValue(property, 'TranslationY', layerName) ?? 0);
     return (left !== null && differs(left, nativeX)) || (top !== null && differs(top, nativeY));
   }
@@ -74,10 +92,10 @@ function layerNeedsMode(entry: ItemBundle, asset: Asset, index: number, mode: Ex
   // AEE's legacy position fallback did not run when either native translation existed.
   const aeeX = left !== null && itemValue(property, 'TranslationX') === null
     && nativeLayerValue(property, 'TranslationX', layerName) === null
-    && differs(left, layerBase(layer?.DrawingLeft));
+    && differs(left, resolvedLayerBase(layer, property, 'DrawingLeft'));
   const aeeY = top !== null && itemValue(property, 'TranslationY') === null
     && nativeLayerValue(property, 'TranslationY', layerName) === null
-    && differs(top, layerBase(layer?.DrawingTop));
+    && differs(top, resolvedLayerBase(layer, property, 'DrawingTop'));
   const scaleX = legacyNumber(override.ScaleX);
   const scaleY = legacyNumber(override.ScaleY);
   const rotation = legacyNumber(override.Rotation);
@@ -122,16 +140,16 @@ function migrateEntry(entry: ItemBundle, family: IAssetFamily, mode: Exclude<War
     const itemX = itemValue(property, 'TranslationX') ?? 0;
     const itemY = itemValue(property, 'TranslationY') ?? 0;
     if (mode === 'lscg') {
-      if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft) - itemX]);
-      if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop) - itemY]);
+      if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - resolvedLayerBase(layer, property, 'DrawingLeft') - itemX]);
+      if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - resolvedLayerBase(layer, property, 'DrawingTop') - itemY]);
     } else {
       if (left !== null && itemValue(property, 'TranslationX') === null
         && nativeLayerValue(property, 'TranslationX', layerName) === null) {
-        nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft)]);
+        nativeValues.push(['DrawingLeft', 'TranslationX', left - resolvedLayerBase(layer, property, 'DrawingLeft')]);
       }
       if (top !== null && itemValue(property, 'TranslationY') === null
         && nativeLayerValue(property, 'TranslationY', layerName) === null) {
-        nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop)]);
+        nativeValues.push(['DrawingTop', 'TranslationY', top - resolvedLayerBase(layer, property, 'DrawingTop')]);
       }
     }
     if (mode === 'aee') {

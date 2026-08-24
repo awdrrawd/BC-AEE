@@ -52,13 +52,6 @@ function isBodyGroup(group: AssetGroup): boolean {
   return group.Category === 'Appearance' && !group.Clothing;
 }
 
-function outfitHasBody(family: IAssetFamily, outfit: readonly ItemBundle[] | null): boolean {
-  return !!outfit?.some(entry => {
-    const group = AssetGroupGet(family, entry.Group);
-    return !!group && isBodyGroup(group);
-  });
-}
-
 function bodySignature(character: Character): string {
   return character.Appearance
     .filter(item => isBodyGroup(item.Asset.Group))
@@ -174,11 +167,15 @@ export class CharacterPreview extends Component<Props, State> {
 
     try {
       character.Appearance = [];
-      if (!outfitHasBody(wearer.AssetFamily, outfit)) {
-        const body = bundleAppearance(wearer.Appearance.filter(item => isBodyGroup(item.Asset.Group)));
-        for (const entry of body) wearBundle(character, entry);
-      }
+      // Wardrobe bundles can contain only part of a body. Fill each missing body
+      // group independently; the old all-or-nothing check left preview characters
+      // without BodyStyle, which makes BC R131's DrawOffset lookup throw.
+      const outfitGroups = new Set(outfit?.map(entry => entry.Group) ?? []);
+      const body = bundleAppearance(wearer.Appearance.filter(item =>
+        isBodyGroup(item.Asset.Group) && !outfitGroups.has(item.Asset.Group.Name)));
+      for (const entry of body) wearBundle(character, entry);
       if (outfit) for (const entry of outfit) wearBundle(character, entry);
+      if (!InventoryGet(character, 'BodyStyle')) InventoryWear(character, 'Original', 'BodyStyle');
 
       const before = cachedImageKeys();
       CharacterRefresh(character, false, false);

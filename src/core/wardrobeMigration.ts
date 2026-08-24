@@ -1,6 +1,15 @@
 import type {WardrobeSource} from '@/core/wardrobeStorage';
 
+export type WardrobeMigrationMode = 'none' | 'aee' | 'lscg';
 type LegacyTransform = 'DrawingLeft' | 'DrawingTop' | 'ScaleX' | 'ScaleY' | 'Rotation';
+
+export interface WardrobeMigrationPart {
+  bundleIndex: number;
+  group: AssetGroupName;
+  name: string;
+  layers: number;
+  supportsLscg: boolean;
+}
 
 export interface WardrobeMigrationSlot {
   index: number;
@@ -8,6 +17,7 @@ export interface WardrobeMigrationSlot {
   before: ItemBundle[];
   after: ItemBundle[];
   changedItems: number;
+  parts: WardrobeMigrationPart[];
 }
 
 function layerBase(value: unknown): number {
@@ -28,57 +38,77 @@ function legacyNumber(value: unknown): number | null {
   return null;
 }
 
-/** Converts AEE's pre-R131 render-time transforms into BC's native per-layer properties. */
-export function migrateOutfitToR131(outfit: readonly ItemBundle[], family: IAssetFamily): {
-  outfit: ItemBundle[];
-  changedItems: number;
-} {
-  const migrated = CommonCloneDeep(outfit) as ItemBundle[];
-  let changedItems = 0;
+function legacyKeys(override: Record<string, unknown>): LegacyTransform[] {
+  return (['DrawingLeft', 'DrawingTop', 'ScaleX', 'ScaleY', 'Rotation'] as LegacyTransform[])
+    .filter(key => legacyNumber(override[key]) !== null);
+}
 
-  for (const entry of migrated) {
-    const property = entry.Property as (ItemProperties & Record<string, unknown>) | undefined;
-    const overrides = property?.LayerOverrides;
-    if (!property || !Array.isArray(overrides)) continue;
+function inspectPart(entry: ItemBundle, bundleIndex: number): WardrobeMigrationPart | null {
+  const overrides = entry.Property?.LayerOverrides;
+  if (!Array.isArray(overrides)) return null;
+  let layers = 0;
+  let supportsLscg = false;
+  for (const raw of overrides) {
+    if (!raw || typeof raw !== 'object') continue;
+    const keys = legacyKeys(raw as unknown as Record<string, unknown>);
+    if (!keys.length) continue;
+    layers++;
+    if (keys.includes('DrawingLeft') || keys.includes('DrawingTop')) supportsLscg = true;
+  }
+  return layers ? {bundleIndex, group: entry.Group, name: entry.Name, layers, supportsLscg} : null;
+}
 
-    const asset = AssetGet(family, entry.Group, entry.Name);
-    if (!asset) continue;
-    let itemChanged = false;
+function migrateEntry(entry: ItemBundle, family: IAssetFamily, mode: Exclude<WardrobeMigrationMode, 'none'>): boolean {
+  const property = entry.Property as (ItemProperties & Record<string, unknown>) | undefined;
+  const overrides = property?.LayerOverrides;
+  if (!property || !Array.isArray(overrides)) return false;
+  const asset = AssetGet(family, entry.Group, entry.Name);
+  if (!asset) return false;
+  let changed = false;
 
-    overrides.forEach((rawOverride, index) => {
-      if (!rawOverride || typeof rawOverride !== 'object') return;
-      const override = rawOverride as unknown as Record<string, unknown>;
-      const layer = asset.Layer?.[index];
-      const layerName = layer?.Name ?? asset.Name;
-      const nativeValues: Array<[LegacyTransform, string, number]> = [];
-
-      const left = legacyNumber(override.DrawingLeft);
-      const top = legacyNumber(override.DrawingTop);
+  overrides.forEach((rawOverride, index) => {
+    if (!rawOverride || typeof rawOverride !== 'object') return;
+    const override = rawOverride as unknown as Record<string, unknown>;
+    const layer = asset.Layer?.[index];
+    const layerName = layer?.Name ?? asset.Name;
+    const nativeValues: Array<[LegacyTransform, string, number]> = [];
+    const left = legacyNumber(override.DrawingLeft);
+    const top = legacyNumber(override.DrawingTop);
+    if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft)]);
+    if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop)]);
+    if (mode === 'aee') {
       const scaleX = legacyNumber(override.ScaleX);
       const scaleY = legacyNumber(override.ScaleY);
       const rotation = legacyNumber(override.Rotation);
-      if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft)]);
-      if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop)]);
       if (scaleX !== null) nativeValues.push(['ScaleX', 'ScaleX', scaleX]);
       if (scaleY !== null) nativeValues.push(['ScaleY', 'ScaleY', scaleY]);
       if (rotation !== null) nativeValues.push(['Rotation', 'Rotation', rotation]);
+    }
+    for (const [legacyKey, nativeKey, value] of nativeValues) {
+      const propertyKey = `Layer${nativeKey}`;
+      const existing = property[propertyKey];
+      const values = existing && typeof existing === 'object'
+        ? existing as Record<string, number>
+        : (property[propertyKey] = {}) as Record<string, number>;
+      if (values[layerName] == null) values[layerName] = value;
+      delete override[legacyKey];
+      changed = true;
+    }
+  });
+  return changed;
+}
 
-      for (const [legacyKey, nativeKey, value] of nativeValues) {
-        const propertyKey = `Layer${nativeKey}`;
-        const existing = property[propertyKey];
-        const values = existing && typeof existing === 'object'
-          ? existing as Record<string, number>
-          : (property[propertyKey] = {}) as Record<string, number>;
-        if (values[layerName] == null) values[layerName] = value;
-        delete override[legacyKey];
-        itemChanged = true;
-      }
-    });
-
-    if (itemChanged) changedItems++;
+export function buildWardrobeMigrationOutfit(
+  slot: WardrobeMigrationSlot,
+  family: IAssetFamily,
+  modeForPart: (part: WardrobeMigrationPart) => WardrobeMigrationMode,
+): ItemBundle[] {
+  const outfit = CommonCloneDeep(slot.before) as ItemBundle[];
+  for (const part of slot.parts) {
+    const mode = modeForPart(part);
+    if (mode !== 'none') migrateEntry(outfit[part.bundleIndex], family, mode);
   }
-
-  return {outfit: migrated, changedItems};
+  return outfit;
 }
 
 export function scanWardrobeMigration(source: WardrobeSource, family: IAssetFamily): WardrobeMigrationSlot[] {
@@ -86,9 +116,16 @@ export function scanWardrobeMigration(source: WardrobeSource, family: IAssetFami
   for (let index = 0; index < source.size(); index++) {
     const before = source.outfitAt(index);
     if (!before.length) continue;
-    const result = migrateOutfitToR131(before, family);
-    if (!result.changedItems) continue;
-    slots.push({index, name: source.nameAt(index), before, after: result.outfit, changedItems: result.changedItems});
+    const parts = before.flatMap((entry, bundleIndex) => {
+      const part = inspectPart(entry, bundleIndex);
+      return part ? [part] : [];
+    });
+    if (!parts.length) continue;
+    const slot: WardrobeMigrationSlot = {
+      index, name: source.nameAt(index), before, after: [], changedItems: parts.length, parts,
+    };
+    slot.after = buildWardrobeMigrationOutfit(slot, family, () => 'aee');
+    slots.push(slot);
   }
   return slots;
 }

@@ -20,7 +20,12 @@ function record(): AppearanceQuickSettings | null {
 export function loadAppearanceQuickSettings() {
   const saved = record();
   if (!saved) return;
-  if (typeof saved.hoverTryOnEnabled === 'boolean') runtime.hoverTryOnEnabled = saved.hoverTryOnEnabled;
+  if (typeof saved.hoverTryOnEnabled === 'boolean') {
+    runtime.hoverTryOnEnabled = saved.hoverTryOnEnabled;
+    settings.hoverTryOnActive.set(saved.hoverTryOnEnabled);
+  } else {
+    runtime.hoverTryOnEnabled = settings.hoverTryOnActive.get();
+  }
   if (typeof saved.characterPreviewActive === 'boolean') settings.characterPreviewActive.set(saved.characterPreviewActive, false);
 }
 

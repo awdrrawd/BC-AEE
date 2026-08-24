@@ -527,7 +527,7 @@ export function installSettingEffects() {
     if (!enabled) stopHoverCharHighlight();
   });
   settings.hoverTryOn.onChange(enabled => {
-    runtime.hoverTryOnEnabled = enabled;
+    runtime.hoverTryOnEnabled = enabled && settings.hoverTryOnActive.get();
     if (!enabled) stopHoverTryOn();
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
@@ -810,6 +810,7 @@ export function isHoverTryOnEnabled(): boolean {
 
 export function toggleHoverTryOn(): void {
   runtime.hoverTryOnEnabled = !runtime.hoverTryOnEnabled;
+  settings.hoverTryOnActive.set(runtime.hoverTryOnEnabled);
   saveAppearanceQuickSetting('hoverTryOnEnabled', runtime.hoverTryOnEnabled);
   if (!runtime.hoverTryOnEnabled) stopHoverTryOn();
 }

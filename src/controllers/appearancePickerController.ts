@@ -200,8 +200,6 @@ function handleLayerPickerClick(x: number, y: number): boolean {
   if (index == null) return false;
   mutateState(draft => {
     draft.selectedLayer = String(index);
-    if (!draft.editTool) draft.editTool = 'xy';
-    if (!draft.editTools.length) draft.editTools = ['xy'];
   });
   return true;
 }

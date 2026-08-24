@@ -48,8 +48,6 @@ export function selectLayer(layerId: LayerId) {
   stopHoverHighlight(true);
   mutateState(draft => {
     draft.selectedLayer = layerId;
-    if (draft.editTools.length === 0) draft.editTools.push('xy');
-    if (!draft.editTool) draft.editTool = 'xy';
   });
 }
 
@@ -939,7 +937,6 @@ export function leaveSelectedPart() {
   mutateState(draft => {
     draft.selectedLayer = null;
     draft.editTool = null;
-    draft.editTools = [];
     draft.activeDrag = null;
     draft.rotationOverlayOpen = false;
     draft.transformOverlay.mode = null;

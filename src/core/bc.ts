@@ -7,6 +7,7 @@ import {clamp} from '@/util/math';
 // NOT locked here (Penis was never in this set; Pussy removed to align with R131).
 // BodyUpper/BodyLower/Nipples/Head stay locked — official R131 still disables them.
 export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Head']);
+const AEE_EXTENDED_ITEM_ASSETS = new Set(['Plushie', '玩偶']);
 
 // Hard caps for the native R131 Translation/Scale/Rotation properties, mirrored
 // from the official Layering panel (Scripts/Layering.js `_UpdateLimits` /
@@ -106,14 +107,13 @@ export function isEditableAppearanceContext() {
   const group = getCurrentGroup();
   const mode = getAppearanceMode();
   const wardrobeColor = mode === 'Color';
-  const itemColor = !!runtime.itemColorItem;
-  // Assets such as BC Plushie and ECHO 玩偶 explicitly have no colourable
+  const itemColor = !!runtime.itemColorItem && item === runtime.itemColorItem;
+  // BC Plushie and ECHO 玩偶 explicitly have no colourable
   // layers, so ItemColor can never be their entry point. Their modular
   // extended dialog is still a valid AEE transform/layer-editing context.
   const extendedItem = DialogMenuMode === 'extended'
     && DialogFocusItem === item
-    && item?.Asset?.Name !== 'DrawingBoard'
-    && !String(group).startsWith('ItemCanvas')
+    && AEE_EXTENDED_ITEM_ASSETS.has(item?.Asset?.Name ?? '')
     && (item?.Asset?.Layer?.length ?? 0) > 0;
   return !!item && !!group && (wardrobeColor || itemColor || extendedItem);
 }

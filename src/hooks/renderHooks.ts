@@ -1,6 +1,5 @@
 import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
-import {migrateLegacyLayerTransforms} from '@/core/bc';
 import type {
   AeeLayerOverride,
   BeforeDrawParams,
@@ -115,10 +114,6 @@ export function installRenderHooks() {
     const character = args[0];
     const toRestore: Array<{ asset: WritableAsset; original: boolean }> = [];
     character?.Appearance?.forEach(item => {
-      // Pre-R131 AEE stored ordinary transforms in its private LayerOverrides.
-      // Convert them before BC draws so CommonDraw's native transform pipeline
-      // is the only code applying position, scale, and rotation.
-      migrateLegacyLayerTransforms(item);
       const layerOverrides = item.Property?.LayerOverrides;
       const needsTransform = Array.isArray(layerOverrides) && layerOverrides.some((layerOverride: AeeLayerOverride | undefined) => layerOverride
         && (layerOverride.SkewX != null || layerOverride.SkewY != null

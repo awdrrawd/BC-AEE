@@ -177,8 +177,20 @@ export class CharacterPreview extends Component<Props, State> {
       if (!outfitHasBody(wearer.AssetFamily, outfit)) {
         const body = bundleAppearance(wearer.Appearance.filter(item => isBodyGroup(item.Asset.Group)));
         for (const entry of body) wearBundle(character, entry);
+      } else if (!outfit?.some(entry => entry.Group === 'BodyStyle')) {
+        // A partial body bundle suppresses the full body copy above, but BC's
+        // drawing coordinates always require BodyStyle for its DrawOffset.
+        const bodyStyle = wearer.Appearance.find(item => item.Asset.Group.Name === 'BodyStyle');
+        if (bodyStyle) {
+          const [entry] = bundleAppearance([bodyStyle]);
+          if (entry) wearBundle(character, entry);
+        }
       }
       if (outfit) for (const entry of outfit) wearBundle(character, entry);
+
+      // Keep malformed/imported bundles from crashing the preview renderer.
+      // This only changes the temporary preview character, never wardrobe data.
+      if (!InventoryGet(character, 'BodyStyle')) InventoryWear(character, 'Original', 'BodyStyle');
 
       const before = cachedImageKeys();
       CharacterRefresh(character, false, false);

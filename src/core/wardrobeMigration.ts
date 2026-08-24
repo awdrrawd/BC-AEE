@@ -29,6 +29,28 @@ function layerBase(value: unknown): number {
   return 0;
 }
 
+/**
+ * Resolves the default-pose origin exactly like BC R131's
+ * PropertyLayerOrigin.resolveLayer. Modular/ECHO clothing can override a
+ * layer's origin through Item.Property.DrawingLeft/DrawingTop; subtracting the
+ * raw AssetLayer origin makes those items jump after migration.
+ */
+function resolvedLayerBase(
+  layer: AssetLayer | undefined,
+  property: Record<string, unknown>,
+  field: 'DrawingLeft' | 'DrawingTop',
+): number {
+  if (!layer) return 0;
+  const base = layerBase(layer[field]);
+  const extended = property[field];
+  if (!extended || typeof extended !== 'object') return base;
+  const values = extended as Record<string, unknown>;
+  const layerName = layer.Name ?? '';
+  if (values[layerName]) return layerBase(values[layerName]);
+  const relative = values.ASSET_OVERRIDE;
+  return relative ? base + layerBase(relative) : base;
+}
+
 function legacyNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (value && typeof value === 'object') {
@@ -74,8 +96,12 @@ function migrateEntry(entry: ItemBundle, family: IAssetFamily, mode: Exclude<War
     const nativeValues: Array<[LegacyTransform, string, number]> = [];
     const left = legacyNumber(override.DrawingLeft);
     const top = legacyNumber(override.DrawingTop);
-    if (left !== null) nativeValues.push(['DrawingLeft', 'TranslationX', left - layerBase(layer?.DrawingLeft)]);
-    if (top !== null) nativeValues.push(['DrawingTop', 'TranslationY', top - layerBase(layer?.DrawingTop)]);
+    if (left !== null) nativeValues.push([
+      'DrawingLeft', 'TranslationX', left - resolvedLayerBase(layer, property, 'DrawingLeft'),
+    ]);
+    if (top !== null) nativeValues.push([
+      'DrawingTop', 'TranslationY', top - resolvedLayerBase(layer, property, 'DrawingTop'),
+    ]);
     if (mode === 'aee') {
       const scaleX = legacyNumber(override.ScaleX);
       const scaleY = legacyNumber(override.ScaleY);

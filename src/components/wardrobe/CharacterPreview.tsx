@@ -177,15 +177,8 @@ export class CharacterPreview extends Component<Props, State> {
       if (!outfitHasBody(wearer.AssetFamily, outfit)) {
         const body = bundleAppearance(wearer.Appearance.filter(item => isBodyGroup(item.Asset.Group)));
         for (const entry of body) wearBundle(character, entry);
-      } else if (!outfit?.some(entry => entry.Group === 'BodyStyle')) {
-        // A partial body bundle must still have BodyStyle because BC R131 reads
-        // BodyStyle.DrawOffset unconditionally. Add only this required group;
-        // filling every omitted body group changes the outfit being previewed.
-        const bodyStyle = wearer.Appearance.find(item => item.Asset.Group.Name === 'BodyStyle');
-        if (bodyStyle) wearBundle(character, bundleAppearance([bodyStyle])[0]);
       }
       if (outfit) for (const entry of outfit) wearBundle(character, entry);
-      if (!InventoryGet(character, 'BodyStyle')) InventoryWear(character, 'Original', 'BodyStyle');
 
       const before = cachedImageKeys();
       CharacterRefresh(character, false, false);

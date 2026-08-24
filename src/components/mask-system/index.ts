@@ -9,7 +9,17 @@ import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawAr
 import {settings} from '@/core/settings';
 import {installMaskTranslations} from './translations';
 import {installPeerDetection, isAeeMember} from './peers';
-import {SG_MASK_GROUP, SG_ASSET, DRAW_GROUPS, DRAW_ASSET} from './constants';
+import {
+  SG_MASK_GROUP,
+  SG_ASSET,
+  DRAW_GROUPS,
+  DRAW_ASSET,
+  drawMaskGroupName,
+  drawVisibleGroupName,
+  MASK_INSTALL_RETRY_MS,
+  MASK_REGISTRY_HEARTBEAT_MS,
+  MASK_SYNC_REPUSH_DELAY_MS,
+} from './constants';
 
 let started = false;
 let drawHooked = false;
@@ -22,8 +32,8 @@ let callbacksInstalled = false;
 const OUR_GROUP_NAMES = new Set<string>([
   SG_MASK_GROUP as unknown as string,
   ...DRAW_GROUPS.map(g => g as unknown as string),
-  ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Mask'),
-  ...DRAW_GROUPS.map(g => (g as unknown as string) + 'Vis'),
+  ...DRAW_GROUPS.map(drawMaskGroupName),
+  ...DRAW_GROUPS.map(drawVisibleGroupName),
 ]);
 
 // Every [group, asset] pair we register — used to purge stale AssetMap/
@@ -32,7 +42,9 @@ function ourAssetPairs(): [string, string][] {
   const pairs: [string, string][] = [[SG_MASK_GROUP as unknown as string, SG_ASSET]];
   for (const g of DRAW_GROUPS) {
     const gn = g as unknown as string;
-    pairs.push([gn, DRAW_ASSET], [gn + 'Mask', gn + 'MaskA'], [gn + 'Vis', gn + 'VisA']);
+    const maskGroup = drawMaskGroupName(gn);
+    const visibleGroup = drawVisibleGroupName(gn);
+    pairs.push([gn, DRAW_ASSET], [maskGroup, `${maskGroup}A`], [visibleGroup, `${visibleGroup}A`]);
   }
   return pairs;
 }
@@ -136,7 +148,7 @@ function preserveOurItemsAfterSync(C: Character, sourceMember: number, before: I
     setTimeout(() => {
       preserveRepushPending.delete(mn);
       try { if (typeof ChatRoomCharacterUpdate === 'function') ChatRoomCharacterUpdate(C); } catch { /* ignore */ }
-    }, 600);
+    }, MASK_SYNC_REPUSH_DELAY_MS);
   }
 }
 
@@ -261,7 +273,7 @@ export function installMaskSystem() {
       // items still reference the old (orphaned) asset objects — which crashes
       // other mods (e.g. LSCG). registerAll() is idempotent (asset-existence
       // guarded) and cheap, so re-run it periodically to self-heal.
-      setInterval(() => { installImagePatch(); registerAll(); }, 4000);
+      setInterval(() => { installImagePatch(); registerAll(); }, MASK_REGISTRY_HEARTBEAT_MS);
     }
-  }, 500);
+  }, MASK_INSTALL_RETRY_MS);
 }

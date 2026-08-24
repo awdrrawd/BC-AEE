@@ -10,6 +10,7 @@
 // (BC drops Type:"Hidden" before display).
 
 import bcAeeModSdk from '@/modsdk';
+import {MASK_PEER_ANNOUNCE_DELAY_MS, MASK_PEER_ANNOUNCE_INTERVAL_MS} from './constants';
 
 const HELLO = 'LikoAEE:hello';
 const REPLY = 'LikoAEE:hello-reply';
@@ -76,7 +77,10 @@ export function installPeerDetection() {
     try {
       pruneToRoom();
       const now = Date.now();
-      if (now - lastAnnounce > 4000) { lastAnnounce = now; setTimeout(() => sendHidden(HELLO), 600); }
+      if (now - lastAnnounce > MASK_PEER_ANNOUNCE_INTERVAL_MS) {
+        lastAnnounce = now;
+        setTimeout(() => sendHidden(HELLO), MASK_PEER_ANNOUNCE_DELAY_MS);
+      }
     } catch { /* ignore */ }
     return ret;
   });
@@ -84,5 +88,5 @@ export function installPeerDetection() {
   // Loaded (or reloaded) while already inside a room → ChatRoomSync won't fire
   // again, so announce once now.
   lastAnnounce = Date.now();
-  setTimeout(() => sendHidden(HELLO), 600);
+  setTimeout(() => sendHidden(HELLO), MASK_PEER_ANNOUNCE_DELAY_MS);
 }

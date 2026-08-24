@@ -104,7 +104,20 @@ export const DRAW_ASSET = 'DrawingBoard';
 export const PROP_KEY = 'CustomDraw';
 export const PROP_SPS_KEY = 'CustomDrawSPS';
 export const SLOT_COUNT = 3;
-export const DRAW_GROUPS = (['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3'] as unknown) as AssetGroupName[];
+export const DRAW_GROUP_PREFIX = 'ItemCanvas';
+export const DRAW_GROUPS = ([1, 2, 3].map(index => `${DRAW_GROUP_PREFIX}${index}`) as unknown) as AssetGroupName[];
+
+export const drawMaskGroupName = (group: AssetGroupName | string) => `${group as string}Mask`;
+export const drawVisibleGroupName = (group: AssetGroupName | string) => `${group as string}Vis`;
+export const isDrawMaskGroupName = (name: string) => name.startsWith(DRAW_GROUP_PREFIX) && name.endsWith('Mask');
+
+// Runtime registration / peer-handshake timings. They share one owner so retry
+// behaviour cannot silently drift across the mask modules.
+export const MASK_INSTALL_RETRY_MS = 500;
+export const MASK_REGISTRY_HEARTBEAT_MS = 4000;
+export const MASK_SYNC_REPUSH_DELAY_MS = 600;
+export const MASK_PEER_ANNOUNCE_INTERVAL_MS = 4000;
+export const MASK_PEER_ANNOUNCE_DELAY_MS = 600;
 
 export const DRAW_X = 500, DRAW_Y = 0;
 export const BOARD_W = 250, BOARD_H = 500;

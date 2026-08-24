@@ -1,48 +1,25 @@
 // Loads custom item fonts as FontFaces and caches their bytes in IndexedDB so a large .ttf
 // is downloaded from its host only once, then served locally on every later session.
 import {CUSTOM_FONT_FAMILY_PREFIX, type CustomFontDef, customFontFamily, customFontUrl} from '@/core/fonts';
+import {createIndexedDbOpener, requestResult, transactionComplete} from '@/core/indexedDb';
 
 const DB_NAME = 'liko-aee-fonts';
 const DB_VERSION = 1;
 const STORE = 'fonts';
 
-let dbPromise: Promise<IDBDatabase> | null = null;
-
-function openDb(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, {keyPath: 'id'});
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  dbPromise.catch(() => {
-    dbPromise = null;
-  });
-  return dbPromise;
-}
+const openDb = createIndexedDbOpener(DB_NAME, DB_VERSION, [{name: STORE, options: {keyPath: 'id'}}]);
 
 async function readCachedFont(id: string): Promise<ArrayBuffer | null> {
   const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const request = db.transaction(STORE, 'readonly').objectStore(STORE).get(id);
-    request.onsuccess = () => resolve((request.result as {id: string; buffer: ArrayBuffer} | undefined)?.buffer ?? null);
-    request.onerror = () => reject(request.error);
-  });
+  const result = await requestResult(db.transaction(STORE, 'readonly').objectStore(STORE).get(id));
+  return (result as {id: string; buffer: ArrayBuffer} | undefined)?.buffer ?? null;
 }
 
 async function writeCachedFont(id: string, buffer: ArrayBuffer): Promise<void> {
   const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).put({id, buffer});
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
+  const tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).put({id, buffer});
+  return transactionComplete(tx);
 }
 
 const ready = new Set<string>();
@@ -140,13 +117,9 @@ export function ensureCustomFontLoaded(def: CustomFontDef): boolean {
 
 async function clearFontCacheDb(): Promise<void> {
   const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).clear();
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
+  const tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).clear();
+  return transactionComplete(tx);
 }
 
 /**

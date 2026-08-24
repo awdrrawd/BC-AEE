@@ -71,6 +71,10 @@ function pointerEventCanvasPoint(event: PointerEvent | undefined): {x: number; y
   };
 }
 
+function captureDrawImageArgs(args: readonly [unknown, unknown, number, number, DrawOptions?, ...unknown[]]) {
+  captureAppearanceImage(args[0], args[2], args[3], args[4]);
+}
+
 export function installAppearanceHooks() {
   installDialogHoverTryOnHandlers();
   onAppearanceScreenTransition(transition => {
@@ -226,12 +230,12 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('GLDrawImage', 2, (args, next) => {
-    captureAppearanceImage(args[0], args[2], args[3], args[4]);
+    captureDrawImageArgs(args);
     return next(args);
   });
 
   bcAeeModSdk.hookFunction('DrawImageCanvas', 2, (args, next) => {
-    captureAppearanceImage(args[0], args[2], args[3], args[4]);
+    captureDrawImageArgs(args);
     return next(args);
   });
 

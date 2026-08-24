@@ -4,7 +4,13 @@
 import bcAeeModSdk from '@/modsdk';
 import {NAKED_DATAURL} from './assets';
 import {LRUCache} from './lruCache';
-import {MASK_IMAGE_CACHE_SIZE, MASK_TEXTURE_CACHE_SIZE} from './constants';
+import {
+  DRAW_GROUP_PREFIX,
+  MASK_IMAGE_CACHE_SIZE,
+  MASK_TEXTURE_CACHE_SIZE,
+  SG_MASK_GROUP,
+  isDrawMaskGroupName,
+} from './constants';
 
 type MaskProvider = string | (() => string);
 
@@ -140,7 +146,7 @@ function characterUsesOurMasks(C: Character | null): boolean {
   if (!C || !Array.isArray(C.Appearance)) return false;
   return C.Appearance.some(it => {
     const n = it?.Asset?.Group?.Name as string | undefined;
-    return n === 'SingleGloveFX' || (typeof n === 'string' && n.startsWith('ItemCanvas') && n.endsWith('Mask'));
+    return n === SG_MASK_GROUP || (typeof n === 'string' && isDrawMaskGroupName(n));
   });
 }
 
@@ -165,7 +171,7 @@ export interface PreviewRule {
   url: () => string;
 }
 const previewRules: PreviewRule[] = [
-  {match: (src) => src.includes('ItemCanvas'), url: () => NAKED_DATAURL}, // ItemCanvas1/2/3 (hidden *Mask groups have no preview)
+  {match: (src) => src.includes(DRAW_GROUP_PREFIX), url: () => NAKED_DATAURL}, // ItemCanvas1/2/3 (hidden *Mask groups have no preview)
 ];
 export function addPreviewRule(rule: PreviewRule) { previewRules.push(rule); }
 

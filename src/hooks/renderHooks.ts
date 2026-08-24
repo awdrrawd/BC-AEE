@@ -1,5 +1,6 @@
 import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
+import {migrateLegacyLayerTransforms} from '@/core/bc';
 import type {
   AeeLayerOverride,
   BeforeDrawParams,
@@ -114,6 +115,10 @@ export function installRenderHooks() {
     const character = args[0];
     const toRestore: Array<{ asset: WritableAsset; original: boolean }> = [];
     character?.Appearance?.forEach(item => {
+      // Pre-R131 AEE stored ordinary transforms in its private LayerOverrides.
+      // Convert them before BC draws so CommonDraw's native transform pipeline
+      // is the only code applying position, scale, and rotation.
+      migrateLegacyLayerTransforms(item);
       const layerOverrides = item.Property?.LayerOverrides;
       const needsTransform = Array.isArray(layerOverrides) && layerOverrides.some((layerOverride: AeeLayerOverride | undefined) => layerOverride
         && (layerOverride.SkewX != null || layerOverride.SkewY != null
@@ -169,26 +174,6 @@ export function installRenderHooks() {
 
     const fnExists = typeof windowFunctions[funcName] === 'function';
     const ret: BeforeDrawResult = (fnExists ? (next(args) ?? {}) : {});
-
-    const property = params.Property;
-    if (currentAppearance && property) {
-      let rawName = (params.L ?? '').trim();
-      if (rawName[0] === '_') rawName = rawName.slice(1);
-      const layerIdx = resolveDrawLayerIndex(currentAppearance, rawName);
-      if (layerIdx >= 0) {
-        const layerOverride = property?.LayerOverrides?.[layerIdx];
-        if (layerOverride) {
-          const layerName = currentAppearance.Asset?.Layer?.[layerIdx]?.Name ?? currentAppearance.Asset?.Name ?? '';
-          const p = property as (ItemProperties & Record<string, unknown>) | undefined;
-          const nativeTx = (p?.LayerTranslationX as Record<string, number> | undefined)?.[layerName];
-          const nativeTy = (p?.LayerTranslationY as Record<string, number> | undefined)?.[layerName];
-          const dx = nativeTx == null && (p?.TranslationX as number | undefined) == null ? layerOverride.DrawingLeft?.[''] : null;
-          const dy = nativeTy == null && (p?.TranslationY as number | undefined) == null ? layerOverride.DrawingTop?.[''] : null;
-          if (dx != null && ret.X == null) ret.X = dx;
-          if (dy != null && ret.Y == null) ret.Y = dy + CanvasUpperOverflow;
-        }
-      }
-    }
 
     if (currentAppearance) {
       let rawName = (params.L ?? '').trim();

@@ -139,6 +139,55 @@ export function ensureOpacityArray(item: Item | null) {
   }
 }
 
+/**
+ * Move transforms saved by pre-R131 AEE into BC's native per-layer properties.
+ * This is intentionally data migration only: CommonDraw remains solely
+ * responsible for applying position, scale, and rotation while rendering.
+ */
+export function migrateLegacyLayerTransforms(item: Item | null): boolean {
+  const overrides = item?.Property?.LayerOverrides;
+  const layers = item?.Asset?.Layer;
+  if (!item || !Array.isArray(overrides) || !layers?.length) return false;
+  const property = item.Property as ItemProperties & Record<string, unknown>;
+  let changed = false;
+
+  const migrate = (
+    index: number,
+    legacyKey: 'DrawingLeft' | 'DrawingTop' | 'ScaleX' | 'ScaleY' | 'Rotation',
+    nativeKey: 'TranslationX' | 'TranslationY' | 'ScaleX' | 'ScaleY' | 'Rotation',
+  ) => {
+    const layerOverride = overrides[index];
+    const legacy = layerOverride?.[legacyKey];
+    if (legacy == null) return;
+    const raw = typeof legacy === 'object' ? (legacy as LayerPositionOverride)[''] : legacy;
+    const numeric = Number(raw);
+    if (!Number.isFinite(numeric)) {
+      delete layerOverride![legacyKey];
+      changed = true;
+      return;
+    }
+    const layerName = layers[index]?.Name ?? item.Asset?.Name ?? '';
+    const nativeProperty = `Layer${nativeKey}`;
+    const nativeValues = (property[nativeProperty] ??= {}) as Record<string, number>;
+    if (nativeValues[layerName] == null) {
+      const base = legacyKey === 'DrawingLeft' ? getAssetBaseXY(item, String(index)).bx
+        : legacyKey === 'DrawingTop' ? getAssetBaseXY(item, String(index)).by : 0;
+      nativeValues[layerName] = numeric - base;
+    }
+    delete layerOverride![legacyKey];
+    changed = true;
+  };
+
+  layers.forEach((_, index) => {
+    migrate(index, 'DrawingLeft', 'TranslationX');
+    migrate(index, 'DrawingTop', 'TranslationY');
+    migrate(index, 'ScaleX', 'ScaleX');
+    migrate(index, 'ScaleY', 'ScaleY');
+    migrate(index, 'Rotation', 'Rotation');
+  });
+  return changed;
+}
+
 export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverrideKey, value: AeeLayerOverride[LayerOverrideKey]) {
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;

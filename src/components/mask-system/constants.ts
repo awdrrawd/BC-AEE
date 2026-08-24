@@ -114,7 +114,6 @@ export const isDrawMaskGroupName = (name: string) => name.startsWith(DRAW_GROUP_
 // Runtime registration / peer-handshake timings. They share one owner so retry
 // behaviour cannot silently drift across the mask modules.
 export const MASK_INSTALL_RETRY_MS = 500;
-export const MASK_REGISTRY_HEARTBEAT_MS = 4000;
 export const MASK_SYNC_REPUSH_DELAY_MS = 600;
 export const MASK_PEER_ANNOUNCE_INTERVAL_MS = 4000;
 export const MASK_PEER_ANNOUNCE_DELAY_MS = 600;

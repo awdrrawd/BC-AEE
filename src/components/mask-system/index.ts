@@ -17,7 +17,6 @@ import {
   drawMaskGroupName,
   drawVisibleGroupName,
   MASK_INSTALL_RETRY_MS,
-  MASK_REGISTRY_HEARTBEAT_MS,
   MASK_SYNC_REPUSH_DELAY_MS,
 } from './constants';
 
@@ -267,13 +266,9 @@ export function installMaskSystem() {
       callbacksInstalled = true;
       installFreeDrawCallbacks();
     }
-    if (patch && registered && drawHooked && callbacksInstalled && assetReloadHooked && appearanceSyncHooked) {
+    if (patch && registered && drawHooked && sanitizeHooked && callbacksInstalled
+      && assetReloadHooked && appearanceSyncHooked) {
       clearInterval(timer);
-      // Heartbeat: if BC reloads its assets our runtime groups vanish while worn
-      // items still reference the old (orphaned) asset objects — which crashes
-      // other mods (e.g. LSCG). registerAll() is idempotent (asset-existence
-      // guarded) and cheap, so re-run it periodically to self-heal.
-      setInterval(() => { installImagePatch(); registerAll(); }, MASK_REGISTRY_HEARTBEAT_MS);
     }
   }, MASK_INSTALL_RETRY_MS);
 }

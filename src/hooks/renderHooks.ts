@@ -76,7 +76,7 @@ export function installRenderHooks() {
   bcAeeModSdk.hookFunction('GLDrawAppearanceBuild', 1, (args, next) => {
     const character = args[0];
     runtime.currentRenderChar = character;
-    const savedPriority: Array<{ layer: WritableAssetLayer; original: number }> = [];
+    const savedPriority = new Map<WritableAssetLayer, number>();
     character.Appearance?.forEach(item => {
       const assetLayers = item.Asset?.Layer;
       const override = item.Property?.OverridePriority;
@@ -87,16 +87,20 @@ export function installRenderHooks() {
             : (typeof override === 'object' && override[layer.Name ?? ''] != null ? override[layer.Name ?? ''] : null);
           if (newPriority != null) {
             const writableLayer = layer as WritableAssetLayer;
-            savedPriority.push({layer: writableLayer, original: writableLayer.Priority});
+            if (!savedPriority.has(writableLayer)) savedPriority.set(writableLayer, writableLayer.Priority);
             writableLayer.Priority = newPriority;
           }
         });
       }
     });
-    const result = next(args);
-    savedPriority.forEach(({layer, original}) => {
-      layer.Priority = original;
-    });
+    let result: ReturnType<typeof next>;
+    try {
+      result = next(args);
+    } finally {
+      savedPriority.forEach((original, layer) => {
+        layer.Priority = original;
+      });
+    }
     character.AppearanceLayers?.forEach(layer => {
       const asset = layer.Asset?.Name;
       const group = layer.Asset?.Group?.Name;
@@ -112,7 +116,7 @@ export function installRenderHooks() {
 
   bcAeeModSdk.hookFunction('CommonDrawAppearanceBuild', 1, (args, next) => {
     const character = args[0];
-    const toRestore: Array<{ asset: WritableAsset; original: boolean }> = [];
+    const toRestore = new Map<WritableAsset, boolean>();
     character?.Appearance?.forEach(item => {
       const layerOverrides = item.Property?.LayerOverrides;
       const needsTransform = Array.isArray(layerOverrides) && layerOverrides.some((layerOverride: AeeLayerOverride | undefined) => layerOverride
@@ -121,15 +125,17 @@ export function installRenderHooks() {
       const needsFlash = item === runtime.hoverFlashData?.item || item === runtime.hoverCharFlashData?.item;
       if (needsTransform || needsFlash) {
         const writableAsset = item.Asset as WritableAsset;
-        toRestore.push({asset: writableAsset, original: writableAsset.DynamicBeforeDraw});
+        if (!toRestore.has(writableAsset)) toRestore.set(writableAsset, writableAsset.DynamicBeforeDraw);
         writableAsset.DynamicBeforeDraw = true;
       }
     });
-    const result = next(args);
-    toRestore.forEach(({asset, original}) => {
-      asset.DynamicBeforeDraw = original;
-    });
-    return result;
+    try {
+      return next(args);
+    } finally {
+      toRestore.forEach((original, asset) => {
+        asset.DynamicBeforeDraw = original;
+      });
+    }
   });
 
   bcAeeModSdk.hookFunction('CommonCallFunctionByNameWarn', 3, (args, next) => {

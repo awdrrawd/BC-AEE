@@ -3,27 +3,33 @@ import cn from '@/util/cn';
 import {bundleAppearance, wearBundle} from '@/util/appearanceBundle';
 import {CHARACTER_HEIGHT, CHARACTER_WIDTH, drawCharacterTo} from '@/util/characterCanvas';
 import {getTargetCharacter} from '@/core/wardrobeStore';
+import {collectDrawImages} from '@/core/drawImageTracker';
 
 const RESOLUTION = 0.5;
 const PICTURE_WIDTH = CHARACTER_WIDTH * RESOLUTION;
 const PICTURE_HEIGHT = CHARACTER_HEIGHT * RESOLUTION;
 const LOAD_TIMEOUT = 15_000;
+const FINAL_QUIET_FRAMES = 2;
 
 let previewSerial = 0;
-
-function cachedImageKeys(): Set<string> {
-  const keys = new Set<string>();
-  for (const key of GLDrawImageCache.keys()) keys.add(key);
-  for (const key of DrawCacheImage.keys()) keys.add(key);
-  return keys;
-}
 
 function allComplete(urls: readonly string[]): boolean {
   for (const url of urls) {
     const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
+    // A removed entry is allowed to reach the final rebuild; BC will request it
+    // again there if it is still required by this character.
     if (image && image.complete === false) return false;
   }
   return true;
+}
+
+function pendingImageKeys(keys: readonly string[]): string[] {
+  const pending: string[] = [];
+  for (const key of keys) {
+    const image = GLDrawImageCache.get(key) ?? DrawCacheImage.get(key);
+    if (image?.complete === false) pending.push(key);
+  }
+  return pending;
 }
 
 interface Props {
@@ -94,6 +100,8 @@ export class CharacterPreview extends Component<Props, State> {
   private built: Snapshot | null = null;
   private builtAt = 0;
   private awaiting: string[] = [];
+  private finalRebuilt = false;
+  private quietFrames = 0;
 
   componentDidMount() {
     const canvas = this.canvasRef.current;
@@ -166,6 +174,8 @@ export class CharacterPreview extends Component<Props, State> {
   ) {
     this.release();
     this.builtAt = performance.now();
+    this.finalRebuilt = false;
+    this.quietFrames = 0;
     CharacterPreview.live.add(this);
     CharacterPreview.schedule();
 
@@ -192,12 +202,12 @@ export class CharacterPreview extends Component<Props, State> {
       // This only changes the temporary preview character, never wardrobe data.
       if (!InventoryGet(character, 'BodyStyle')) InventoryWear(character, 'Original', 'BodyStyle');
 
-      const before = cachedImageKeys();
       CharacterRefresh(character, false, false);
       for (const name of pose) PoseSetActive(character, name, true);
-      CharacterLoadCanvas(character);
-      this.paint(character);
-      this.awaiting = [...cachedImageKeys()].filter(key => !before.has(key));
+      this.rebuildCanvas(character);
+      // Other cards may already have inserted the same image into the global BC
+      // cache. Wait for every currently pending image, not only keys this card
+      // happened to create, or shared assets can finalize as partial canvases.
     } catch (error) {
       console.warn('🐈‍⬛ [AEE] Failed to render an outfit preview', error);
       this.awaiting = [];
@@ -211,23 +221,51 @@ export class CharacterPreview extends Component<Props, State> {
     const character = this.character;
     if (!character || !this.visible) return;
 
-    if (character.MustDraw) {
-      try {
-        CharacterLoadCanvas(character); // absorb art that just finished loading
-        this.paint(character);
-      } catch {
-        return; // GL state briefly unusable — try again next frame
-      }
+    const timedOut = performance.now() - this.builtAt > LOAD_TIMEOUT;
+    const settled = allComplete(this.awaiting);
+    if (timedOut) {
+      if (!this.rebuildCanvas(character)) return;
+      this.finish();
+      return;
     }
 
-    const settled = allComplete(this.awaiting) || performance.now() - this.builtAt > LOAD_TIMEOUT;
-    if (this.state.loading && !character.MustDraw && settled) {
-      this.paint(character);
-      this.awaiting = [];
-      this.release();
-      CharacterPreview.live.delete(this);
-      this.setState({loading: false, painted: true});
+    if (!settled) {
+      this.finalRebuilt = false;
+      this.quietFrames = 0;
+      if (character.MustDraw) this.rebuildCanvas(character);
+      return;
     }
+
+    // `HTMLImageElement.complete` can become true before BC finishes uploading
+    // its WebGL texture and marks the temporary character dirty. Rebuild at the
+    // completion boundary, then require quiet frames with no new MustDraw signal.
+    if (!this.finalRebuilt || character.MustDraw) {
+      if (!this.rebuildCanvas(character)) return;
+      this.finalRebuilt = this.awaiting.length === 0;
+      this.quietFrames = 0;
+      return;
+    }
+
+    if (++this.quietFrames < FINAL_QUIET_FRAMES) return;
+    this.finish();
+  }
+
+  private rebuildCanvas(character: Character): boolean {
+    try {
+      const {urls} = collectDrawImages(() => CharacterLoadCanvas(character));
+      this.paint(character);
+      this.awaiting = pendingImageKeys(urls);
+      return true;
+    } catch {
+      return false; // GL state briefly unusable — try again next frame
+    }
+  }
+
+  private finish() {
+    this.awaiting = [];
+    this.release();
+    CharacterPreview.live.delete(this);
+    this.setState({loading: false, painted: true});
   }
 
   private release() {

@@ -45,7 +45,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   const spsEnabled = settings.wardrobeSpsEnabled.get();
 
   const modeOf = (slot: WardrobeMigrationSlot, part: WardrobeMigrationPart) =>
-    choices[partKey(slot.index, part)] ?? (part.supportsAee ? 'aee' : 'lscg');
+    choices[partKey(slot.index, part)] ?? 'none';
   const chosenParts = slots.reduce((count, slot) =>
     count + slot.parts.filter(part => modeOf(slot, part) !== 'none').length, 0);
   const chosenOutfits = slots.filter(slot => slot.parts.some(part => modeOf(slot, part) !== 'none')).length;

@@ -206,7 +206,9 @@ export function scanWardrobeMigration(source: WardrobeSource, family: IAssetFami
     const slot: WardrobeMigrationSlot = {
       index, name: source.nameAt(index), before, after: [], changedItems: parts.length, parts,
     };
-    slot.after = buildWardrobeMigrationOutfit(slot, family, () => 'aee');
+    // Migration is opt-in per part; the initial result must be byte-for-byte
+    // equivalent to the saved outfit until the player chooses a mode.
+    slot.after = CommonCloneDeep(before) as ItemBundle[];
     slots.push(slot);
   }
   return slots;

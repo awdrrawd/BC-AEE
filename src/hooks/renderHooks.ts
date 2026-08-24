@@ -29,37 +29,6 @@ function resolveDrawLayerIndex(currentAppearance: Item, rawName: string): number
 export function installRenderHooks() {
   installWebGlPrototypePatch();
 
-  // GLDrawImage is the stable boundary where BC now owns translation, rotation
-  // and scaling natively (R131). Flip is applied by negating its scale options;
-  // the remaining skew (and the scoped mirror copy) are handled by the WebGL
-  // matrix patch, gated on activeSkewTransform set here for the duration of the
-  // single image draw instead of guessing which global matrix calls belong to
-  // the current appearance layer.
-  bcAeeModSdk.hookFunction('GLDrawImage', 1, (args, next) => {
-    const transform = runtime.pendingTransform;
-    if (!transform) return next(args);
-
-    const options = {...((args[4] as Record<string, unknown> | undefined) ?? {})};
-    const scaleX = typeof options.ScaleX === 'number' ? options.ScaleX : 1;
-    const scaleY = typeof options.ScaleY === 'number' ? options.ScaleY : 1;
-    if (transform.flipX) options.ScaleX = -scaleX;
-    if (transform.flipY) options.ScaleY = -scaleY;
-    args[4] = options;
-
-    runtime.activeSkewTransform = transform;
-    runtime.pendingTransformApplied++;
-    try {
-      return next(args);
-    } finally {
-      runtime.activeSkewTransform = null;
-      // CommonDraw emits the normal and blink image consecutively for a layer.
-      if (runtime.pendingTransformApplied >= 2) {
-        runtime.pendingTransform = null;
-        runtime.pendingTransformApplied = 0;
-      }
-    }
-  });
-
   bcAeeModSdk.hookFunction('CommonDrawResolveLayerColor', 0, (args, next) => {
     const item = args[1];
     const layer = args[2];
@@ -107,11 +76,6 @@ export function installRenderHooks() {
       if (asset && group) runtime.assetGroupMap.set(asset, group);
     });
     return result;
-  });
-
-  bcAeeModSdk.hookFunction('CharacterLoadCanvas', 0, (args, next) => {
-    if (args[0]) runtime.currentRenderChar = args[0];
-    return next(args);
   });
 
   bcAeeModSdk.hookFunction('CommonDrawAppearanceBuild', 1, (args, next) => {
@@ -191,6 +155,36 @@ export function installRenderHooks() {
 
     return ret;
   });
+}
+
+// GLDrawImage is the stable boundary where BC owns translation, rotation and
+// scaling natively. AEE only adds flip plus the scoped skew/mirror transform.
+export function renderGlImage(
+  args: Parameters<typeof GLDrawImage>,
+  next: (args: Parameters<typeof GLDrawImage>) => ReturnType<typeof GLDrawImage>,
+) {
+  const transform = runtime.pendingTransform;
+  if (!transform) return next(args);
+
+  const options = {...((args[4] as Record<string, unknown> | undefined) ?? {})};
+  const scaleX = typeof options.ScaleX === 'number' ? options.ScaleX : 1;
+  const scaleY = typeof options.ScaleY === 'number' ? options.ScaleY : 1;
+  if (transform.flipX) options.ScaleX = -scaleX;
+  if (transform.flipY) options.ScaleY = -scaleY;
+  args[4] = options as DrawOptions;
+
+  runtime.activeSkewTransform = transform;
+  runtime.pendingTransformApplied++;
+  try {
+    return next(args);
+  } finally {
+    runtime.activeSkewTransform = null;
+    // CommonDraw emits the normal and blink image consecutively for a layer.
+    if (runtime.pendingTransformApplied >= 2) {
+      runtime.pendingTransform = null;
+      runtime.pendingTransformApplied = 0;
+    }
+  }
 }
 
 function installWebGlPrototypePatch() {

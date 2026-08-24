@@ -14,7 +14,7 @@ import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh} from '@/controlle
 import {closeImportDialog} from '@/controllers/importExportController';
 import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
 import {resetPartsFilterMode, withFilteredGroups} from '@/controllers/partsFilterController';
-import {clearHideRestraints, withRestraintsHidden} from '@/controllers/hideRestraintsController';
+import {clearHideRestraints} from '@/controllers/hideRestraintsController';
 import {closeLayerManagerPanel} from '@/controllers/layerManagerController';
 import {
   isAppearanceGroupsPhase,
@@ -34,7 +34,6 @@ import {
   drawAppearancePickerOutline,
   handleAppearancePickerClick,
   isLayerPickerLabelPoint,
-  invalidateAppearancePicker,
 } from '@/controllers/appearancePickerController';
 
 const EDIT_BUTTON_SCALE = 0.7;
@@ -221,16 +220,6 @@ export function installAppearanceHooks() {
       captureAppearanceDraw(character, args[1], args[2], args[3], args[4]);
       return next(args);
     }
-    return next(args);
-  });
-
-  bcAeeModSdk.hookFunction('CharacterLoadCanvas', 5, (args, next) => {
-    if (args[0] === CharacterAppearanceSelection) invalidateAppearancePicker();
-    return withRestraintsHidden(args[0], () => next(args));
-  });
-
-  bcAeeModSdk.hookFunction('GLDrawImage', 2, (args, next) => {
-    captureDrawImageArgs(args);
     return next(args);
   });
 

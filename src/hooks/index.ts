@@ -13,11 +13,13 @@ import {installMaskSystem} from '@/components/mask-system';
 import {installOnboarding} from '@/hooks/onboardingHooks';
 import {installCanvasCorsHooks} from '@/hooks/canvasCorsHooks';
 import {installHiddenArousalHook} from '@/hooks/hiddenArousalHook';
+import {installDrawingHooks} from '@/hooks/drawingHooks';
 
 export function installAeeHooks() {
   installCanvasCorsHooks();
   installHiddenArousalHook();
   installSettingEffects();
+  installDrawingHooks();
   installRenderHooks();
   installAppearanceHooks();
   installItemColorHooks();

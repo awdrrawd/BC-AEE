@@ -573,7 +573,22 @@ export function installSettingEffects() {
   settings.enableCopyPaste.onChange(enabled => {
     if (!enabled) clearCopyBuffer();
   });
-  settings.hideLscgLayers.onChange(hidden => applyLscgLayersVisibility(hidden));
+  settings.hideLscgLayers.onChange(() => applyLscgLayersVisibility());
+  installLscgLayersObserver();
+  applyLscgLayersVisibility();
+}
+
+let lscgLayersObserver: MutationObserver | null = null;
+
+function installLscgLayersObserver() {
+  if (lscgLayersObserver || !document.body) return;
+  lscgLayersObserver = new MutationObserver(records => {
+    const panelAdded = records.some(record => Array.from(record.addedNodes).some(node =>
+      node instanceof Element && (node.id === 'lscg-layers' || !!node.querySelector('#lscg-layers'))
+    ));
+    if (panelAdded) applyLscgLayersVisibility();
+  });
+  lscgLayersObserver.observe(document.body, {childList: true, subtree: true});
 }
 
 export function cycleLayerPickerMode() {
@@ -586,10 +601,18 @@ export function cycleLayerPickerMode() {
   settings.layerPickerMode.set(nextMode);
 }
 
-export function applyLscgLayersVisibility(value = settings.hideLscgLayers.get()) {
+export function applyLscgLayersVisibility() {
+  const item = getCurrentItem();
+  const lscg = (Player as PlayerCharacter & {
+    LSCG?: {GlobalModule?: {enabled?: boolean}; OpacityModule?: {enabled?: boolean}};
+  })?.LSCG;
+  const hasLscgOpacityTool = window.LSCG_Loaded === true
+    && lscg?.GlobalModule?.enabled === true
+    && (lscg?.OpacityModule?.enabled ?? true);
+  const hasAeeReplacement = getState().visible && !!item?.Asset?.Layer?.length;
   const el = document.getElementById('lscg-layers');
   if (!el) return;
-  el.style.display = value ? 'none' : '';
+  el.style.display = settings.hideLscgLayers.get() && hasLscgOpacityTool && hasAeeReplacement ? 'none' : '';
 }
 
 export function startHoverHighlight(item: Item, layerIdx: LayerId) {
@@ -840,7 +863,6 @@ export function setCharControlVisible(visible: boolean) {
 
 export function syncAfterBcRender() {
   syncCurrentContext();
-  applyLscgLayersVisibility();
   if (getState().activeDrag) alignTouchBlocker();
 }
 

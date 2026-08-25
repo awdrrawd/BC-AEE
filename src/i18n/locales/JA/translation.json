@@ -61,6 +61,7 @@
   "settings-language-auto": "自動（ゲームに従う）",
   "settings-appearance-view-control": "外見ビューコントロール",
   "settings-toolbar-always-visible": "サイドツールを常に表示",
+  "settings-right-click-exit-drag": "編集中に右クリックでドラッグ状態を終了",
   "toolbar-mode-neat": "モード：整列",
   "toolbar-mode-free": "モード：自由",
   "toolbar-select-part-hint": "下のパーツを選択すると操作項目が表示されます。",

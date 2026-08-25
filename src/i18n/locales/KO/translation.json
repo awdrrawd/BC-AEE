@@ -61,6 +61,7 @@
   "settings-language-auto": "자동 (게임 설정)",
   "settings-appearance-view-control": "외형 보기 제어",
   "settings-toolbar-always-visible": "사이드 도구 항상 표시",
+  "settings-right-click-exit-drag": "편집 중 우클릭으로 드래그 상태 종료",
   "toolbar-mode-neat": "모드: 정돈",
   "toolbar-mode-free": "모드: 자유",
   "toolbar-select-part-hint": "아래에서 파트를 선택하면 조작 항목이 표시됩니다.",

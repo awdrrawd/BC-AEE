@@ -64,6 +64,7 @@
   "settings-language-auto": "自動（跟隨遊戲）",
   "settings-appearance-view-control": "更衣室視圖控制",
   "settings-toolbar-always-visible": "側邊工具總是顯示",
+  "settings-right-click-exit-drag": "編輯時右鍵退出拖移狀態",
   "settings-replace-bc-color-picker": "取代預設調色盤",
   "settings-hover-item-highlight": "懸停時衣服閃爍（右側面板）",
   "settings-hover-outline": "懸停外框",

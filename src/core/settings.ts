@@ -93,6 +93,7 @@ function value<T>(key: string, fallback: T) {
 
 export const settings = {
   toolbarAlwaysVisible: bool('toolbarAlwaysVisible', true),
+  rightClickExitDrag: bool('rightClickExitDrag', false),
   hoverHighlight: bool('hoverHighlight', false),
   hoverHighlightChar: bool('hoverHighlightChar', false),
   hoverOutlineColor: value<HoverOutlineColor>('hoverOutlineColor', 'off'),

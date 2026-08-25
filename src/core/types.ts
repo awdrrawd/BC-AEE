@@ -27,6 +27,7 @@ export type SettingKey =
   | 'hoverTryOn'
   | 'enableCopyPaste'
   | 'hideLscgLayers'
+  | 'rightClickExitDrag'
   | 'showCharCtrl'
   | 'enableAeeMenu'
   | 'hideUnnecessaryAppearanceButtons'

@@ -61,6 +61,7 @@
   "settings-language-auto": "Auto (suivre le jeu)",
   "settings-appearance-view-control": "Contrôle de la vue d'apparence",
   "settings-toolbar-always-visible": "Toujours afficher la barre latérale",
+  "settings-right-click-exit-drag": "Clic droit pour quitter le déplacement pendant l’édition",
   "toolbar-mode-neat": "Mode : Ordonné",
   "toolbar-mode-free": "Mode : Libre",
   "toolbar-select-part-hint": "Sélectionnez une partie ci-dessous pour afficher ses contrôles.",

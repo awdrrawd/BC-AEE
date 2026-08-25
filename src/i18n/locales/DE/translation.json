@@ -61,6 +61,7 @@
   "settings-language-auto": "Automatisch (Spiel folgen)",
   "settings-appearance-view-control": "Ansichtssteuerung",
   "settings-toolbar-always-visible": "Seitenleiste immer anzeigen",
+  "settings-right-click-exit-drag": "Beim Bearbeiten per Rechtsklick den Ziehmodus beenden",
   "toolbar-mode-neat": "Modus: Geordnet",
   "toolbar-mode-free": "Modus: Frei",
   "toolbar-select-part-hint": "Wähle unten ein Teil aus, um seine Steuerung anzuzeigen.",

@@ -30,12 +30,13 @@ const OUTLINE_SAMPLES = 20;
 const PICK_TOP = 115;
 
 export function appearancePickerEnabled(): boolean {
-  return settings.hoverOutlineColor.get() !== 'off' || settings.appearancePick.get() || layerPickerEnabled();
+  return settings.appearancePick.get() || layerPickerEnabled();
 }
 
 function layerPickerEnabled(): boolean {
   const state = getState();
-  return state.visible && !!state.item && state.layerPickerMode !== 'off';
+  const isItem = state.item?.Asset?.Group?.Category === 'Item';
+  return state.visible && !!state.item && !isItem && !state.activeDrag && state.layerPickerMode !== 'off';
 }
 
 function inSupportedAppearanceMode(): boolean {
@@ -53,21 +54,30 @@ export function captureAppearanceDraw(character: Character, x: number, y: number
 export function captureAppearanceImage(source: unknown, x: number, y: number, options?: DrawOptions) {
   if (!(inSupportedAppearanceMode() || layerPickerEnabled()) || runtime.currentRenderChar !== CharacterAppearanceSelection || typeof source !== 'string') return;
   if (options?.Alpha === 0) return;
-  const asset = matchAsset(source);
-  if (!asset) return;
   const transform = options as DrawOptions & {TranslationX?: number; TranslationY?: number};
-  const order = appearanceImageOrder(asset, source);
-  const capture = {url: source, x: x - (transform?.TranslationX ?? 0), y: y - (transform?.TranslationY ?? 0), order};
-  const list = frame.get(asset) ?? [];
-  list.push(capture);
-  frame.set(asset, list);
   const state = getState();
-  const layerIndex = matchCurrentItemLayer(source, state.item);
+  const sameTrackedAsset = runtime.currentDrawLayerItem?.Asset === state.item?.Asset;
+  const trackedLayerIndex = sameTrackedAsset
+    ? runtime.currentDrawLayerIndex
+    : null;
+  const layerIndex = trackedLayerIndex != null && trackedLayerIndex >= 0
+    ? trackedLayerIndex
+    : matchCurrentItemLayer(source, state.item);
+  const asset = matchAsset(source);
+  const order = asset ? appearanceImageOrder(asset, source) : (layerIndex >= 0 ? layerOrder(layerIndex) : -1);
+  const capture = {url: source, x: x - (transform?.TranslationX ?? 0), y: y - (transform?.TranslationY ?? 0), order};
   if (layerPickerEnabled() && layerIndex >= 0) {
     const layerList = layerFrame.get(layerIndex) ?? [];
     layerList.push(capture);
     layerFrame.set(layerIndex, layerList);
   }
+  // Whole-item picking additionally needs the owning asset. Layer picking can
+  // still proceed from CommonDraw's authoritative item/layer tracking when a
+  // modded image URL cannot be matched back to AppearanceLayers.
+  if (!asset) return;
+  const list = frame.get(asset) ?? [];
+  list.push(capture);
+  frame.set(asset, list);
 }
 
 export function commitAppearancePickerFrame() {

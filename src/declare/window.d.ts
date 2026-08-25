@@ -15,6 +15,7 @@ interface EyeDropperConstructor {
 }
 
 interface Window {
+  LSCG_Loaded?: boolean;
   LZString?: LZStringLike;
   EyeDropper?: EyeDropperConstructor;
   Liko: Record<string, unknown>;

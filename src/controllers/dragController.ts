@@ -8,8 +8,9 @@ import {
   isGroupLocked,
   setLayerOverride,
 } from '@/core/bc';
-import {getState} from '@/core/store';
+import {getState, mutateState} from '@/core/store';
 import {forceUiUpdate} from '@/core/context';
+import {settings} from '@/core/settings';
 
 interface BaseDragState {
   layerId: LayerId;
@@ -342,6 +343,21 @@ export function installDragHandlers() {
       event.stopImmediatePropagation();
       event.preventDefault();
     }
+  }, true);
+
+  document.addEventListener('contextmenu', event => {
+    if (!settings.rightClickExitDrag.get() || !getState().activeDrag || !shouldIntercept(event)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    xyDragState = null;
+    scaleDragState = null;
+    skewDragState = null;
+    rotationDragging = false;
+    mutateState(draft => {
+      draft.activeDrag = null;
+      draft.rotationOverlayOpen = false;
+    });
+    hideTouchBlocker();
   }, true);
 }
 

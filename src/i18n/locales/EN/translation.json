@@ -64,6 +64,7 @@
   "settings-language-auto": "Auto (follow game)",
   "settings-appearance-view-control": "Appearance View Control",
   "settings-toolbar-always-visible": "Always show side toolbar",
+  "settings-right-click-exit-drag": "Right-click to exit canvas dragging while editing",
   "settings-replace-bc-color-picker": "Replace default color picker",
   "settings-hover-layer-highlight": "Layer flashes on hover (AEE panel)",
   "settings-hover-item-highlight": "Clothing flashes on hover (right-side panel)",

@@ -14,6 +14,7 @@ export function SettingsTab() {
       <SettingRow label={t('settings-load-others-font-label')} setting={settings.loadOthersFont}
                   tooltip={t('settings-load-others-font-tooltip')}/>
       <SettingRow label={t('settings-toolbar-always-visible')} setting={settings.toolbarAlwaysVisible}/>
+      <SettingRow label={t('settings-right-click-exit-drag')} setting={settings.rightClickExitDrag}/>
       <SettingRow label={t('settings-replace-bc-color-picker')} setting={settings.useAeeColorPicker}/>
       <SettingRow label={t('settings-enable-wardrobe')} setting={settings.enableWardrobe}/>
       <SettingRow label={t('settings-enable-free-draw')} setting={settings.enableFreeDraw}

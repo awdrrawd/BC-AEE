@@ -61,6 +61,7 @@
   "settings-language-auto": "Авто (как в игре)",
   "settings-appearance-view-control": "Управление видом внешности",
   "settings-toolbar-always-visible": "Всегда показывать боковую панель",
+  "settings-right-click-exit-drag": "Выход из режима перетаскивания правой кнопкой при редактировании",
   "toolbar-mode-neat": "Режим: Точный",
   "toolbar-mode-free": "Режим: Свободный",
   "toolbar-select-part-hint": "Выберите часть ниже, чтобы показать её элементы управления.",

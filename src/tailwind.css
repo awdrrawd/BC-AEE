@@ -247,3 +247,10 @@
   padding-top: 4px;
   padding-bottom: 4px;
 }
+
+.aee-control button:not(:disabled):hover {
+  border-color: var(--aee-accent) !important;
+  background-color: var(--aee-accent-35) !important;
+  color: white !important;
+  box-shadow: 0 0 9px var(--aee-accent-55);
+}

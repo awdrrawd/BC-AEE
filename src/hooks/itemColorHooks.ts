@@ -5,12 +5,14 @@ import {syncCurrentContext} from '@/core/context';
 import {getCanvasRect, getCurrentItem, getEditableParts, getLayerColor, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {observeAppearanceScreenState, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
+  applyLscgLayersVisibility,
   closeColorPicker,
   openColorPicker,
   startHoverHighlight,
   stopHoverHighlight
 } from '@/controllers/uiController';
 import {settings} from '@/core/settings';
+import {handleAppearancePickerClick} from '@/controllers/appearancePickerController';
 
 export function installItemColorHooks() {
   installLayerDiagnostics();
@@ -28,6 +30,14 @@ export function installItemColorHooks() {
     return next(args);
   });
 
+  // ItemColor has its own click dispatcher and does not consistently pass
+  // canvas clicks through AppearanceClick/CommonClick. Handle the layer
+  // picker at this screen boundary so both normal and detailed modes work.
+  bcAeeModSdk.hookFunction('ItemColorClick', 100, (args, next) => {
+    if (handleAppearancePickerClick()) return;
+    return next(args);
+  });
+
   bcAeeModSdk.hookFunction('ItemColorLoad', 0, (args, next) => {
     runtime.itemColorChar = args[0];
     runtime.itemColorItem = args[1];
@@ -36,6 +46,7 @@ export function installItemColorHooks() {
     syncCurrentContext();
     Promise.resolve(result).then(() => {
       updateAppearanceScreenState();
+      applyLscgLayersVisibility();
       window.setTimeout(syncCurrentContext, 300);
     });
     return result;

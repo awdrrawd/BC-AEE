@@ -61,6 +61,7 @@
   "settings-language-auto": "Tự động (theo game)",
   "settings-appearance-view-control": "Điều khiển hiển thị ngoại hình",
   "settings-toolbar-always-visible": "Luôn hiển thị thanh công cụ bên",
+  "settings-right-click-exit-drag": "Nhấp chuột phải để thoát chế độ kéo khi chỉnh sửa",
   "toolbar-mode-neat": "Chế độ: Gọn gàng",
   "toolbar-mode-free": "Chế độ: Tự do",
   "toolbar-select-part-hint": "Chọn một bộ phận bên dưới để hiển thị điều khiển.",

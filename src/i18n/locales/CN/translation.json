@@ -64,6 +64,7 @@
   "settings-language-auto": "自动（跟随游戏）",
   "settings-appearance-view-control": "更衣室视图控制",
   "settings-toolbar-always-visible": "侧边工具始终显示",
+  "settings-right-click-exit-drag": "编辑时右键退出拖移状态",
   "settings-replace-bc-color-picker": "取代默认调色盘",
   "settings-hover-layer-highlight": "悬停时图层闪烁（AEE面板）",
   "settings-hover-item-highlight": "悬停时衣服闪烁（右侧面板）",

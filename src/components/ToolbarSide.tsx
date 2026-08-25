@@ -50,11 +50,12 @@ const freeIcon = new URL('../assets/editor/mod-Free.svg', import.meta.url).href;
 
 type ManagePanel = 'settings' | null;
 
-function ToolButton({title, icon, selected, active, activeTone = 'purple', onClick, className = ''}: {
+function ToolButton({title, icon, selected, active, disabled = false, activeTone = 'purple', onClick, className = ''}: {
   title: string;
   icon: ReactNode;
   selected?: boolean;
   active?: boolean;
+  disabled?: boolean;
   activeTone?: 'purple' | 'orange';
   onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void;
   className?: string;
@@ -65,12 +66,13 @@ function ToolButton({title, icon, selected, active, activeTone = 'purple', onCli
     title={title}
     aria-label={title}
     aria-pressed={selected || active}
+    disabled={disabled}
     className={`relative flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-[8px] border bg-zinc-900/90 text-zinc-200 transition
       ${selected || active
         ? activeTone === 'orange'
           ? '[border-width:2.5px] border-orange-400 bg-orange-400/10 text-white shadow-[0_0_9px_rgba(251,146,60,.65)]'
           : '[border-width:2.5px] border-(--aee-accent) bg-(--aee-accent-35) text-white shadow-[0_0_9px_var(--aee-accent-55)]'
-        : 'border-zinc-700 hover:border-(--aee-accent) hover:bg-zinc-800'} ${className}`}
+        : 'border-zinc-700 hover:[border-width:2.5px] hover:border-(--aee-accent) hover:bg-(--aee-accent-35) hover:text-white hover:shadow-[0_0_9px_var(--aee-accent-55)]'} ${disabled ? 'cursor-not-allowed opacity-45' : ''} ${className}`}
     onDragStart={event => event.preventDefault()}
     onClick={onClick}>
     <span className="flex h-[34px] w-[34px] items-center justify-center [&>svg]:h-full [&>svg]:w-full [&>img]:h-full [&>img]:w-full [&>img]:object-contain">{icon}</span>
@@ -302,15 +304,16 @@ function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState;
 
 function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: EditToolMode) => (event: ReactMouseEvent<HTMLButtonElement>) => void}) {
   const selected = state.selectedLayer !== null;
+  const canPickLayer = state.item?.Asset?.Group?.Category !== 'Item';
   const selectedTool = (tool: EditToolMode) => state.toolbarLayout === 'neat'
     ? state.editTools.includes(tool)
     : state.transformOverlay.mode === tool || (state.opacityOverlay.open && tool === 'opacity');
   return <>
     <div className="flex flex-col gap-[7px]">
       <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<SvgIcon src={partIcon}/>} onClick={openTool('parts')}/>
-      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)}
-                  active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
-                  icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
+      {canPickLayer ? <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag}
+                                  active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
+                                  icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/> : null}
       {selected ? <>
         <ToolButton title={t('toggle-bar-position-button-title')} selected={selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
         <ToolButton title={t('toggle-bar-rotation-button-title')} selected={selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>

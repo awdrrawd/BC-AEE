@@ -61,6 +61,7 @@
   "settings-language-auto": "تلقائي (حسب اللعبة)",
   "settings-appearance-view-control": "التحكم في عرض المظهر",
   "settings-toolbar-always-visible": "إظهار شريط الأدوات الجانبي دائمًا",
+  "settings-right-click-exit-drag": "النقر بزر الفأرة الأيمن لإنهاء وضع السحب أثناء التحرير",
   "toolbar-mode-neat": "الوضع: مرتب",
   "toolbar-mode-free": "الوضع: حر",
   "toolbar-select-part-hint": "حدد جزءًا أدناه لإظهار عناصر التحكم الخاصة به.",

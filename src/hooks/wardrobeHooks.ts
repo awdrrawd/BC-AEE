@@ -11,6 +11,7 @@ interface WardrobeBundleExtras {
   AEE: 1;
   D?: number;
   C?: CraftingItem;
+  H?: AssetGroupName[];
 }
 
 function isWardrobeBundleExtras(value: unknown): value is WardrobeBundleExtras {
@@ -49,11 +50,13 @@ function addBundleExtras(
       const tuple = storedOutfit[itemIndex];
       if (!sourceItem || !Array.isArray(tuple)) continue;
       if (tuple[0] !== sourceItem.Name || tuple[1] !== sourceItem.Group) continue;
-      if (sourceItem.Difficulty == null && sourceItem.Craft == null) continue;
+      const hide = sourceItem.Property?.wceOverrideHide;
+      if (sourceItem.Difficulty == null && sourceItem.Craft == null && !Array.isArray(hide)) continue;
 
       const extras: WardrobeBundleExtras = {AEE: 1};
       if (sourceItem.Difficulty != null) extras.D = sourceItem.Difficulty;
       if (sourceItem.Craft != null) extras.C = sourceItem.Craft;
+      if (Array.isArray(hide)) extras.H = [...hide];
 
       const extrasIndex = tuple.findIndex(isWardrobeBundleExtras);
       if (extrasIndex >= 0) tuple[extrasIndex] = extras;
@@ -84,6 +87,10 @@ function restoreBundleExtras(compressed: string, wardrobe: ItemBundle[][]) {
       if (!isWardrobeBundleExtras(extras)) continue;
       if (extras.D != null) item.Difficulty = extras.D;
       if (extras.C != null) item.Craft = extras.C;
+      if (Array.isArray(extras.H)) {
+        item.Property ??= {};
+        item.Property.wceOverrideHide = [...extras.H];
+      }
     }
   }
 }

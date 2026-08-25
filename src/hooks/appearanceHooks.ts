@@ -16,6 +16,7 @@ import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controller
 import {resetPartsFilterMode, withFilteredGroups} from '@/controllers/partsFilterController';
 import {clearHideRestraints} from '@/controllers/hideRestraintsController';
 import {closeLayerManagerPanel} from '@/controllers/layerManagerController';
+import {restoreWceOverrides} from '@/controllers/layeringHideController';
 import {
   isAppearanceGroupsPhase,
   markAppearanceRunEnd,
@@ -109,12 +110,33 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('CharacterAppearanceVisible', 1, (args, next) => {
-    if (!settings.hoverHighlightChar.get()) return next(args);
     const character = args[0];
     const groupName = args[2];
-    const isAppearanceChar = CharacterAppearanceSelection === character;
-    if (isAppearanceChar && runtime.hoverCharGroup && groupName === runtime.hoverCharGroup && runtime.hoverCharHiddenGroup.has(groupName)) return false;
-    return next(args);
+    if (settings.hoverHighlightChar.get()) {
+      const isAppearanceChar = CharacterAppearanceSelection === character;
+      if (isAppearanceChar && runtime.hoverCharGroup && groupName === runtime.hoverCharGroup && runtime.hoverCharHiddenGroup.has(groupName)) return false;
+    }
+
+    // CharacterAppearanceVisible reads Asset.Hide internally. Temporarily expose
+    // each item's persisted override to the native calculation, then restore the
+    // shared asset definitions before returning.
+    const changed = new Map<Asset, readonly AssetGroupName[] | undefined>();
+    for (const item of character?.Appearance ?? []) {
+      if (!Array.isArray(item.Property?.wceOverrideHide) || changed.has(item.Asset)) continue;
+      changed.set(item.Asset, item.Asset.Hide);
+      (item.Asset as unknown as {Hide?: readonly AssetGroupName[]}).Hide = item.Property.wceOverrideHide;
+    }
+    try {
+      return next(args);
+    } finally {
+      for (const [asset, hide] of changed) (asset as unknown as {Hide?: readonly AssetGroupName[]}).Hide = hide;
+    }
+  });
+
+  bcAeeModSdk.hookFunction('ServerAppearanceLoadFromBundle', 1, (args, next) => {
+    const result = next(args);
+    if (restoreWceOverrides(args[0])) CharacterRefresh(args[0], false, false);
+    return result;
   });
 
   // Detailed labels are painted on MainCanvas, above BC's own group buttons.

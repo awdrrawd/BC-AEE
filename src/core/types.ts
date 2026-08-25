@@ -1,7 +1,7 @@
 export type AeeTab = 'edit' | 'opacity' | 'layers' | 'settings';
 export type ToolbarLayoutMode = 'neat' | 'free';
 export type LayerPickerMode = 'off' | 'normal' | 'detail';
-export type EditToolMode = 'parts' | 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | 'opacity' | 'layers' | 'settings' | null;
+export type EditToolMode = 'parts' | 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | 'opacity' | 'layers' | 'layeringHide' | 'settings' | null;
 export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | null;
 export type TransformOverlayMode = Exclude<DragMode, null> | 'mirror';
 export type LayerId = 'all' | string;
@@ -76,6 +76,8 @@ declare global {
   interface ItemProperties {
     Color?: BCColor | BCColor[];
     LayerOverrides?: AeeLayerOverride[];
+    /** WCE-compatible, per-item replacement for Asset.Hide. */
+    wceOverrideHide?: AssetGroupName[];
   }
 
   interface Item {

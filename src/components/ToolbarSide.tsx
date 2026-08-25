@@ -30,14 +30,16 @@ import {OpacityRow} from '@/components/main-panel/OpacityRow';
 import {PriorityRow} from '@/components/main-panel/PriorityRow';
 import {OpacityTab} from '@/components/main-panel/OpacityTab';
 import {LayersTab} from '@/components/main-panel/LayersTab';
+import {LayeringHidePanel} from '@/components/main-panel/LayeringHidePanel';
 import {Section} from '@/components/main-panel/Section';
 import {getLayerColor, getLayerDisplayName, getOpacity} from '@/core/bc';
 import {Panel} from '@/components/ui/Panel';
 import {t} from '@/i18n/i18n';
 import {
   Accessibility, Download, Eye, EyeOff, FlipHorizontal2, Grid3x3, ImageIcon,
-  Layers3, Move, PersonStanding, Scaling, Settings, SlidersHorizontal, Undo2, Upload, User,
+  Layers3, Move, PersonStanding, RotateCcw, Scan, Scaling, Settings, SlidersHorizontal, Undo2, Upload, User,
 } from '@/components/main-panel/icons/Icons';
+import {getLayeringHideGroups} from '@/controllers/layeringHideController';
 import {TiltIcon} from '@/components/main-panel/Icons';
 import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
 
@@ -233,6 +235,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
 function EditControlPanel({state}: {state: AeeState}) {
   if (state.editTool === 'opacity') return <ControlPage title={t('main-panel-tab-opacity')}><OpacityTab state={state}/></ControlPage>;
   if (state.editTool === 'layers') return <ControlPage title={t('main-panel-tab-layers')}><LayersTab state={state}/></ControlPage>;
+  if (state.editTool === 'layeringHide' && state.item) return <ControlPage title={t('layering-hide-title')}><LayeringHidePanel item={state.item}/></ControlPage>;
   if (state.editTool === 'settings') return <ControlPage title={t('main-panel-tab-settings')}><SettingsTab/></ControlPage>;
   const layerId = state.selectedLayer;
   if (layerId === null) return <div className="flex min-h-full flex-col">
@@ -288,7 +291,7 @@ function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState;
       <ToolButton title={hideRestraintsTooltip()} active={isHideRestraintsActive()} icon={<GameIcon src={hideRestraintsIcon()}/>} onClick={() => toggleHideRestraints()}/>
       {CurrentScreen === 'Appearance' ?
         <ToolButton title={t('settings-appearance-pick')} active={appearancePick}
-                    icon={<GameIcon src="Icons/Public.png"/>} onClick={() => settings.appearancePick.toggle()}/> : null}
+                    icon={<Scan/>} onClick={() => settings.appearancePick.toggle()}/> : null}
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
@@ -307,7 +310,7 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
       <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<SvgIcon src={partIcon}/>} onClick={openTool('parts')}/>
       <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)}
                   active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
-                  icon={<GameIcon src="Icons/Public.png"/>} onClick={() => cycleLayerPickerMode()}/>
+                  icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
       {selected ? <>
         <ToolButton title={t('toggle-bar-position-button-title')} selected={selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
         <ToolButton title={t('toggle-bar-rotation-button-title')} selected={selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>
@@ -318,7 +321,11 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
       <div className="my-[7px] h-px w-[56px] bg-zinc-600"/>
       <ToolButton title={t('main-panel-tab-opacity')} selected={state.editTool === 'opacity'} icon={<TransparentIcon/>} onClick={openTool('opacity')}/>
       <ToolButton title={t('main-panel-tab-layers')} selected={state.editTool === 'layers'} icon={<Layers3/>} onClick={openTool('layers')}/>
-      {selected ? <ToolButton title={t('toggle-bar-reset-transforms-button-title')} icon={<Undo2/>} onClick={() => resetSelectedTransforms()}/> : null}
+      {getLayeringHideGroups(state.item).length > 0
+        ? <ToolButton title={t('layering-hide-title')} selected={state.editTool === 'layeringHide'}
+                      icon={<GameIcon src="Icons/Private.png"/>} onClick={openTool('layeringHide')}/>
+        : null}
+      {selected ? <ToolButton title={t('toggle-bar-reset-transforms-button-title')} icon={<RotateCcw/>} onClick={() => resetSelectedTransforms()}/> : null}
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       <ToolButton title={state.toolbarLayout === 'neat' ? t('toolbar-mode-neat') : t('toolbar-mode-free')}

@@ -1,4 +1,4 @@
-import {Check} from 'lucide-react';
+import {Check} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 import {UI_STYLE_LABEL_KEYS, type UiThemePreset} from '@/core/theme';

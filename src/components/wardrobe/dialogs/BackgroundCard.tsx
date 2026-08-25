@@ -1,4 +1,4 @@
-import {Check, Folder, Globe, Image as ImageIcon, Palette} from 'lucide-react';
+import {Check, Folder, Globe, ImageIcon, Palette} from '@/components/wardrobe/icons/Icons';
 import type {ReactNode} from 'react';
 import cn from '@/util/cn';
 import {type BackgroundChoice, backgroundChoiceLabel,} from '@/components/wardrobe/dialogs/backgroundChoices';

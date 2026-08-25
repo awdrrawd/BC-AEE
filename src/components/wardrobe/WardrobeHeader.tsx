@@ -1,4 +1,4 @@
-import {Camera, LogOut, Settings} from 'lucide-react';
+import {Camera, LogOut, Settings} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {openDialog} from '@/core/dialogs';
 import {settings, useSetting} from '@/core/settings';

@@ -1,4 +1,4 @@
-import {Check, Clipboard, Folder, LogOut, Save, Upload} from 'lucide-react';
+import {Check, Clipboard, Folder, LogOut, Save, Upload} from '@/components/wardrobe/icons/Icons';
 import {useState} from 'react';
 import {t} from '@/i18n/i18n';
 import {applyImports, exportWardrobeToFile, readImportCode, readImportFile} from '@/controllers/outfitsController';
@@ -11,14 +11,34 @@ import {ImportPreviewPane} from '@/components/wardrobe/dialogs/ImportPreviewPane
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
 import {FileInput} from '@/components/ui/Fields';
+import {WardrobeSourceTabs} from '@/components/wardrobe/dialogs/WardrobeSourceTabs';
+import {wardrobeSourceById} from '@/core/wardrobeStorage';
+import {getWardrobeState} from '@/core/wardrobeStore';
+import {settings} from '@/core/settings';
+import type {WardrobeSourceId} from '@/core/types';
 
 export function ImportDialog({initial, onClose}: { initial: readonly PendingImport[]; onClose: () => void }) {
-  const [entries, setEntries] = useState<ImportEntry[]>(() => planImports(initial));
+  const [sourceId, setSourceId] = useState<WardrobeSourceId>(() => {
+    const current = getWardrobeState().source;
+    return current === 'sps' && !settings.wardrobeSpsEnabled.get() ? 'online' : current;
+  });
+  const source = wardrobeSourceById(sourceId);
+  const [pendingOutfits, setPendingOutfits] = useState<readonly PendingImport[]>(initial);
+  const [entries, setEntries] = useState<ImportEntry[]>(() => planImports(initial, source));
   const [focus, setFocus] = useState(0);
 
   const load = (outfits: PendingImport[] | null) => {
     if (!outfits?.length) return;
-    setEntries(planImports(outfits));
+    setPendingOutfits(outfits);
+    setEntries(planImports(outfits, source));
+    setFocus(0);
+  };
+
+  const chooseSource = (id: WardrobeSourceId) => {
+    const next = wardrobeSourceById(id);
+    next.reload();
+    setSourceId(id);
+    setEntries(planImports(pendingOutfits, next));
     setFocus(0);
   };
 
@@ -28,16 +48,17 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
   };
 
   const confirm = () => {
-    applyImports(entries.filter(entry => entry.selected && entry.target >= 0));
+    applyImports(entries.filter(entry => entry.selected && entry.target >= 0), source);
     onClose();
   };
 
-  const counts = countByStatus(entries);
+  const counts = countByStatus(entries, source);
   const pending = counts.add + counts.replace;
   const focused = entries[focus] ?? null;
 
   return <Dialog onDismiss={onClose} className="h-240 w-490 p-6">
     <header className="mb-4 flex shrink-0 items-center gap-4">
+      <WardrobeSourceTabs source={sourceId} onChange={chooseSource}/>
       <FileInput
         accept="application/json,.json"
         ariaLabel={t('wardrobe-import-load-file')}
@@ -52,7 +73,7 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
 
       <h1 className="flex-1 text-center text-[28px] text-[#f0eee4]">{t('wardrobe-import-title')}</h1>
 
-      <Button density="stage" className="h-15" onClick={exportWardrobeToFile} icon={<Upload className="h-6 w-6"/>}
+      <Button density="stage" className="h-15" onClick={() => exportWardrobeToFile(source)} icon={<Upload className="h-6 w-6"/>}
       >{t('wardrobe-export-file')}</Button>
 
       <Button density="stage" className="h-15 w-22.5" onClick={onClose} icon={<LogOut className="h-6 w-6"/>}
@@ -83,6 +104,7 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
               key={entry.id}
               entry={entry}
               index={index}
+              source={source}
               focused={index === focus}
               onFocus={() => setFocus(index)}
               onToggle={() => setEntries(toggleEntry(entries, entry.id))}

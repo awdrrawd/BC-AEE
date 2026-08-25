@@ -1,4 +1,4 @@
-import {ChevronRight} from 'lucide-react';
+import {ChevronRight} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {useSetting, settings} from '@/core/settings';
 import {DEFAULT_FONT_ID, findCustomFont, findSystemFont} from '@/core/fonts';

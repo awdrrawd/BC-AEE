@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState, useSyncExternalStore} from 'react';
-import {X} from 'lucide-react';
+import {X} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {clamp} from '@/util/math';
 import type {CanvasRect} from '@/core/types';

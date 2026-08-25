@@ -1,4 +1,4 @@
-import {ArrowRightLeft, X} from 'lucide-react';
+import {ArrowRightLeft, X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {cycleWardrobeSource, toggleReorderMode} from '@/controllers/wardrobeController';
 import {isOutfitListCollapsed} from '@/controllers/outfitsController';

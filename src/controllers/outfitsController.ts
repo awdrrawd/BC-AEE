@@ -389,23 +389,23 @@ export function importOutfitFromCode(index: number, code: string) {
   showToast(t('wardrobe-toast-imported'));
 }
 
-export function exportWardrobeToFile() {
-  writeWardrobeFile(collectWardrobeSlots());
+export function exportWardrobeToFile(source: WardrobeSource = activeWardrobeSource()) {
+  writeWardrobeFile(collectWardrobeSlots(source), source.id);
 }
 
 /** Exports only the given wardrobe slot indices to a file (the ExportDialog's checkbox selection). */
-export function exportSelectedSlotsToFile(indices: ReadonlySet<number>) {
-  writeWardrobeFile(collectWardrobeSlots().filter(slot => indices.has(slot.index)));
+export function exportSelectedSlotsToFile(indices: ReadonlySet<number>, source: WardrobeSource = activeWardrobeSource()) {
+  writeWardrobeFile(collectWardrobeSlots(source).filter(slot => indices.has(slot.index)), source.id);
 }
 
-function writeWardrobeFile(slots: ReturnType<typeof collectWardrobeSlots>) {
+function writeWardrobeFile(slots: ReturnType<typeof collectWardrobeSlots>, sourceId?: string) {
   if (!slots.length) {
     showToast(t('wardrobe-toast-file-empty'));
     return;
   }
 
   try {
-    downloadJson(wardrobeFileName(), JSON.stringify(buildWardrobeFile(slots), null, 2));
+    downloadJson(wardrobeFileName(sourceId), JSON.stringify(buildWardrobeFile(slots), null, 2));
   } catch (error) {
     console.error('🐈‍⬛ [AEE] Failed to export the wardrobe file', error);
     showToast(t('wardrobe-toast-export-failed'));
@@ -440,8 +440,7 @@ export function readImportCode(code: string): PendingImport[] | null {
   return outfits.map(outfit => ({outfit}));
 }
 
-export function applyImports(plan: readonly { pending: PendingImport; target: number }[]): number {
-  const source = activeWardrobeSource();
+export function applyImports(plan: readonly { pending: PendingImport; target: number }[], source: WardrobeSource = activeWardrobeSource()): number {
   const entries = plan.filter(({target}) => target >= 0 && target < source.size());
   if (!entries.length) return 0;
 

@@ -1,5 +1,5 @@
 import {useLayoutEffect, useRef, useState} from 'react';
-import {ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight} from 'lucide-react';
+import {ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight} from '@/components/wardrobe/icons/Icons';
 import {isSlotOccupied, pageCount, perPage} from '@/controllers/outfitsController';
 import {goToPage} from '@/controllers/wardrobeController';
 import type {WardrobeState} from '@/core/wardrobeStore';

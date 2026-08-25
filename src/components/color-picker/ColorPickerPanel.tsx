@@ -19,7 +19,7 @@ import {ToolButton} from '@/components/color-picker/ToolButton';
 import {Track} from '@/components/color-picker/Track';
 import {Button, IconButton} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
-import {ChevronRight, Clipboard, Copy, Pipette} from 'lucide-react';
+import {ChevronRight, Clipboard, Copy, Pipette} from '@/components/color-picker/Icons';
 import type {SavedColor} from '@/components/color-picker/types';
 
 const RECENT_COLORS_KEY = 'liko-aee-recent-colors';

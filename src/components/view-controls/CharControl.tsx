@@ -18,7 +18,7 @@ import {
 } from '@/controllers/viewController';
 import {openBgSettings} from '@/controllers/backgroundController';
 import {ControlButton} from '@/components/view-controls/ControlButton';
-import {Accessibility, Eye, EyeOff, Grid3x3, Image as ImageIcon, Move, PersonStanding, Settings, User} from 'lucide-react';
+import {Accessibility, Eye, EyeOff, Grid3x3, ImageIcon, Move, PersonStanding, Settings, User} from '@/components/view-controls/Icons';
 import {settings, useSetting} from '@/core/settings';
 
 export function CharControl({state}: { state: AeeState }) {

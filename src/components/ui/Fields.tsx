@@ -3,7 +3,7 @@ import {
   type ReactElement, type ReactNode, useEffect, useRef, useState,
 } from 'react';
 import cn from '@/util/cn';
-import {Check, ChevronDown} from 'lucide-react';
+import {Check, ChevronDown} from '@/components/icons/Icons';
 
 type FieldDensity = 'compact' | 'stage';
 

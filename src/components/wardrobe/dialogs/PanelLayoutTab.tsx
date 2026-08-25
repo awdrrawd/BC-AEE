@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {ArrowRightLeft, RotateCcw, Trash2} from 'lucide-react';
+import {ArrowRightLeft, RotateCcw, Trash2} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 import {settings, useSetting} from '@/core/settings';

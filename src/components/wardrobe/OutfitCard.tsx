@@ -1,4 +1,4 @@
-import {Star} from 'lucide-react';
+import {Star} from '@/components/wardrobe/icons/Icons';
 import cn from '@/util/cn';
 import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
 import {isSlotOccupied, slotName, toggleFavorite} from '@/controllers/outfitsController';

@@ -1,4 +1,4 @@
-import {Maximize, Minus, Plus} from 'lucide-react';
+import {Maximize, Minus, Plus} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {resetZoom, setZoom, ZOOM_PCT_MAX, ZOOM_PCT_MIN, ZOOM_PCT_STEP} from '@/controllers/wardrobeController';
 import {Button} from '@/components/ui/Button';

@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Check, X} from 'lucide-react';
+import {Check, X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {knownTags, saveOutfitMeta, slotName} from '@/controllers/outfitsController';
 import {stopEditingOutfit} from '@/controllers/wardrobeController';

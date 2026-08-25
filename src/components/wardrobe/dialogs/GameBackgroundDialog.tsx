@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react';
-import {X} from 'lucide-react';
+import {X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 import {backgroundUrl} from '@/util/wardrobeBackground';

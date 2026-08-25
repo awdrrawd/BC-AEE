@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {X} from 'lucide-react';
+import {X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {useWardrobeStore} from '@/core/wardrobeStore';
 import type {WardrobeSettingsTab} from '@/core/types';

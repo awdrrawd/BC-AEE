@@ -1,4 +1,4 @@
-import {Check, LogOut, Upload} from 'lucide-react';
+import {Check, LogOut, Upload} from '@/components/wardrobe/icons/Icons';
 import {useMemo, useState} from 'react';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
@@ -8,11 +8,34 @@ import {CharacterPreview} from '@/components/wardrobe/CharacterPreview';
 import {Button} from '@/components/ui/Button';
 import {Dialog} from '@/components/ui/Dialog';
 import {Switch} from '@/components/ui/Switch';
+import {WardrobeSourceTabs} from '@/components/wardrobe/dialogs/WardrobeSourceTabs';
+import {wardrobeSourceById} from '@/core/wardrobeStorage';
+import {getWardrobeState, useWardrobeStore} from '@/core/wardrobeStore';
+import {settings} from '@/core/settings';
+import type {WardrobeSourceId} from '@/core/types';
 
 export function ExportDialog({onClose}: { onClose: () => void }) {
-  const slots = useMemo(() => collectWardrobeSlots(), []);
+  const {dataVersion} = useWardrobeStore();
+  const [sourceId, setSourceId] = useState<WardrobeSourceId>(() => {
+    const current = getWardrobeState().source;
+    return current === 'sps' && !settings.wardrobeSpsEnabled.get() ? 'online' : current;
+  });
+  const source = wardrobeSourceById(sourceId);
+  const slots = useMemo(() => {
+    void dataVersion;
+    return collectWardrobeSlots(source);
+  }, [source, dataVersion]);
   const [selected, setSelected] = useState<Set<number>>(() => new Set(slots.map(slot => slot.index)));
   const [focus, setFocus] = useState(0);
+
+  const chooseSource = (id: WardrobeSourceId) => {
+    const next = wardrobeSourceById(id);
+    next.reload();
+    const nextSlots = collectWardrobeSlots(next);
+    setSourceId(id);
+    setSelected(new Set(nextSlots.map(slot => slot.index)));
+    setFocus(0);
+  };
 
   const toggle = (index: number) => setSelected(prev => {
     const next = new Set(prev);
@@ -24,7 +47,7 @@ export function ExportDialog({onClose}: { onClose: () => void }) {
   const toggleAll = () => setSelected(allOn ? new Set() : new Set(slots.map(slot => slot.index)));
 
   const confirm = () => {
-    exportSelectedSlotsToFile(selected);
+    exportSelectedSlotsToFile(selected, source);
     onClose();
   };
 
@@ -32,10 +55,7 @@ export function ExportDialog({onClose}: { onClose: () => void }) {
 
   return <Dialog onDismiss={onClose} className="h-240 w-490 p-6">
     <header className="mb-4 flex shrink-0 items-center gap-4">
-      <Button density="stage" className="h-15" disabled={!slots.length} onClick={toggleAll}
-              icon={<Check className="h-6 w-6"/>}
-      >{t('wardrobe-import-toggle-all')}</Button>
-
+      <WardrobeSourceTabs source={sourceId} onChange={chooseSource}/>
       <h1 className="flex-1 text-center text-[28px] text-[#f0eee4]">{t('wardrobe-export-title')}</h1>
 
       <Button density="stage" className="h-15 w-22.5" onClick={onClose} icon={<LogOut className="h-6 w-6"/>}
@@ -54,7 +74,12 @@ export function ExportDialog({onClose}: { onClose: () => void }) {
       </section>
 
       <section className="flex min-h-0 flex-1 flex-col gap-2">
-        <h2 className="shrink-0 text-[24px] text-white">{t('wardrobe-export-list', {n: selected.size})}</h2>
+        <div className="flex shrink-0 items-center gap-3">
+          <h2 className="flex-1 text-[24px] text-white">{t('wardrobe-export-list', {n: selected.size})}</h2>
+          <Button density="stage" className="h-9" disabled={!slots.length} onClick={toggleAll}
+                  icon={<Check className="h-4 w-4"/>}
+          >{t('wardrobe-import-toggle-all')}</Button>
+        </div>
 
         <div
           className="aee-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto rounded-xl border border-white/20 p-2">

@@ -18,7 +18,7 @@ import {
 import {BgSection} from '@/components/view-controls/BgSection';
 import {ColorSwatch, TextInput} from '@/components/ui/Fields';
 import {Button} from '@/components/ui/Button';
-import {X} from 'lucide-react';
+import {X} from '@/components/view-controls/Icons';
 import {Panel} from '@/components/ui/Panel';
 import {NumberInput} from '@/components/main-panel/NumberInput';
 import {RangeInput} from '@/components/main-panel/RangeInput';

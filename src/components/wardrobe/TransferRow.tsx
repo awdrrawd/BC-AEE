@@ -1,4 +1,4 @@
-import {Download, Upload} from 'lucide-react';
+import {Download, Upload} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 import {Button} from '@/components/ui/Button';

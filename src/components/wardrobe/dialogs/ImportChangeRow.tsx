@@ -1,7 +1,6 @@
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
-import {activeWardrobeSource} from '@/core/wardrobeStorage';
-import {slotName} from '@/controllers/outfitsController';
+import type {WardrobeSource} from '@/core/wardrobeStorage';
 import type {ImportEntry, ImportStatus} from '@/components/wardrobe/dialogs/importPlan';
 import {entryStatus, outfitLabel, slotLabel} from '@/components/wardrobe/dialogs/importPlan';
 import {Select} from '@/components/ui/Fields';
@@ -13,18 +12,19 @@ const STATUS_STYLE: Record<ImportStatus, { sign: string; text: string; bar: stri
   skip: {sign: '−', text: 'text-zinc-500', bar: 'bg-zinc-600', bg: 'bg-white/2'},
 };
 
-export function ImportChangeRow({entry, index, focused, onFocus, onToggle, onRetarget}: {
+export function ImportChangeRow({entry, index, source, focused, onFocus, onToggle, onRetarget}: {
   entry: ImportEntry;
   index: number;
+  source: WardrobeSource;
   focused: boolean;
   onFocus: () => void;
   onToggle: () => void;
   onRetarget: (target: number) => void;
 }) {
-  const status = entryStatus(entry);
+  const status = entryStatus(entry, source);
   const style = STATUS_STYLE[status];
   const label = outfitLabel(entry, index);
-  const replaced = status === 'replace' ? slotName(entry.target).trim() : '';
+  const replaced = status === 'replace' ? source.nameAt(entry.target).trim() : '';
 
   return <div
     role="button"
@@ -74,7 +74,7 @@ export function ImportChangeRow({entry, index, focused, onFocus, onToggle, onRet
         onValueChange={value => onRetarget(Number(value))}
       >
         <option value={-1}>{t('wardrobe-import-no-target')}</option>
-        {Array.from({length: activeWardrobeSource().size()}, (_, slot) => <option key={slot} value={slot}>{slotLabel(slot)}</option>)}
+        {Array.from({length: source.size()}, (_, slot) => <option key={slot} value={slot}>{slotLabel(slot, source)}</option>)}
       </Select>
     </span>
   </div>;

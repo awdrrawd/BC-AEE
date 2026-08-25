@@ -1,4 +1,4 @@
-import {Tag} from 'lucide-react';
+import {Tag} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {activeWardrobeSource, getSlotMeta} from '@/core/wardrobeStorage';
 import {openDialog} from '@/core/dialogs';

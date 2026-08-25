@@ -1,4 +1,4 @@
-import {SquarePen, Star} from 'lucide-react';
+import {SquarePen, Star} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 
 import {setFilter} from '@/controllers/wardrobeController';

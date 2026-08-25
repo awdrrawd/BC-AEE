@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {Clipboard, Download, X} from 'lucide-react';
+import {Clipboard, Download, X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 import {showToast} from '@/util/toast';

@@ -1,4 +1,4 @@
-import {Check, ChevronDown} from 'lucide-react';
+import {Check, ChevronDown} from '@/components/wardrobe/icons/Icons';
 import {useState} from 'react';
 import {t} from '@/i18n/i18n';
 import {setSortMode} from '@/controllers/wardrobeController';

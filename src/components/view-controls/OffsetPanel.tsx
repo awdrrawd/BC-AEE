@@ -16,7 +16,7 @@ import {
 import {Switch} from '@/components/ui/Switch';
 import {OffsetSlider} from '@/components/view-controls/OffsetSlider';
 import {Button, IconButton} from '@/components/ui/Button';
-import {ChevronDown, ChevronUp, X} from 'lucide-react';
+import {ChevronDown, ChevronUp, X} from '@/components/view-controls/Icons';
 import {Panel} from '@/components/ui/Panel';
 import {clamp} from '@/util/math';
 import {settings, useSetting} from '@/core/settings';

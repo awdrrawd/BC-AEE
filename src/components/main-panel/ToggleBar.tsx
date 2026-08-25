@@ -13,7 +13,7 @@ import {
   toggleTransformOverlay,
 } from '@/controllers/uiController';
 import {IconButton} from '@/components/ui/Button';
-import {ChevronLeft, ChevronRight, Layers, Move, Palette, Scaling} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Layers, Move, Palette, Scaling} from '@/components/main-panel/icons/Icons';
 import {TransparentIcon, TiltIcon, RotateIcon} from '@/components/main-panel/Icons';
 
 export function ToggleBar({state}: { state: AeeState }) {

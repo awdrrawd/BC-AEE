@@ -1,4 +1,4 @@
-import {Trash2} from 'lucide-react';
+import {Trash2} from '@/components/wardrobe/icons/Icons';
 import {type PointerEvent, useEffect, useMemo, useRef, useState} from 'react';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';

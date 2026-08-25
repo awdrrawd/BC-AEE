@@ -1,4 +1,4 @@
-import {Archive, ChevronDown, ChevronRight, DatabaseBackup, LogOut, Save} from 'lucide-react';
+import {Archive, ChevronDown, ChevronRight, DatabaseBackup, LogOut, Save} from '@/components/wardrobe/icons/Icons';
 import {useMemo, useState} from 'react';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
@@ -12,8 +12,8 @@ import {
   type WardrobeMigrationPart,
   type WardrobeMigrationSlot,
 } from '@/core/wardrobeMigration';
-import {bumpWardrobeData, getTargetCharacter, useWardrobeStore} from '@/core/wardrobeStore';
-import {settings} from '@/core/settings';
+import {bumpWardrobeData, getTargetCharacter, getWardrobeState, useWardrobeStore} from '@/core/wardrobeStore';
+import {settings, useSetting} from '@/core/settings';
 import {showToast} from '@/util/toast';
 import {CharacterPreview} from '@/components/wardrobe/CharacterPreview';
 import {Button} from '@/components/ui/Button';
@@ -28,7 +28,10 @@ function partKey(slot: number, part: WardrobeMigrationPart): string {
 
 export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   const {dataVersion} = useWardrobeStore();
-  const [sourceId, setSourceId] = useState<WardrobeSourceId>('online');
+  const [sourceId, setSourceId] = useState<WardrobeSourceId>(() => {
+    const current = getWardrobeState().source;
+    return current === 'sps' && !settings.wardrobeSpsEnabled.get() ? 'online' : current;
+  });
   const source = wardrobeSourceById(sourceId);
   const character = getTargetCharacter();
   const slots = useMemo(() => {
@@ -40,7 +43,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   const [focusSlot, setFocusSlot] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
   const focused = slots.find(slot => slot.index === focusSlot) ?? slots[0] ?? null;
-  const spsEnabled = settings.wardrobeSpsEnabled.get();
+  const spsEnabled = useSetting(settings.wardrobeSpsEnabled);
 
   const selected = (slot: WardrobeMigrationSlot, part: WardrobeMigrationPart) =>
     choices[partKey(slot.index, part)] ?? true;
@@ -94,8 +97,8 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   return <Dialog onDismiss={onClose} className="h-240 w-490 p-6">
     <header className="mb-4 flex shrink-0 items-center gap-4">
       <div className="flex gap-2">
-        {SOURCES.map(id => <Button key={id} density="stage" className="h-12"
-          selected={sourceId === id} disabled={id === 'sps' && !spsEnabled}
+        {SOURCES.filter(id => id !== 'sps' || spsEnabled).map(id => <Button key={id} density="stage" className="h-12"
+          selected={sourceId === id}
           onClick={() => chooseSource(id)}>{t(`wardrobe-source-${id}-short`)}</Button>)}
       </div>
       <h1 className="flex-1 text-center text-[28px] text-[#f0eee4]">{t('wardrobe-migration-title')}</h1>

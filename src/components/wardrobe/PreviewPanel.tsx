@@ -1,5 +1,5 @@
 import {useRef} from 'react';
-import {Undo2} from 'lucide-react';
+import {Undo2} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 

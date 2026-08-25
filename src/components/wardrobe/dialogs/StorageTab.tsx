@@ -1,4 +1,4 @@
-import {ExternalLink} from 'lucide-react';
+import {ExternalLink} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {settings} from '@/core/settings';
 import {fbcWardrobeUsage} from '@/core/wardrobeStorage';

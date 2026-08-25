@@ -35,9 +35,9 @@ import {getLayerColor, getLayerDisplayName, getOpacity} from '@/core/bc';
 import {Panel} from '@/components/ui/Panel';
 import {t} from '@/i18n/i18n';
 import {
-  Accessibility, Download, Eye, EyeOff, FlipHorizontal2, Grid3x3, Image as ImageIcon,
+  Accessibility, Download, Eye, EyeOff, FlipHorizontal2, Grid3x3, ImageIcon,
   Layers3, Move, PersonStanding, Scaling, Settings, SlidersHorizontal, Undo2, Upload, User,
-} from 'lucide-react';
+} from '@/components/main-panel/icons/Icons';
 import {TiltIcon} from '@/components/main-panel/Icons';
 import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
 

@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Plus, X} from 'lucide-react';
+import {Plus, X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import cn from '@/util/cn';
 import {saveWardrobeCategories} from '@/controllers/wardrobeController';

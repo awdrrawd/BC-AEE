@@ -1,4 +1,4 @@
-import {Search, X} from 'lucide-react';
+import {Search, X} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {setSearch} from '@/controllers/wardrobeController';
 import {TextInput} from '@/components/ui/Fields';

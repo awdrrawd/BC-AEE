@@ -88,9 +88,18 @@ export function setRotationDragging(active: boolean) {
   rotationDragging = active;
 }
 
+/** LSCG owns MainCanvas pointer gestures while its translation tool is enabled. */
+function isLscgTranslationActive() {
+  return document.querySelector<HTMLInputElement>('#lscg-layers-translate-check')?.checked === true;
+}
+
 function isAeeEditing() {
   const state = getState();
   if (!state.visible) return false;
+  // Compatibility boundary: both editors listen on MainCanvas. Let the tool
+  // explicitly enabled by LSCG receive the gesture, without changing either
+  // plugin's values, rendering path, or AEE's remembered drag mode.
+  if (isLscgTranslationActive()) return false;
   // Merely showing AEE must never disable BC/ECHO controls underneath it.
   // Intercept the game canvas only while an AEE gesture explicitly owns it.
   // Ordinary colour-picker use is confined to AEE's own DOM; only its
@@ -143,6 +152,7 @@ function shouldIntercept(event: Event): boolean {
 
 function canStartCanvasDrag(event: MouseEvent | PointerEvent) {
   const state = getState();
+  if (isLscgTranslationActive()) return false;
   if (!state.activeDrag || state.activeDrag === 'rot' || state.selectedLayer === null) return false;
   // Locked body parts (official FixedPosition) must not be dragged on canvas,
   // even if a drag mode was left active before switching to the locked part.

@@ -137,8 +137,20 @@ export function installRenderHooks() {
       }
     }
 
+    // Keep the ModSDK chain intact even when the asset has no native
+    // BeforeDraw function. LSCG deliberately supplies X/Y from its downstream
+    // CommonCallFunctionByNameWarn hook for such assets; skipping `next` here
+    // left its LayerOverrides changing numerically without affecting drawing.
+    // A scoped no-op prevents BC's missing-function warning while still giving
+    // every compatibility hook a chance to contribute to the result.
     const fnExists = typeof windowFunctions[funcName] === 'function';
-    const ret: BeforeDrawResult = (fnExists ? (next(args) ?? {}) : {});
+    if (!fnExists) windowFunctions[funcName] = () => ({});
+    let ret: BeforeDrawResult;
+    try {
+      ret = next(args) ?? {};
+    } finally {
+      if (!fnExists) delete windowFunctions[funcName];
+    }
 
     if (currentAppearance) {
       let rawName = (params.L ?? '').trim();

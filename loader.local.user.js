@@ -5,7 +5,7 @@
 // @description  Likolisu's Appearance editing extension. (local dev loader)
 // @supportURL   https://github.com/awdrrawd/BC-AEE
 // @author       InkerBot & Liko
-// @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
+// @include      /^https:\/\/(www\.)?(bondage(projects\.elementfx|-(europe|asia))\.com|bondageeurope\.com)\/R*/
 // @icon         https://raw.githubusercontent.com/awdrrawd/liko-tool-Image-storage/refs/heads/main/Images/LOGO_2.png
 // @grant        none
 // @run-at       document-end

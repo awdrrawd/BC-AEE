@@ -42,7 +42,7 @@ export function BgSettingsPanel({state}: { state: AeeState }) {
   const left = state.bg.panelLeft ?? fallback.left;
   const top = state.bg.panelTop ?? fallback.top;
 
-  return <div className="fixed z-999992 overflow-visible">
+  return <div className="fixed z-1000002 overflow-visible">
     <Panel className="fixed w-90"
            style={{left, top, transform: `scale(${state.canvasRect!.width / 2000 * 1.75})`, transformOrigin: 'top left'}}>
       <div

@@ -94,7 +94,7 @@ export function LayerManagerPanel({state}: { state: AeeState }) {
   };
 
   return <div className="fixed z-1000002 pointer-events-none" style={{left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height}}>
-    <Panel className={`${lm.closing ? 'aee-layer-manager-exit' : 'aee-layer-manager-enter'} pointer-events-auto absolute bottom-0 right-0 top-0 flex w-[40%] min-w-[420px] flex-col rounded-none border-y-0 border-r-0`}>
+    <Panel className={`${lm.closing ? 'aee-panel-slide-right-exit' : 'aee-panel-slide-right-enter'} pointer-events-auto absolute bottom-0 right-0 top-0 flex w-[40%] min-w-[420px] flex-col rounded-none border-y-0 border-r-0`}>
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-3">
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-(--aee-accent)">{t('layer-manager-title')}</span>
         <button className="h-[25px] w-[35px] rounded border border-red-800 bg-red-950/60 text-red-200 transition hover:border-red-300 hover:bg-red-900"

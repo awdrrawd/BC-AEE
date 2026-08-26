@@ -592,10 +592,18 @@ function installLscgLayersObserver() {
 }
 
 export function cycleLayerPickerMode() {
-  const order = ['off', 'normal', 'detail'] as const;
+  // Item/restraint colour editing happens inside a Dialog (ChatRoom, Crafting,
+  // Shop2, SlaveCollar, ...). A plain click there can land on BC's own
+  // interactive body-zone cells outside the colour panel instead of being
+  // routed to AEE, so "normal" single-click picking is unreliable for Item
+  // assets. "detail" draws its own labelled hit boxes off to the side and
+  // does not have that problem, so items cycle straight between off/detail.
+  const isItem = getCurrentItem()?.Asset?.Group?.Category === 'Item';
+  const order = isItem ? (['off', 'detail'] as const) : (['off', 'normal', 'detail'] as const);
   let nextMode = settings.layerPickerMode.get();
   mutateState(draft => {
-    nextMode = order[(order.indexOf(draft.layerPickerMode) + 1) % order.length];
+    const currentIndex = order.indexOf(draft.layerPickerMode as typeof order[number]);
+    nextMode = order[(Math.max(currentIndex, 0) + 1) % order.length];
     draft.layerPickerMode = nextMode;
   });
   settings.layerPickerMode.set(nextMode);

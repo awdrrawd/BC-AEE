@@ -42,7 +42,7 @@ let compactBackNextDepth = 0;
 let compactEditButtons: Array<{x: number; y: number; w: number; h: number; originalX: number}> = [];
 
 function compactEditButtonRect(x: number, y: number, width: number) {
-  if (!runtime.inAppearanceRun || !getState().visible || y < 120
+  if (!getState().visible || y < 120
     || x < 1000 || x + width > 2000 || width < 250) return null;
   const nextWidth = width * EDIT_BUTTON_SCALE;
   return {x: x + width - nextWidth, width: nextWidth};
@@ -146,7 +146,7 @@ export function installAppearanceHooks() {
     const point = pointerEventCanvasPoint(args[0]);
     const x = point?.x ?? MouseX;
     const y = point?.y ?? MouseY;
-    if (CurrentScreen === 'Appearance' && isLayerPickerLabelPoint(x, y) && handleAppearancePickerClick(x, y)) return;
+    if (isLayerPickerLabelPoint(x, y) && handleAppearancePickerClick(x, y)) return;
     return next(args);
   });
 
@@ -215,9 +215,16 @@ export function installAppearanceHooks() {
   });
 
   bcAeeModSdk.hookFunction('DrawCharacter', 1, (args, next) => {
-    if (!runtime.inAppearanceRun) return next(args);
     const character = args[0];
     const scale = args[3];
+    // Dialog-based Item editing does not run AppearanceRun, but it still draws
+    // the edited character through DrawCharacter. Capture that exact draw
+    // rectangle so labels and hit boxes use the current Dialog coordinates
+    // instead of a stale Appearance-screen map.
+    if (!runtime.inAppearanceRun) {
+      captureAppearanceDraw(character, args[1], args[2], scale, args[4]);
+      return next(args);
+    }
     const isTarget = character && character === CharacterAppearanceSelection;
     if (scale === 4) {
       if (!isTarget) return next(args);
@@ -287,7 +294,19 @@ export function installAppearanceHooks() {
   // explicitly active drag/rotation/eyedropper gesture does that.
   bcAeeModSdk.hookFunction('DialogDraw', 0, (args, next) => {
     if (DialogMenuMode === 'extended' && DialogFocusItem) syncCurrentContext();
-    return next(args);
+    compactEditButtons = [];
+    const result = next(args);
+    // Item/restraint dyeing normally happens here (ChatRoom, Crafting, Shop2,
+    // SlaveCollar, ...), not on the standalone Appearance screen. The layer
+    // picker's per-frame commit/draw used to only run inside AppearanceRun's
+    // hook below, so layerCaptures/layerLabels were never populated for a
+    // Dialog-based item colour session - detailed-pick labels never appeared,
+    // and there was nothing for a click to hit. Mirror AppearanceRun's tail
+    // call here so the same capture/commit/draw pipeline runs on this screen
+    // too. Both no-op harmlessly when the picker isn't actually enabled.
+    commitAppearancePickerFrame();
+    drawAppearancePickerOutline();
+    return result;
   });
 
   bcAeeModSdk.hookFunction('DialogLeaveFocusItem', 0, (args, next) => {
@@ -327,6 +346,10 @@ export function installAppearanceHooks() {
 
   bcAeeModSdk.hookFunction('DialogClick', 0, (args, next) => {
     if (runtime.hoverTryOnActive && runtime.hoverTryOnRestraint) stopHoverTryOn(true);
+    // Detailed picker labels occupy the same canvas area as Dialog controls.
+    // Consume their complete rectangle (including the painted text), before
+    // BC can dispatch the click to the button underneath.
+    if (isLayerPickerLabelPoint() && handleAppearancePickerClick()) return;
     if (isEditingBody() && isBodyClick()) return;
     return withExpandedEditMouseX(() => next(args));
   });

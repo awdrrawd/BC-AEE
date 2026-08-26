@@ -152,6 +152,11 @@ export function ToolbarSide({state}: {state: AeeState}) {
   if (panelOpen) panelWidthRef.current = settingsOpen ? 500 : 350;
   const panelWidth = panelWidthRef.current;
   const controlContent = editing ? <EditControlPanel state={state}/> : <SettingsTab/>;
+  const controlPageKey = editing
+    ? state.editTool === 'settings' || state.editTool === 'layers' || state.editTool === 'opacity' || state.editTool === 'layeringHide'
+      ? state.editTool
+      : 'edit'
+    : managePanel ?? 'resident';
   if (panelOpen) controlContentRef.current = controlContent;
   const displayEditing = editing || (exiting && editingRef.current);
   const openTool = (tool: EditToolMode) => (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -182,19 +187,21 @@ export function ToolbarSide({state}: {state: AeeState}) {
                             event.stopPropagation();
                             if (!state.toolbarPinned) setToolbarPinned(true);
                           }}/> : null}
-      <Panel className={`pointer-events-auto absolute bottom-0 left-0 top-0 z-30 w-[80px] flex-col items-center rounded-none border-y-0 border-l-0 px-[9px] py-[12px] [backface-visibility:hidden] ${editing ? '' : 'transition-transform duration-300 will-change-transform'}`}
-             style={{transform: residentOpen ? 'translate3d(0,0,0)' : 'translate3d(-70px,0,0)'}}>
+      <Panel className={`pointer-events-auto absolute bottom-0 left-0 top-0 z-30 w-[80px] flex-col items-center rounded-none border-y-0 border-l-0 px-[9px] py-[12px] [backface-visibility:hidden] ${editing ? '' : 'aee-panel-collapse-motion'}`}
+             style={{transform: residentOpen ? 'translate3d(0,0,0)' : 'translate3d(-70px,0,0)', opacity: residentOpen ? 1 : 0}}>
         {displayEditing ? <EditingButtons state={state} openTool={openTool}/> : <ResidentButtons state={state} managePanel={managePanel} setManagePanel={setManagePanel}/>} 
       </Panel>
-      <div className={`absolute left-[80px] top-0 z-10 h-[1000px] overflow-hidden transition-transform duration-300 ease-out will-change-transform [backface-visibility:hidden] ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-           style={{width: panelWidth, transform: panelOpen ? 'translate3d(0,0,0)' : 'translate3d(calc(-100% - 80px),0,0)'}}>
+      <div className={`aee-panel-collapse-motion absolute left-[80px] top-0 z-10 h-[1000px] overflow-hidden ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+           style={{width: panelWidth, transform: panelOpen ? 'translate3d(0,0,0)' : 'translate3d(calc(-100% - 80px),0,0)', opacity: panelOpen ? 1 : 0}}>
         <Panel className="aee-control flex h-full w-full flex-col overflow-hidden rounded-none border-y-0 border-l-0 p-0">
           <div className="relative flex h-[52px] shrink-0 items-center justify-center border-b border-zinc-700 bg-zinc-950/80">
             <span className="aee-wave-text text-[26px] font-bold">AEE v{state.version}</span>
           </div>
           <div className="aee-scroll min-h-0 flex-1 overscroll-contain overflow-y-auto"
                style={{WebkitOverflowScrolling: 'touch'}}>
-            {panelOpen ? controlContent : controlContentRef.current}
+            {panelOpen
+              ? <div key={controlPageKey} className="aee-panel-page-enter min-h-full">{controlContent}</div>
+              : controlContentRef.current}
           </div>
         </Panel>
       </div>
@@ -212,11 +219,11 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
   const bgImgEnabled = useSetting(settings.bgImgEnabled);
   const hideCloseup = useSetting(settings.hideCloseup);
   const hideFullbody = useSetting(settings.hideFullbody);
-  return <div className={`absolute bottom-[81px] left-[80px] z-20 flex h-[62px] items-center gap-[10px] rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform [backface-visibility:hidden] ${open ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-5 opacity-0'}`}>
+  return <div className={`aee-panel-collapse-motion absolute bottom-[81px] left-[80px] z-20 flex h-[62px] items-center gap-[10px] rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${open ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-5 opacity-0'}`}>
     <ControlButton active={state.offset.open} label={t('char-control-offset-button')} icon={<Move className="h-full w-full"/>} onClick={() => toggleOffsetPanel()}/>
     <div className="relative">
       <ControlButton active={state.charControl.bgSubOpen || bgEnabled || bgGridEnabled || bgImgEnabled} label={t('char-control-background-button')} icon={<ImageIcon className="h-full w-full"/>} onClick={toggleBgSubOpen}/>
-      <div className={`absolute bottom-[62px] left-0 flex flex-col-reverse gap-[9px] rounded-t-lg bg-zinc-950/95 p-[5px] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform [backface-visibility:hidden] ${state.charControl.bgSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
+      <div className={`aee-panel-collapse-motion absolute bottom-[62px] left-0 flex flex-col-reverse gap-[9px] rounded-t-lg bg-zinc-950/95 p-[5px] ${state.charControl.bgSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
         <ControlButton active={bgEnabled} label={t('char-control-solid-background-button')} icon={<span className="h-5 w-5 rounded bg-white/80"/>} onClick={toggleSolidBg}/>
         <ControlButton active={bgGridEnabled} label={t('char-control-grid-background-button')} icon={<Grid3x3 className="h-full w-full"/>} onClick={toggleGridBg}/>
         <ControlButton active={bgImgEnabled && state.bg.imageLoaded} label={t('char-control-image-background-button')} icon={<ImageIcon className="h-full w-full"/>} onClick={toggleImageBg}/>
@@ -226,7 +233,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
     <ControlButton active={state.pose.open} label={t('char-control-pose-button')} icon={<Accessibility className="h-full w-full"/>} onClick={() => togglePoseWindow()}/>
     <div className="relative">
       <ControlButton active={state.charControl.hideSubOpen || hideCloseup || hideFullbody} label={t('char-control-hide-menu-button')} icon={hideCloseup || hideFullbody ? <EyeOff className="h-full w-full"/> : <Eye className="h-full w-full"/>} onClick={toggleHideSubOpen}/>
-      <div className={`absolute bottom-[62px] left-0 flex flex-col-reverse gap-[9px] rounded-t-lg bg-zinc-950/95 p-[5px] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform [backface-visibility:hidden] ${state.charControl.hideSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
+      <div className={`aee-panel-collapse-motion absolute bottom-[62px] left-0 flex flex-col-reverse gap-[9px] rounded-t-lg bg-zinc-950/95 p-[5px] ${state.charControl.hideSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
         <ControlButton active={hideFullbody} label={t('char-control-hide-fullbody-button')} icon={<PersonStanding className="h-full w-full"/>} onClick={() => toggleHide('fullbody')}/>
         <ControlButton active={hideCloseup} label={t('char-control-hide-closeup-button')} icon={<User className="h-full w-full"/>} onClick={() => toggleHide('closeup')}/>
       </div>
@@ -304,16 +311,15 @@ function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState;
 
 function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: EditToolMode) => (event: ReactMouseEvent<HTMLButtonElement>) => void}) {
   const selected = state.selectedLayer !== null;
-  const canPickLayer = state.item?.Asset?.Group?.Category !== 'Item';
   const selectedTool = (tool: EditToolMode) => state.toolbarLayout === 'neat'
     ? state.editTools.includes(tool)
     : state.transformOverlay.mode === tool || (state.opacityOverlay.open && tool === 'opacity');
   return <>
     <div className="flex flex-col gap-[7px]">
       <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<SvgIcon src={partIcon}/>} onClick={openTool('parts')}/>
-      {canPickLayer ? <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag}
-                                  active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
-                                  icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/> : null}
+      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag}
+                  active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
+                  icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
       {selected ? <>
         <ToolButton title={t('toggle-bar-position-button-title')} selected={selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
         <ToolButton title={t('toggle-bar-rotation-button-title')} selected={selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>

@@ -16,6 +16,7 @@ export interface Runtime {
   colorPickerAlpha: number;
   offsetPreview: { x: number; y: number } | null;
   hoverLayerIdx: string | null;
+  panelHoverLayerIdx: string | null;
   hoverCooldownUntil: number;
   hoverHighlightAnimFrame: number | null;
   hoverHighlightStartTime: number | null;
@@ -65,6 +66,7 @@ export const runtime: Runtime = {
   colorPickerAlpha: 255,
   offsetPreview: null,
   hoverLayerIdx: null,
+  panelHoverLayerIdx: null,
   hoverCooldownUntil: 0,
   hoverHighlightAnimFrame: null,
   hoverHighlightStartTime: null,

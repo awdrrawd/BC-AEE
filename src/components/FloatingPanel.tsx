@@ -31,7 +31,7 @@ export function FloatingPanel({
   const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
   const scale = canvasRect.width / 2000;
 
-  return <div className="fixed z-999996 pointer-events-none"
+  return <div className="fixed z-1000002 pointer-events-none"
               style={{left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height}}>
     <Panel
       className={`aee-control pointer-events-auto absolute ${className}`}

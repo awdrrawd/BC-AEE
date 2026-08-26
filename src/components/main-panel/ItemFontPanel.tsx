@@ -123,7 +123,7 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
 
   return <Panel
     data-aee-font-panel="true"
-    className="aee-control fixed z-999999 pointer-events-auto"
+    className="aee-control fixed z-1000002 pointer-events-auto"
     style={{left: pos.left, top: pos.top, width, maxHeight, transform: `scale(${canvasRect.width / 2000})`, transformOrigin: 'top left'}}
   >
     <div

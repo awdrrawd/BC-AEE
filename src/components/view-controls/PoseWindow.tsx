@@ -14,7 +14,7 @@ export function PoseWindow({state}: { state: AeeState }) {
   const left = state.pose.left ?? Math.round(state.canvasRect.left + state.canvasRect.width * 0.36);
   const top = state.pose.top ?? Math.round(state.canvasRect.top + state.canvasRect.height * 0.08);
   return <Panel
-    className={`${presence.closing ? 'aee-view-panel-exit' : 'aee-view-panel-enter'} fixed z-999990`}
+    className={`${presence.closing ? 'aee-panel-fade-exit' : 'aee-panel-fade-enter'} fixed z-1000002`}
     style={{left, top, width: 4 * (58 + 6) - 6 + 20, transform: `scale(${state.canvasRect.width / 2000 * 1.5})`, transformOrigin: 'top left'}}>
     <div
       className="flex min-h-[42px] cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"

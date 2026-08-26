@@ -175,17 +175,42 @@
   50% { background-position: 0 180px; filter: brightness(1.35); }
 }
 
-@keyframes aee-layer-manager-enter {
+/* Shared panel motion families. Use slide for docked panels and fade for
+   free-floating windows; state-driven collapses use the transition helper. */
+@keyframes aee-panel-slide-right {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
 
-.aee-layer-manager-enter {
-  animation: aee-layer-manager-enter .32s ease-out both;
+@keyframes aee-panel-slide-right-exit {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
 }
 
-.aee-layer-manager-exit {
-  animation: aee-layer-manager-enter .28s ease-in reverse both;
+.aee-panel-slide-right-enter {
+  animation: aee-panel-slide-right .32s ease-out both;
+}
+
+.aee-panel-slide-right-exit {
+  animation: aee-panel-slide-right-exit .28s ease-in both;
+  pointer-events: none;
+}
+
+.aee-panel-collapse-motion {
+  transition-property: transform, opacity, width;
+  transition-duration: .3s;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+@keyframes aee-panel-page-enter {
+  from { transform: translateX(28px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.aee-panel-page-enter {
+  animation: aee-panel-page-enter .24s cubic-bezier(.22, 1, .36, 1) both;
 }
 
 .aee-toolbar-stream {
@@ -200,27 +225,18 @@
   box-shadow: 0 0 10px color-mix(in srgb, var(--aee-accent) 75%, #9ff);
 }
 
-@keyframes aee-view-panel-fade {
+@keyframes aee-panel-fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.aee-view-panel-enter {
-  animation: aee-view-panel-fade .25s ease-out both;
+.aee-panel-fade-enter {
+  animation: aee-panel-fade .25s ease-out both;
 }
 
-.aee-view-panel-exit {
-  animation: aee-view-panel-fade .25s ease-in reverse both;
+.aee-panel-fade-exit {
+  animation: aee-panel-fade .25s ease-in reverse both;
   pointer-events: none;
-}
-
-@keyframes aee-control-enter {
-  from { transform: translateX(-100%); opacity: .4; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-.aee-control-enter {
-  animation: aee-control-enter .24s ease-out both;
 }
 
 .aee-control .text-xs {

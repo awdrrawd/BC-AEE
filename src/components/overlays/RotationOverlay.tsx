@@ -42,7 +42,7 @@ export function RotationOverlay({state}: { state: AeeState }) {
     document.addEventListener('mouseup', onUp, true);
   };
 
-  return <div className="fixed z-999997 pointer-events-none" style={{
+  return <div className="fixed z-1000002 pointer-events-none" style={{
     left: state.canvasRect.left,
     top: state.canvasRect.top,
     width: state.canvasRect.width,

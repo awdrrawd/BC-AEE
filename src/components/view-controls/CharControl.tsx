@@ -45,7 +45,7 @@ export function CharControl({state}: { state: AeeState }) {
   const expandedStyle = {left: 0, bottom: CTRL_BTN_SIZE + 8, flexDirection: 'column-reverse' as const};
   const subSide = {left: CTRL_BTN_SIZE + 6, right: 'auto', flexDirection: 'row' as const};
 
-  return <div className="fixed z-999995 pointer-events-none overflow-visible" style={{
+  return <div className="fixed z-1000001 pointer-events-none overflow-visible" style={{
     left: state.canvasRect!.left,
     top: state.canvasRect!.top,
     width: state.canvasRect!.width,

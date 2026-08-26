@@ -3,6 +3,7 @@ import {openLayerColorPicker, selectLayer, startHoverHighlight, stopHoverHighlig
 import {getState} from '@/core/store';
 import {settings} from '@/core/settings';
 import {t} from '@/i18n/i18n';
+import {setLayerPanelHover} from '@/controllers/appearancePickerController';
 
 export function LayerButtonRow({id, name, color, selected}: {
   id: LayerId;
@@ -12,9 +13,11 @@ export function LayerButtonRow({id, name, color, selected}: {
 }) {
   const hoverStart = () => {
     const state = getState();
+    setLayerPanelHover(String(id));
     if (settings.hoverHighlight.get() && state.item) startHoverHighlight(state.item, id);
   };
   const hoverEnd = () => {
+    setLayerPanelHover(null);
     if (settings.hoverHighlight.get()) stopHoverHighlight(true);
   };
 

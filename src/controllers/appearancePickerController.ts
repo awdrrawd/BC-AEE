@@ -2,7 +2,7 @@ import {settings} from '@/core/settings';
 import {readUiTheme, THEME_PRESETS} from '@/core/theme';
 import {runtime} from '@/core/runtime';
 import {getState, mutateState} from '@/core/store';
-import {getLayerDisplayName} from '@/core/bc';
+import {getCurrentCharacter, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
@@ -10,12 +10,17 @@ type DrawCapture = {url: string; x: number; y: number; order: number};
 type CanvasMap = {ox: number; oy: number; sx: number; sy: number; yStart: number};
 type AlphaData = {bounds: {x: number; y: number; w: number; h: number}; mask: Uint8Array; mw: number; mh: number; scale: number};
 type PickHit = {asset: Asset; group: AssetGroup; area: number; order: number};
+type ScreenRect = {left: number; top: number; right: number; bottom: number};
+type LabelRow = {index: number; minX: number; maxX: number; anchorY: number; label: string};
+type LabelLayout = LabelRow & {side: 'left' | 'right'; x: number; y: number; w: number; h: number};
 
 const captures = new Map<Asset, DrawCapture[]>();
 let frame = new Map<Asset, DrawCapture[]>();
 const layerCaptures = new Map<number, DrawCapture[]>();
 let layerFrame = new Map<number, DrawCapture[]>();
-const archive = new Map<AssetGroupName, {asset: Asset; list: DrawCapture[]}>();
+// Last non-transparent render for each worn group. Hover flashing can render a
+// layer with Alpha=0, so the current frame alone cannot always draw its outline.
+const lastVisibleCaptures = new Map<AssetGroupName, {asset: Asset; list: DrawCapture[]}>();
 const alphaCache = new Map<string, AlphaData | null>();
 let drawAt: DrawAt | null = null;
 let frameDrawAt: DrawAt | null = null;
@@ -30,13 +35,23 @@ const OUTLINE_SAMPLES = 20;
 const PICK_TOP = 115;
 
 export function appearancePickerEnabled(): boolean {
-  return settings.appearancePick.get() || layerPickerEnabled();
+  return settings.hoverOutlineColor.get() !== 'off' || settings.appearancePick.get() || layerPickerEnabled();
 }
 
 function layerPickerEnabled(): boolean {
   const state = getState();
-  const isItem = state.item?.Asset?.Group?.Category === 'Item';
-  return state.visible && !!state.item && !isItem && !state.activeDrag && state.layerPickerMode !== 'off';
+  return state.visible && !!state.item && !state.activeDrag && state.layerPickerMode !== 'off';
+}
+
+function layerCaptureEnabled(): boolean {
+  const state = getState();
+  return state.visible && !!state.item && !state.activeDrag
+    && (state.layerPickerMode !== 'off' || settings.hoverOutlineColor.get() !== 'off');
+}
+
+/** Active Appearance character, or the ItemColor/Dialog character. */
+function pickerCharacter(): Character | null {
+  return getCurrentCharacter();
 }
 
 function inSupportedAppearanceMode(): boolean {
@@ -47,14 +62,14 @@ function inSupportedAppearanceMode(): boolean {
 }
 
 export function captureAppearanceDraw(character: Character, x: number, y: number, zoom: number, heightResize?: boolean) {
-  if (!(inSupportedAppearanceMode() || layerPickerEnabled()) || character !== CharacterAppearanceSelection || zoom > 2) return;
+  if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || character !== pickerCharacter() || zoom > 2) return;
   frameDrawAt = {x, y, zoom, heightResize};
 }
 
 export function captureAppearanceImage(source: unknown, x: number, y: number, options?: DrawOptions) {
-  if (!(inSupportedAppearanceMode() || layerPickerEnabled()) || runtime.currentRenderChar !== CharacterAppearanceSelection || typeof source !== 'string') return;
+  const character = pickerCharacter();
+  if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || runtime.currentRenderChar !== character || typeof source !== 'string') return;
   if (options?.Alpha === 0) return;
-  const transform = options as DrawOptions & {TranslationX?: number; TranslationY?: number};
   const state = getState();
   const sameTrackedAsset = runtime.currentDrawLayerItem?.Asset === state.item?.Asset;
   const trackedLayerIndex = sameTrackedAsset
@@ -63,17 +78,25 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   const layerIndex = trackedLayerIndex != null && trackedLayerIndex >= 0
     ? trackedLayerIndex
     : matchCurrentItemLayer(source, state.item);
-  const asset = matchAsset(source);
-  const order = asset ? appearanceImageOrder(asset, source) : (layerIndex >= 0 ? layerOrder(layerIndex) : -1);
-  const capture = {url: source, x: x - (transform?.TranslationX ?? 0), y: y - (transform?.TranslationY ?? 0), order};
-  if (layerPickerEnabled() && layerIndex >= 0) {
+  const asset = matchAsset(source, character);
+  const order = asset ? appearanceImageOrder(asset, source, character) : (layerIndex >= 0 ? layerOrder(layerIndex, character) : -1);
+  // CommonDraw has already applied TranslationX/Y to the coordinates passed
+  // to GLDrawImage. Keep those final draw coordinates: subtracting the
+  // translation here leaves picking, labels and outlines at the old position.
+  // GLDrawImage applies the same translation once more after CommonDraw has
+  // already included it in x/y (see BC's FIXME beside its matrix setup).
+  // Record the actual raster origin produced by that matrix.
+  const transform = options as (DrawOptions & {TranslationX?: number; TranslationY?: number}) | undefined;
+  const translationX = transform?.TranslationX ?? 0;
+  const translationY = transform?.TranslationY ?? 0;
+  const capture = {url: source, x: x + translationX, y: y + translationY, order};
+  if (layerCaptureEnabled() && layerIndex >= 0) {
     const layerList = layerFrame.get(layerIndex) ?? [];
     layerList.push(capture);
     layerFrame.set(layerIndex, layerList);
   }
-  // Whole-item picking additionally needs the owning asset. Layer picking can
-  // still proceed from CommonDraw's authoritative item/layer tracking when a
-  // modded image URL cannot be matched back to AppearanceLayers.
+  // Whole-item picking needs an asset owner. Per-layer picking can still use
+  // CommonDraw's authoritative item/layer context for non-standard URLs.
   if (!asset) return;
   const list = frame.get(asset) ?? [];
   list.push(capture);
@@ -81,7 +104,7 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
 }
 
 export function commitAppearancePickerFrame() {
-  if (!inSupportedAppearanceMode() && !layerPickerEnabled()) {
+  if (!inSupportedAppearanceMode() && !layerCaptureEnabled()) {
     hovered = null;
     return;
   }
@@ -89,11 +112,15 @@ export function commitAppearancePickerFrame() {
     drawAt = frameDrawAt;
     frameDrawAt = null;
   }
+  // BC may draw the target character again without passing its layers through
+  // the capture path. Only replace a good frame when a new frame actually has
+  // images; otherwise labels/picking disappear until panel hover forces a
+  // second full CharacterLoadCanvas render.
   if (frame.size) {
     captures.clear();
     for (const [asset, list] of frame) {
       captures.set(asset, list);
-      archive.set(asset.Group.Name, {asset, list});
+      lastVisibleCaptures.set(asset.Group.Name, {asset, list});
     }
     frame = new Map();
   }
@@ -101,6 +128,10 @@ export function commitAppearancePickerFrame() {
     layerCaptures.clear();
     for (const [index, list] of layerFrame) layerCaptures.set(index, list);
     layerFrame = new Map();
+  }
+  const wornAssets = new Set(pickerCharacter()?.Appearance.map(item => item.Asset) ?? []);
+  for (const [groupName, record] of lastVisibleCaptures) {
+    if (!wornAssets.has(record.asset)) lastVisibleCaptures.delete(groupName);
   }
   hovered = inSupportedAppearanceMode() ? pickAt(MouseX, MouseY)[0] ?? null : null;
 }
@@ -124,11 +155,17 @@ export function drawAppearancePickerOutline() {
     const index = pickLayerAt(MouseX, MouseY)[0];
     if (index != null) drawLayerOutline(index);
   }
+  if (settings.hoverOutlineColor.get() !== 'off' && state.visible && state.item && runtime.panelHoverLayerIdx !== null) {
+    const indices = runtime.panelHoverLayerIdx === 'all'
+      ? [...layerCaptures.keys()]
+      : getLayerGroupMembers(state.item, Number.parseInt(runtime.panelHoverLayerIdx, 10));
+    indices.forEach(index => drawLayerOutline(index));
+  }
   if (settings.hoverOutlineColor.get() === 'off' || !inSupportedAppearanceMode()) return;
   const groupHover = findGroupHover();
   const hit = hovered ?? groupHover;
   if (!hit) return;
-  const list = captures.get(hit.asset) ?? archive.get(hit.group.Name)?.list;
+  const list = captures.get(hit.asset) ?? lastVisibleCaptures.get(hit.group.Name)?.list;
   const map = canvasMap();
   if (!list?.length || !map) return;
 
@@ -200,6 +237,14 @@ export function isLayerPickerLabelPoint(x = MouseX, y = MouseY): boolean {
     && layerLabels.some(label => x >= label.x && x <= label.x + label.w && y >= label.y && y <= label.y + label.h);
 }
 
+export function setLayerPanelHover(layerId: string | null): void {
+  if (runtime.panelHoverLayerIdx === layerId) return;
+  runtime.panelHoverLayerIdx = layerId;
+  if (settings.hoverOutlineColor.get() === 'off') return;
+  const character = pickerCharacter();
+  if (character) CharacterLoadCanvas(character);
+}
+
 function handleLayerPickerClick(x: number, y: number): boolean {
   const state = getState();
   if (!layerPickerEnabled()) return false;
@@ -237,11 +282,11 @@ function pickLayerAt(x: number, y: number): number[] {
   return hits.sort((a, b) => (b.order - a.order) || (a.area - b.area)).map(hit => hit.index);
 }
 
-function layerOrder(index: number): number {
+function layerOrder(index: number, character: Character | null = pickerCharacter()): number {
   const state = getState();
   const layerName = state.layers[index]?.Name ?? '';
   let order = index;
-  CharacterAppearanceSelection?.AppearanceLayers?.forEach((layer, position) => {
+  character?.AppearanceLayers?.forEach((layer, position) => {
     if (layer.Asset === state.item?.Asset && (layer.Name ?? '') === layerName) order = position;
   });
   return order;
@@ -259,7 +304,7 @@ function drawDetailedLayerPicker() {
     syncLabelHover(null);
     return;
   }
-  const rows: Array<{index: number; minX: number; maxX: number; anchorY: number; label: string}> = [];
+  const rows: LabelRow[] = [];
   for (const [index, list] of layerCaptures) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const cap of list) {
@@ -280,13 +325,6 @@ function drawDetailedLayerPicker() {
   rows.sort((a, b) => a.anchorY - b.anchorY);
   const accent = readUiTheme().accent;
   const personCenter = map.ox + 250 * map.sx;
-  const left: typeof rows = [];
-  const right: typeof rows = [];
-  for (const row of rows) {
-    const center = (row.minX + row.maxX) / 2;
-    if (center < personCenter - 8 || (Math.abs(center - personCenter) <= 8 && left.length <= right.length)) left.push(row);
-    else right.push(row);
-  }
   MainCanvas.save();
   MainCanvas.font = 'bold 22px Arial';
   MainCanvas.textBaseline = 'middle';
@@ -295,46 +333,173 @@ function drawDetailedLayerPicker() {
   // column ends at -300, while the right one begins at +300.
   const leftX = Math.max(12, personCenter - 300 - labelWidth);
   const rightX = Math.min(1990 - labelWidth, personCenter + 300);
-  drawLabelSide(left, 'left', personCenter, accent, leftX, labelWidth);
-  drawLabelSide(right, 'right', personCenter, accent, rightX, labelWidth);
+  const left: LabelRow[] = [];
+  const right: LabelRow[] = [];
+  distributeLabelRows(rows, left, right, leftX, rightX, labelWidth, aeeControlRects());
+  const labels = [
+    ...layoutLabelSide(left, 'left', leftX, labelWidth),
+    ...layoutLabelSide(right, 'right', rightX, labelWidth),
+  ];
+  layerLabels = labels.map(label => ({index: label.index, x: label.x, y: label.y, w: label.w, h: label.h}));
+  const labelHover = labels.find(label => MouseX >= label.x && MouseX <= label.x + label.w && MouseY >= label.y && MouseY <= label.y + label.h)?.index ?? null;
+  // Paint every connector first so no later row can draw a line over a label.
+  labels.forEach(label => drawLabelConnector(label, accent, label.index === labelHover));
+  labels.forEach(label => drawLayerLabel(label, accent, label.index === labelHover));
   MainCanvas.restore();
-  const labelHover = layerLabels.find(label => MouseX >= label.x && MouseX <= label.x + label.w && MouseY >= label.y && MouseY <= label.y + label.h)?.index ?? null;
   syncLabelHover(labelHover);
   if (labelHover != null) drawLayerOutline(labelHover);
 }
 
-function drawLabelSide(
-  rows: Array<{index: number; minX: number; maxX: number; anchorY: number; label: string}>,
+function layoutLabelSide(
+  rows: LabelRow[],
   side: 'left' | 'right',
-  personCenter: number,
-  accent: string,
   columnX: number,
   width: number,
-) {
-  let nextY = 125;
-  for (const row of rows) {
-    const height = 38;
-    const y = Math.max(nextY, Math.min(930 - height, row.anchorY - height / 2));
-    nextY = y + height + 8;
-    const x = Math.min(1990 - width, columnX);
-    const edgeX = side === 'left' ? row.minX : row.maxX;
-    const elbowX = side === 'left' ? personCenter - 235 : personCenter + 235;
-    const labelEdgeX = side === 'left' ? x + width : x;
-    MainCanvas.strokeStyle = accent;
-    MainCanvas.lineWidth = 3;
-    MainCanvas.beginPath();
-    MainCanvas.moveTo(edgeX, row.anchorY);
-    MainCanvas.lineTo(elbowX, y + height / 2);
-    MainCanvas.lineTo(labelEdgeX, y + height / 2);
-    MainCanvas.stroke();
-    MainCanvas.fillStyle = 'rgba(9,9,15,0.88)';
-    MainCanvas.fillRect(x, y, width, height);
-    MainCanvas.strokeRect(x, y, width, height);
-    MainCanvas.fillStyle = '#FFFFFF';
-    MainCanvas.textAlign = 'left';
-    MainCanvas.fillText(row.label, x + 12, y + height / 2);
-    layerLabels.push({index: row.index, x, y, w: width, h: height});
+): LabelLayout[] {
+  const positions = layoutLabelRows(rows);
+  return rows.map((row, index) => ({...row, side, x: Math.min(1990 - width, columnX), y: positions[index], w: width, h: 38}));
+}
+
+function drawLabelConnector(label: LabelLayout, accent: string, highlighted: boolean) {
+  const edgeX = label.side === 'left' ? label.minX : label.maxX;
+  const labelEdgeX = label.side === 'left' ? label.x + label.w : label.x;
+  const labelY = label.y + label.h / 2;
+  const gap = labelEdgeX - edgeX;
+  MainCanvas.save();
+  MainCanvas.strokeStyle = accent;
+  MainCanvas.lineWidth = highlighted ? 6 : 3;
+  if (highlighted) {
+    MainCanvas.shadowColor = accent;
+    MainCanvas.shadowBlur = 14;
   }
+  MainCanvas.beginPath();
+  MainCanvas.moveTo(edgeX, label.anchorY);
+  if (Math.abs(gap) < 120 || Math.abs(label.anchorY - labelY) < 10) {
+    MainCanvas.lineTo(labelEdgeX, labelY);
+  } else {
+    const landing = Math.min(70, Math.abs(gap) * 0.22);
+    const elbowX = labelEdgeX - Math.sign(gap) * landing;
+    MainCanvas.lineTo(elbowX, labelY);
+    MainCanvas.lineTo(labelEdgeX, labelY);
+  }
+  MainCanvas.stroke();
+  MainCanvas.restore();
+}
+
+function drawLayerLabel(label: LabelLayout, accent: string, highlighted: boolean) {
+  MainCanvas.save();
+  MainCanvas.fillStyle = highlighted ? 'rgba(28,20,45,0.96)' : 'rgba(9,9,15,0.88)';
+  MainCanvas.fillRect(label.x, label.y, label.w, label.h);
+  MainCanvas.strokeStyle = accent;
+  MainCanvas.lineWidth = highlighted ? 5 : 3;
+  if (highlighted) {
+    MainCanvas.shadowColor = accent;
+    MainCanvas.shadowBlur = 14;
+  }
+  MainCanvas.strokeRect(label.x, label.y, label.w, label.h);
+  MainCanvas.shadowBlur = 0;
+  MainCanvas.fillStyle = '#FFFFFF';
+  MainCanvas.textAlign = 'left';
+  MainCanvas.fillText(label.label, label.x + 12, label.y + label.h / 2);
+  MainCanvas.restore();
+}
+
+function distributeLabelRows(
+  rows: LabelRow[],
+  left: LabelRow[],
+  right: LabelRow[],
+  leftX: number,
+  rightX: number,
+  width: number,
+  obstacles: ScreenRect[],
+) {
+  const nextY = {left: 50, right: 50};
+  const characterCenter = (leftX + width + rightX) / 2;
+  const leftRoom = characterCenter;
+  const rightRoom = 2000 - characterCenter;
+  for (const row of rows) {
+    const center = (row.minX + row.maxX) / 2;
+    const preferred: 'left' | 'right' = rightRoom < width + 360
+      ? 'left'
+      : leftRoom < width + 360
+        ? 'right'
+        : center < characterCenter ? 'left' : 'right';
+    const scores = {
+      left: labelCollisionScore(labelCandidate(row, leftX, width, nextY.left), obstacles),
+      right: labelCollisionScore(labelCandidate(row, rightX, width, nextY.right), obstacles),
+    };
+    const side: 'left' | 'right' = scores[preferred] <= scores[preferred === 'left' ? 'right' : 'left']
+      ? preferred
+      : preferred === 'left' ? 'right' : 'left';
+    const destination = side === 'left' ? left : right;
+    destination.push(row);
+    nextY[side] = labelCandidate(row, side === 'left' ? leftX : rightX, width, nextY[side]).bottom + 8;
+  }
+}
+
+function labelCandidate(row: LabelRow, x: number, width: number, nextY: number): ScreenRect {
+  const height = 38;
+  const top = Math.max(nextY, Math.min(950 - height, row.anchorY - height / 2));
+  return {left: x, top, right: x + width, bottom: top + height};
+}
+
+/** Keep every label fully inside y=50..950. A backward pass moves earlier
+ * labels upward when the bottom of a dense column would otherwise overflow. */
+function layoutLabelRows(rows: LabelRow[]): number[] {
+  if (!rows.length) return [];
+  const height = 38;
+  const gap = rows.length > 1 ? Math.max(0, Math.min(8, (900 - rows.length * height) / (rows.length - 1))) : 0;
+  const result: number[] = [];
+  let next = 50;
+  for (const row of rows) {
+    const y = Math.max(next, Math.min(950 - height, row.anchorY - height / 2));
+    result.push(y);
+    next = y + height + gap;
+  }
+  result[result.length - 1] = Math.min(result[result.length - 1], 950 - height);
+  for (let index = result.length - 2; index >= 0; index--) {
+    result[index] = Math.min(result[index], result[index + 1] - height - gap);
+  }
+  if (result[0] < 50) {
+    const shift = 50 - result[0];
+    for (let index = 0; index < result.length; index++) result[index] += shift;
+  }
+  return result;
+}
+
+function labelCollisionScore(label: ScreenRect, obstacles: ScreenRect[]): number {
+  return obstacles.reduce((score, obstacle) => {
+    const width = Math.max(0, Math.min(label.right, obstacle.right) - Math.max(label.left, obstacle.left));
+    const height = Math.max(0, Math.min(label.bottom, obstacle.bottom) - Math.max(label.top, obstacle.top));
+    return score + width * height;
+  }, 0);
+}
+
+/** Convert the visible AEE panels (including floating color/transform panels)
+ * from DOM pixels to MainCanvas coordinates. Transformed/collapsed controls
+ * report their actual on-screen bounds, so the freed space is reusable. */
+function aeeControlRects(): ScreenRect[] {
+  const canvas = document.getElementById('MainCanvas') as HTMLCanvasElement | null;
+  const canvasRect = canvas?.getBoundingClientRect();
+  if (!canvas || !canvasRect || canvasRect.width <= 0 || canvasRect.height <= 0) return [];
+  const roots: ShadowRoot[] = [];
+  for (const element of document.body.children) if (element.shadowRoot?.querySelector('[data-aee-root]')) roots.push(element.shadowRoot);
+  const scaleX = canvas.width / canvasRect.width;
+  const scaleY = canvas.height / canvasRect.height;
+  const result: ScreenRect[] = [];
+  for (const root of roots) for (const control of root.querySelectorAll<HTMLElement>('.aee-control')) {
+    const style = getComputedStyle(control);
+    const rect = control.getBoundingClientRect();
+    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0 || rect.width <= 0 || rect.height <= 0) continue;
+    const converted = {
+      left: (rect.left - canvasRect.left) * scaleX,
+      top: (rect.top - canvasRect.top) * scaleY,
+      right: (rect.right - canvasRect.left) * scaleX,
+      bottom: (rect.bottom - canvasRect.top) * scaleY,
+    };
+    if (converted.right > 0 && converted.left < canvas.width && converted.bottom > 0 && converted.top < canvas.height) result.push(converted);
+  }
+  return result;
 }
 
 function syncLabelHover(index: number | null) {
@@ -386,7 +551,7 @@ function drawLayerOutline(index: number) {
   off.ctx.globalCompositeOperation = 'destination-out';
   blit(0, 0);
   off.ctx.globalCompositeOperation = 'source-in';
-  off.ctx.fillStyle = readUiTheme().accent;
+  off.ctx.fillStyle = outlineColor();
   off.ctx.fillRect(0, 0, bw, bh);
   MainCanvas.drawImage(off.canvas, 0, 0, bw, bh, bx, by, bw, bh);
 }
@@ -446,18 +611,19 @@ function pickableGroup(asset: Asset): AssetGroup | null {
 function findGroupHover(): PickHit | null {
   const groupName = runtimeGroupHover();
   if (!groupName) return null;
-  const record = archive.get(groupName);
-  return record ? {asset: record.asset, group: record.asset.Group, area: 0, order: 0} : null;
+  const record = lastVisibleCaptures.get(groupName);
+  const worn = pickerCharacter()?.Appearance.find(item => item.Asset.Group.Name === groupName)?.Asset;
+  return record && worn === record.asset ? {asset: record.asset, group: record.asset.Group, area: 0, order: 0} : null;
 }
 
 function runtimeGroupHover(): AssetGroupName | null {
   return runtime.hoverCharGroup as AssetGroupName | null;
 }
 
-function matchAsset(url: string): Asset | null {
+function matchAsset(url: string, character: Character | null = pickerCharacter()): Asset | null {
   const file = url.slice(url.lastIndexOf('/') + 1).split(/[?#]/, 1)[0].replace(/\.png$/i, '');
   let best: Asset | null = null;
-  for (const layer of CharacterAppearanceSelection?.AppearanceLayers ?? []) {
+  for (const layer of character?.AppearanceLayers ?? []) {
     const asset = layer.Asset;
     if (asset?.Name && file.startsWith(asset.Name) && (!best || asset.Name.length > best.Name.length)) best = asset;
   }
@@ -476,11 +642,11 @@ function matchCurrentItemLayer(url: string, item: Item | null): number {
     : !named.some(name => file.endsWith(`_${name}`) || file === name));
 }
 
-function appearanceImageOrder(asset: Asset, url: string): number {
+function appearanceImageOrder(asset: Asset, url: string, character: Character | null = pickerCharacter()): number {
   const file = imageFileName(url);
   const named = (asset.Layer ?? []).filter(layer => layer.Name).map(layer => layer.Name!);
   let best = -1;
-  CharacterAppearanceSelection?.AppearanceLayers?.forEach((layer, index) => {
+  character?.AppearanceLayers?.forEach((layer, index) => {
     if (layer.Asset !== asset) return;
     const name = layer.Name ?? '';
     const matches = name
@@ -488,7 +654,7 @@ function appearanceImageOrder(asset: Asset, url: string): number {
       : !named.some(candidate => file.endsWith(`_${candidate}`) || file === candidate);
     if (matches) best = Math.max(best, index);
   });
-  return best >= 0 ? best : stackOrder(asset);
+  return best >= 0 ? best : stackOrder(asset, character);
 }
 
 function imageFileName(url: string): string {
@@ -496,7 +662,7 @@ function imageFileName(url: string): string {
 }
 
 function canvasMap(): CanvasMap | null {
-  const character = CharacterAppearanceSelection;
+  const character = pickerCharacter();
   if (!character || !drawAt) return null;
   const heightRatio = drawAt.heightResize === false ? 1 : (character.HeightRatio ?? 1);
   const xOffset = CharacterAppearanceXOffset?.(character, heightRatio) ?? 0;
@@ -562,9 +728,9 @@ function opaqueAt(alpha: AlphaData | null, x: number, y: number): boolean {
   return mx >= 0 && my >= 0 && mx < alpha.mw && my < alpha.mh && alpha.mask[my * alpha.mw + mx] === 1;
 }
 
-function stackOrder(asset: Asset): number {
+function stackOrder(asset: Asset, character: Character | null = pickerCharacter()): number {
   let result = -1;
-  CharacterAppearanceSelection?.AppearanceLayers?.forEach((layer, index) => { if (layer.Asset === asset) result = index; });
+  character?.AppearanceLayers?.forEach((layer, index) => { if (layer.Asset === asset) result = index; });
   return result;
 }
 

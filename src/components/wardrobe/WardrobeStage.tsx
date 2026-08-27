@@ -32,7 +32,7 @@ export function WardrobeStage({
   // A solid colour the user chose stays true — only image backgrounds get the readability vignette.
   const dimmed = !previewing && !isColorBackground(bgPath);
   return <div
-    className="fixed z-[999998] overflow-hidden"
+    className="fixed z-1000003 overflow-hidden"
     style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}
   >
     <div

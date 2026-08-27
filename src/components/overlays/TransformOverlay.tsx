@@ -5,7 +5,6 @@ import {
   closeTransformOverlay,
   moveTransformOverlay,
   resetEditProperty,
-  setActiveDrag,
   setEditProperty,
   setScaleLock,
 } from '@/controllers/uiController';
@@ -14,6 +13,7 @@ import {Button} from '@/components/ui/Button';
 import {SliderRow} from '@/components/overlays/SliderRow';
 import {getSelectedLayerLabel} from '@/components/overlays/getSelectedLayerLabel';
 import {MirrorGroup} from '@/components/main-panel/MirrorGroup';
+import {DragCheck} from '@/components/main-panel/DragCheck';
 
 export function TransformOverlay({state}: { state: AeeState }) {
   const mode = state.transformOverlay.mode;
@@ -31,9 +31,10 @@ export function TransformOverlay({state}: { state: AeeState }) {
   const rotation = layerOverride.Rotation ?? 0;
   const skewX = layerOverride.SkewX ?? 0;
   const skewY = layerOverride.SkewY ?? 0;
+  const xLimit = Math.max(1000, Math.ceil(Math.abs(x) / 100) * 100);
+  const yLimit = Math.max(1000, Math.ceil(Math.abs(y) / 100) * 100);
   const left = state.transformOverlay.left ?? 46;
   const top = state.transformOverlay.top ?? 90;
-  const activeDrag = state.activeDrag === mode;
   const title = mode === 'xy'
     ? t('transform-overlay-position-title')
     : mode === 'rot'
@@ -42,7 +43,7 @@ export function TransformOverlay({state}: { state: AeeState }) {
         ? t('transform-overlay-scale-title')
         : mode === 'skew'
           ? t('transform-overlay-skew-title')
-          : t('mirror-group-title');
+          : `${t('mirror-group-mode-title')} / ${t('mirror-group-copy-title')}`;
 
   const setScale = (ctrl: 'sx' | 'sy', value: number) => {
     const next = Math.max(0.05, value);
@@ -60,24 +61,6 @@ export function TransformOverlay({state}: { state: AeeState }) {
     }
   };
 
-  const resetMode = () => {
-    if (mode === 'xy') {
-      resetEditProperty('x');
-      resetEditProperty('y');
-    } else if (mode === 'rot') {
-      resetEditProperty('rot');
-    } else if (mode === 'scale') {
-      resetEditProperty('sx');
-      resetEditProperty('sy');
-    } else if (mode === 'skew') {
-      resetEditProperty('skx');
-      resetEditProperty('sky');
-    } else {
-      resetEditProperty('fcx');
-      resetEditProperty('fcy');
-    }
-  };
-
   return <FloatingPanel
     canvasRect={state.canvasRect}
     left={left}
@@ -87,15 +70,19 @@ export function TransformOverlay({state}: { state: AeeState }) {
     onClose={closeTransformOverlay}
     onMove={moveTransformOverlay}
   >
+    {mode !== 'mirror' ? <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+      <span className="text-xs font-bold tracking-wide text-zinc-100">{title}</span>
+      <DragCheck mode={mode} label={t(`edit-section-${mode === 'xy' ? 'position' : mode === 'rot' ? 'rotation' : mode}-drag-label`)} activeDrag={state.activeDrag}/>
+    </div> : null}
     {mode === 'xy' ? <>
-      <SliderRow label="X" value={x} min={Math.min(-500, x - 300)} max={Math.max(2500, x + 300)} step={1}
-                 display={String(Math.round(x))} onChange={value => setEditProperty('x', value)}/>
-      <SliderRow label="Y" value={y} min={Math.min(-500, y - 300)} max={Math.max(1500, y + 300)} step={1}
-                 display={String(Math.round(y))} onChange={value => setEditProperty('y', value)}/>
+      <SliderRow label="X" value={x} min={-xLimit} max={xLimit} step={1}
+                 display={String(Math.round(x))} stepDelta={1} onChange={value => setEditProperty('x', value)} onReset={() => resetEditProperty('x')}/>
+      <SliderRow label="Y" value={y} min={-yLimit} max={yLimit} step={1}
+                 display={String(Math.round(y))} stepDelta={1} onChange={value => setEditProperty('y', value)} onReset={() => resetEditProperty('y')}/>
     </> : null}
     {mode === 'rot' ?
       <SliderRow label="°" value={rotation} min={0} max={359} step={1} display={`${Math.round(rotation)}°`}
-                 onChange={value => setEditProperty('rot', value)}/> : null}
+                 stepDelta={1} onChange={value => setEditProperty('rot', value)} onReset={() => resetEditProperty('rot')}/> : null}
     {mode === 'scale' ? <>
       <div className="flex items-center justify-between">
         <span className="text-[11px]"
@@ -105,24 +92,16 @@ export function TransformOverlay({state}: { state: AeeState }) {
         </Button>
       </div>
       <SliderRow label="X" value={sx} min={0.05} max={Math.max(3, sx + 1)} step={0.01} display={sx.toFixed(2)}
-                 onChange={value => setScale('sx', value)}/>
+                 stepDelta={0.1} onChange={value => setScale('sx', value)} onReset={() => resetEditProperty('sx')}/>
       <SliderRow label="Y" value={sy} min={0.05} max={Math.max(3, sy + 1)} step={0.01} display={sy.toFixed(2)}
-                 onChange={value => setScale('sy', value)}/>
+                 stepDelta={0.1} onChange={value => setScale('sy', value)} onReset={() => resetEditProperty('sy')}/>
     </> : null}
     {mode === 'skew' ? <>
       <SliderRow label="X°" value={skewX} min={Math.min(-60, skewX - 15)} max={Math.max(60, skewX + 15)} step={0.1}
-                 display={`${skewX.toFixed(1)}°`} onChange={value => setEditProperty('skx', value)}/>
+                 display={`${skewX.toFixed(1)}°`} stepDelta={1} onChange={value => setEditProperty('skx', value)} onReset={() => resetEditProperty('skx')}/>
       <SliderRow label="Y°" value={skewY} min={Math.min(-60, skewY - 15)} max={Math.max(60, skewY + 15)} step={0.1}
-                 display={`${skewY.toFixed(1)}°`} onChange={value => setEditProperty('sky', value)}/>
+                 display={`${skewY.toFixed(1)}°`} stepDelta={1} onChange={value => setEditProperty('sky', value)} onReset={() => resetEditProperty('sky')}/>
     </> : null}
-    {mode === 'mirror' ? <MirrorGroup layerOverride={layerOverride}/> : null}
-    <div className="mt-1 flex items-center gap-1.5 border-t border-zinc-800 pt-2">
-      {mode !== 'mirror' ? <Button className="h-7 flex-1" selected={activeDrag} onClick={() => setActiveDrag(mode)}>
-        {activeDrag ? t('transform-overlay-canvas-drag-active-button') : t('transform-overlay-canvas-drag-button')}
-      </Button> : <div className="flex-1"/>}
-      <Button className="h-7" tone="danger" onClick={resetMode}>
-        {t('transform-overlay-reset-button')}
-      </Button>
-    </div>
+    {mode === 'mirror' ? <MirrorGroup layerOverride={layerOverride} activeDrag={state.activeDrag}/> : null}
   </FloatingPanel>;
 }

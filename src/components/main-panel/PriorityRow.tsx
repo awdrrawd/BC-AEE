@@ -13,7 +13,7 @@ export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerI
     <div className="mb-1 flex items-center justify-between gap-2">
       <span
         className={`min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm ${priority.overridden ? 'text-teal-300' : 'text-zinc-100'}`}>
-        {name}<span className="ml-1 text-[10px] text-zinc-500">({priority.base})</span>
+        {name}
       </span>
       <div className="flex items-center gap-1">
         <button

@@ -11,7 +11,7 @@ export function PropGroup({title, dragMode, dragLabel, activeDrag, children}: {
 }) {
   return <div className="mb-2">
     <div className="mb-1 flex items-center justify-between gap-2">
-      <span className="text-xs font-bold tracking-wide text-zinc-100">{title}</span>
+      <span className="text-sm text-zinc-100">{title}</span>
       <DragCheck mode={dragMode} label={dragLabel} activeDrag={activeDrag}/>
     </div>
     {children}

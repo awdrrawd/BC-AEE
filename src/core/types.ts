@@ -2,7 +2,7 @@ export type AeeTab = 'edit' | 'opacity' | 'layers' | 'settings';
 export type ToolbarLayoutMode = 'neat' | 'free';
 export type LayerPickerMode = 'off' | 'normal' | 'detail';
 export type EditToolMode = 'parts' | 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | 'opacity' | 'layers' | 'layeringHide' | 'settings' | null;
-export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | null;
+export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | null;
 export type TransformOverlayMode = Exclude<DragMode, null> | 'mirror';
 export type LayerId = 'all' | string;
 export type UnknownFunction = (...args: unknown[]) => unknown;

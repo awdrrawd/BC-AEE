@@ -238,7 +238,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     hgroup.style.width = `${headingWidth}px`;
     hgroup.style.maxWidth = `${maxWidth}px`;
     hgroup.style.transform = 'translate(-50%, -100%)';
-    hgroup.style.zIndex = '1000003';
+    hgroup.style.zIndex = '999999';
     hgroup.style.pointerEvents = collapsed ? 'none' : 'auto';
     hgroup.style.visibility = collapsed ? 'hidden' : 'visible';
     hgroup.style.textAlign = 'center';
@@ -549,7 +549,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   if (!picker.bcMode) {
     return <>
       {eyedropperLayer}
-      <div className="fixed z-1000002" style={{left, top, ...dimStyle}}>
+      <div className="fixed z-[999999]" style={{left, top, ...dimStyle}}>
         <div className="fixed inset-0" onClick={() => closeColorPicker(false)}/>
         <div className="relative">{cardEl}</div>
       </div>
@@ -558,7 +558,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
 
   return <>
     {eyedropperLayer}
-    <div className="pointer-events-none fixed z-1000002"
+    <div className="pointer-events-none fixed z-[999999]"
          style={{top, left: left - toggleW, width: toggleW + fw, transform: collapsed ? `translateX(${fw + toggleW}px)` : 'translateX(0)', opacity: dimStyle.opacity, pointerEvents: dimStyle.pointerEvents, transition: 'transform .35s ease-in-out, opacity .15s ease'}}>
       <div className="flex items-center">
         <IconButton className="pointer-events-auto h-12 w-6 rounded-l-md rounded-r-none border-r-0"
@@ -568,7 +568,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
       </div>
     </div>
     <button type="button"
-      className={`pointer-events-auto fixed z-1000003 w-[10px] border-0 p-0 transition-opacity duration-200 ${collapsed ? 'aee-toolbar-glow opacity-100' : 'pointer-events-none opacity-0'}`}
+      className={`pointer-events-auto fixed z-[999999] w-[10px] border-0 p-0 transition-opacity duration-200 ${collapsed ? 'aee-toolbar-glow opacity-100' : 'pointer-events-none opacity-0'}`}
       style={{top, left: dockRight - 10, height: Math.min(rect?.height ? rect.height * 0.9 : 500, fh || 500)}}
       onPointerEnter={() => setColorPickerCollapsed(false)}
       onClick={() => setColorPickerCollapsed(false)}

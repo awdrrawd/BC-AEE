@@ -15,6 +15,7 @@ import {LayerManagerPanel} from '@/components/layer-manager/LayerManagerPanel';
 import {uiThemeVariables} from '@/core/theme';
 import {FreeDrawLibraryPanel} from '@/components/free-draw/FreeDrawLibraryPanel';
 import {ToolbarSide} from '@/components/ToolbarSide';
+import {AeeTooltip} from '@/components/ui/AeeTooltip';
 
 export function App() {
   const state = useAeeStore();
@@ -33,6 +34,7 @@ export function App() {
     <ItemFontPanelHost canvasRect={state.canvasRect}/>
     <LayerManagerPanel state={state}/>
     <FreeDrawLibraryPanel/>
+    <AeeTooltip/>
     {prompt && !wardrobe.active
       ? <div className="fixed inset-0 z-1000005"><PromptDialog prompt={prompt} scale="panel"/></div>
       : null}

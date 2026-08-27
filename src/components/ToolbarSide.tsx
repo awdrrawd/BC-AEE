@@ -63,15 +63,15 @@ function ToolButton({title, icon, selected, active, disabled = false, activeTone
   return <button
     type="button"
     draggable={false}
-    title={title}
+    data-aee-tooltip={title}
     aria-label={title}
     aria-pressed={selected || active}
     disabled={disabled}
     className={`relative flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-[8px] border bg-zinc-900/90 text-zinc-200 transition
       ${selected || active
         ? activeTone === 'orange'
-          ? '[border-width:2.5px] border-orange-400 bg-orange-400/10 text-white shadow-[0_0_9px_rgba(251,146,60,.65)]'
-          : '[border-width:2.5px] border-(--aee-accent) bg-(--aee-accent-35) text-white shadow-[0_0_9px_var(--aee-accent-55)]'
+          ? '[border-width:2.5px] border-orange-400 text-orange-300 shadow-[0_0_9px_rgba(251,146,60,.65)]'
+          : '[border-width:2.5px] border-(--aee-accent) text-(--aee-accent) shadow-[0_0_9px_var(--aee-accent-55)]'
         : 'border-zinc-700 hover:[border-width:2.5px] hover:border-(--aee-accent) hover:bg-(--aee-accent-35) hover:text-white hover:shadow-[0_0_9px_var(--aee-accent-55)]'} ${disabled ? 'cursor-not-allowed opacity-45' : ''} ${className}`}
     onDragStart={event => event.preventDefault()}
     onClick={onClick}>
@@ -219,7 +219,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
   const bgImgEnabled = useSetting(settings.bgImgEnabled);
   const hideCloseup = useSetting(settings.hideCloseup);
   const hideFullbody = useSetting(settings.hideFullbody);
-  return <div className={`aee-panel-collapse-motion absolute bottom-[81px] left-[80px] z-20 flex h-[62px] items-center gap-[10px] rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${open ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-5 opacity-0'}`}>
+  return <div className={`aee-panel-collapse-motion absolute bottom-[69px] left-[80px] z-40 flex h-[74px] items-center gap-[10px] rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${open ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-full opacity-0'}`}>
     <ControlButton active={state.offset.open} label={t('char-control-offset-button')} icon={<Move className="h-full w-full"/>} onClick={() => toggleOffsetPanel()}/>
     <div className="relative">
       <ControlButton active={state.charControl.bgSubOpen || bgEnabled || bgGridEnabled || bgImgEnabled} label={t('char-control-background-button')} icon={<ImageIcon className="h-full w-full"/>} onClick={toggleBgSubOpen}/>
@@ -242,9 +242,9 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
 }
 
 function EditControlPanel({state}: {state: AeeState}) {
-  if (state.editTool === 'opacity') return <ControlPage title={t('main-panel-tab-opacity')}><OpacityTab state={state}/></ControlPage>;
-  if (state.editTool === 'layers') return <ControlPage title={t('main-panel-tab-layers')}><LayersTab state={state}/></ControlPage>;
-  if (state.editTool === 'layeringHide' && state.item) return <ControlPage title={t('layering-hide-title')}><LayeringHidePanel item={state.item}/></ControlPage>;
+  if (state.editTool === 'opacity') return <ControlPage title={t('main-panel-tab-opacity')} back><OpacityTab state={state}/></ControlPage>;
+  if (state.editTool === 'layers') return <ControlPage title={t('main-panel-tab-layers')} back><LayersTab state={state}/></ControlPage>;
+  if (state.editTool === 'layeringHide' && state.item) return <ControlPage title={t('layering-hide-title')} back><LayeringHidePanel item={state.item}/></ControlPage>;
   if (state.editTool === 'settings') return <ControlPage title={t('main-panel-tab-settings')}><SettingsTab/></ControlPage>;
   const layerId = state.selectedLayer;
   if (layerId === null) return <div className="flex min-h-full flex-col">
@@ -280,9 +280,15 @@ function EditControlPanel({state}: {state: AeeState}) {
   </div>;
 }
 
-function ControlPage({title, children}: {title: string; children: ReactNode}) {
+function ControlPage({title, children, back = false}: {title: string; children: ReactNode; back?: boolean}) {
   return <div>
-    <div className="border-b border-zinc-700 bg-zinc-900 px-3 py-2 text-center text-sm font-bold text-(--aee-accent)">{title}</div>
+    <div className="relative flex h-[52px] items-center justify-center border-b border-zinc-700 bg-zinc-900 px-3 py-2 text-center text-sm font-bold text-(--aee-accent)">
+      {back ? <button type="button"
+                      className="absolute left-2 flex h-[30px] w-[45px] items-center justify-center rounded border border-(--aee-accent-55) bg-(--aee-control-bg) text-zinc-200 hover:border-(--aee-accent)"
+                      aria-label={t('main-panel-deselect-button-title')} data-aee-tooltip={t('main-panel-deselect-button-title')}
+                      onClick={leaveSelectedPart}><Undo2 className="h-4.5 w-4.5"/></button> : null}
+      <span>{title}</span>
+    </div>
     {children}
   </div>;
 }
@@ -320,13 +326,11 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
       <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag}
                   active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
                   icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
-      {selected ? <>
-        <ToolButton title={t('toggle-bar-position-button-title')} selected={selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
-        <ToolButton title={t('toggle-bar-rotation-button-title')} selected={selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>
-        <ToolButton title={t('toggle-bar-scale-button-title')} selected={selectedTool('scale')} icon={<Scaling/>} onClick={openTool('scale')}/>
-        <ToolButton title={t('toggle-bar-skew-button-title')} selected={selectedTool('skew')} icon={<TiltIcon/>} onClick={openTool('skew')}/>
-        <ToolButton title={t('mirror-group-title')} selected={selectedTool('mirror')} icon={<FlipHorizontal2/>} onClick={openTool('mirror')}/>
-      </> : null}
+      <ToolButton title={t('toggle-bar-position-button-title')} disabled={!selected} selected={selected && selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
+      <ToolButton title={t('toggle-bar-rotation-button-title')} disabled={!selected} selected={selected && selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>
+      <ToolButton title={t('toggle-bar-scale-button-title')} disabled={!selected} selected={selected && selectedTool('scale')} icon={<Scaling/>} onClick={openTool('scale')}/>
+      <ToolButton title={t('toggle-bar-skew-button-title')} disabled={!selected} selected={selected && selectedTool('skew')} icon={<TiltIcon/>} onClick={openTool('skew')}/>
+      <ToolButton title={t('mirror-group-title')} disabled={!selected} selected={selected && selectedTool('mirror')} icon={<FlipHorizontal2/>} onClick={openTool('mirror')}/>
       <div className="my-[7px] h-px w-[56px] bg-zinc-600"/>
       <ToolButton title={t('main-panel-tab-opacity')} selected={state.editTool === 'opacity'} icon={<TransparentIcon/>} onClick={openTool('opacity')}/>
       <ToolButton title={t('main-panel-tab-layers')} selected={state.editTool === 'layers'} icon={<Layers3/>} onClick={openTool('layers')}/>
@@ -349,5 +353,6 @@ function dragLabel(mode: NonNullable<AeeState['activeDrag']>) {
   if (mode === 'xy') return t('toolbar-dragging-position');
   if (mode === 'rot') return t('toolbar-dragging-rotation');
   if (mode === 'scale') return t('toolbar-dragging-scale');
+  if (mode === 'mirror') return `${t('mirror-group-mode-title')} / ${t('mirror-group-copy-title')}`;
   return t('toolbar-dragging-skew');
 }

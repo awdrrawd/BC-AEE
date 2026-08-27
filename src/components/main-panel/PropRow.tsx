@@ -1,6 +1,6 @@
 import {memo, useEffect, useRef} from 'react';
 import {resetEditProperty, setEditProperty, stepEditProperty} from '@/controllers/uiController';
-import {resetButtonClass, stepButtonClass} from '@/components/main-panel/styles';
+import {resetButtonClass, stepButtonClass, tallRangeClass} from '@/components/main-panel/styles';
 import {HoldButton} from '@/components/ui/HoldButton';
 
 export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
@@ -9,6 +9,14 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   ctrl: string;
   deltas: number[]
 }) {
+  const numericValue = Number(value);
+  const step = Math.min(...deltas.filter(delta => delta > 0));
+  const coordinateMax = Math.max(1000, Math.ceil(Math.abs(numericValue) / 100) * 100);
+  const bounds: Record<string, [number, number, number]> = {
+    x: [-coordinateMax, coordinateMax, 1], y: [-coordinateMax, coordinateMax, 1], rot: [-180, 180, 1],
+    sx: [0.05, 3, 0.01], sy: [0.05, 3, 0.01], skx: [-60, 60, 0.1], sky: [-60, 60, 0.1],
+  };
+  const [min, max, rangeStep] = bounds[ctrl] ?? [-100, 100, step];
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (inputRef.current && document.activeElement !== inputRef.current) {
@@ -17,12 +25,14 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   }, [value]);
 
   return <div className="mb-1">
-    <div className="mb-1 flex items-center justify-between text-xs text-zinc-300">
-      <span>{label}</span>
+    <div className="mb-1 flex items-center justify-between gap-2 text-xs text-zinc-300">
+      <span className="w-7 shrink-0">{label}</span>
+      <div className="flex items-center gap-1">
+        <HoldButton className={stepButtonClass} onTrigger={() => stepEditProperty(ctrl, -step)}>−{step}</HoldButton>
       <input
         ref={inputRef}
         type="text"
-        className="w-14 border-b border-transparent bg-transparent text-right font-mono text-xs text-teal-300 outline-none focus:border-teal-300 focus:bg-teal-300/10"
+        className="h-5 w-16 border-0 bg-transparent text-center font-mono text-xs text-teal-300 outline-none focus:bg-(--aee-accent-35)"
         defaultValue={value}
         onBlur={event => setEditProperty(ctrl, Number.parseFloat(event.target.value))}
         onKeyDown={event => {
@@ -34,11 +44,15 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
         onMouseDown={event => event.stopPropagation()}
         onClick={event => event.stopPropagation()}
       />
+        <HoldButton className={stepButtonClass} onTrigger={() => stepEditProperty(ctrl, step)}>+{step}</HoldButton>
+        <button className={resetButtonClass} onClick={() => resetEditProperty(ctrl)}>↺</button>
+      </div>
     </div>
-    <div className="flex gap-0.5">
-      {deltas.map(delta => <HoldButton key={delta} className={stepButtonClass}
-                                       onTrigger={() => stepEditProperty(ctrl, delta)}>{delta > 0 ? '+' : ''}{delta}</HoldButton>)}
-      <button className={resetButtonClass} onClick={() => resetEditProperty(ctrl)}>↺</button>
+    <div className="relative flex items-center">
+      <input type="range" className={tallRangeClass} min={min} max={max} step={rangeStep}
+             value={Math.max(min, Math.min(max, numericValue))}
+             onChange={event => setEditProperty(ctrl, Number(event.target.value))}/>
+      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
     </div>
   </div>;
 }, (prev, next) => prev.ctrl === next.ctrl && String(prev.value) === String(next.value));

@@ -441,7 +441,9 @@ export function resetEditProperty(ctrl: string) {
   else if (ctrl === 'rot') setLayerOverride(item, idx, 'Rotation', 0);
   else if (ctrl === 'skx') setLayerOverride(item, idx, 'SkewX', 0);
   else if (ctrl === 'sky') setLayerOverride(item, idx, 'SkewY', 0);
-  else if (ctrl === 'fcx' || ctrl === 'mc') {
+  else if (ctrl === 'fcx') setLayerOverride(item, idx, 'MirrorCopyAxisX', 0.5);
+  else if (ctrl === 'fcy') setLayerOverride(item, idx, 'MirrorCopyAxisY', 0.5);
+  else if (ctrl === 'mc') {
     setLayerOverride(item, idx, 'MirrorCopyAxisX', 0.5);
     setLayerOverride(item, idx, 'MirrorCopyAxisY', 0.5);
   }

@@ -1,7 +1,7 @@
 import type {AeeState, EditToolMode, LayerId} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {getAssetBaseXY, getLayerColor, getLayerDisplayName, getLayerOverride, isGroupLocked} from '@/core/bc';
-import {openLayerColorPicker, setOpacity, setScaleLock, stepOpacity} from '@/controllers/uiController';
+import {openLayerColorPicker, resetEditProperty, setOpacity, setScaleLock, stepOpacity} from '@/controllers/uiController';
 import {DragCheck} from '@/components/main-panel/DragCheck';
 import {MirrorGroup} from '@/components/main-panel/MirrorGroup';
 import {PropGroup} from '@/components/main-panel/PropGroup';
@@ -9,6 +9,7 @@ import {PropRow} from '@/components/main-panel/PropRow';
 import {RangeInput} from '@/components/main-panel/RangeInput';
 import {Section} from '@/components/main-panel/Section';
 import {StepPair} from '@/components/main-panel/StepPair';
+import {tallRangeClass} from '@/components/main-panel/styles';
 
 export function EditSection({state, layerId, toolOnly = null, showHeader = true}: {
   state: AeeState;
@@ -43,9 +44,12 @@ export function EditSection({state, layerId, toolOnly = null, showHeader = true}
     {!toolOnly ? <div className="mb-2">
       <div className="mb-1 flex items-center justify-between text-xs text-zinc-100">
         <span>{t('edit-section-opacity-label')}</span>
-        <StepPair display={`${opacity}%`} onStep={delta => stepOpacity(layerId, delta)}/>
+        <StepPair display={`${opacity}%`} onStep={delta => stepOpacity(layerId, delta)} onReset={() => resetEditProperty('op')}/>
       </div>
-      <RangeInput min={0} max={100} step={1} value={opacity} onChange={value => setOpacity(layerId, value)}/>
+      <div className="relative flex items-center">
+        <RangeInput className={tallRangeClass} min={0} max={100} step={1} value={opacity} onChange={value => setOpacity(layerId, value)}/>
+        <span className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+      </div>
     </div> : null}
     {locked ? <div
       className="rounded border border-zinc-800 bg-zinc-900/70 px-2 py-3 text-center text-xs leading-6 text-zinc-400">
@@ -63,9 +67,9 @@ export function EditSection({state, layerId, toolOnly = null, showHeader = true}
       </PropGroup> : null}
       {(!toolOnly || toolOnly === 'scale') ? <div className="mb-2">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <span className="text-xs font-bold tracking-wide text-zinc-100">{t('edit-section-scale-group-title')}</span>
+          <span className="text-sm text-zinc-100">{t('edit-section-scale-group-title')}</span>
           <button
-            className={`flex h-7 min-w-[58px] items-center justify-center rounded border px-2 text-xs transition ${state.scaleLock ? 'border-teal-300 bg-teal-400/10 text-teal-300' : 'border-zinc-700 text-zinc-400 hover:border-teal-300 hover:text-teal-300'}`}
+            className={`flex h-5 min-w-[58px] items-center justify-center rounded border px-1.5 text-[11px] transition ${state.scaleLock ? 'border-teal-300 text-teal-300' : 'border-zinc-700 text-zinc-400 hover:border-teal-300 hover:text-teal-300'}`}
             onClick={() => setScaleLock()}>
             <svg className="hidden" version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 980" width="14" height="14"
                  fill="currentColor">
@@ -86,7 +90,7 @@ export function EditSection({state, layerId, toolOnly = null, showHeader = true}
         <PropRow label="X°" value={(layerOverride.SkewX ?? 0).toFixed(1)} ctrl="skx" deltas={[-5, -1, 1, 5]}/>
         <PropRow label="Y°" value={(layerOverride.SkewY ?? 0).toFixed(1)} ctrl="sky" deltas={[-5, -1, 1, 5]}/>
       </PropGroup> : null}
-      {(!toolOnly || toolOnly === 'mirror') ? <MirrorGroup layerOverride={layerOverride}/> : null}
+      {(!toolOnly || toolOnly === 'mirror') ? <MirrorGroup layerOverride={layerOverride} activeDrag={state.activeDrag}/> : null}
     </>}
   </Section>;
 }

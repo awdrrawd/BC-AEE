@@ -35,9 +35,15 @@ interface SkewDragState extends BaseDragState {
   origSY: number;
 }
 
+interface MirrorDragState extends BaseDragState {
+  origX: number;
+  origY: number;
+}
+
 let xyDragState: XyDragState | null = null;
 let scaleDragState: ScaleDragState | null = null;
 let skewDragState: SkewDragState | null = null;
+let mirrorDragState: MirrorDragState | null = null;
 let handlersInstalled = false;
 
 const DRAG_CURSORS: Record<string, string> = {
@@ -45,6 +51,7 @@ const DRAG_CURSORS: Record<string, string> = {
   rot: 'crosshair',
   scale: 'nwse-resize',
   skew: 'ew-resize',
+  mirror: 'move',
 };
 
 let touchBlocker: HTMLDivElement | null = null;
@@ -212,6 +219,17 @@ export function startCanvasDrag(event: MouseEvent | PointerEvent) {
     return true;
   }
 
+  if (state.activeDrag === 'mirror') {
+    mirrorDragState = {
+      layerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      origX: layerOverride.MirrorCopyAxisX ?? 0.5,
+      origY: layerOverride.MirrorCopyAxisY ?? 0.5,
+    };
+    return true;
+  }
+
   return false;
 }
 
@@ -270,6 +288,18 @@ function moveSkewDrag(event: MouseEvent) {
   forceUiUpdate();
 }
 
+function moveMirrorDrag(event: MouseEvent) {
+  const item = getCurrentItem();
+  const canvas = getCanvas();
+  if (!item || !canvas || !mirrorDragState) return;
+  const rect = canvas.getBoundingClientRect();
+  const dx = (event.clientX - mirrorDragState.startX) / rect.width;
+  const dy = (event.clientY - mirrorDragState.startY) / rect.height;
+  setLayerOverride(item, mirrorDragState.layerId, 'MirrorCopyAxisX', +(mirrorDragState.origX + dx).toFixed(2));
+  setLayerOverride(item, mirrorDragState.layerId, 'MirrorCopyAxisY', +(mirrorDragState.origY + dy).toFixed(2));
+  forceUiUpdate();
+}
+
 export function installDragHandlers() {
   if (handlersInstalled) return;
   handlersInstalled = true;
@@ -294,14 +324,18 @@ export function installDragHandlers() {
     } else if (skewDragState) {
       moveSkewDrag(event);
       event.stopImmediatePropagation();
+    } else if (mirrorDragState) {
+      moveMirrorDrag(event);
+      event.stopImmediatePropagation();
     }
   }, true);
 
   document.addEventListener('mouseup', event => {
-    if (xyDragState || scaleDragState || skewDragState) {
+    if (xyDragState || scaleDragState || skewDragState || mirrorDragState) {
       xyDragState = null;
       scaleDragState = null;
       skewDragState = null;
+      mirrorDragState = null;
       event.stopImmediatePropagation();
       return;
     }
@@ -352,6 +386,7 @@ export function installDragHandlers() {
     xyDragState = null;
     scaleDragState = null;
     skewDragState = null;
+    mirrorDragState = null;
     rotationDragging = false;
     mutateState(draft => {
       draft.activeDrag = null;

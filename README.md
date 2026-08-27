@@ -4,134 +4,61 @@
 <div align="center">
 
 ![Version](https://img.shields.io/badge/version-0.9.2-purple.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)
+![License](https://img.shields.io/badge/License-Custom%20(Copyleft)-purple.svg)
 ![BondageClub](https://img.shields.io/badge/BondageClub-Compatible-pink.svg)
 
 </div>
 
-一個 BondageClub UserScript 插件，為更衣室提供進階外觀編輯功能，包含旋轉、縮放、位移、透明度調整等。  
-A BondageClub UserScript plugin providing advanced appearance editing — rotation, scaling, offset, opacity, and more.
+一個 BondageClub UserScript 插件，為更衣室提供現代化的外觀編輯介面與獨立的專屬衣櫃系統。  
+A BondageClub UserScript plugin that brings a modern appearance-editing interface and a dedicated wardrobe system to the dressing room.
 
 ---
 
-## ✨ 功能 · Features
+## ✨ 主要功能 · Features
 
-**🎨 圖層編輯 · Layer Editing**
+**🎨 外觀編輯 · Appearance Editing**
 
-逐圖層或整件衣服調整位移（X/Y）、旋轉、縮放（XY 等比/獨立）、傾斜（Skew）。  
-Adjust position (X/Y), rotation, scale (proportional or independent), and skew per layer or for the whole item.
+逐圖層或整件衣服調整位移、旋轉、縮放、繪製優先度，可直接在畫布上拖曳操作；另附進階調色盤（HSV、色彩和諧、滴管取色、已存色票）。  
+Per-layer or whole-item control over offset, rotation, scale, and draw priority, adjustable by dragging directly on the canvas — plus an advanced color picker (HSV, harmony rules, eyedropper, saved swatches).
 
-支援拖移操作：在更衣室畫面上直接拖動來調整，不需要輸入數值。  
-Drag controls: directly drag on the canvas to adjust values without typing.
+**👗 專屬衣櫃 · Dedicated Wardrobe**
 
-**🪞 鏡射與複製 · Mirror & Copy**
+獨立於遊戲原生存檔的服裝管理介面，支援線上／本地／SPS 三種儲存來源，並提供搜尋、標籤、最愛，以及 BCX 相容的匯出／匯入。  
+An outfit-management UI separate from the game's native save slots — with online / local / SPS storage, search, tags, favorites, and BCX-compatible export/import.
 
-水平/垂直鏡射，以及水平/垂直鏡射複製（在對稱軸位置產生複製圖層）。  
-Horizontal/vertical flip, and mirror copy (generates a mirrored duplicate at a configurable axis position).
+**🖱 操作輔助 · Workflow Aids**
 
-**💧 透明度 · Opacity**
+懸停高亮、懸停試穿、服裝複製／貼上、獨立的檢視控制面板（人物位移縮放、背景、姿勢快選）等，加快換裝與比對流程。  
+Hover highlight, hover try-on, item copy/paste, and a standalone view-control panel (character offset/zoom, background, quick poses) to speed up outfit iteration.
 
-逐圖層獨立調整透明度，與 LSCG 相容，也可不依賴 LSCG 單獨使用。  
-Per-layer opacity control, compatible with LSCG but works independently too.
+**🧪 實驗性功能 · Experimental Features**
 
-**🎭 色彩選擇器 · Color Picker**
-
-內建進階調色盤，支援 HSV 調整、色彩和諧（互補/三角/類比等）、漸層色板、已儲存色票。  
-Built-in advanced color picker with HSV sliders, color harmony modes, shade gradients, and saved swatches.
-
-支援滴管工具（EyeDropper API），可直接從螢幕取色。  
-Supports EyeDropper API to pick colors directly from the screen.
-
-可選擇取代 BC 原生調色盤。  
-Optionally replaces the BC native color picker.
-
-**🖼️ 圖層優先度 · Layer Priority**
-
-逐圖層或整件衣服調整繪製優先度（Override Priority），即時預覽。  
-Adjust drawing priority per layer or per item with live preview.
-
-**👁 懸停閃爍 · Hover Highlight**
-
-在 AEE 圖層清單或 BC 外觀清單懸停時，對應衣服在角色身上閃爍，方便確認位置。  
-Hovering over a layer in the AEE list or BC appearance list flashes the corresponding item on the character.
-
-**🪞 懸停試穿 · Hover Try-On**
-
-替換服裝時，游標停在服裝格上即自動套用到角色身上預覽，移開或選別件即還原，不會真的穿上（需在設定開啟）。  
-While replacing clothing, hovering over an item in the selection grid temporarily previews it on the character; moving away or hovering another reverts it, without actually wearing it (toggle in settings).
-
-**📋 服裝複製/貼上 · Item Copy/Paste**
-
-外觀清單每件衣服旁多一個複製鈕，複製後在「能穿同一件衣服」的欄位顯示貼上鈕，貼上會保留顏色、透明度與所有 AEE 圖層設定；可跨角色（A 複製、B 貼上），上方工具列的清除鈕可解除複製狀態（需在設定開啟）。  
-Each item in the appearance list gets a Copy button; after copying, a Paste button appears on every slot that can wear the same asset, carrying over color, opacity and all AEE layer settings. Works across characters (copy on A, paste on B); a Clear button in the top toolbar drops the copy state (toggle in settings).
-
-**📦 外觀匯出/匯入 · Appearance Export/Import**
-
-BCX 相容格式匯出外觀至剪貼板，匯入時可選擇只套用衣服、身體、或拘束具。  
-Export appearance to clipboard in BCX-compatible format; import with category selection (clothes / body / restraints).
-
-**🧍 視圖控制 · View Control**
-
-提供獨立浮動面板（CharCtrl），含以下功能：  
-Standalone floating panel (CharCtrl) with the following features:
-
-- 人物位移（X/Y）與縮放，支援滾輪/鍵盤控制、小地圖拖移。  
-  Character offset (X/Y) and scale with mouse wheel / keyboard support and minimap dragging.
-- 背景：素色、格線（線格/棋盤）、圖片網址背景。  
-  Background: solid color, grid (line/checker), image URL.
-- POSE 快速選擇面板。  
-  Quick pose selection panel.
-- 特寫/全身畫面獨立隱藏。  
-  Independent hide controls for closeup / fullbody view.
+變形（傾斜等進階調整）、鏡射與鏡射複製、自由繪圖（含遮罩、單手套等預設工具）。這些效果皆由 AEE 本地渲染，只有同樣安裝 AEE 的人才看得到；其中僅自由繪圖可在設定中獨立開關，變形與鏡射目前沒有獨立開關。  
+Advanced transforms (e.g. skew), mirror / mirror-copy, and free drawing (including masking presets such as single-glove). These effects are rendered locally by AEE, so only other AEE users can see them; only free drawing can be toggled independently in Settings — transform and mirror currently have no individual on/off switch.
 
 ---
 
 ## 📦 安裝方式 · Installation
 
-### 🔌 透過 FUSAM（推薦） · Via FUSAM (Recommended)
+### 透過插件管理器（推薦） · Via a plugin manager (Recommended)
 
-1. 安裝 FUSAM（若尚未安裝）：https://sidiousious.gitlab.io/bc-addon-loader/  
-   Install FUSAM if you don't have it yet: https://sidiousious.gitlab.io/bc-addon-loader/
+- **FUSAM**：安裝 [FUSAM](https://sidiousious.gitlab.io/bc-addon-loader/) 後，於 BC 設定頁的 **ADD-ON** 分頁找到 **Liko-AEE** 並啟用。
+- **Liko PCM**：若已安裝 [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/)，可直接在插件列表啟用 AEE。
+- **BC Mod Manager**：若已安裝 [BC Mod Manager](https://inkerbot.github.io/bc-mod-manager/)，可直接在插件列表啟用 AEE。
 
-2. 登入 BondageClub 後，前往主設定頁面點擊頂部的 **ADD-ON**。  
-   After logging in, click **ADD-ON** at the top of the main settings page.
+Install [FUSAM](https://sidiousious.gitlab.io/bc-addon-loader/) and enable **Liko-AEE** from the **ADD-ON** tab, or enable it directly from the plugin list if you already use [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/) or [BC Mod Manager](https://inkerbot.github.io/bc-mod-manager/).
 
-3. 在列表中找到 **Liko-AEE**，選擇版本後點擊 **Save**。  
-   Find **Liko-AEE** in the list, select your preferred branch, and click **Save**.
+### 手動安裝 · Manual installation
 
-4. 重新載入 BC。  
-   Reload BondageClub.
-
----
-
-### 🧩 透過 PCM 管理器（推薦） · Via PCM Manager (Recommended)
-
-若你已安裝 [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/)，可在插件列表中直接啟用 AEE，無需單獨安裝。  
-If you have [Liko PCM](https://awdrrawd.github.io/liko-Plugin-Repository/) installed, enable AEE directly from the plugin list.
-
----
-
-### 🐺 BC Mod Manager
-
-若你已安裝 [BC Mod Manager](https://inkerbot.github.io/bc-mod-manager/)，可在插件列表中直接啟用 AEE，無需單獨安裝。  
-If you have [BC Mod Manager](https://inkerbot.github.io/bc-mod-manager/) installed, enable AEE directly from the plugin list.
-
----
-
-### 🐵 直接安裝 · Direct installation
-Tampermonkey / Violentmonkey
-
-點擊以下連結直接安裝：  
-Click the link below to install:
+<details>
+<summary>Tampermonkey / Violentmonkey</summary>
 
 👉 **[Install Liko-AEE.user.js](https://raw.githubusercontent.com/awdrrawd/BC-AEE/main/loader.user.js)**
 
----
+</details>
 
-### 🔖 書籤安裝 · Bookmarklet
-
-建立新書籤，將以下程式碼貼入網址欄，在 BC 頁面點擊書籤即可載入：  
-Create a new bookmark, paste the code below as the URL, then click it on the BondageClub page:
+<details>
+<summary>書籤安裝 · Bookmarklet</summary>
 
 ```javascript
 javascript:(function(){
@@ -143,47 +70,39 @@ javascript:(function(){
 })();
 ```
 
----
+</details>
 
-### 💻 瀏覽器控制台 · Browser Console
-
-開啟 F12，在 Console 分頁貼上以下程式碼：  
-Open F12 DevTools and paste the following into the Console tab:
+<details>
+<summary>瀏覽器控制台 · Browser Console</summary>
 
 ```javascript
 import(`https://github.com/awdrrawd/liko-Plugin-Repository/raw/refs/heads/main/Plugins/Liko-AEE.user.js?v=${(Date.now()/10000).toFixed(0)}`);
 ```
 
+</details>
+
 ---
 
 ## ⚠️ 注意事項 · Notes
 
-旋轉、縮放、傾斜、鏡射為實驗性功能，不保證所有物件均完全相容。  
-Rotation, scale, skew, and mirror are experimental features — full compatibility with all items is not guaranteed.
-
-位移與透明度功能不依賴 LSCG，穩定性較高。  
-Offset and opacity features do not depend on LSCG and are more stable.
+實驗性功能（變形、鏡射、自由繪圖）皆由 AEE 本地渲染，沒有安裝 AEE 的人看不到效果；可能與部分物品不完全相容。目前僅自由繪圖能在設定中停用，變形與鏡射沒有獨立開關。  
+Experimental features (transform, mirror, free draw) are rendered locally by AEE — anyone without AEE installed won't see the effect — and may not be fully compatible with every item. Only free draw can currently be disabled in Settings; transform and mirror have no individual toggle.
 
 ---
 
-## 🙏 技術來源 · Technical Credits
+## 🙏 技術來源 · Credits
 
-服裝懸停輪廓與畫布拾取功能的 alpha 遮罩、像素命中、重疊部件輪換，以及 Canvas 合成描邊技術，參考並改寫自 **XinLian132243 / BCMod** 的服裝優化實作。倉庫：<https://github.com/XinLian132243/BCMod/tree/master>
-
-The hover-outline and canvas-picking implementation—alpha masks, pixel hit-testing, overlapping-item cycling, and composited canvas outlines—was adapted from the clothing optimization work in **XinLian132243 / BCMod**. Repository: <https://github.com/XinLian132243/BCMod/tree/master>
-
-本倉庫保留了技術參考檔 `BC_LianDressOptimizationSource.user.js` 與整理文件 `服装悬停外框与拾取功能实现说明.md`，便於追溯實作來源。
-
-The reference source and implementation notes are retained in this repository for provenance and review.
+懸停外框與畫布拾取功能（alpha 遮罩、像素命中、重疊部件輪換等）參考並改寫自 **星漣 XinLian132243 / BCMod**：<https://github.com/XinLian132243/BCMod>  
+The hover-outline and canvas-picking implementation was adapted from **XinLian132243 (星漣) / BCMod**: <https://github.com/XinLian132243/BCMod>
 
 ---
 
 ## 📄 授權 · License
 
-MIT License © Likolisu
+本專案採用自訂授權條款（借鑑 GPLv3 的著佐權精神，並附加商業使用之實質修改門檻），並非 MIT、也非官方 GPLv3，完整條文請見 [LICENSE](./LICENSE)。散布或修改本專案時，請保留授權聲明並標示原作者與協力者。  
+This project uses a custom license (GPLv3-inspired copyleft, plus a substantial-modification clause for commercial use) — it is neither MIT nor official GPLv3. See [LICENSE](./LICENSE) for the full text. Any redistribution or modification must retain the license notice and credit the original author and contributors.
 
-使用本插件的程式碼時，請附上來源連結或保留版權聲明。  
-When using code from this project, please include a link to the source or retain the copyright notice.
+Copyright © 2026 Likolisu · Contributors: InkerBot, Tao MUSE
 
 ---
 

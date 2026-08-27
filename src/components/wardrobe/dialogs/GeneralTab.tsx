@@ -7,8 +7,6 @@ const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
   {labelKey: 'wardrobe-setting-categories', setting: settings.wardrobeCategoriesEnabled},
   {labelKey: 'wardrobe-setting-zoom', setting: settings.wardrobeZoom},
   {labelKey: 'wardrobe-setting-cancel-tryon', setting: settings.wardrobeCancelTryOn},
-  {labelKey: 'wardrobe-setting-photo', setting: settings.wardrobePhoto},
-  {labelKey: 'wardrobe-setting-collapse-list', setting: settings.wardrobeCollapseEnabled},
   {labelKey: 'wardrobe-setting-portrait', setting: settings.wardrobePortrait},
 ];
 

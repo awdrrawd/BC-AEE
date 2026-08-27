@@ -21,8 +21,7 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
   const prompt = usePrompt();
   const {portrait} = useViewport();
   const layout = useSetting(settings.wardrobePanelLayout);
-  // Subscribe to both so the grid re-lays-out when either the feature or the collapse state flips.
-  useSetting(settings.wardrobeCollapseEnabled);
+  // Subscribe so the grid re-lays-out when the collapse state flips.
   useSetting(settings.wardrobeListCollapsed);
   const listCollapsed = isOutfitListCollapsed();
   const slots = useMemo(

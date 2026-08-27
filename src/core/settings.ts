@@ -168,9 +168,6 @@ export const settings = {
   wardrobeBgImage: value('wardrobeBgImage', 'Backgrounds/Private.jpg'),
   wardrobeSlotMeta: value<Record<string, WardrobeSlotMeta>>('wardrobeSlotMeta', {}),
   wardrobePanelLayout: value<string[]>('wardrobePanelLayout', ['list', 'grid', 'manage', 'preview']),
-  wardrobePhoto: bool('wardrobePhoto', false),
-  // Whether the header's collapse button is shown (general setting); the button toggles the state below.
-  wardrobeCollapseEnabled: bool('wardrobeCollapseEnabled', false),
   wardrobeListCollapsed: bool('wardrobeListCollapsed', false),
   // Reflow the wardrobe into the vertical DC/B layout when the viewport is taller than wide.
   wardrobePortrait: bool('wardrobePortrait', true),

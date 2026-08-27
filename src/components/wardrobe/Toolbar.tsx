@@ -10,7 +10,6 @@ import {Button} from '@/components/ui/Button';
 import {settings, useSetting} from '@/core/settings';
 
 export function Toolbar({state, layout}: { state: WardrobeState; layout: string[] }) {
-  useSetting(settings.wardrobeCollapseEnabled);
   useSetting(settings.wardrobeListCollapsed);
   const {portrait} = useStage();
   // When the outfit-list panel (A) is hidden or collapsed — or always in portrait, where the list is

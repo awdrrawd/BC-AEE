@@ -24,8 +24,7 @@ const HIDEABLE_SIDE_PANELS = ['list', 'manage', 'preview'];
 
 /** True when the outfit list is collapsed away — it then frees a grid column, like hiding the panel. */
 export function isOutfitListCollapsed(): boolean {
-  return settings.wardrobeCollapseEnabled.get()
-    && settings.wardrobeListCollapsed.get()
+  return settings.wardrobeListCollapsed.get()
     && settings.wardrobePanelLayout.get().includes('list');
 }
 

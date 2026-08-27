@@ -223,7 +223,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
     <ControlButton active={state.offset.open} label={t('char-control-offset-button')} icon={<Move className="h-full w-full"/>} onClick={() => toggleOffsetPanel()}/>
     <div className="relative">
       <ControlButton active={state.charControl.bgSubOpen || bgEnabled || bgGridEnabled || bgImgEnabled} label={t('char-control-background-button')} icon={<ImageIcon className="h-full w-full"/>} onClick={toggleBgSubOpen}/>
-      <div className={`aee-panel-collapse-motion absolute bottom-[62px] left-0 flex flex-col-reverse gap-[9px] rounded-t-lg bg-zinc-950/95 p-[5px] ${state.charControl.bgSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
+      <div className={`aee-panel-collapse-motion absolute bottom-full left-1/2 mb-2 flex -translate-x-1/2 flex-col-reverse gap-[9px] rounded-lg border border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${state.charControl.bgSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
         <ControlButton active={bgEnabled} label={t('char-control-solid-background-button')} icon={<span className="h-5 w-5 rounded bg-white/80"/>} onClick={toggleSolidBg}/>
         <ControlButton active={bgGridEnabled} label={t('char-control-grid-background-button')} icon={<Grid3x3 className="h-full w-full"/>} onClick={toggleGridBg}/>
         <ControlButton active={bgImgEnabled && state.bg.imageLoaded} label={t('char-control-image-background-button')} icon={<ImageIcon className="h-full w-full"/>} onClick={toggleImageBg}/>
@@ -233,7 +233,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
     <ControlButton active={state.pose.open} label={t('char-control-pose-button')} icon={<Accessibility className="h-full w-full"/>} onClick={() => togglePoseWindow()}/>
     <div className="relative">
       <ControlButton active={state.charControl.hideSubOpen || hideCloseup || hideFullbody} label={t('char-control-hide-menu-button')} icon={hideCloseup || hideFullbody ? <EyeOff className="h-full w-full"/> : <Eye className="h-full w-full"/>} onClick={toggleHideSubOpen}/>
-      <div className={`aee-panel-collapse-motion absolute bottom-[62px] left-0 flex flex-col-reverse gap-[9px] rounded-t-lg bg-zinc-950/95 p-[5px] ${state.charControl.hideSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
+      <div className={`aee-panel-collapse-motion absolute bottom-full left-1/2 mb-2 flex -translate-x-1/2 flex-col-reverse gap-[9px] rounded-lg border border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${state.charControl.hideSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
         <ControlButton active={hideFullbody} label={t('char-control-hide-fullbody-button')} icon={<PersonStanding className="h-full w-full"/>} onClick={() => toggleHide('fullbody')}/>
         <ControlButton active={hideCloseup} label={t('char-control-hide-closeup-button')} icon={<User className="h-full w-full"/>} onClick={() => toggleHide('closeup')}/>
       </div>

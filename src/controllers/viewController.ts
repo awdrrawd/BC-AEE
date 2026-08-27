@@ -54,6 +54,8 @@ export function hideCharControl() {
   mutateState(draft => {
     draft.charControl.visible = false;
     draft.charControl.open = false;
+    draft.charControl.bgSubOpen = false;
+    draft.charControl.hideSubOpen = false;
     draft.offset.open = false;
     draft.pose.open = false;
     draft.bg.settingsOpen = false;
@@ -62,7 +64,15 @@ export function hideCharControl() {
 
 export function toggleCharControlOpen() {
   mutateState(draft => {
-    draft.charControl.open = !draft.charControl.open;
+    const next = !draft.charControl.open;
+    draft.charControl.open = next;
+    // Collapsing the flyout should also collapse its sub-menus, so the
+    // next time it opens it always starts from a fully-closed state
+    // instead of remembering whichever sub-menu was left open.
+    if (!next) {
+      draft.charControl.bgSubOpen = false;
+      draft.charControl.hideSubOpen = false;
+    }
   });
 }
 

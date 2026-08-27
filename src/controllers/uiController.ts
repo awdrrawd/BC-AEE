@@ -862,6 +862,8 @@ export function setCharControlVisible(visible: boolean) {
     draft.charControl.visible = visible;
     if (!visible) {
       draft.charControl.open = false;
+      draft.charControl.bgSubOpen = false;
+      draft.charControl.hideSubOpen = false;
       draft.offset.open = false;
       draft.pose.open = false;
       draft.bg.settingsOpen = false;

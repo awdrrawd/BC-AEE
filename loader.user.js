@@ -1,16 +1,11 @@
 // ==UserScript==
 // @name Liko - AEE - Loader
 // @namespace https://www.bondageprojects.com/
-// @version 1.0
+// @version 1.0.1
 // @description Likolisu's Appearance editing extension.
 // @author InkerBot & Liko
 // @supportURL https://github.com/awdrrawd/BC-AEE
-// @match https://bondageprojects.elementfx.com/*
-// @match https://www.bondageprojects.elementfx.com/*
-// @match https://bondage-europe.com/*
-// @match https://www.bondage-europe.com/*
-// @match https://bondageprojects.com/*
-// @match https://www.bondageprojects.com/*
+// @include /^https:\/\/(www\.)?(bondage(projects\.elementfx|-(europe|asia))\.com|bondageeurope\.com)\/R*/
 // @grant none
 // @run-at document-end
 // ==/UserScript==

@@ -17,8 +17,8 @@ interface HoverInfo {
 export function EyedropperOverlay({onPick, onCancel}: { onPick: (hex: string) => void; onCancel: () => void }) {
   const [hover, setHover] = useState<HoverInfo | null>(null);
   // Set when getImageData throws a SecurityError: the canvas was tainted by a
-  // cross-origin image drawn before our CORS-hardening hook could prevent it
-  // (installCanvasCorsHooks). Surface a reason instead of a silent dead crosshair.
+  // cross-origin image loaded through BC's non-CORS fallback. Displaying those
+  // images takes priority; surface a reason instead of a silent dead crosshair.
   const [blocked, setBlocked] = useState(false);
   const loupeRef = useRef<HTMLCanvasElement>(null);
 

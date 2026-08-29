@@ -27,27 +27,13 @@ try {
 }
 */
 
-import {AEE_ALREADY_LOADED, MOD_VERSION} from '@/core/version';
+import {MOD_VERSION} from '@/core/version';
 
-// Avoid registering twice on a duplicate load (registerMod would throw).
-const bcAeeModSdk = AEE_ALREADY_LOADED
-  ? createNoopModApi()
-  : bcModSdk.registerMod({
+const bcAeeModSdk = bcModSdk.registerMod({
     name: 'Liko - AEE',
     fullName: 'Liko - Appearance Editor',
     version: MOD_VERSION,
     repository: 'https://github.com/awdrrawd/BC-AEE',
   }, { allowReplace: false });
-
-function createNoopModApi() {
-  return {
-    unload: () => {},
-    hookFunction: () => () => {},
-    callOriginal: () => undefined,
-    patchFunction: () => {},
-    removePatches: () => {},
-    getOriginalHash: () => '',
-  };
-}
 
 export default bcAeeModSdk;

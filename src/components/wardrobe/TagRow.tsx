@@ -7,13 +7,14 @@ import {TagDialog} from '@/components/wardrobe/dialogs/TagDialog';
 
 export function TagRow({selection}: { selection: number }) {
   const hasSelection = selection >= 0;
-  const tags = hasSelection ? getSlotMeta(activeWardrobeSource().id, selection).tags : [];
+  const source = activeWardrobeSource();
+  const tags = hasSelection ? getSlotMeta(source.id, selection).tags : [];
 
   return <div className="flex items-center justify-between gap-2">
     <span className="truncate text-[24px] text-white">{t('wardrobe-tag')}</span>
     <Button density="stage"
             className="h-10 w-42.5"
-            disabled={!hasSelection}
+            disabled={!hasSelection || !source.isReady()}
             onClick={() => openDialog(close => <TagDialog slot={selection} onClose={close}/>)}
             icon={<Tag className="h-5 w-5"/>}
     >

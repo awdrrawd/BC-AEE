@@ -18,7 +18,7 @@
 
 import {BOARD_W, BOARD_H} from '../constants';
 import {t} from '@/i18n/i18n';
-import {A} from './slots';
+import {getActiveSession, isCurrentSession} from './slots';
 import {placeFloating} from './selection';
 
 // Keep the source at up to 2× the board — the resolution the drawing is finally
@@ -54,8 +54,8 @@ function decode(file: File): Promise<HTMLImageElement> {
 // Shared by the toolbar button and Ctrl+V — a pasted picture arrives as a File
 // too, so both routes are equally taint-proof and land in the same place.
 async function placeFile(file: File) {
-  const slot = A;
-  if (!slot) return;
+  const session = getActiveSession();
+  if (!session || session.phase !== 'editing') return;
 
   let img: HTMLImageElement;
   try {
@@ -80,16 +80,17 @@ async function placeFile(file: File) {
     return;
   }
 
-  if (A !== slot) return; // the editor moved on (slot switched / closed) while picking
+  if (!isCurrentSession(session) || session.phase !== 'editing') return;
   const fit = Math.min(BOARD_W * FIT / nw, BOARD_H * FIT / nh);
   placeFloating(buf, Math.round(nw * fit), Math.round(nh * fit));
   DialogExtendedMessage = t('free-draw-image-placed');
 }
 
 export async function importImage() {
-  if (!A) return;
+  const session = getActiveSession();
+  if (!session || session.phase !== 'editing') return;
   const file = await pickImageFile();
-  if (!file) return; // user cancelled the file dialog
+  if (!file || !isCurrentSession(session) || session.phase !== 'editing') return;
   await placeFile(file);
 }
 
@@ -97,7 +98,8 @@ export async function importImage() {
 // API, so it needs no permission prompt and only ever sees what the user
 // deliberately pasted. Attached only while the editor is open (input.ts).
 export function onPaste(evt: ClipboardEvent) {
-  if (!A) return;
+  const session = getActiveSession();
+  if (!session || session.phase !== 'editing') return;
   const items = evt.clipboardData?.items;
   if (!items) return;
   for (let i = 0; i < items.length; i++) {

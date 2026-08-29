@@ -8,6 +8,7 @@ import {SortDropdown} from '@/components/wardrobe/SortDropdown';
 import {useStage} from '@/components/wardrobe/stageContext';
 import {Button} from '@/components/ui/Button';
 import {settings, useSetting} from '@/core/settings';
+import {activeWardrobeSource} from '@/core/wardrobeStorage';
 
 export function Toolbar({state, layout}: { state: WardrobeState; layout: string[] }) {
   useSetting(settings.wardrobeListCollapsed);
@@ -30,6 +31,7 @@ export function Toolbar({state, layout}: { state: WardrobeState; layout: string[
 
     <Button density="stage"
             className="h-full w-11"
+            disabled={!activeWardrobeSource().isReady()}
             selected={state.reorderMode}
             onClick={toggleReorderMode}
             icon={state.reorderMode ? <X className="h-5 w-5"/> :

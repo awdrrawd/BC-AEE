@@ -52,11 +52,12 @@ export function OutfitCard({
 
     <button
       type="button"
+      disabled={!source.isReady()}
       aria-label="favorite"
       aria-pressed={meta.favorite}
       onClick={event => {
         event.stopPropagation();
-        toggleFavorite(slotIndex);
+        void toggleFavorite(slotIndex);
       }}
       className="absolute right-1.5 top-1.5 h-8.5 w-8.5 transition hover:scale-110"
       style={{color: meta.favorite ? 'var(--aee-accent)' : 'rgba(255,255,255,0.35)'}}

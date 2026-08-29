@@ -189,7 +189,7 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
       containerRef.current.releasePointerCapture(event.pointerId);
     }
     resetDrag();
-    if (target >= 0 && target !== source) swapOutfits(source, target);
+    if (target >= 0 && target !== source) void swapOutfits(source, target);
   };
 
   const onReorderCancel = (event: PointerEvent) => {

@@ -8,7 +8,7 @@ import {drawShapePreview, floodFill} from '../shapes';
 import {askText} from '@/core/prompts';
 import {t} from '@/i18n/i18n';
 import {STROKE_BAR_X, STROKE_Y, STROKE_BAR_W, STROKE_H, MPRIO_Y, MPRIO_BAR_X, MPRIO_BAR_W, MPRIO_H, BOARD_W, BOARD_H} from '../constants';
-import {A, pushUndo, scratch, scratchCtx} from './slots';
+import {A, getActiveSession, isCurrentSession, isEditorInteractive, pushUndo, scratch, scratchCtx} from './slots';
 import {State} from './editorState';
 import {toLocal, inBoardArea, getBoardScreenRect, updateStrokeFromPointerX, pointInRect} from './geometry';
 import {updatePriorityFromPointerX, commitMaskPriority} from './maskToggle';
@@ -84,9 +84,11 @@ export function onPointerDown(evt: PointerEvent) {
   }
   if (State.tool === 'text') {
     const [lx, ly] = local;
-    const slot = A;
+    const session = getActiveSession();
+    if (!session) return;
+    const slot = session.slot;
     askText(t('free-draw-text-prompt'), State.lastText).then(text => {
-      if (A !== slot || text == null || text === '') return;
+      if (!isCurrentSession(session) || session.phase !== 'editing' || text == null || text === '') return;
       State.lastText = text;
       pushUndo();
       slot.ctx.save();
@@ -219,7 +221,7 @@ function drawShape(local: [number, number]) {
 }
 
 export function onPointerUp(evt: PointerEvent) {
-  if (!A) return;
+  if (!A || !isEditorInteractive()) return;
   if (State.draggingStroke) { State.draggingStroke = false; return; }
   if (State.draggingPriority) { State.draggingPriority = false; commitMaskPriority(); return; }
   if (State.dragging) { State.dragging = false; afterEdit(); return; }

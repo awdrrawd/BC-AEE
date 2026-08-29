@@ -5,7 +5,7 @@
 
 import {DRAW_GROUPS, DRAW_ASSET, SLOT_COUNT, BOARD_W, BOARD_H, MASK_IMG_W, MASK_IMG_H, MASK_PRIORITY} from '../constants';
 import {bustMaskTexture} from '../masking';
-import type {Slot} from './types';
+import type {Slot, SlotEditSession, SlotSessionPhase, SlotSessionState} from './types';
 
 function makeSlot(i: number): Slot {
   const c = document.createElement('canvas');
@@ -24,19 +24,90 @@ function makeSlot(i: number): Slot {
     maskPriority: MASK_PRIORITY,
     undoStack: [],
     redoStack: [],
-    sessionSnapshot: null,
-    sessionState: null,
   };
 }
 export const slots: Slot[] = [];
 for (let i = 0; i < SLOT_COUNT; i++) slots.push(makeSlot(i));
 
-// The slot currently open in the extended-item editor, or null. Other
-// modules read this live binding directly (`import {A} from './slots'`);
-// only this module reassigns it, via setActiveSlot.
+// Compatibility view of the explicit editor session. New asynchronous code
+// must retain SlotEditSession instead of comparing this slot-only binding.
 export let A: Slot | null = null;
-export function setActiveSlot(slot: Slot | null) {
+let sessionSequence = 0;
+let activeSession: SlotEditSession | null = null;
+
+export function beginEditSession(slot: Slot, character: Character, item: Item): SlotEditSession {
+  if (activeSession) throw new Error('free_draw_session_already_active');
+  slot.undoStack.length = 0;
+  slot.redoStack.length = 0;
+  slot.loading = true;
   A = slot;
+  activeSession = {
+    id: ++sessionSequence,
+    slot,
+    character,
+    item,
+    phase: 'loading',
+    dirty: false,
+    hasDrawing: false,
+    snapshot: null,
+    initialState: null,
+  };
+  return activeSession;
+}
+
+export function getActiveSession(): SlotEditSession | null {
+  return activeSession;
+}
+
+export function isCurrentSession(session: SlotEditSession | null | undefined): session is SlotEditSession {
+  return !!session && activeSession === session;
+}
+
+export function activateEditSession(
+  session: SlotEditSession,
+  snapshot: ImageData,
+  initialState: SlotSessionState,
+  hasDrawing: boolean,
+): boolean {
+  if (!isCurrentSession(session)) return false;
+  session.snapshot = snapshot;
+  session.initialState = initialState;
+  session.hasDrawing = hasDrawing;
+  session.phase = 'editing';
+  session.slot.loading = false;
+  return true;
+}
+
+export function setSessionPhase(session: SlotEditSession, phase: SlotSessionPhase): boolean {
+  if (!isCurrentSession(session)) return false;
+  session.phase = phase;
+  session.slot.loading = phase !== 'editing';
+  return true;
+}
+
+export function markSessionDirty(slot: Slot, hasDrawing?: boolean) {
+  if (!activeSession || activeSession.slot !== slot || activeSession.phase !== 'editing') return;
+  activeSession.dirty = true;
+  if (hasDrawing !== undefined) activeSession.hasDrawing = hasDrawing;
+}
+
+export function isEditorInteractive(): boolean {
+  return !!activeSession && activeSession.phase === 'editing';
+}
+
+export function isSessionPreviewReady(session: SlotEditSession | null): session is SlotEditSession {
+  return !!session && (session.phase === 'editing' || session.phase === 'saving');
+}
+
+export function endEditSession(session: SlotEditSession): boolean {
+  if (!isCurrentSession(session)) return false;
+  session.phase = 'closing';
+  session.slot.loading = false;
+  session.slot.undoStack.length = 0;
+  session.slot.redoStack.length = 0;
+  activeSession = null;
+  A = null;
+  return true;
 }
 
 export function slotComposite(slot: Slot): string {
@@ -50,6 +121,14 @@ export function slotComposite(slot: Slot): string {
 export function invalidateSlot(slot: Slot) {
   slot._composite = null;
   bustMaskTexture();
+}
+
+export function slotHasDrawing(slot: Slot): boolean {
+  const pixels = slot.ctx.getImageData(0, 0, BOARD_W, BOARD_H).data;
+  for (let alpha = 3; alpha < pixels.length; alpha += 4) {
+    if (pixels[alpha] !== 0) return true;
+  }
+  return false;
 }
 
 export function findSlotItem(C: Character | null, slot: Slot): Item | null {

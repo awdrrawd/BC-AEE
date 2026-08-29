@@ -13,9 +13,8 @@ export function OutfitEditForm({slot}: { slot: number }) {
   const [name, setName] = useState(() => slotName(slot));
   const [tags, setTags] = useState(() => getSlotMeta(activeWardrobeSource().id, slot).tags);
 
-  const save = () => {
-    saveOutfitMeta(slot, name, tags);
-    stopEditingOutfit();
+  const save = async () => {
+    if (await saveOutfitMeta(slot, name, tags)) stopEditingOutfit();
   };
 
   return <>
@@ -31,7 +30,7 @@ export function OutfitEditForm({slot}: { slot: number }) {
       placeholder={t('wardrobe-name-placeholder')}
       onChange={event => setName(event.currentTarget.value)}
       onKeyDown={event => {
-        if (event.key === 'Enter') save();
+        if (event.key === 'Enter') void save();
       }}
       className="h-11 shrink-0 text-[22px]"
     />
@@ -50,7 +49,7 @@ export function OutfitEditForm({slot}: { slot: number }) {
     <div className="mt-auto flex shrink-0 gap-2.5">
       <Button density="stage" className="h-12 flex-1" onClick={stopEditingOutfit}
               icon={<X className="h-5 w-5"/>}>{t('wardrobe-cancel')}</Button>
-      <Button density="stage" className="h-12 flex-1" selected onClick={save}
+      <Button density="stage" className="h-12 flex-1" selected onClick={() => void save()}
               icon={<Check className="h-5 w-5"/>}>{t('wardrobe-save')}</Button>
     </div>
   </>;

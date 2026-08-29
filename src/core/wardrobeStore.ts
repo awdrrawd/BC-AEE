@@ -28,6 +28,7 @@ export interface WardrobeState {
   returnScreen: [string, string];
   dataVersion: number;
   source: WardrobeSourceId;
+  spsStatus: 'idle' | 'loading' | 'ready' | 'error';
   /** Serialized appearance captured on entry, so try-ons can be reverted. */
   entryAppearance: string | null;
   /** A try-on has changed the worn appearance since entry. */
@@ -54,6 +55,7 @@ const initialState: WardrobeState = {
   returnScreen: DEFAULT_RETURN_SCREEN,
   dataVersion: 0,
   source: settings.wardrobeSource.get(),
+  spsStatus: 'idle',
   entryAppearance: null,
   triedOn: false,
 };

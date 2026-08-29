@@ -34,9 +34,9 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
     setFocus(0);
   };
 
-  const chooseSource = (id: WardrobeSourceId) => {
+  const chooseSource = async (id: WardrobeSourceId) => {
     const next = wardrobeSourceById(id);
-    next.reload();
+    await next.reload();
     setSourceId(id);
     setEntries(planImports(pendingOutfits, next));
     setFocus(0);
@@ -47,9 +47,9 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
     if (code?.trim()) load(readImportCode(code.trim()));
   };
 
-  const confirm = () => {
-    applyImports(entries.filter(entry => entry.selected && entry.target >= 0), source);
-    onClose();
+  const confirm = async () => {
+    const count = await applyImports(entries.filter(entry => entry.selected && entry.target >= 0), source);
+    if (count > 0) onClose();
   };
 
   const counts = countByStatus(entries, source);
@@ -122,7 +122,7 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
             className="mx-auto mt-4 h-12.5 w-145 shrink-0"
             tone="primary"
             disabled={pending === 0}
-            onClick={confirm}
+            onClick={() => void confirm()}
             icon={<Save className="h-5 w-5"/>}
     >{t('wardrobe-import-apply', {n: pending})}</Button>
   </Dialog>;

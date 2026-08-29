@@ -5,8 +5,7 @@
 
 import type {AnyProps, Slot} from './types';
 import {VIS_SLOTS, PROP_KEY, PROP_SPS_KEY, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
-import {A, invalidateSlot, findSlotItem} from './slots';
-import {safeCurrentCharacter} from './currentCharacter';
+import {A, getActiveSession, invalidateSlot, findSlotItem, markSessionDirty} from './slots';
 
 // Property key on the DrawingBoard item that remembers this slot's mask
 // priority across on/off toggles + reloads (and syncs to other players).
@@ -20,6 +19,12 @@ function flushPriorityPreview(slot: Slot, C: Character) {
   applyMaskPriority(C, slot);
   invalidateSlot(slot);
   if (typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
+}
+
+export function cancelMaskPriorityPreview() {
+  if (priorityPreviewTimer === null) return;
+  clearTimeout(priorityPreviewTimer);
+  priorityPreviewTimer = null;
 }
 
 export function isSlotMasked(C: Character | null, slot: Slot): boolean {
@@ -87,11 +92,18 @@ export function applyMaskPriority(C: Character | null, slot: Slot): boolean {
   return changed;
 }
 
-// Wear the visible companion only in normal drawing mode. Mask mode removes it
-// so the stroke disappears and only its clothing cut-out remains.
-let visRefreshPending = false;
-export function syncVisCompanion(C: Character | null, slot: Slot, liveHasDraw?: boolean): boolean {
-  if (!C || !VIS_SLOTS.has(slot.index)) return false;
+export interface CompanionSyncResult {
+  appearanceChanged: boolean;
+  priorityChanged: boolean;
+}
+
+const unchangedCompanion = (): CompanionSyncResult => ({appearanceChanged: false, priorityChanged: false});
+
+// Mutate the visible companion to match the requested presentation, but never
+// refresh/persist/broadcast implicitly. The caller owns that policy: editor
+// previews rebuild locally, while Accept and background reconciliation persist.
+export function syncVisCompanion(C: Character | null, slot: Slot, liveHasDraw?: boolean): CompanionSyncResult {
+  if (!C || !VIS_SLOTS.has(slot.index)) return unchangedCompanion();
   const board = findSlotItem(C, slot);
   // During an edit the slot canvas may already contain pixels while the saved
   // DrawingBoard property is still empty. The live override makes the Vis layer
@@ -106,18 +118,16 @@ export function syncVisCompanion(C: Character | null, slot: Slot, liveHasDraw?: 
   // Report a priority repair to the caller. BC has already snapshotted the
   // current AppearanceLayers by the time syncSlots runs, so changing the worn
   // item's property alone cannot reorder the layer until CharacterLoadCanvas.
-  if (shouldWear === worn) return worn ? applyMaskPriority(C, slot) : false;
+  if (shouldWear === worn) {
+    return {appearanceChanged: false, priorityChanged: worn ? applyMaskPriority(C, slot) : false};
+  }
   if (shouldWear) {
     InventoryWear(C, slot.visAsset, slot.visGroup, null, null, null, null as never, false);
-    applyMaskPriority(C, slot);
+    return {appearanceChanged: true, priorityChanged: applyMaskPriority(C, slot)};
   } else {
     InventoryRemove(C, slot.visGroup, false);
+    return {appearanceChanged: true, priorityChanged: false};
   }
-  if (!visRefreshPending) {
-    visRefreshPending = true;
-    setTimeout(() => { visRefreshPending = false; try { CharacterRefresh(C, true, false); } catch { /* ignore */ } }, 0);
-  }
-  return false; // the scheduled CharacterRefresh handles wear/remove changes
 }
 
 // Read the remembered priority off the DrawingBoard item (default 99).
@@ -128,9 +138,9 @@ export function loadMaskPriority(slot: Slot, boardItem: Item | null) {
 }
 
 export function toggleSlotMask() {
-  if (!A) return;
-  const C = safeCurrentCharacter();
-  if (!C) return;
+  const session = getActiveSession();
+  if (!A || !session || session.phase !== 'editing') return;
+  const C = session.character;
   if (isSlotMasked(C, A)) {
     InventoryRemove(C, A.maskGroup, false);
     A.isMask = false;
@@ -139,12 +149,13 @@ export function toggleSlotMask() {
     applyMaskPriority(C, A); // honour the remembered priority on the fresh companion
     A.isMask = true;
   }
+  markSessionDirty(A);
   syncVisCompanion(C, A);
   invalidateSlot(A);
-  // Push=true saves to the account DB (self); the room broadcast propagates the
-  // worn/removed mask companion — incl. when editing another character.
-  CharacterRefresh(C, true, false);
-  syncCharacterToRoom(C, A.maskGroup, A.visGroup);
+  // Mask/Vis changes are transaction-local until Accept. A local canvas rebuild
+  // gives immediate preview without leaving persistent state behind on crashes
+  // or native dialog exits.
+  if (typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
 }
 
 // Live-update during a priority-slider drag. Character canvas rebuilds are
@@ -155,8 +166,9 @@ export function updatePriorityFromPointerX(cx: number) {
   const ratio = Math.min(1, Math.max(0, (cx - MPRIO_BAR_X) / MPRIO_BAR_W));
   A.maskPriority = Math.round(MPRIO_MIN + ratio * (MPRIO_MAX - MPRIO_MIN));
   const slot = A;
-  const C = safeCurrentCharacter();
-  if (!C) return;
+  const session = getActiveSession();
+  if (!session || session.slot !== slot || session.phase !== 'editing') return;
+  const C = session.character;
   // BC only rebuilds AppearanceLayers during CharacterLoadCanvas. Throttle the
   // rebuild while dragging so the character preview follows the slider without
   // making every pointermove perform a full character render.
@@ -167,21 +179,18 @@ export function updatePriorityFromPointerX(cx: number) {
   }
 }
 
-// On release: apply to the worn companion, persist to the DrawingBoard item,
-// rebuild once + push-sync so others get it.
+// On release: apply to the live companion and rebuild locally. Accept owns the
+// later DrawingBoard write, persistence, and room broadcast.
 export function commitMaskPriority() {
-  if (!A) return;
+  const session = getActiveSession();
+  if (!A || !session || session.phase !== 'editing') return;
   if (priorityPreviewTimer !== null) {
     clearTimeout(priorityPreviewTimer);
     priorityPreviewTimer = null;
   }
-  const C = safeCurrentCharacter();
-  const board = C ? findSlotItem(C, A) : null;
-  if (board) {
-    if (!CommonIsObject(board.Property)) board.Property = {};
-    (board.Property as AnyProps)[PROP_MASK_PRIO] = A.maskPriority;
-  }
+  const C = session.character;
+  markSessionDirty(A);
   applyMaskPriority(C, A);
   invalidateSlot(A);
-  if (C) { CharacterRefresh(C, true, false); syncCharacterToRoom(C, ...slotSyncGroups(A)); }
+  if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);
 }

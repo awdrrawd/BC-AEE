@@ -16,9 +16,11 @@ import {PreviewPanel} from '@/components/wardrobe/PreviewPanel';
 import {DialogHost} from '@/components/ui/DialogHost';
 import {PromptDialog} from '@/components/ui/PromptDialog';
 import {usePrompt} from '@/core/prompts';
+import {t} from '@/i18n/i18n';
 
 export function WardrobeScreen({state}: { state: WardrobeState }) {
   const prompt = usePrompt();
+  const spsBlocked = state.source === 'sps' && state.spsStatus !== 'ready';
   const {portrait} = useViewport();
   const layout = useSetting(settings.wardrobePanelLayout);
   // Subscribe so the grid re-lays-out when the collapse state flips.
@@ -87,6 +89,10 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
   return <WardrobeStage canvasRect={state.canvasRect}>
     <WardrobeHeader/>
     {body}
+    {spsBlocked ? <div
+      className="pointer-events-none absolute left-1/2 top-20 z-20 -translate-x-1/2 rounded-xl border border-white/15 bg-zinc-950/90 px-6 py-3 text-[22px] text-white shadow-xl"
+      role="status" aria-live="polite"
+    >{t(state.spsStatus === 'error' ? 'wardrobe-toast-sps-load-failed' : 'wardrobe-toast-sps-loading')}</div> : null}
     <DialogHost/>
     {prompt ? <PromptDialog prompt={prompt} scale="stage"/> : null}
   </WardrobeStage>;

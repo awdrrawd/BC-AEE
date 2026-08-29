@@ -1,3 +1,4 @@
+import '@/vendor/studio-oauth.js';
 import {createRoot} from "react-dom/client";
 import {StrictMode} from "react";
 import '@/tailwind.css'

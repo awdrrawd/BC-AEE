@@ -9,9 +9,8 @@ import {ListEditor} from '@/components/ui/ListEditor';
 export function TagDialog({slot, onClose}: { slot: number; onClose: () => void }) {
   const [tags, setTags] = useState(() => getSlotMeta(activeWardrobeSource().id, slot).tags);
 
-  const confirm = () => {
-    setSlotTags(slot, tags);
-    onClose();
+  const confirm = async () => {
+    if (await setSlotTags(slot, tags)) onClose();
   };
 
   return <Dialog onDismiss={onClose} className="w-180 gap-6 p-8">
@@ -28,7 +27,7 @@ export function TagDialog({slot, onClose}: { slot: number; onClose: () => void }
 
     <div className="flex justify-end gap-3">
       <Button density="stage" className="h-12 w-35" onClick={onClose}>{t('wardrobe-cancel')}</Button>
-      <Button density="stage" className="h-12 w-35" selected onClick={confirm}>{t('wardrobe-confirm')}</Button>
+      <Button density="stage" className="h-12 w-35" selected onClick={() => void confirm()}>{t('wardrobe-confirm')}</Button>
     </div>
   </Dialog>;
 }

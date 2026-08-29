@@ -131,7 +131,7 @@ export function OutfitListPanel({state}: { state: WardrobeState }) {
     const target = active.current ? slotAt(event.clientX, event.clientY) : -1;
     if (scrollRef.current?.hasPointerCapture(event.pointerId)) scrollRef.current.releasePointerCapture(event.pointerId);
     reset();
-    if (target >= 0 && target !== source) swapOutfits(source, target);
+    if (target >= 0 && target !== source) void swapOutfits(source, target);
   };
 
   const onPointerCancel = (event: PointerEvent) => {
@@ -140,7 +140,7 @@ export function OutfitListPanel({state}: { state: WardrobeState }) {
   };
 
   const remove = async () => {
-    if (await askConfirm(t('wardrobe-confirm-delete'), true)) deleteOutfit(state.selection);
+    if (await askConfirm(t('wardrobe-confirm-delete'), true)) await deleteOutfit(state.selection);
   };
 
   return <Panel ref={panelRef} soft className="aee-rise-in relative w-80 shrink-0 gap-2.5 p-2.5">

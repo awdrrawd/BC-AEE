@@ -28,9 +28,9 @@ export function ExportDialog({onClose}: { onClose: () => void }) {
   const [selected, setSelected] = useState<Set<number>>(() => new Set(slots.map(slot => slot.index)));
   const [focus, setFocus] = useState(0);
 
-  const chooseSource = (id: WardrobeSourceId) => {
+  const chooseSource = async (id: WardrobeSourceId) => {
     const next = wardrobeSourceById(id);
-    next.reload();
+    await next.reload();
     const nextSlots = collectWardrobeSlots(next);
     setSourceId(id);
     setSelected(new Set(nextSlots.map(slot => slot.index)));

@@ -2,7 +2,9 @@ import {useCallback, useEffect, useMemo, useState, type SyntheticEvent} from 're
 import {t} from '@/i18n/i18n';
 import {askConfirm, askText} from '@/core/prompts';
 import {showToast} from '@/util/toast';
-import {A, invalidateSlot, pushUndo} from '@/components/mask-system/freeDraw/slots';
+import {
+  A, getActiveSession, invalidateSlot, isCurrentSession, pushUndo,
+} from '@/components/mask-system/freeDraw/slots';
 import {afterEdit} from '@/components/mask-system/freeDraw/editing';
 import {State} from '@/components/mask-system/freeDraw/editorState';
 import {
@@ -44,9 +46,16 @@ export function FreeDrawLibraryPanel() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setTick(value => value + 1);
-      if (!A) return;
-      try { setUsage(projectedAppearanceBytes(canvasEmbeddedData(A.canvas))); }
-      catch { setUsage(0); }
+      const session = getActiveSession();
+      if (!session) return;
+      try {
+        const compressed = session.hasDrawing ? canvasEmbeddedData(session.slot.canvas) : '';
+        setUsage(projectedAppearanceBytes(compressed, session));
+      } catch {
+        // Estimation failures are displayed at the upload threshold rather than
+        // as a reassuring zero; Accept independently blocks on the same error.
+        setUsage(APPEARANCE_UPLOAD_BYTES);
+      }
     }, 500);
     return () => window.clearInterval(timer);
   }, []);
@@ -58,20 +67,22 @@ export function FreeDrawLibraryPanel() {
   }, [activeSlot, libraryError]);
 
   const recall = async (index: number) => {
-    if (!A || busy) return;
+    const session = getActiveSession();
+    if (!session || session.phase !== 'editing' || busy) return;
     setBusy(true);
     try {
       const blob = await recallLibrarySlot(index);
-      if (!blob) return;
+      if (!blob || !isCurrentSession(session) || session.phase !== 'editing') return;
       const url = URL.createObjectURL(blob);
       try {
         const image = await new Promise<HTMLImageElement>((resolve, reject) => {
           const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url;
         });
+        if (!isCurrentSession(session) || session.phase !== 'editing') return;
         pushUndo();
-        A.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
-        A.ctx.drawImage(image, 0, 0, BOARD_W, BOARD_H);
-        invalidateSlot(A);
+        session.slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
+        session.slot.ctx.drawImage(image, 0, 0, BOARD_W, BOARD_H);
+        invalidateSlot(session.slot);
         afterEdit();
       } finally { URL.revokeObjectURL(url); }
     } catch (error) { libraryError(error); }
@@ -79,12 +90,13 @@ export function FreeDrawLibraryPanel() {
   };
 
   const save = async (index: number, currentName: string) => {
-    if (!A || busy) return;
+    const session = getActiveSession();
+    if (!session || session.phase !== 'editing' || busy) return;
     const name = await askText(t('free-draw-library-name-prompt'), currentName || t('free-draw-library-default-name', {slot: index + 1}));
-    if (name === null || !A) return;
+    if (name === null || !isCurrentSession(session) || session.phase !== 'editing') return;
     setBusy(true);
     try {
-      await saveLibrarySlot(index, name, A.canvas);
+      await saveLibrarySlot(index, name, session.slot.canvas);
       showToast(t('free-draw-library-saved'));
       setTick(value => value + 1);
     } catch (error) { libraryError(error); }

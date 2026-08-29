@@ -1,8 +1,8 @@
 import {settings} from '@/core/settings';
 import type {WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
-import {bumpWardrobeData, getWardrobeState} from '@/core/wardrobeStore';
+import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 import {type LocalWardrobeRecord, readLocalWardrobeRecord, writeLocalWardrobeRecord} from '@/core/wardrobeDb';
-import {listSpsKeys, readSpsText, SPS_WARDROBE_PREFIX, writeSpsText} from '@/core/sps';
+import {deleteSpsKey, listSpsKeys, readSpsText, SPS_WARDROBE_PREFIX, writeSpsText} from '@/core/sps';
 import {showToast} from '@/util/toast';
 import {t} from '@/i18n/i18n';
 
@@ -10,39 +10,31 @@ const DEFAULT_WARDROBE_SIZE = 24;
 const EXPANDED_WARDROBE_SIZE = 96;
 const LOCAL_WARDROBE_SIZE = 288;
 const SPS_WARDROBE_CHUNK_SIZE = 300;
+const SPS_WARDROBE_MAX_CHUNKS = 16;
+const SPS_WARDROBE_MAX_SLOTS = SPS_WARDROBE_CHUNK_SIZE * SPS_WARDROBE_MAX_CHUNKS;
+const SPS_WARDROBE_SLOT_PREFIX = 'liko-aee:wardrobe/slot/';
+const SPS_WARDROBE_TXN_KEY = 'liko-aee:wardrobe/transaction';
 
 const CUSTOM_BG_KEY = 'liko-aee-wardrobe-bg';
 const LOCAL_WARDROBE_PREFIX = 'liko-aee-wardrobe-local:';
 const LEGACY_ONLINE_BACKUP_PREFIX = 'liko-aee-wardrobe-backup:';
 
-// Shared expanded-wardrobe key: WCE and LCE both store their 24→96 extension here (LZString+JSON),
-// so pointing AEE at the same key makes all three read/write one 96-slot online wardrobe.
 const FBC_WARDROBE_KEY = 'FBCWardrobe';
-// AEE's own pre-split extension key, kept only to migrate legacy data into FBCWardrobe.
 const LEGACY_EXTENSION_WARDROBE_KEY = 'LIKO_AEE_WARDROBE';
 
 export const CUSTOM_BG_PATH = 'custom';
 
-// The server limits the serialized AccountUpdate payload: UTF-8 bytes on the
-// wire, not JavaScript UTF-16 code units. FBCWardrobe is compressToUTF16 data,
-// so `.length` can under-report its upload size by almost 3x.
 const ACCOUNT_UPDATE_BYTE_LIMIT = 180000;
 
 function extensionSettings(): Record<string, unknown> | undefined {
   return Player?.ExtensionSettings as Record<string, unknown> | undefined;
 }
 
-/** True when a shared extended wardrobe (WCE/LCE, or a prior AEE session) already exists. */
 function externalExtendedActive(): boolean {
   const raw = extensionSettings()?.[FBC_WARDROBE_KEY];
   return typeof raw === 'string' && raw.length > 0;
 }
 
-/**
- * The online wardrobe is a single 96-slot wardrobe (slots 24–96 shared via FBCWardrobe).
- * It expands to 96 when the user enables it *or* when WCE/LCE already did — matching whatever
- * those mods show, rather than stacking a second 96-slot segment on top (the old 96+96 bug).
- */
 export function onlineWardrobeSize(): number {
   return settings.wardrobeExtended.get() || externalExtendedActive() ? EXPANDED_WARDROBE_SIZE : DEFAULT_WARDROBE_SIZE;
 }
@@ -63,9 +55,9 @@ export interface WardrobeSource {
   nameAt(index: number): string;
   writeSlot(index: number, outfit: ItemBundle[], name: string): void;
   swap(a: number, b: number): void;
-  /** Pushes the given slots to the underlying storage. False = storage full/unavailable, callers roll back. */
-  persist(indices: readonly number[]): boolean;
-  reload(): void;
+  persist(indices: readonly number[]): boolean | Promise<boolean>;
+  reload(): void | Promise<void>;
+  isReady(): boolean;
 }
 
 function isBundleEntry(value: unknown): value is ItemBundle {
@@ -80,13 +72,6 @@ function swapSlots(source: WardrobeSource, a: number, b: number) {
   source.writeSlot(b, outfit, name);
 }
 
-// ---------------------------------------------------------------------------
-// Online wardrobe: one 96-slot wardrobe living entirely in Player.Wardrobe.
-// Slots 0–24 sync to the server (base BC wardrobe); slots 24–96 are the shared
-// expansion persisted to Player.ExtensionSettings.FBCWardrobe (WCE/LCE format).
-// ---------------------------------------------------------------------------
-
-/** Legacy AEE extension payload (pre-split), read only during migration. */
 interface StoredExtensionWardrobe {
   v: 1;
   /** Compressed via CharacterCompressWardrobe. */
@@ -94,7 +79,6 @@ interface StoredExtensionWardrobe {
   n: string[];
 }
 
-/** Compressed payload that would be written to FBCWardrobe for the current extended slots (24–96). */
 function compressedExtendedWardrobe(): string {
   const extended = (Player?.Wardrobe ?? [])
     .slice(DEFAULT_WARDROBE_SIZE, EXPANDED_WARDROBE_SIZE)
@@ -103,24 +87,18 @@ function compressedExtendedWardrobe(): string {
 }
 
 function extensionSettingUploadBytes(fbcWardrobe: string): number {
-  // ServerPlayerExtensionSettingsSync only sends this dot-notation key. Other
-  // plugins' ExtensionSettings do not share this request or consume AEE's limit.
   const path = `ExtensionSettings.${FBC_WARDROBE_KEY}`;
   return new TextEncoder().encode(JSON.stringify({[path]: fbcWardrobe})).byteLength;
 }
 
-/** Actual UTF-8 upload size of AEE's FBCWardrobe key against BC's AccountUpdate limit. */
 export function fbcWardrobeUsage(): {used: number; budget: number} {
   return {used: extensionSettingUploadBytes(compressedExtendedWardrobe()), budget: ACCOUNT_UPDATE_BYTE_LIMIT};
 }
 
-/** Serializes the extended slots (24–96) into the shared FBCWardrobe extension setting. */
 function writeFbcWardrobe(): boolean {
   if (!Player.Wardrobe) return false;
   try {
     const payload = compressedExtendedWardrobe();
-    // Over BC's AccountUpdate cap: reject before writing so the caller rolls back and warns,
-    // rather than letting the oversized sync throw later at flush time.
     if (extensionSettingUploadBytes(payload) > ACCOUNT_UPDATE_BYTE_LIMIT) return false;
     Player.ExtensionSettings ??= {};
     (Player.ExtensionSettings as Record<string, unknown>)[FBC_WARDROBE_KEY] = payload;
@@ -132,7 +110,6 @@ function writeFbcWardrobe(): boolean {
   }
 }
 
-/** Loads the shared FBCWardrobe expansion into Player.Wardrobe[24..96], filling only empty slots. */
 function loadFbcWardrobe() {
   const raw = extensionSettings()?.[FBC_WARDROBE_KEY];
   if (typeof raw !== 'string' || !raw || !Player.Wardrobe) return;
@@ -158,12 +135,8 @@ function persistOnline(indices: readonly number[]): boolean {
   if (!Player.Wardrobe) return false;
   const needsExtended = indices.some(index => index >= DEFAULT_WARDROBE_SIZE);
 
-  // Extended slots (24–96) go to the shared FBCWardrobe extension.
   if (needsExtended && !writeFbcWardrobe()) return false;
 
-  // Base slots (0–24) plus names for the whole visible range sync to the server.
-  // With WCE/LCE loaded, CharacterCompressWardrobe is hooked to route the tail into FBCWardrobe;
-  // slicing to the base size here keeps that path a no-op and avoids a double write.
   ServerAccountUpdate.QueueData({
     Wardrobe: CharacterCompressWardrobe(Player.Wardrobe.slice(0, DEFAULT_WARDROBE_SIZE)),
     WardrobeCharacterNames: (Player.WardrobeCharacterNames ?? []).slice(0, onlineWardrobeSize()),
@@ -187,6 +160,7 @@ const onlineSource: WardrobeSource = {
   },
   persist: persistOnline,
   reload: loadFbcWardrobe,
+  isReady: () => true,
 };
 
 interface StoredLocalWardrobe {
@@ -195,18 +169,14 @@ interface StoredLocalWardrobe {
   names: unknown[];
 }
 
-// In-memory cache: the WardrobeSource API is synchronous, so reads come from here while
-// IndexedDB is read/written asynchronously behind it.
 const localOutfits: ItemBundle[][] = Array.from({length: LOCAL_WARDROBE_SIZE}, () => []);
 const localNames: string[] = Array.from({length: LOCAL_WARDROBE_SIZE}, () => '');
-// Guards against a slow load for an old scope overwriting the cache after the scope changed.
 let localLoadToken = 0;
 
 function localWardrobeKey(): string {
   return LOCAL_WARDROBE_PREFIX + storageScope();
 }
 
-/** Legacy localStorage payload, kept only to migrate old data into IndexedDB. */
 function readLegacyLocalWardrobe(): StoredLocalWardrobe | null {
   try {
     const parsed = JSON.parse(localStorage.getItem(localWardrobeKey()) || 'null') as StoredLocalWardrobe | null;
@@ -231,8 +201,6 @@ function persistLocal(): boolean {
     outfits: localOutfits.map(outfit => outfit ?? []),
     names: [...localNames],
   };
-  // Fire-and-forget: IndexedDB has ample quota, so we optimistically report success and
-  // only surface a problem in the console if the write later fails.
   writeLocalWardrobeRecord(record).catch(error => {
     console.warn('🐈‍⬛ [AEE] Failed to store the local wardrobe', error);
   });
@@ -254,7 +222,6 @@ async function loadLocalWardrobe() {
     console.warn('🐈‍⬛ [AEE] Failed to read the local wardrobe', error);
   }
 
-  // One-time migration: pull any pre-IndexedDB localStorage data across, then drop it.
   if (!record) {
     const legacy = readLegacyLocalWardrobe();
     if (legacy) {
@@ -268,7 +235,6 @@ async function loadLocalWardrobe() {
     }
   }
 
-  // A newer load (e.g. after a scope switch) already superseded this one.
   if (token !== localLoadToken) return;
 
   fillLocalArrays(record?.outfits ?? [], record?.names ?? []);
@@ -290,44 +256,157 @@ const localSource: WardrobeSource = {
   },
   persist: persistLocal,
   reload: reloadLocalWardrobe,
+  isReady: () => true,
 };
 
-// SPS is asynchronous, while the wardrobe UI deliberately consumes a synchronous source.
-// Keep a memory mirror and refresh it when the source is opened; writes upload a complete,
-// versioned snapshot so a failed request never corrupts the currently visible wardrobe.
 const spsOutfits: ItemBundle[][] = Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => []);
 const spsNames: string[] = Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => '');
+const spsMeta: WardrobeSlotMeta[] = Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => ({favorite: false, tags: []}));
+const spsLegacyOccupied = new Set<number>();
+const spsLegacyMigrationCandidates = new Set<number>();
 let spsLoadToken = 0;
+let spsReady = false;
+let spsLoadPromise: Promise<void> | null = null;
+let spsWriteQueue: Promise<void> = Promise.resolve();
 
-interface StoredSpsWardrobe {
+interface StoredLegacySpsWardrobe {
   version: 1;
   outfits: unknown[];
   names: unknown[];
 }
 
+interface StoredSpsSlot {
+  version: 2;
+  outfit: unknown[];
+  name: string;
+  meta: WardrobeSlotMeta;
+}
+
+interface StoredSpsTransaction {
+  version: 1;
+  records: ReadonlyArray<{index: number; value: StoredSpsSlot | null}>;
+}
+
+function emptySlotMeta(): WardrobeSlotMeta {
+  return {favorite: false, tags: []};
+}
+
+function normalizeSlotMeta(value: unknown): WardrobeSlotMeta {
+  const meta = value as Partial<WardrobeSlotMeta> | null;
+  return {
+    favorite: !!meta?.favorite,
+    tags: Array.isArray(meta?.tags) ? meta.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+  };
+}
+
+function parseSpsIndex(key: string, prefix: string, maxExclusive: number): number | null {
+  if (!key.startsWith(prefix)) return null;
+  const oneBased = Number(key.slice(prefix.length));
+  return Number.isInteger(oneBased) && oneBased > 0 && oneBased <= maxExclusive ? oneBased - 1 : null;
+}
+
+function spsSlotKey(index: number): string {
+  return `${SPS_WARDROBE_SLOT_PREFIX}${index + 1}`;
+}
+
+async function mapWithConcurrency<T, R>(values: readonly T[], limit: number, worker: (value: T) => Promise<R>): Promise<R[]> {
+  const result = new Array<R>(values.length);
+  let cursor = 0;
+  const runners = Array.from({length: Math.min(limit, values.length)}, async () => {
+    for (;;) {
+      const index = cursor++;
+      if (index >= values.length) return;
+      result[index] = await worker(values[index]);
+    }
+  });
+  await Promise.all(runners);
+  return result;
+}
+
+function legacyLocalMeta(index: number): WardrobeSlotMeta {
+  const key = `local:${storageScope()}:${index}`;
+  return normalizeSlotMeta(settings.wardrobeSlotMeta.get()[key]);
+}
+
 async function loadSpsWardrobe() {
   const token = ++spsLoadToken;
+  spsReady = false;
+  setWardrobeState({spsStatus: 'loading'});
+  // Never expose the prior account/load's mirror while authentication and the
+  // fresh key list are still pending.
+  resetSpsArrays(SPS_WARDROBE_CHUNK_SIZE);
+  spsLegacyOccupied.clear();
+  spsLegacyMigrationCandidates.clear();
+  bumpWardrobeData();
   try {
+    await spsWriteQueue;
     const keys = await listSpsKeys();
-    const chunks = keys
-      .filter(key => key.startsWith(SPS_WARDROBE_PREFIX))
-      .map(key => Number(key.slice(SPS_WARDROBE_PREFIX.length)))
-      .filter(index => Number.isInteger(index) && index > 0)
+    const legacyChunks = [...new Set(keys
+      .map(key => parseSpsIndex(key, SPS_WARDROBE_PREFIX, SPS_WARDROBE_MAX_CHUNKS))
+      .filter((index): index is number => index !== null))]
       .sort((a, b) => a - b);
-    const chunkCount = Math.max(1, chunks.at(-1) ?? 1);
-    const texts = await Promise.all(Array.from({length: chunkCount}, (_, index) =>
-      readSpsText(`${SPS_WARDROBE_PREFIX}${index + 1}`)));
+    const slots = [...new Set(keys
+      .map(key => parseSpsIndex(key, SPS_WARDROBE_SLOT_PREFIX, SPS_WARDROBE_MAX_SLOTS))
+      .filter((index): index is number => index !== null))]
+      .sort((a, b) => a - b);
+    const legacyChunkCount = (legacyChunks.at(-1) ?? -1) + 1;
+    const highestSlot = slots.at(-1) ?? -1;
+    const legacyTexts = await mapWithConcurrency(legacyChunks, 6,
+      chunk => readSpsText(`${SPS_WARDROBE_PREFIX}${chunk + 1}`));
+    const slotTexts = await mapWithConcurrency(slots, 8, index => readSpsText(spsSlotKey(index)));
+    const transactionText = keys.includes(SPS_WARDROBE_TXN_KEY) ? await readSpsText(SPS_WARDROBE_TXN_KEY) : null;
+    let transactionRecords: ReadonlyArray<{index: number; value: StoredSpsSlot | null}> = [];
+    if (transactionText) {
+      const transaction = JSON.parse(transactionText) as Partial<StoredSpsTransaction>;
+      if (transaction.version !== 1 || !Array.isArray(transaction.records)) throw new Error('bad_sps_transaction');
+      transactionRecords = transaction.records.filter(isStoredSpsTransactionRecord);
+      if (transactionRecords.length !== transaction.records.length) throw new Error('bad_sps_transaction_record');
+    }
+    const highestTransactionSlot = transactionRecords.reduce((highest, record) => Math.max(highest, record.index), -1);
+    const size = Math.max(SPS_WARDROBE_CHUNK_SIZE,
+      legacyChunkCount * SPS_WARDROBE_CHUNK_SIZE,
+      Math.ceil((Math.max(highestSlot, highestTransactionSlot) + 1) / SPS_WARDROBE_CHUNK_SIZE)
+        * SPS_WARDROBE_CHUNK_SIZE);
     if (token !== spsLoadToken) return;
-    resetSpsArrays(chunkCount * SPS_WARDROBE_CHUNK_SIZE);
-    texts.forEach((text, index) => {
+    resetSpsArrays(size);
+    spsLegacyOccupied.clear();
+    spsLegacyMigrationCandidates.clear();
+    const validLegacyChunks: number[] = [];
+    legacyTexts.forEach((text, position) => {
       if (text === null) return;
-      const parsed = JSON.parse(text) as Partial<StoredSpsWardrobe>;
-      fillSpsChunk(index, Array.isArray(parsed.outfits) ? parsed.outfits : [], Array.isArray(parsed.names) ? parsed.names : []);
+      try {
+        const parsed = JSON.parse(text) as Partial<StoredLegacySpsWardrobe>;
+        fillLegacySpsChunk(legacyChunks[position], Array.isArray(parsed.outfits) ? parsed.outfits : [],
+          Array.isArray(parsed.names) ? parsed.names : []);
+        validLegacyChunks.push(legacyChunks[position]);
+      } catch (error) {
+        console.warn('🐈‍⬛ [AEE] Ignoring a malformed legacy SPS wardrobe chunk', error);
+      }
     });
+    slotTexts.forEach((text, position) => {
+      if (text === null) return;
+      try {
+        if (!applyStoredSpsSlot(slots[position], JSON.parse(text))) throw new Error('bad_sps_slot');
+        spsLegacyMigrationCandidates.delete(slots[position]);
+      }
+      catch (error) { console.warn('🐈‍⬛ [AEE] Ignoring a malformed SPS wardrobe slot', error); }
+    });
+    if (transactionText) {
+      for (const record of transactionRecords) {
+        applyStoredSpsSlot(record.index, record.value);
+        spsLegacyMigrationCandidates.delete(record.index);
+      }
+      await writeSpsRecords(transactionRecords, false);
+      await deleteSpsKey(SPS_WARDROBE_TXN_KEY);
+    }
     growSpsIfFull();
+    spsReady = true;
+    setWardrobeState({spsStatus: 'ready'});
     bumpWardrobeData();
+    void migrateLegacySpsWardrobe(validLegacyChunks, [...spsLegacyMigrationCandidates]);
   } catch (error) {
     console.warn('🐈‍⬛ [AEE] Failed to load the SPS wardrobe', error);
+    setWardrobeState({spsStatus: 'error'});
     showToast(t('wardrobe-toast-sps-load-failed'), {color: '#f87171'});
   }
 }
@@ -335,47 +414,139 @@ async function loadSpsWardrobe() {
 function resetSpsArrays(size: number) {
   spsOutfits.length = size;
   spsNames.length = size;
+  spsMeta.length = size;
   for (let index = 0; index < size; index++) {
     spsOutfits[index] = [];
     spsNames[index] = '';
+    spsMeta[index] = emptySlotMeta();
   }
 }
 
-function fillSpsChunk(chunk: number, outfits: readonly unknown[], names: readonly unknown[]) {
+function fillLegacySpsChunk(chunk: number, outfits: readonly unknown[], names: readonly unknown[]) {
   const offset = chunk * SPS_WARDROBE_CHUNK_SIZE;
   for (let local = 0; local < SPS_WARDROBE_CHUNK_SIZE; local++) {
     const outfit = outfits[local];
     spsOutfits[offset + local] = Array.isArray(outfit) && outfit.every(isBundleEntry) ? outfit as ItemBundle[] : [];
     spsNames[offset + local] = typeof names[local] === 'string' ? names[local] as string : '';
+    spsMeta[offset + local] = legacyLocalMeta(offset + local);
+    if (spsOutfits[offset + local].length || spsNames[offset + local]) spsLegacyOccupied.add(offset + local);
+    if (spsOutfits[offset + local].length || spsNames[offset + local]
+      || spsMeta[offset + local].favorite || spsMeta[offset + local].tags.length) {
+      spsLegacyMigrationCandidates.add(offset + local);
+    }
   }
 }
 
+function isStoredSpsSlot(value: unknown): value is StoredSpsSlot {
+  if (!value || typeof value !== 'object') return false;
+  const stored = value as Partial<StoredSpsSlot>;
+  const meta = stored.meta as Partial<WardrobeSlotMeta> | undefined;
+  return stored.version === 2
+    && Array.isArray(stored.outfit) && stored.outfit.every(isBundleEntry)
+    && typeof stored.name === 'string'
+    && !!meta && typeof meta.favorite === 'boolean'
+    && Array.isArray(meta.tags) && meta.tags.every(tag => typeof tag === 'string');
+}
+
+function applyStoredSpsSlot(index: number, value: unknown): boolean {
+  if (!Number.isInteger(index) || index < 0 || index >= spsOutfits.length) return false;
+  if (value === null) {
+    spsOutfits[index] = [];
+    spsNames[index] = '';
+    spsMeta[index] = emptySlotMeta();
+    return true;
+  }
+  if (!isStoredSpsSlot(value)) return false;
+  const stored = value;
+  spsOutfits[index] = stored.outfit as ItemBundle[];
+  spsNames[index] = stored.name;
+  spsMeta[index] = normalizeSlotMeta(stored.meta);
+  return true;
+}
+
 function growSpsIfFull() {
+  if (spsOutfits.length >= SPS_WARDROBE_MAX_SLOTS) return;
   const lastChunkStart = spsOutfits.length - SPS_WARDROBE_CHUNK_SIZE;
   if (spsOutfits.slice(lastChunkStart).every(outfit => outfit.length > 0)) {
     spsOutfits.push(...Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => []));
     spsNames.push(...Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, () => ''));
+    spsMeta.push(...Array.from({length: SPS_WARDROBE_CHUNK_SIZE}, emptySlotMeta));
   }
 }
 
-function persistSps(indices: readonly number[]): boolean {
-  const chunks = [...new Set(indices.map(index => Math.floor(index / SPS_WARDROBE_CHUNK_SIZE)))];
-  const uploads = chunks.map(chunk => {
-    const start = chunk * SPS_WARDROBE_CHUNK_SIZE;
-    const payload = JSON.stringify({
-      version: 1,
-      outfits: spsOutfits.slice(start, start + SPS_WARDROBE_CHUNK_SIZE),
-      names: spsNames.slice(start, start + SPS_WARDROBE_CHUNK_SIZE),
-    } satisfies StoredSpsWardrobe);
-    return writeSpsText(`${SPS_WARDROBE_PREFIX}${chunk + 1}`, payload);
+function storedSpsSlotAt(index: number): StoredSpsSlot {
+  return {version: 2, outfit: spsOutfits[index] ?? [], name: spsNames[index] ?? '', meta: spsMeta[index] ?? emptySlotMeta()};
+}
+
+function isStoredSpsTransactionRecord(value: unknown): value is {index: number; value: StoredSpsSlot | null} {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as {index?: unknown; value?: unknown};
+  return Number.isInteger(record.index) && Number(record.index) >= 0 && Number(record.index) < SPS_WARDROBE_MAX_SLOTS
+    && (record.value === null || isStoredSpsSlot(record.value));
+}
+
+function recordForIndex(index: number): {index: number; value: StoredSpsSlot | null} {
+  const value = storedSpsSlotAt(index);
+  const empty = value.outfit.length === 0 && !value.name && !value.meta.favorite && value.meta.tags.length === 0;
+  return {index, value: empty && !spsLegacyOccupied.has(index) ? null : value};
+}
+
+async function writeSpsRecords(records: readonly {index: number; value: StoredSpsSlot | null}[], journal = true) {
+  const durable = journal && records.length > 1;
+  if (durable) {
+    await writeSpsText(SPS_WARDROBE_TXN_KEY, JSON.stringify({version: 1, records} satisfies StoredSpsTransaction));
+  }
+  try {
+    for (const record of records) {
+      if (record.value === null) await deleteSpsKey(spsSlotKey(record.index));
+      else await writeSpsText(spsSlotKey(record.index), JSON.stringify(record.value));
+    }
+  } catch (error) {
+    if (durable) {
+      console.warn('🐈‍⬛ [AEE] SPS wardrobe operation journaled for retry', error);
+      return;
+    }
+    throw error;
+  }
+  if (durable) {
+    try { await deleteSpsKey(SPS_WARDROBE_TXN_KEY); }
+    catch (error) { console.warn('🐈‍⬛ [AEE] SPS wardrobe journal cleanup will retry on next load', error); }
+  }
+}
+
+async function persistSps(indices: readonly number[]): Promise<boolean> {
+  if (!spsReady) return false;
+  const unique = [...new Set(indices)].filter(index => index >= 0 && index < spsOutfits.length);
+  const records = unique.map(recordForIndex);
+  const operation = spsWriteQueue.then(() => writeSpsRecords(records));
+  spsWriteQueue = operation.catch(() => {});
+  try {
+    await operation;
+    bumpWardrobeData();
+    return true;
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Failed to save the SPS wardrobe', error);
+    return false;
+  }
+}
+
+async function migrateLegacySpsWardrobe(chunks: readonly number[], indices: readonly number[]) {
+  if (!chunks.length) return;
+  const records = indices.map(recordForIndex);
+  const operation = spsWriteQueue.then(async () => {
+    for (const record of records) await writeSpsRecords([record]);
+    for (const chunk of chunks) await deleteSpsKey(`${SPS_WARDROBE_PREFIX}${chunk + 1}`);
   });
-  void Promise.all(uploads)
-    .then(() => { bumpWardrobeData(); showToast(t('wardrobe-toast-sps-synced')); })
-    .catch(error => {
-      console.warn('🐈‍⬛ [AEE] Failed to save the SPS wardrobe', error);
-      showToast(t('wardrobe-toast-sps-save-failed'), {color: '#f87171'});
-    });
-  return true;
+  spsWriteQueue = operation.catch(() => {});
+  try { await operation; }
+  catch (error) { console.warn('🐈‍⬛ [AEE] Legacy SPS wardrobe migration will retry later', error); }
+}
+
+function reloadSpsWardrobe(): Promise<void> {
+  if (!spsLoadPromise) {
+    spsLoadPromise = loadSpsWardrobe().finally(() => { spsLoadPromise = null; });
+  }
+  return spsLoadPromise;
 }
 
 const spsSource: WardrobeSource = {
@@ -391,7 +562,8 @@ const spsSource: WardrobeSource = {
   },
   swap(a, b) { swapSlots(this, a, b); },
   persist: persistSps,
-  reload() { void loadSpsWardrobe(); },
+  reload: reloadSpsWardrobe,
+  isReady: () => spsReady,
 };
 
 export function wardrobeSourceById(id: WardrobeSourceId): WardrobeSource {
@@ -422,15 +594,9 @@ export function reloadWardrobeData() {
   onlineSource.reload();
   migrateLegacyExtensionWardrobe();
   localSource.reload();
-  if (settings.wardrobeSpsEnabled.get()) spsSource.reload();
+  if (settings.wardrobeSpsEnabled.get()) void spsSource.reload();
 }
 
-/**
- * One-time move of AEE's old separate extension wardrobe (LIKO_AEE_WARDROBE, the segment that
- * used to stack on top as slots 96+) into empty slots of the shared 96-slot wardrobe, so users
- * don't lose those outfits when the extra segment is dropped. Best-effort: anything that doesn't
- * fit stays untouched in the old key as a backup.
- */
 function migrateLegacyExtensionWardrobe() {
   if (settings.wardrobeFbcMigrated.get()) return;
   settings.wardrobeFbcMigrated.set(true);
@@ -476,30 +642,29 @@ function migrateLegacyExtensionWardrobe() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Slot metadata (favorites / tags)
-// ---------------------------------------------------------------------------
-
 function slotMetaKey(source: WardrobeSourceId, index: number): string {
-  // Online outfits live at fixed Player.Wardrobe indices now, so meta keys by absolute index.
-  // The `b` prefix is retained so existing keys (from the previous 96-slot base) still match.
   if (source === 'online') return `online:${accountScope()}:b${index}`;
+  if (source === 'sps') return `sps:${accountScope()}:${index}`;
   return `local:${storageScope()}:${index}`;
 }
 
 export function getSlotMeta(source: WardrobeSourceId, index: number): WardrobeSlotMeta {
+  if (source === 'sps') return spsMeta[index] ?? emptySlotMeta();
   const meta = settings.wardrobeSlotMeta.get()[slotMetaKey(source, index)];
   return {favorite: !!meta?.favorite, tags: meta?.tags ?? []};
 }
 
 export function setSlotMeta(source: WardrobeSourceId, index: number, patch: Partial<WardrobeSlotMeta>) {
+  if (source === 'sps') {
+    if (index >= 0 && index < spsMeta.length) spsMeta[index] = {...getSlotMeta(source, index), ...patch};
+    return;
+  }
   settings.wardrobeSlotMeta.set({
     ...settings.wardrobeSlotMeta.get(),
     [slotMetaKey(source, index)]: {...getSlotMeta(source, index), ...patch},
   });
 }
 
-/** One-time rewrite of pre-split meta keys (`<scope>:<index>`) to source-prefixed keys. */
 function migrateSlotMeta() {
   if (settings.wardrobeMetaMigrated.get()) return;
 
@@ -522,10 +687,6 @@ function migrateSlotMeta() {
   settings.wardrobeSlotMeta.set(next);
   settings.wardrobeMetaMigrated.set(true);
 }
-
-// ---------------------------------------------------------------------------
-// Custom background
-// ---------------------------------------------------------------------------
 
 export function readCustomBackground(): string | null {
   try {

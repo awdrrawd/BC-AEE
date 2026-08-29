@@ -20,3 +20,17 @@ interface Window {
   EyeDropper?: EyeDropperConstructor;
   Liko: Record<string, unknown>;
 }
+
+interface StudioOauthToken {
+  token: string;
+  user: string;
+  resources: string[];
+  expires: number;
+}
+
+interface StudioOauthApi {
+  login(client: string | null, resources: string[]): Promise<StudioOauthToken | null>;
+  header(resource: string): Promise<string>;
+}
+
+declare let studioOauth: StudioOauthApi;

@@ -293,6 +293,7 @@
   "wardrobe-sps-about": "什么是SPS？",
   "wardrobe-sps-about-hint": "SPS 是在线衣柜，可跨服务器读取。点击右侧按钮前往官方仓库。",
   "wardrobe-toast-sps-load-failed": "SPS衣柜加载失败",
+  "wardrobe-toast-sps-loading": "正在加载SPS衣柜…",
   "wardrobe-toast-sps-save-failed": "SPS衣柜同步失败",
   "wardrobe-toast-sps-synced": "SPS衣柜已同步",
   "wardrobe-setting-categories": "启用服装分类/标签",

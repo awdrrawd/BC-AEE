@@ -32,6 +32,7 @@ import {settings} from '@/core/settings';
 export function ManagePanel({state}: { state: WardrobeState }) {
   const {portrait} = useStage();
   const hasSelection = state.selection >= 0;
+  const storageReady = state.source !== 'sps' || state.spsStatus === 'ready';
   const editing = hasSelection && state.editing;
   // Fixed width beside the grid in landscape; shares the top half and may scroll in portrait.
   // overflowY is set inline so it beats Panel's base `overflow-hidden` class.
@@ -39,8 +40,9 @@ export function ManagePanel({state}: { state: WardrobeState }) {
   const panelStyle = {animationDelay: '120ms', ...(portrait ? {overflowY: 'auto' as const} : {})};
 
   const save = async () => {
+    if (!storageReady) return;
     if (settings.wardrobeConfirmSave.get() && !(await askConfirm(t('wardrobe-confirm-save')))) return;
-    saveOutfit(state.selection, state.name);
+    await saveOutfit(state.selection, state.name);
   };
 
   const importFromClipboard = async () => {
@@ -54,7 +56,7 @@ export function ManagePanel({state}: { state: WardrobeState }) {
       } catch (error) {
         console.warn('🐈‍⬛ [AEE] Failed to read the clipboard', error);
       }
-      if (code) importOutfitFromCode(state.selection, code);
+      if (code) await importOutfitFromCode(state.selection, code);
       else showToast(t('wardrobe-toast-import-failed'));
       return;
     }
@@ -92,7 +94,7 @@ export function ManagePanel({state}: { state: WardrobeState }) {
 
     <Button density="stage"
             className="h-10 shrink-0 self-end px-6"
-            disabled={!hasSelection}
+            disabled={!hasSelection || !storageReady}
             onClick={() => void save()}
             icon={<Save className="h-5 w-5"/>}
     >{t('wardrobe-save')}</Button>
@@ -113,12 +115,14 @@ export function ManagePanel({state}: { state: WardrobeState }) {
 
     <TransferRow
       className="mt-[50px]"
+      disabled={hasSelection && !storageReady}
       label={hasSelection ? t('wardrobe-clipboard-save') : t('wardrobe-clipboard-save-worn')}
       onExport={() => (hasSelection ? exportOutfitToClipboard(state.selection) : exportWornToClipboard())}
       onImport={() => void importFromClipboard()}
     />
 
     <TransferRow
+      disabled={!storageReady}
       label={t('wardrobe-file-save')}
       onExport={() => openDialog(close => <ExportDialog onClose={close}/>)}
       onImportFile={file => void importFromFile(file)}

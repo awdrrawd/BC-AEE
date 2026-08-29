@@ -15,11 +15,9 @@ import {isPortraitActive} from '@/core/orientation';
 import {settings} from '@/core/settings';
 
 const BASE_GRID_COLS = 3;
-// In portrait the grid owns the bottom half on its own: a fixed 3×2 (人物卡) page.
 const PORTRAIT_GRID_COLS = 3;
 const PORTRAIT_GRID_ROWS = 2;
 const LANDSCAPE_GRID_ROWS = 2;
-// Side panels that can be hidden; each hidden one widens the grid by one column.
 const HIDEABLE_SIDE_PANELS = ['list', 'manage', 'preview'];
 
 /** True when the outfit list is collapsed away — it then frees a grid column, like hiding the panel. */
@@ -188,24 +186,44 @@ interface SlotSnapshot {
   index: number;
   outfit: ItemBundle[];
   name: string;
+  meta: ReturnType<typeof getSlotMeta>;
 }
 
 function snapshotSlots(source: WardrobeSource, indices: readonly number[]): SlotSnapshot[] {
-  return indices.map(index => ({index, outfit: source.outfitAt(index), name: source.nameAt(index)}));
+  return indices.map(index => ({
+    index,
+    outfit: source.outfitAt(index),
+    name: source.nameAt(index),
+    meta: {...getSlotMeta(source.id, index), tags: [...getSlotMeta(source.id, index).tags]},
+  }));
 }
 
 /**
  * Persists the slots covered by the snapshots, rolling the in-memory slots back
  * when the underlying storage rejects the write (quota / server size cap).
  */
-function commitWardrobeChanges(source: WardrobeSource, snapshots: readonly SlotSnapshot[]): boolean {
-  if (source.persist(snapshots.map(snapshot => snapshot.index))) return true;
-  snapshots.forEach(snapshot => source.writeSlot(snapshot.index, snapshot.outfit, snapshot.name));
-  showToast(t(source.id === 'online' ? 'wardrobe-toast-online-full' : 'wardrobe-toast-save-failed'));
+async function commitWardrobeChanges(source: WardrobeSource, snapshots: readonly SlotSnapshot[]): Promise<boolean> {
+  const rollback = () => snapshots.forEach(snapshot => {
+    source.writeSlot(snapshot.index, snapshot.outfit, snapshot.name);
+    setSlotMeta(source.id, snapshot.index, snapshot.meta);
+  });
+  if (!source.isReady()) {
+    rollback();
+    showToast(t('wardrobe-toast-sps-loading'), {color: '#f87171'});
+    return false;
+  }
+  try {
+    if (await source.persist(snapshots.map(snapshot => snapshot.index))) return true;
+  } catch (error) {
+    console.warn('🐈‍⬛ [AEE] Wardrobe persistence failed', error);
+  }
+  rollback();
+  showToast(t(source.id === 'online' ? 'wardrobe-toast-online-full'
+    : source.id === 'sps' ? 'wardrobe-toast-sps-save-failed' : 'wardrobe-toast-save-failed'), {color: '#f87171'});
   return false;
 }
 
-export function saveOutfit(index: number, name: string) {
+export async function saveOutfit(index: number, name: string) {
   const source = activeWardrobeSource();
   if (index < 0 || index >= source.size()) return;
   const character = getTargetCharacter();
@@ -220,7 +238,7 @@ export function saveOutfit(index: number, name: string) {
     }
     const snapshots = snapshotSlots(source, [index]);
     source.writeSlot(index, bundle, resolved);
-    if (!commitWardrobeChanges(source, snapshots)) return;
+    if (!await commitWardrobeChanges(source, snapshots)) return;
   } catch (error) {
     console.error('🐈‍⬛ [AEE] ❌ Failed to save the outfit', error);
     showToast(t('wardrobe-toast-save-failed'));
@@ -232,18 +250,18 @@ export function saveOutfit(index: number, name: string) {
 }
 
 /** Metadata-only save from the edit panel: replaces just the outfit's name and tags. */
-export function saveOutfitMeta(index: number, name: string, tags: string[]) {
+export async function saveOutfitMeta(index: number, name: string, tags: string[]): Promise<boolean> {
   const source = activeWardrobeSource();
-  if (index < 0 || index >= source.size() || !isSlotOccupied(index)) return;
+  if (index < 0 || index >= source.size() || !isSlotOccupied(index)) return false;
 
   const resolved = name.trim().slice(0, 40) || slotName(index);
   const snapshots = snapshotSlots(source, [index]);
   source.writeSlot(index, source.outfitAt(index), resolved);
-  if (!commitWardrobeChanges(source, snapshots)) return;
-
   setSlotMeta(source.id, index, {tags});
+  if (!await commitWardrobeChanges(source, snapshots)) return false;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-saved'));
+  return true;
 }
 
 export function tryOnOutfit(index: number) {
@@ -263,42 +281,46 @@ export function tryOnOutfit(index: number) {
   bumpWardrobeData();
 }
 
-export function deleteOutfit(index: number) {
+export async function deleteOutfit(index: number) {
   if (index < 0 || !isSlotOccupied(index)) return;
 
   const source = activeWardrobeSource();
   const snapshots = snapshotSlots(source, [index]);
   source.writeSlot(index, [], '');
-  if (!commitWardrobeChanges(source, snapshots)) return;
-
   setSlotMeta(source.id, index, {favorite: false, tags: []});
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   if (getWardrobeState().selection === index) setWardrobeState({selection: -1, name: ''});
   bumpWardrobeData();
 }
 
-export function swapOutfits(a: number, b: number) {
+export async function swapOutfits(a: number, b: number) {
   const source = activeWardrobeSource();
   if (a < 0 || b < 0 || a >= source.size() || b >= source.size() || a === b) return;
 
   const snapshots = snapshotSlots(source, [a, b]);
   source.swap(a, b);
-  if (!commitWardrobeChanges(source, snapshots)) return;
-
   const meta = getSlotMeta(source.id, a);
   setSlotMeta(source.id, a, getSlotMeta(source.id, b));
   setSlotMeta(source.id, b, meta);
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
 }
 
-export function toggleFavorite(index: number) {
+export async function toggleFavorite(index: number) {
   const source = activeWardrobeSource();
+  const snapshots = snapshotSlots(source, [index]);
   setSlotMeta(source.id, index, {favorite: !getSlotMeta(source.id, index).favorite});
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
 }
 
-export function setSlotTags(index: number, tags: string[]) {
-  setSlotMeta(activeWardrobeSource().id, index, {tags});
+export async function setSlotTags(index: number, tags: string[]): Promise<boolean> {
+  const source = activeWardrobeSource();
+  const snapshots = snapshotSlots(source, [index]);
+  setSlotMeta(source.id, index, {tags});
+  if (!await commitWardrobeChanges(source, snapshots)) return false;
   bumpWardrobeData();
+  return true;
 }
 
 export function knownTags(): string[] {
@@ -374,7 +396,7 @@ export function importCodeToWorn(code: string) {
   showToast(t('wardrobe-toast-imported'));
 }
 
-export function importOutfitFromCode(index: number, code: string) {
+export async function importOutfitFromCode(index: number, code: string) {
   const source = activeWardrobeSource();
   const bundle = decodeBundles(code)?.[0];
   if (!bundle || index < 0 || index >= source.size()) {
@@ -383,7 +405,7 @@ export function importOutfitFromCode(index: number, code: string) {
   }
   const snapshots = snapshotSlots(source, [index]);
   source.writeSlot(index, bundle, snapshots[0].name);
-  if (!commitWardrobeChanges(source, snapshots)) return;
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-imported'));
 }
@@ -439,19 +461,16 @@ export function readImportCode(code: string): PendingImport[] | null {
   return outfits.map(outfit => ({outfit}));
 }
 
-export function applyImports(plan: readonly { pending: PendingImport; target: number }[], source: WardrobeSource = activeWardrobeSource()): number {
+export async function applyImports(plan: readonly { pending: PendingImport; target: number }[], source: WardrobeSource = activeWardrobeSource()): Promise<number> {
   const entries = plan.filter(({target}) => target >= 0 && target < source.size());
   if (!entries.length) return 0;
 
   const snapshots = snapshotSlots(source, entries.map(entry => entry.target));
   for (const {pending, target} of entries) {
     source.writeSlot(target, pending.outfit, pending.name ? pending.name.slice(0, 40) : source.nameAt(target));
-  }
-  if (!commitWardrobeChanges(source, snapshots)) return 0;
-
-  for (const {pending, target} of entries) {
     if (pending.meta) setSlotMeta(source.id, target, pending.meta);
   }
+  if (!await commitWardrobeChanges(source, snapshots)) return 0;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-import-count', {n: entries.length}));
   return entries.length;

@@ -144,7 +144,10 @@ export function setSearch(search: string) {
 
 export function setWardrobeSource(source: WardrobeSourceId) {
   if (source === 'sps' && !settings.wardrobeSpsEnabled.get()) return;
-  if (source === getWardrobeState().source) return;
+  if (source === getWardrobeState().source) {
+    if (source === 'sps' && getWardrobeState().spsStatus === 'error') reloadWardrobeData();
+    return;
+  }
   settings.wardrobeSource.set(source);
   setWardrobeState({source, selection: -1, name: targetCharacterName(), editing: false, offset: 0, reorderMode: false, reorderFirst: -1});
   bumpWardrobeData();
@@ -252,7 +255,7 @@ export function markOrSwap(index: number) {
     return;
   }
   if (reorderFirst === index) return;
-  swapOutfits(reorderFirst, index);
+  void swapOutfits(reorderFirst, index);
   setWardrobeState({reorderMode: false, reorderFirst: -1});
 }
 

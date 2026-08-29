@@ -55,7 +55,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
 
   const chooseSource = (id: WardrobeSourceId) => {
     if (id === 'sps' && !spsEnabled) return;
-    wardrobeSourceById(id).reload();
+    void wardrobeSourceById(id).reload();
     setSourceId(id);
     setChoices({});
     setExpanded(new Set());
@@ -74,7 +74,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
     return next;
   });
 
-  const migrate = (backup: boolean) => {
+  const migrate = async (backup: boolean) => {
     const chosen = slots.flatMap(slot => {
       if (!slot.parts.some(part => selected(slot, part))) return [];
       return [{...slot, after: buildWardrobeMigrationOutfit(slot, character, part => selected(slot, part))}];
@@ -82,7 +82,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
     if (!chosen.length) return;
     try {
       if (backup && backupWardrobeSource(source) === 0) throw new Error('Wardrobe backup was empty');
-      if (!applyWardrobeMigration(source, chosen)) throw new Error('Wardrobe persistence rejected the migration');
+      if (!await applyWardrobeMigration(source, chosen)) throw new Error('Wardrobe persistence rejected the migration');
     } catch (error) {
       console.error('🐈‍⬛ [AEE] Failed to migrate wardrobe data', error);
       showToast(t('wardrobe-migration-failed'), {color: '#f87171'});

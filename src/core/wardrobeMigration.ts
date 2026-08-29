@@ -211,10 +211,10 @@ export function scanWardrobeMigration(source: WardrobeSource, character: Charact
   return slots;
 }
 
-export function applyWardrobeMigration(source: WardrobeSource, slots: readonly WardrobeMigrationSlot[]): boolean {
+export async function applyWardrobeMigration(source: WardrobeSource, slots: readonly WardrobeMigrationSlot[]): Promise<boolean> {
   const snapshots = slots.map(slot => ({index: slot.index, outfit: source.outfitAt(slot.index), name: source.nameAt(slot.index)}));
   for (const slot of slots) source.writeSlot(slot.index, slot.after, slot.name);
-  if (source.persist(slots.map(slot => slot.index))) return true;
+  if (await source.persist(slots.map(slot => slot.index))) return true;
   for (const snapshot of snapshots) source.writeSlot(snapshot.index, snapshot.outfit, snapshot.name);
   return false;
 }

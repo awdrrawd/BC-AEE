@@ -1,4 +1,8 @@
 /.idea
-/dist
+# 只追蹤可供 Loader 直接載入的發布本體；其他 build 產物仍忽略。
+/dist/*
+!/dist/assets/
+/dist/assets/*
+!/dist/assets/main.js
 /node_modules
 /BondageClub

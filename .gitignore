@@ -4,5 +4,6 @@
 !/dist/assets/
 /dist/assets/*
 !/dist/assets/main.js
+!/dist/assets/app.js
 /node_modules
 /BondageClub

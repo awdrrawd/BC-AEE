@@ -46,7 +46,6 @@ export default defineConfig({
     rollupOptions: {
       input: 'src/main.tsx',
       output: {
-        inlineDynamicImports: true,
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name].[ext]'

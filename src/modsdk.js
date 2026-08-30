@@ -29,6 +29,12 @@ try {
 
 import {MOD_VERSION} from '@/core/version';
 
+const existingAeeMod = bcModSdk.getModsInfo().find(mod => mod.name === 'Liko - AEE');
+if (existingAeeMod) {
+  console.warn('🐈‍⬛ [AEE] Already registered with Mod SDK, aborting duplicate init.');
+  throw new Error('[AEE] Duplicate Mod SDK registration prevented.');
+}
+
 const bcAeeModSdk = bcModSdk.registerMod({
     name: 'Liko - AEE',
     fullName: 'Liko - Appearance Editor',

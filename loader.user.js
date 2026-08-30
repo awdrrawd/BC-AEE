@@ -10,7 +10,7 @@
 // @run-at document-end
 // ==/UserScript==
 
-// The real duplicate-load guard lives in the bundle itself (src/core/version.ts),
+// The real duplicate-load guard lives in the bundle bootstrap (src/main.tsx),
 // so it still catches every case - including someone installing both this
 // loader and a directly-installed full copy of the script. This check here
 // is just an early, pre-download warning; it doesn't own the flag.

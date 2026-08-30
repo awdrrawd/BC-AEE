@@ -1,4 +1,4 @@
-import {getCanvas, getCanvasRect} from '@/core/bc';
+import {getCanvas} from '@/core/bc';
 import {clamp} from '@/util/math';
 import {getState, mutateState} from '@/core/store';
 import {settings} from '@/core/settings';
@@ -12,56 +12,6 @@ import {
   setGridEnabled
 } from '@/controllers/backgroundController';
 
-export const CTRL_BTN_SIZE = 52;
-
-export function assetUrl(path: string) {
-  const url = new URL(import.meta.url);
-  url.pathname = url.pathname.replace(/\/assets\/[^/]+$/, `/${path.replace(/^\//, '')}`);
-  return url.toString();
-}
-
-// View-control icons come from one 300x150 sprite sheet: two 150x150 tiles —
-// left (x 0..150) = frame/outline, right (x 150..300) = cat paw. The main
-// view-control button shows frame + paw composited; the sub (detail) buttons
-// show the frame only. `background-size: 200% 100%` scales each tile to the
-// (square) button; `background-position` 0%/100% picks the left/right tile.
-export const CTRL_ICONS_SHEET = assetUrl('AEE_icons.png');
-
-// Frame tile only (sub / detail buttons).
-export const CTRL_FRAME_STYLE = {
-  backgroundImage: `url(${CTRL_ICONS_SHEET})`,
-  backgroundSize: '200% 100%',
-  backgroundPosition: '0% 0%',
-  backgroundRepeat: 'no-repeat',
-} as const;
-
-// Cat paw over frame (main view-control button). First layer is drawn on top.
-export const CTRL_FRAME_PAW_STYLE = {
-  backgroundImage: `url(${CTRL_ICONS_SHEET}), url(${CTRL_ICONS_SHEET})`,
-  backgroundSize: '200% 100%, 200% 100%',
-  backgroundPosition: '100% 0%, 0% 0%',
-  backgroundRepeat: 'no-repeat, no-repeat',
-} as const;
-
-export function showCharControl() {
-  mutateState(draft => {
-    draft.charControl.visible = true;
-  });
-  alignCharControl();
-}
-
-export function hideCharControl() {
-  mutateState(draft => {
-    draft.charControl.visible = false;
-    draft.charControl.open = false;
-    draft.charControl.bgSubOpen = false;
-    draft.charControl.hideSubOpen = false;
-    draft.offset.open = false;
-    draft.pose.open = false;
-    draft.bg.settingsOpen = false;
-  });
-}
-
 export function toggleCharControlOpen() {
   mutateState(draft => {
     const next = !draft.charControl.open;
@@ -74,40 +24,6 @@ export function toggleCharControlOpen() {
       draft.charControl.hideSubOpen = false;
     }
   });
-}
-
-export function moveCharControl(left: number, top: number, persist = true) {
-  const rect = getCanvasRect();
-  let nextLeft = left;
-  let nextTop = top;
-  if (rect) {
-    nextLeft = clamp(left, 0, rect.width - CTRL_BTN_SIZE);
-    nextTop = clamp(top, 0, rect.height - CTRL_BTN_SIZE);
-  }
-  settings.charCtrlPos.set({left: nextLeft, top: nextTop}, persist);
-  mutateState(draft => {
-    draft.charControl.left = nextLeft;
-    draft.charControl.top = nextTop;
-  });
-}
-
-export function commitCharControlPos() {
-  const {left, top} = getState().charControl;
-  if (left != null && top != null) settings.charCtrlPos.set({left, top});
-}
-
-export function alignCharControl() {
-  const rect = getCanvasRect();
-  if (!rect) return;
-  const state = getState();
-  if (state.charControl.left != null && state.charControl.top != null) {
-    moveCharControl(state.charControl.left, state.charControl.top);
-  } else {
-    mutateState(draft => {
-      draft.charControl.left = rect.width * 0.01;
-      draft.charControl.top = rect.height * 0.87;
-    });
-  }
 }
 
 export function toggleExpandDirection() {

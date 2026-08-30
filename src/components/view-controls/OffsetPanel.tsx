@@ -19,14 +19,16 @@ import {Button, IconButton} from '@/components/ui/Button';
 import {ChevronDown, ChevronUp, X} from '@/components/view-controls/Icons';
 import {Panel} from '@/components/ui/Panel';
 import {clamp} from '@/util/math';
-import {settings, useSetting} from '@/core/settings';
+import {useSetting} from '@/core/settings';
+import {getViewSettings} from '@/core/viewSettings';
 import {useAnimatedPresence} from '@/components/view-controls/useAnimatedPresence';
 
 export function OffsetPanel({state}: { state: AeeState }) {
   const presence = useAnimatedPresence(state.offset.open);
-  const charOffsetX = useSetting(settings.charOffsetX);
-  const charOffsetY = useSetting(settings.charOffsetY);
-  const charScale = useSetting(settings.charScale);
+  const view = getViewSettings();
+  const charOffsetX = useSetting(view.charOffsetX);
+  const charOffsetY = useSetting(view.charOffsetY);
+  const charScale = useSetting(view.charScale);
   const drag = useRef<{ pointerId: number; sx: number; sy: number; left: number; top: number } | null>(null);
   const minimapThumbRef = useRef<HTMLSpanElement>(null);
   const pendingOffsetRef = useRef<{ x: number; y: number } | null>(null);

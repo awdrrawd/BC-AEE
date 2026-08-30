@@ -2,6 +2,8 @@ import {getCanvas} from '@/core/bc';
 import {clamp} from '@/util/math';
 import {getState, mutateState} from '@/core/store';
 import {settings} from '@/core/settings';
+import {getViewSettings} from '@/core/viewSettings';
+import {runtime} from '@/core/runtime';
 import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
   loadBgImage,
@@ -60,20 +62,21 @@ export function moveOffsetPanel(left: number, top: number) {
 }
 
 export function setOffsetX(x: number) {
-  settings.charOffsetX.set(clampOffsetX(x));
+  getViewSettings().charOffsetX.set(clampOffsetX(x));
 }
 
 export function setOffsetY(y: number) {
-  settings.charOffsetY.set(clampOffsetY(y));
+  getViewSettings().charOffsetY.set(clampOffsetY(y));
 }
 
 export function setOffsetXY(x: number, y: number, persist = true) {
-  settings.charOffsetX.set(clampOffsetX(x), persist);
-  settings.charOffsetY.set(clampOffsetY(y), persist);
+  const view = getViewSettings();
+  view.charOffsetX.set(clampOffsetX(x), persist);
+  view.charOffsetY.set(clampOffsetY(y), persist);
 }
 
 export function setCharScale(scale: number) {
-  settings.charScale.set(clamp(scale, 0.1, 5));
+  getViewSettings().charScale.set(clamp(scale, 0.1, 5));
 }
 
 function clampOffsetX(x: number) {
@@ -137,7 +140,10 @@ export function getPoseIconUrl(name: string) {
 export function applyPose(index: number) {
   const pose = POSES[index];
   if (!pose) return;
-  const target = CharacterAppearanceSelection || Player;
+  const target = CharacterAppearanceSelection
+    || (CurrentScreen === 'Crafting' ? CraftingPreview : null)
+    || runtime.itemColorChar
+    || Player;
   if (!target) return;
   try {
     CharacterSetActivePose(target, pose.name);
@@ -151,29 +157,35 @@ export function applyPose(index: number) {
 }
 
 export function toggleHide(kind: 'fullbody' | 'closeup') {
-  if (kind === 'fullbody') settings.hideFullbody.toggle();
-  else settings.hideCloseup.toggle();
+  const view = getViewSettings();
+  if (kind === 'fullbody') view.hideFullbody.toggle();
+  else view.hideCloseup.toggle();
 }
 
 export function toggleSolidBg() {
-  setBgEnabled(!settings.bgEnabled.get());
+  setBgEnabled(!getViewSettings().bgEnabled.get());
 }
 
 export function toggleGridBg() {
-  setGridEnabled(!settings.bgGridEnabled.get());
+  setGridEnabled(!getViewSettings().bgGridEnabled.get());
 }
 
 export function toggleImageBg() {
   const state = getState();
-  if (!settings.bgImgUrl.get()) {
+  const view = getViewSettings();
+  if (!view.bgImgUrl.get()) {
     openBgSettings(true);
     return;
   }
-  if (!state.bg.imageLoaded) loadBgImage(settings.bgImgUrl.get());
-  setBgImageEnabled(!settings.bgImgEnabled.get());
+  if (!state.bg.imageLoaded || runtime.bgImageUrl !== view.bgImgUrl.get()) loadBgImage(view.bgImgUrl.get());
+  setBgImageEnabled(!view.bgImgEnabled.get());
 }
 
 let wheelHandlersInstalled = false;
+
+function isViewControlScreen() {
+  return isInAppearanceScreen() || CurrentScreen === 'Crafting' || !!runtime.itemColorChar;
+}
 
 function isWheelOverAeeUi(event: WheelEvent): boolean {
   const path = event.composedPath?.() ?? [];
@@ -189,17 +201,17 @@ export function installViewControlHandlers() {
   document.addEventListener('keydown', event => {
     const state = getState();
     updateAppearanceScreenState();
-    if (!state.offset.wheelControl || !isInAppearanceScreen()) return;
+    if (!state.offset.wheelControl || !isViewControlScreen()) return;
     if (event.code === 'Space' && !event.repeat) {
       spaceDown = true;
       event.preventDefault();
     }
     if (event.ctrlKey && (event.code === 'Equal' || event.code === 'NumpadAdd')) {
-      setCharScale(settings.charScale.get() + 0.05);
+      setCharScale(getViewSettings().charScale.get() + 0.05);
       event.preventDefault();
     }
     if (event.ctrlKey && (event.code === 'Minus' || event.code === 'NumpadSubtract')) {
-      setCharScale(settings.charScale.get() - 0.05);
+      setCharScale(getViewSettings().charScale.get() - 0.05);
       event.preventDefault();
     }
   }, true);
@@ -223,21 +235,22 @@ export function installViewControlHandlers() {
   document.addEventListener('mousemove', event => {
     const state = getState();
     updateAppearanceScreenState();
-    if (!state.offset.wheelControl || !isInAppearanceScreen()) return;
+    if (!state.offset.wheelControl || !isViewControlScreen()) return;
     const dragging = wheelButtonDown || (spaceDown && event.buttons === 1);
     if (!dragging) return;
     const canvas = getCanvas();
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const scale = (canvas.width || 2000) / rect.width;
-    setOffsetX(settings.charOffsetX.get() + Math.round(event.movementX * scale));
-    setOffsetY(settings.charOffsetY.get() + Math.round(event.movementY * scale));
+    const view = getViewSettings();
+    setOffsetX(view.charOffsetX.get() + Math.round(event.movementX * scale));
+    setOffsetY(view.charOffsetY.get() + Math.round(event.movementY * scale));
   }, true);
 
   document.addEventListener('wheel', event => {
     const state = getState();
     updateAppearanceScreenState();
-    if (!state.offset.wheelControl || !isInAppearanceScreen()) return;
+    if (!state.offset.wheelControl || !isViewControlScreen()) return;
     if (spaceDown || wheelButtonDown) return;
     if (isWheelOverAeeUi(event)) return;
     const canvas = getCanvas();
@@ -246,7 +259,8 @@ export function installViewControlHandlers() {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return;
     event.preventDefault();
 
-    const oldScale = settings.charScale.get();
+    const view = getViewSettings();
+    const oldScale = view.charScale.get();
     const nextScale = clamp(+(oldScale + (event.deltaY > 0 ? -0.05 : 0.05)).toFixed(2), 0.1, 5);
     if (nextScale === oldScale) return;
     const cw = canvas.width || 2000;
@@ -256,13 +270,14 @@ export function installViewControlHandlers() {
     const pivotX = mouseCanvasX - 500;
     const pivotY = mouseCanvasY;
     const ratio = nextScale / oldScale;
-    setOffsetX(Math.round(pivotX + (settings.charOffsetX.get() - pivotX) * ratio));
-    setOffsetY(Math.round(pivotY + (settings.charOffsetY.get() - pivotY) * ratio));
+    setOffsetX(Math.round(pivotX + (view.charOffsetX.get() - pivotX) * ratio));
+    setOffsetY(Math.round(pivotY + (view.charOffsetY.get() - pivotY) * ratio));
     setCharScale(nextScale);
   }, {passive: false});
 }
 
 export function initializeViewBackground() {
-  if (settings.bgImgEnabled.get() && settings.bgImgUrl.get()) loadBgImage(settings.bgImgUrl.get());
-  if (settings.bgEnabled.get() || settings.bgGridEnabled.get()) saveBgAndRefresh();
+  const view = getViewSettings();
+  if (view.bgImgEnabled.get() && view.bgImgUrl.get()) loadBgImage(view.bgImgUrl.get());
+  if (view.bgEnabled.get() || view.bgGridEnabled.get()) saveBgAndRefresh();
 }

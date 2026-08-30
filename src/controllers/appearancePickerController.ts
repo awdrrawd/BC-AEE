@@ -63,6 +63,9 @@ function inSupportedAppearanceMode(): boolean {
 
 export function captureAppearanceDraw(character: Character, x: number, y: number, zoom: number, heightResize?: boolean) {
   if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || character !== pickerCharacter() || zoom > 2) return;
+  // Crafting draws the same preview twice. Keep its large, left-hand preview
+  // as the picking surface instead of letting the later 0.9x thumbnail replace it.
+  if (CurrentScreen === 'Crafting' && frameDrawAt && frameDrawAt.zoom > zoom) return;
   frameDrawAt = {x, y, zoom, heightResize};
 }
 

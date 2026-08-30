@@ -40,6 +40,7 @@ import {
   Layers3, Move, PersonStanding, RotateCcw, Scan, Scaling, Settings, SlidersHorizontal, Undo2, Upload, User,
 } from '@/components/main-panel/icons/Icons';
 import {getLayeringHideGroups} from '@/controllers/layeringHideController';
+import {getViewSettings} from '@/core/viewSettings';
 import {TiltIcon} from '@/components/main-panel/Icons';
 import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
 
@@ -214,11 +215,12 @@ export function ToolbarSide({state}: {state: AeeState}) {
 }
 
 function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
-  const bgEnabled = useSetting(settings.bgEnabled);
-  const bgGridEnabled = useSetting(settings.bgGridEnabled);
-  const bgImgEnabled = useSetting(settings.bgImgEnabled);
-  const hideCloseup = useSetting(settings.hideCloseup);
-  const hideFullbody = useSetting(settings.hideFullbody);
+  const view = getViewSettings();
+  const bgEnabled = useSetting(view.bgEnabled);
+  const bgGridEnabled = useSetting(view.bgGridEnabled);
+  const bgImgEnabled = useSetting(view.bgImgEnabled);
+  const hideCloseup = useSetting(view.hideCloseup);
+  const hideFullbody = useSetting(view.hideFullbody);
   return <div className={`aee-panel-collapse-motion absolute bottom-[69px] left-[80px] z-40 flex h-[74px] items-center gap-[10px] rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${open ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-full opacity-0'}`}>
     <ControlButton active={state.offset.open} label={t('char-control-offset-button')} icon={<Move className="h-full w-full"/>} onClick={() => toggleOffsetPanel()}/>
     <div className="relative">
@@ -309,7 +311,7 @@ function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState;
                     icon={<Scan/>} onClick={() => settings.appearancePick.toggle()}/> : null}
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
-      <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
+      {CurrentScreen === 'Appearance' || CurrentScreen === 'Crafting' ? <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/> : null}
       <ToolButton title={t('main-panel-tab-settings')} selected={managePanel === 'settings'} icon={<SvgIcon src={settingsIcon}/>} onClick={() => setManagePanel(managePanel === 'settings' ? null : 'settings')}/>
     </div>
   </>;
@@ -343,7 +345,7 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
     <div className="mt-auto flex flex-col gap-[7px]">
       <ToolButton title={state.toolbarLayout === 'neat' ? t('toolbar-mode-neat') : t('toolbar-mode-free')}
                   icon={<SvgIcon src={state.toolbarLayout === 'neat' ? neatIcon : freeIcon}/>} onClick={() => setToolbarLayout(state.toolbarLayout === 'neat' ? 'free' : 'neat')}/>
-      {CurrentScreen === 'Appearance' ? <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/> : null}
+      <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
       <ToolButton title={t('main-panel-tab-settings')} selected={state.editTool === 'settings'} icon={<SvgIcon src={settingsIcon}/>} onClick={openTool('settings')}/>
     </div>
   </>;

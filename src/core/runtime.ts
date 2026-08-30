@@ -46,6 +46,7 @@ export interface Runtime {
   originalUniformMatrix4fv: typeof WebGL2RenderingContext.prototype.uniformMatrix4fv | null;
   originalDrawArrays: typeof WebGL2RenderingContext.prototype.drawArrays | null;
   bgImageEl: HTMLImageElement | null;
+  bgImageUrl: string | null;
   originalCanvasDrawImage: typeof CanvasRenderingContext2D.prototype.drawImage | null;
   inAppearanceRun: boolean;
   currentDrawLayerItem: Item | null;
@@ -96,6 +97,7 @@ export const runtime: Runtime = {
   originalUniformMatrix4fv: null,
   originalDrawArrays: null,
   bgImageEl: null,
+  bgImageUrl: null,
   originalCanvasDrawImage: null,
   inAppearanceRun: false,
   currentDrawLayerItem: null,

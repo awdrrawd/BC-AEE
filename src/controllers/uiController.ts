@@ -22,6 +22,7 @@ import {runtime} from '@/core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '@/core/context';
 import {clearCopyBuffer} from '@/controllers/copyPasteController';
 import {loadAppearanceQuickSettings, saveAppearanceQuickSetting} from '@/core/appearanceQuickSettings';
+import {getLayerPickerSetting} from '@/core/viewSettings';
 import {
   clampPanelPosition,
   getAnchoredPanelPosition,
@@ -602,13 +603,14 @@ export function cycleLayerPickerMode() {
   // does not have that problem, so items cycle straight between off/detail.
   const isItem = getCurrentItem()?.Asset?.Group?.Category === 'Item';
   const order = isItem ? (['off', 'detail'] as const) : (['off', 'normal', 'detail'] as const);
-  let nextMode = settings.layerPickerMode.get();
+  const pickerSetting = getLayerPickerSetting();
+  let nextMode = pickerSetting.get();
   mutateState(draft => {
     const currentIndex = order.indexOf(draft.layerPickerMode as typeof order[number]);
     nextMode = order[(Math.max(currentIndex, 0) + 1) % order.length];
     draft.layerPickerMode = nextMode;
   });
-  settings.layerPickerMode.set(nextMode);
+  pickerSetting.set(nextMode);
 }
 
 export function applyLscgLayersVisibility() {

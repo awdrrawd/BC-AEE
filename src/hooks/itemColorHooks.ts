@@ -12,7 +12,8 @@ import {
   stopHoverHighlight
 } from '@/controllers/uiController';
 import {settings} from '@/core/settings';
-import {handleAppearancePickerClick} from '@/controllers/appearancePickerController';
+import {commitAppearancePickerFrame, drawAppearancePickerOutline, handleAppearancePickerClick} from '@/controllers/appearancePickerController';
+import {drawAboveGridIfNeeded} from '@/controllers/backgroundController';
 
 export function installItemColorHooks() {
   installLayerDiagnostics();
@@ -27,7 +28,11 @@ export function installItemColorHooks() {
     const state = getState();
     if (runtime.itemColorItem && (!state.visible || state.item !== runtime.itemColorItem)) syncCurrentContext();
     handleItemColorHover();
-    return next(args);
+    const result = next(args);
+    drawAboveGridIfNeeded();
+    commitAppearancePickerFrame();
+    drawAppearancePickerOutline();
+    return result;
   });
 
   // ItemColor has its own click dispatcher and does not consistently pass

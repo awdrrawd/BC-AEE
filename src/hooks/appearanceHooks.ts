@@ -10,7 +10,7 @@ import {
   syncAfterBcRender
 } from '@/controllers/uiController';
 import {getState} from '@/core/store';
-import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh} from '@/controllers/backgroundController';
+import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh, syncViewBackground} from '@/controllers/backgroundController';
 import {closeImportDialog} from '@/controllers/importExportController';
 import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
 import {resetPartsFilterMode, withFilteredGroups} from '@/controllers/partsFilterController';
@@ -28,6 +28,7 @@ import {
 } from '@/core/appearanceScreenMachine';
 import {settings} from '@/core/settings';
 import {syncCurrentContext} from '@/core/context';
+import {getViewSettings} from '@/core/viewSettings';
 import {
   captureAppearanceDraw,
   captureAppearanceImage,
@@ -221,28 +222,33 @@ export function installAppearanceHooks() {
     // the edited character through DrawCharacter. Capture that exact draw
     // rectangle so labels and hit boxes use the current Dialog coordinates
     // instead of a stale Appearance-screen map.
-    if (!runtime.inAppearanceRun) {
+    const craftingTarget = CurrentScreen === 'Crafting' && character === CraftingPreview;
+    const itemColorTarget = !runtime.inAppearanceRun && character === runtime.itemColorChar;
+    if (!runtime.inAppearanceRun && !craftingTarget && !itemColorTarget) {
       captureAppearanceDraw(character, args[1], args[2], scale, args[4]);
       return next(args);
     }
-    const isTarget = character && character === CharacterAppearanceSelection;
-    if (scale === 4) {
+    const isTarget = character && (character === CharacterAppearanceSelection || craftingTarget || itemColorTarget);
+    const view = getViewSettings();
+    const closeup = scale === 4 || (craftingTarget && Math.abs(scale - 2) < 0.05);
+    if (closeup) {
       if (!isTarget) return next(args);
-      if (settings.hideCloseup.get()) return;
+      if (view.hideCloseup.get()) return;
       return next(args);
     }
     if (Math.abs(scale - 1) < 0.1 || Math.abs(scale - 0.95) < 0.05) {
       if (!isTarget) return next(args);
-      if (settings.hideFullbody.get()) return;
+      if (view.hideFullbody.get()) return;
       const previewOffset = runtime.offsetPreview;
-      const offsetX = previewOffset?.x ?? settings.charOffsetX.get();
-      const offsetY = previewOffset?.y ?? settings.charOffsetY.get();
-      const hasOffset = offsetX !== 0 || offsetY !== 0 || settings.charScale.get() !== 1;
+      const offsetX = previewOffset?.x ?? view.charOffsetX.get();
+      const offsetY = previewOffset?.y ?? view.charOffsetY.get();
+      const charScale = view.charScale.get();
+      const hasOffset = offsetX !== 0 || offsetY !== 0 || charScale !== 1;
       if (hasOffset) {
         const nextArgs: (typeof args) = [...args];
         nextArgs[1] = args[1] + offsetX;
         nextArgs[2] = args[2] + offsetY;
-        nextArgs[3] = args[3] * settings.charScale.get();
+        nextArgs[3] = args[3] * charScale;
         captureAppearanceDraw(character, nextArgs[1], nextArgs[2], nextArgs[3], nextArgs[4]);
         return next(nextArgs);
       }
@@ -285,7 +291,9 @@ export function installAppearanceHooks() {
 
   bcAeeModSdk.hookFunction('CommonSetScreen', 1, (args, next) => {
     updateAppearanceScreenState();
-    return observeAppearanceScreenState(next(args));
+    const result = observeAppearanceScreenState(next(args));
+    syncViewBackground();
+    return result;
   });
 
   // Non-colourable modular assets (BC Plushie, ECHO 玩偶) never call

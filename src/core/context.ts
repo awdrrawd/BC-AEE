@@ -1,6 +1,7 @@
 import {getAppearanceMode, getCanvasRect, getCurrentGroup, getCurrentItem, isEditableAppearanceContext} from '@/core/bc';
 import {getState, mutateState, setState} from '@/core/store';
 import {runtime} from '@/core/runtime';
+import {getLayerPickerSetting} from '@/core/viewSettings';
 
 let lastGroup: string | null = null;
 let lastAsset: string | null = null;
@@ -35,6 +36,7 @@ export function syncCurrentContext() {
     draft.item = visible ? item : null;
     draft.group = visible ? group : null;
     draft.mode = mode;
+    draft.layerPickerMode = getLayerPickerSetting().get();
     draft.layers = visible ? (item?.Asset?.Layer || []) : [];
     draft.itemAssetName = visible ? assetName : null;
     draft.itemGroupName = visible ? groupName : null;

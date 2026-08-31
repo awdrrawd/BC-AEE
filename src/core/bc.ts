@@ -132,11 +132,50 @@ export function ensureOpacityArray(item: Item | null) {
   if (!item) return;
   if (!item.Property) item.Property = {};
   const layerCount = item.Asset?.Layer?.length || 1;
-  if (!Array.isArray(item.Property.Opacity) || item.Property.Opacity.length !== layerCount) {
-    const existing = item.Property.Opacity;
-    const base = typeof existing === 'number' ? existing : 1;
-    item.Property.Opacity = Array(layerCount).fill(base);
+  // ItemColor keeps its own editing state and writes it back when the screen is
+  // saved.  Never replace that array while the editor is open: doing so leaves
+  // ItemColorState pointing at the old values, which then overwrite AEE's edits
+  // on exit (most visibly after "all = 0, one layer > 0").
+  const editorOpacity = (ItemColorState && (ItemColorItem === item || runtime.itemColorItem === item))
+    ? ItemColorState.opacity : null;
+  if (Array.isArray(editorOpacity)) {
+    item.Property.Opacity = editorOpacity;
+  } else if (!Array.isArray(item.Property.Opacity)) {
+    const base = typeof item.Property.Opacity === 'number' ? item.Property.Opacity : 1;
+    item.Property.Opacity = [];
+    while (item.Property.Opacity.length < layerCount) item.Property.Opacity.push(base);
   }
+  while (item.Property.Opacity.length < layerCount) {
+    const layer = item.Asset?.Layer?.[item.Property.Opacity.length];
+    item.Property.Opacity.push(layer?.Opacity ?? 1);
+  }
+}
+
+/** Resolve the Property.Opacity slot exactly like BC's CommonDraw: layers with
+ * the same name (including an absent name) resolve to the last matching slot. */
+export function getOpacitySlot(item: Item | null, layerIndex: number): number {
+  const layers = item?.Asset?.Layer;
+  if (!Array.isArray(layers) || !layers[layerIndex]) return layerIndex;
+  const name = layers[layerIndex].Name;
+  let slot = layerIndex;
+  layers.forEach((layer, index) => {
+    if (layer.Name === name) slot = index;
+  });
+  return slot;
+}
+
+/** Write one physical layer through BC's native opacity storage. */
+export function setLayerOpacityAtIndex(item: Item, layerIndex: number, value: number) {
+  ensureOpacityArray(item);
+  const layer = item.Asset?.Layer?.[layerIndex];
+  const clamped = clamp(value, layer?.MinOpacity ?? 0, layer?.MaxOpacity ?? 1);
+  if (item.Property?.LayerOverrides?.[layerIndex]) {
+    delete item.Property.LayerOverrides[layerIndex].Opacity;
+  }
+  const slot = getOpacitySlot(item, layerIndex);
+  if (Array.isArray(item.Property?.Opacity)) item.Property.Opacity[slot] = clamped;
+  if (ItemColorState && (ItemColorItem === item || runtime.itemColorItem === item)
+    && Array.isArray(ItemColorState.opacity)) ItemColorState.opacity[slot] = clamped;
 }
 
 export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverrideKey, value: AeeLayerOverride[LayerOverrideKey]) {
@@ -191,13 +230,11 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
   if (key === 'Opacity') {
     ensureOpacityArray(item);
     indices.forEach(index => {
-      const layer = item.Asset?.Layer?.[index];
       const rawOpacity = typeof value === 'number' ? value : 1;
-      const clamped = clamp(rawOpacity, layer?.MinOpacity ?? 0, layer?.MaxOpacity ?? 1);
-      if (!item.Property.LayerOverrides[index]) item.Property.LayerOverrides[index] = {};
-      item.Property.LayerOverrides[index].Opacity = clamped;
-      const opacityArray = item.Property.Opacity;
-      if (Array.isArray(opacityArray) && index < opacityArray.length) opacityArray[index] = clamped;
+      // Opacity is a native BC property. LayerOverrides is reserved for AEE's
+      // non-native transforms; keeping a second persistent opacity value made
+      // the UI disagree with what CommonDraw actually rendered.
+      setLayerOpacityAtIndex(item, index, rawOpacity);
     });
     const character = getCurrentCharacter();
     if (character) {
@@ -245,19 +282,21 @@ export function getOpacity(item: Item | null, idx: LayerId): number | null {
   if (idx === 'all') {
     const count = item?.Asset?.Layer?.length || 1;
     let commonValue: number | null = null;
+    const seenSlots = new Set<number>();
     for (let index = 0; index < count; index++) {
-      const layerOverride = item?.Property?.LayerOverrides?.[index];
-      const value = layerOverride?.Opacity ?? (Array.isArray(item.Property?.Opacity) ? item.Property.Opacity[index] : 1) ?? 1;
-      if (index === 0) commonValue = value;
+      const slot = getOpacitySlot(item, index);
+      if (seenSlots.has(slot)) continue;
+      seenSlots.add(slot);
+      const value = Array.isArray(item.Property?.Opacity) ? item.Property.Opacity[slot] ?? 1 : 1;
+      if (commonValue === null) commonValue = value;
       else if (Math.abs(value - commonValue!) > 0.005) return null;
     }
     return commonValue;
   }
   const index = parseInt(idx, 10);
-  const layerOverride = item?.Property?.LayerOverrides?.[index];
-  if (layerOverride?.Opacity != null) return layerOverride.Opacity;
+  const slot = getOpacitySlot(item, index);
   const rawOpacity = item?.Property?.Opacity;
-  return Array.isArray(rawOpacity) ? rawOpacity[index] : (typeof rawOpacity === 'number' ? rawOpacity : 1);
+  return Array.isArray(rawOpacity) ? rawOpacity[slot] : (typeof rawOpacity === 'number' ? rawOpacity : 1);
 }
 
 export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverride & { Opacity: number } {
@@ -454,6 +493,8 @@ export function setLayerColor(item: Item | null, layerIdx: LayerId, hexColor: st
     while ((item.Color as BCColor[]).length <= colorIndex) (item.Color as BCColor[]).push('#FFFFFF');
     (item.Property.Color as BCColor[])[colorIndex] = color;
     (item.Color as BCColor[])[colorIndex] = color;
+    if (ItemColorState && (ItemColorItem === item || runtime.itemColorItem === item)
+      && Array.isArray(ItemColorState.colors)) ItemColorState.colors[colorIndex] = color;
   });
   refreshCurrentCharacter(false);
 }

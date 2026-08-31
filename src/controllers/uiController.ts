@@ -16,6 +16,7 @@ import {
   refreshAfterLayerEdit,
   refreshCurrentCharacter,
   setLayerColor,
+  setLayerOpacityAtIndex,
   setLayerOverride,
 } from '@/core/bc';
 import {runtime} from '@/core/runtime';
@@ -432,9 +433,7 @@ export function resetEditProperty(ctrl: string) {
     ensureOpacityArray(item);
     indices.forEach(index => {
       const def = item.Asset?.Layer?.[index]?.Opacity ?? 1;
-      if (item.Property.LayerOverrides?.[index]) delete item.Property.LayerOverrides[index].Opacity;
-      const opacityArray = item.Property.Opacity;
-      if (Array.isArray(opacityArray) && index < opacityArray.length) opacityArray[index] = def;
+      setLayerOpacityAtIndex(item, index, def);
     });
     refreshCurrentCharacter(true);
   } else if (ctrl === 'sx') setLayerOverride(item, idx, 'ScaleX', 1);

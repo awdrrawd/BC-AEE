@@ -2,7 +2,7 @@ import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
 import {getState} from '@/core/store';
 import {syncCurrentContext} from '@/core/context';
-import {getCanvasRect, getCurrentItem, getEditableParts, getLayerColor, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
+import {getCanvasRect, getCurrentItem, getEditableParts, getLayerColor, getLayerDisplayName, getLayerGroupMembers, getOpacity} from '@/core/bc';
 import {observeAppearanceScreenState, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
 import {
   applyLscgLayersVisibility,
@@ -140,8 +140,8 @@ export function installItemColorHooks() {
       currentOpacityPct = Math.round(parseInt(hexInput.value.slice(7, 9), 16) / 255 * 100);
     } else if (runtime.pickerContext?.indices?.length === 1 && runtime.pickerContext?.item) {
       const layerIndex = pickerLayerIdx >= 0 ? pickerLayerIdx : runtime.pickerContext.indices[0];
-      const opacity = runtime.pickerContext.item.Property?.Opacity?.[layerIndex + 1] ?? runtime.pickerContext.item.Property?.Opacity?.[layerIndex];
-      if (opacity !== undefined) currentOpacityPct = Math.round(opacity * 100);
+      const opacity = getOpacity(runtime.pickerContext.item, String(layerIndex));
+      if (opacity != null) currentOpacityPct = Math.round(opacity * 100);
     }
 
     openColorPicker(cachedHex, hex => {

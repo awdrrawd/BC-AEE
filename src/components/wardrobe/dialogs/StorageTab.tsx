@@ -5,12 +5,12 @@ import {fbcWardrobeUsage} from '@/core/wardrobeStorage';
 import {SettingRow} from '@/components/ui/SettingRow';
 import {Button} from '@/components/ui/Button';
 
-const ROW_CLASS = 'flex shrink-0 rounded-lg border border-white/8 bg-black/35 px-4';
+const ROW_CLASS = 'flex shrink-0 rounded-lg border border-white/8 bg-black/35 px-4 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)';
 
 function Gauge({label, hint, used, budget}: {label: string; hint: string; used: number; budget: number}) {
   const pct = Math.min(100, Math.round((used / budget) * 100));
   const danger = pct >= 90;
-  return <div className={`${ROW_CLASS} flex-col gap-1.5 py-3`} title={hint}>
+  return <div className={`${ROW_CLASS} flex-col gap-1.5 py-3`} data-aee-tooltip={hint}>
     <div className="flex items-baseline justify-between text-[22px]">
       <span className="text-[#f0eee4]">{label}</span>
       <span className={danger ? 'text-red-400' : 'text-zinc-400'}>{pct}%</span>

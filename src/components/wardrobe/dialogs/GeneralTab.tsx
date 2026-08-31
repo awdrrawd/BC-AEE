@@ -10,13 +10,13 @@ const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
   {labelKey: 'wardrobe-setting-portrait', setting: settings.wardrobePortrait},
 ];
 
-const ROW_CLASS = 'flex h-[50px] shrink-0 items-center rounded-lg border border-white/8 bg-black/35 px-4';
+const ROW_CLASS = 'flex h-[50px] shrink-0 items-center rounded-lg border border-white/8 bg-black/35 px-4 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)';
 
 export function GeneralTab() {
   const language = getUiLanguageSetting();
 
   return <div className="flex flex-col gap-3">
-    <div className={`${ROW_CLASS} justify-between gap-4`}>
+    <div className={`${ROW_CLASS} justify-between gap-4`} data-aee-tooltip={t('wardrobe-language')}>
       <span className="text-[26px] text-[#f0eee4]">{t('wardrobe-language')}</span>
       <Select
         density="stage"

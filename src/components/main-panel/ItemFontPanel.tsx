@@ -113,7 +113,7 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
       <span className="flex min-w-0 items-center gap-1.5">
         {size !== undefined && <span
           className={`h-1.5 w-1.5 shrink-0 rounded-full ${loaded ? 'bg-(--aee-accent)' : 'bg-zinc-600'}`}
-          title={loaded ? t('settings-item-font-loaded-tooltip') : undefined}
+          data-aee-tooltip={loaded ? t('settings-item-font-loaded-tooltip') : undefined}
         />}
         <span className="truncate text-[24px]">{label}</span>
       </span>

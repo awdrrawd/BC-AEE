@@ -30,8 +30,9 @@ export function getAnchoredPanelPosition(canvasRect: CanvasRect, anchor: Overlay
 }
 
 export function clampPanelPosition(left: number, top: number, canvasRect: CanvasRect, panelWidth = TOOL_PANEL_WIDTH, panelMinHeight = TOOL_PANEL_MIN_HEIGHT) {
+  const scale = canvasRect.width / 2000;
   return {
-    left: clamp(left, OVERLAY_MARGIN, canvasRect.width - panelWidth - OVERLAY_MARGIN),
-    top: clamp(top, OVERLAY_MARGIN, canvasRect.height - panelMinHeight),
+    left: clamp(left, OVERLAY_MARGIN, canvasRect.width - panelWidth * scale - OVERLAY_MARGIN),
+    top: clamp(top, OVERLAY_MARGIN, canvasRect.height - panelMinHeight * scale - OVERLAY_MARGIN),
   };
 }

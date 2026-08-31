@@ -10,7 +10,8 @@ export function SettingToggle({label, checked, onChange, density = 'compact', cl
   /** Hover text; falls back to the label when omitted. */
   tooltip?: string;
 }) {
-  return <div className={cn('flex w-full items-center justify-between gap-4', className)} title={tooltip ?? label}>
+  return <div className={cn('flex w-full items-center justify-between gap-4', className)}
+              data-aee-tooltip={tooltip ?? label}>
     <span
       className={cn('min-w-0 whitespace-normal break-words text-[var(--aee-text)]', density === 'stage' ? 'text-[24px]' : 'text-xs')}>{label}</span>
     <Switch checked={checked} onChange={onChange} ariaLabel={label} size={density === 'stage' ? 'md' : 'lg'}/>

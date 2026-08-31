@@ -9,7 +9,8 @@ const QUICK_PRESETS = new Set(['gold', 'sapphire', 'emerald', 'rose', 'amethyst'
 export function HoverOutlineSelect() {
   const value = useSetting(settings.hoverOutlineColor);
   const custom = useSetting(settings.hoverOutlineCustomColor);
-  return <div className="flex min-h-11 items-center justify-between gap-2 border-b border-zinc-800 py-2">
+  return <div className="flex min-h-11 items-center justify-between gap-2 border-b border-zinc-800 px-1 py-2 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)"
+              data-aee-tooltip={t('settings-hover-outline')}>
     <span className="min-w-0 text-xs text-zinc-300">{t('settings-hover-outline')}</span>
     <div className="flex min-w-0 max-w-[65%] items-center gap-2">
       <Select value={value} ariaLabel={t('settings-hover-outline')} onValueChange={next => settings.hoverOutlineColor.set(next as HoverOutlineColor)}>

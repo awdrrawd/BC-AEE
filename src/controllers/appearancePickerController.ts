@@ -40,7 +40,7 @@ export function appearancePickerEnabled(): boolean {
 
 function layerPickerEnabled(): boolean {
   const state = getState();
-  return state.visible && !!state.item && !state.activeDrag && state.layerPickerMode !== 'off';
+  return state.visible && !!state.item && !state.activeDrag && !state.colorPicker.open && state.layerPickerMode !== 'off';
 }
 
 function layerCaptureEnabled(): boolean {

@@ -87,7 +87,7 @@ export function togglePartsOpen(open?: boolean, anchor?: OverlayAnchor) {
         draft.partsLeft = (80 + 350 + 12) * scale;
         draft.partsTop = 80 * scale;
       } else if (anchor) {
-        const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH * scale, PARTS_PANEL_MIN_HEIGHT * scale);
+        const pos = getAnchoredPanelPosition(draft.canvasRect, anchor, PARTS_PANEL_WIDTH, PARTS_PANEL_MIN_HEIGHT);
         draft.partsLeft = pos.left;
         draft.partsTop = pos.top;
       } else {

@@ -5,6 +5,7 @@ import {type LocalWardrobeRecord, readLocalWardrobeRecord, writeLocalWardrobeRec
 import {listSpsKeys, readSpsText, SPS_WARDROBE_PREFIX, writeSpsText} from '@/core/sps';
 import {showToast} from '@/util/toast';
 import {t} from '@/i18n/i18n';
+import {imageFileToWebp, readBackgroundBlob, writeBackgroundBlob} from '@/core/backgroundImageStore';
 
 const DEFAULT_WARDROBE_SIZE = 24;
 const EXPANDED_WARDROBE_SIZE = 96;
@@ -12,6 +13,7 @@ const LOCAL_WARDROBE_SIZE = 288;
 const SPS_WARDROBE_CHUNK_SIZE = 300;
 
 const CUSTOM_BG_KEY = 'liko-aee-wardrobe-bg';
+const CUSTOM_BG_ID = 'wardrobe';
 const LOCAL_WARDROBE_PREFIX = 'liko-aee-wardrobe-local:';
 const LEGACY_ONLINE_BACKUP_PREFIX = 'liko-aee-wardrobe-backup:';
 
@@ -527,17 +529,46 @@ function migrateSlotMeta() {
 // Custom background
 // ---------------------------------------------------------------------------
 
-export function readCustomBackground(): string | null {
-  try {
-    return localStorage.getItem(CUSTOM_BG_KEY);
-  } catch {
-    return null;
-  }
+let customBackgroundObjectUrl: string | null = null;
+let customBackgroundLoading: Promise<void> | null = null;
+
+function setCustomBackgroundBlob(blob: Blob) {
+  if (customBackgroundObjectUrl) URL.revokeObjectURL(customBackgroundObjectUrl);
+  customBackgroundObjectUrl = URL.createObjectURL(blob);
+  bumpWardrobeData();
 }
 
-export function writeCustomBackground(dataUrl: string): boolean {
+async function loadCustomBackground() {
+  let blob = await readBackgroundBlob(CUSTOM_BG_ID).catch(() => null);
+  if (!blob) {
+    // One-time migration from the old localStorage data URL representation.
+    let legacy: string | null = null;
+    try { legacy = localStorage.getItem(CUSTOM_BG_KEY); } catch { /* unavailable */ }
+    if (legacy) {
+      const source = await fetch(legacy).then(response => response.blob());
+      blob = await imageFileToWebp(new File([source], 'wardrobe-background', {type: source.type}), 0.95);
+      await writeBackgroundBlob(CUSTOM_BG_ID, blob);
+      try { localStorage.removeItem(CUSTOM_BG_KEY); } catch { /* unavailable */ }
+    }
+  }
+  if (blob) setCustomBackgroundBlob(blob);
+}
+
+export function readCustomBackground(): string | null {
+  if (!customBackgroundObjectUrl && !customBackgroundLoading) {
+    customBackgroundLoading = loadCustomBackground()
+      .catch(error => console.warn('🐈‍⬛ [AEE] Failed to load the custom wardrobe background', error))
+      .finally(() => { customBackgroundLoading = null; });
+  }
+  return customBackgroundObjectUrl;
+}
+
+export async function writeCustomBackground(file: File): Promise<boolean> {
   try {
-    localStorage.setItem(CUSTOM_BG_KEY, dataUrl);
+    const blob = await imageFileToWebp(file, 0.95);
+    await writeBackgroundBlob(CUSTOM_BG_ID, blob);
+    setCustomBackgroundBlob(blob);
+    try { localStorage.removeItem(CUSTOM_BG_KEY); } catch { /* unavailable */ }
     return true;
   } catch (error) {
     console.warn('🐈‍⬛ [AEE] Failed to store the custom wardrobe background', error);

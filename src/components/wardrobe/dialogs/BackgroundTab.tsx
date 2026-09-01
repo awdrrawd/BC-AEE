@@ -18,17 +18,13 @@ export function BackgroundTab() {
   const current = useSetting(settings.wardrobeBgImage);
   const apply = (path: string) => settings.wardrobeBgImage.set(path);
 
-  const upload = (file: File) => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      if (typeof reader.result !== 'string' || !writeCustomBackground(reader.result)) {
-        showToast(t('wardrobe-alert-image-too-big'));
-        return;
-      }
+  const upload = async (file: File) => {
+    try {
+      if (!await writeCustomBackground(file)) throw new Error('Background write failed');
       apply(CUSTOM_BG_PATH);
-    });
-    reader.addEventListener('error', () => showToast(t('wardrobe-toast-import-failed')));
-    reader.readAsDataURL(file);
+    } catch {
+      showToast(t('wardrobe-toast-import-failed'));
+    }
   };
 
   const choose = async (choice: BackgroundChoice) => {
@@ -63,7 +59,7 @@ export function BackgroundTab() {
           choice={choice}
           current={current}
           onApply={apply}
-          onUpload={upload}
+          onUpload={file => void upload(file)}
           onPrompt={value => void choose(value)}
         />
       </BackgroundCard>)}

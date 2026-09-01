@@ -52,13 +52,13 @@ function ColorSettingRow({color, onChange, onPick}: {
     <ColorSwatch color={color} checkerboard className="h-7 w-7" onClick={onPick}/>
     {editing
       ? <TextInput ref={inputRef} value={draft} onChange={event => setDraft(event.target.value)}
-                   className="h-7 w-24 font-mono text-[13px] uppercase" maxLength={7}
+                   className="h-7 w-20 font-mono text-[13px] uppercase" maxLength={7}
                    onBlur={commit} onKeyDown={event => {
                      if (event.key === 'Enter') commit();
                      else if (event.key === 'Escape') { setDraft(color); setEditing(false); }
                    }}/>
-      : <span className="w-24 font-mono text-[13px] uppercase text-teal-300">{color}</span>}
-    <Button iconOnly className="h-7 w-7" aria-label={t('background-settings-color-code-edit-button')}
+      : <span className="w-20 font-mono text-[13px] uppercase text-teal-300">{color}</span>}
+    <Button iconOnly className="-ml-1 h-7 w-7" aria-label={t('background-settings-color-code-edit-button')}
             onPointerDown={event => event.preventDefault()} onClick={() => setEditing(true)}>
       <Pencil className="h-3.5 w-3.5"/>
     </Button>

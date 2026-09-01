@@ -97,6 +97,13 @@ The hover-outline and canvas-picking implementation was adapted from **XinLian13
 
 ---
 
+## 🧭 開發文件 · Developer Documentation
+
+- [AEE 架構與擴充指南](./docs/architecture.md)
+- [互動式功能分支圖](./docs/aee-architecture.html)
+
+---
+
 ## 📄 授權 · License
 
 本專案採用自訂授權條款（借鑑 GPLv3 的著佐權精神，並附加商業使用之實質修改門檻），並非 MIT、也非官方 GPLv3，完整條文請見 [LICENSE](./LICENSE)。散布或修改本專案時，請保留授權聲明並標示原作者與協力者。  

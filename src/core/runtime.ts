@@ -47,6 +47,7 @@ export interface Runtime {
   originalDrawArrays: typeof WebGL2RenderingContext.prototype.drawArrays | null;
   bgImageEl: HTMLImageElement | null;
   bgImageUrl: string | null;
+  bgImageObjectUrl: string | null;
   originalCanvasDrawImage: typeof CanvasRenderingContext2D.prototype.drawImage | null;
   inAppearanceRun: boolean;
   currentDrawLayerItem: Item | null;
@@ -98,6 +99,7 @@ export const runtime: Runtime = {
   originalDrawArrays: null,
   bgImageEl: null,
   bgImageUrl: null,
+  bgImageObjectUrl: null,
   originalCanvasDrawImage: null,
   inAppearanceRun: false,
   currentDrawLayerItem: null,

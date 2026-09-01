@@ -1,10 +1,18 @@
 import {getCanvas, getCanvasRect} from '@/core/bc';
 import {mutateState} from '@/core/store';
 import {runtime} from '@/core/runtime';
-import {getViewSettings} from '@/core/viewSettings';
+import {getViewSettings, getViewSettingsContext} from '@/core/viewSettings';
 import {darken, hexToRgb, rgba} from '@/util/color';
 import {clamp} from '@/util/math';
 import {openColorPicker} from '@/controllers/uiController';
+import {
+  deleteBackgroundBlob,
+  imageFileToWebp,
+  localBackgroundId,
+  localBackgroundUrl,
+  readBackgroundBlob,
+  writeBackgroundBlob,
+} from '@/core/backgroundImageStore';
 
 export function setBgEnabled(enabled: boolean) {
   getViewSettings().bgEnabled.set(enabled);
@@ -32,7 +40,7 @@ export function setGridColor(color: string) {
 }
 
 export function setGridPx(px: number) {
-  getViewSettings().bgGridPx.set(clamp(px || 25, 5, 200));
+  getViewSettings().bgGridPx.set(clamp(px || 35, 5, 200));
   saveBgAndRefresh();
 }
 
@@ -54,16 +62,34 @@ export function setBgImageEnabled(enabled: boolean) {
 }
 
 export function setBgImageUrl(url: string) {
+  const previousLocalId = localBackgroundId(getViewSettings().bgImgUrl.get());
   getViewSettings().bgImgUrl.set(url);
   mutateState(draft => {
     draft.bg.imageLoaded = false;
   });
-  if (url) loadBgImage(url);
+  if (previousLocalId && previousLocalId !== localBackgroundId(url)) {
+    deleteBackgroundBlob(previousLocalId).catch(error => console.warn('[AEE] Failed to delete background image', error));
+  }
+  if (url) void loadBgImage(url);
   else {
+    if (runtime.bgImageObjectUrl) URL.revokeObjectURL(runtime.bgImageObjectUrl);
     runtime.bgImageEl = null;
     runtime.bgImageUrl = null;
+    runtime.bgImageObjectUrl = null;
     saveBgAndRefresh();
   }
+}
+
+function currentBackgroundStorageId() {
+  return getViewSettingsContext() === 'crafting' ? 'crafting' : 'appearance';
+}
+
+export async function setBgImageFile(file: File): Promise<void> {
+  if (!file.type.startsWith('image/')) throw new Error('The selected file is not an image');
+  const id = currentBackgroundStorageId();
+  const blob = await imageFileToWebp(file, 0.95);
+  await writeBackgroundBlob(id, blob);
+  setBgImageUrl(localBackgroundUrl(id));
 }
 
 export function openBgSettings(open?: boolean) {
@@ -101,7 +127,11 @@ export function saveBgAndRefresh() {
   }
 }
 
-export function loadBgImage(url: string) {
+export async function loadBgImage(url: string) {
+  if (runtime.bgImageObjectUrl) {
+    URL.revokeObjectURL(runtime.bgImageObjectUrl);
+    runtime.bgImageObjectUrl = null;
+  }
   runtime.bgImageEl = null;
   runtime.bgImageUrl = url || null;
   mutateState(draft => {
@@ -109,7 +139,20 @@ export function loadBgImage(url: string) {
   });
   if (!url) return;
   const img = new Image();
-  img.crossOrigin = 'anonymous';
+  const localId = localBackgroundId(url);
+  let source = url;
+  if (localId) {
+    const blob = await readBackgroundBlob(localId).catch(() => null);
+    if (runtime.bgImageUrl !== url) return;
+    if (!blob) {
+      mutateState(draft => { draft.bg.imageLoaded = false; });
+      return;
+    }
+    source = URL.createObjectURL(blob);
+    runtime.bgImageObjectUrl = source;
+  } else {
+    img.crossOrigin = 'anonymous';
+  }
   img.onload = () => {
     if (runtime.bgImageUrl !== url) return;
     runtime.bgImageEl = img;
@@ -125,7 +168,7 @@ export function loadBgImage(url: string) {
       draft.bg.imageLoaded = false;
     });
   };
-  img.src = url;
+  img.src = source;
 }
 
 export function drawBgGrid(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, forceLayer?: 'below' | 'above') {
@@ -139,7 +182,7 @@ export function drawBgGrid(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElem
   // Every fourth line is drawn a little stronger, so the grid reads at a glance.
   const color = rgba(rgb, opacity);
   const color2 = rgba(rgb, Math.min(1, opacity + 0.15));
-  const px = view.bgGridPx.get() || 25;
+  const px = view.bgGridPx.get() || 35;
   const bigPx = px * 4;
 
   if (view.bgGridMode.get() === 'line') {

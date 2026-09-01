@@ -20,7 +20,7 @@ export const RangeInput = memo(function RangeInput({min, max, step, value, onCha
   return <input
     ref={ref}
     type="range"
-    className={className ?? rangeClass}
+    className={`${className ?? rangeClass} aee-rhombus-range`}
     min={min}
     max={max}
     step={step}

@@ -36,7 +36,7 @@ import {getLayerColor, getLayerDisplayName, getOpacity} from '@/core/bc';
 import {Panel} from '@/components/ui/Panel';
 import {t} from '@/i18n/i18n';
 import {
-  Accessibility, Download, Eye, EyeOff, FlipHorizontal2, Grid3x3, ImageIcon,
+  Download, Eye, EyeOff, FlipHorizontal2, Grid3x3, ImageIcon,
   Layers3, Move, PersonStanding, RotateCcw, Scan, Scaling, Settings, SlidersHorizontal, Undo2, Upload, User,
 } from '@/components/main-panel/icons/Icons';
 import {getLayeringHideGroups} from '@/controllers/layeringHideController';
@@ -48,6 +48,7 @@ const settingsIcon = new URL('../assets/editor/Settings.svg', import.meta.url).h
 const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
 const neatIcon = new URL('../assets/editor/mod-Neat.svg', import.meta.url).href;
 const freeIcon = new URL('../assets/editor/mod-Free.svg', import.meta.url).href;
+const poseIcon = new URL('../assets/editor/Pose.svg', import.meta.url).href;
 
 type ManagePanel = 'settings' | null;
 
@@ -232,7 +233,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
         <ControlButton active={state.bg.settingsOpen} label={t('char-control-background-settings-button')} icon={<Settings className="h-full w-full"/>} onClick={() => openBgSettings()}/>
       </div>
     </div>
-    <ControlButton active={state.pose.open} label={t('char-control-pose-button')} icon={<Accessibility className="h-full w-full"/>} onClick={() => togglePoseWindow()}/>
+    <ControlButton active={state.pose.open} label={t('char-control-pose-button')} icon={<SvgIcon src={poseIcon}/>} onClick={() => togglePoseWindow()}/>
     <div className="relative">
       <ControlButton active={state.charControl.hideSubOpen || hideCloseup || hideFullbody} label={t('char-control-hide-menu-button')} icon={hideCloseup || hideFullbody ? <EyeOff className="h-full w-full"/> : <Eye className="h-full w-full"/>} onClick={toggleHideSubOpen}/>
       <div className={`aee-panel-collapse-motion absolute bottom-full left-1/2 mb-2 flex -translate-x-1/2 flex-col-reverse gap-[9px] rounded-lg border border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${state.charControl.hideSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>

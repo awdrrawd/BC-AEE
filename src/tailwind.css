@@ -88,15 +88,16 @@
     background: #050505;
 }
 
-.aee-tall-range::-webkit-slider-thumb {
-    width: 25px;
-    height: 25px;
-    margin-top: -10px;
+.aee-tall-range::-webkit-slider-thumb,
+.aee-rhombus-range::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -9.5px;
     appearance: none;
-    border: 2px solid var(--aee-accent);
-    border-radius: 50%;
     background: var(--aee-accent);
-    box-shadow: 0 0 5px var(--aee-accent-55);
+    -webkit-mask: url('./assets/editor/gemini-ai.svg') center / contain no-repeat;
+    mask: url('./assets/editor/gemini-ai.svg') center / contain no-repeat;
+    filter: drop-shadow(0 0 3px var(--aee-accent-55));
 }
 
 .aee-tall-range::-moz-range-track {
@@ -105,14 +106,16 @@
     background: #050505;
 }
 
-.aee-tall-range::-moz-range-thumb {
-    width: 25px;
-    height: 25px;
+.aee-tall-range::-moz-range-thumb,
+.aee-rhombus-range::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
     box-sizing: border-box;
-    border: 2px solid var(--aee-accent);
-    border-radius: 50%;
+    border: 0;
+    border-radius: 0;
     background: var(--aee-accent);
-    box-shadow: 0 0 5px var(--aee-accent-55);
+    mask: url('./assets/editor/gemini-ai.svg') center / contain no-repeat;
+    filter: drop-shadow(0 0 3px var(--aee-accent-55));
 }
 
 .aee-wave-text {

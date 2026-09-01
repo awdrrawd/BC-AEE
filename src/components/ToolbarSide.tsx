@@ -38,7 +38,7 @@ import {Panel} from '@/components/ui/Panel';
 import {t} from '@/i18n/i18n';
 import {
   Download, Eye, EyeOff, FlipHorizontal2, Grid3x3, ImageIcon,
-  Layers3, Move, PersonStanding, RotateCcw, Scan, Scaling, Settings, SlidersHorizontal, Undo2, Upload, User,
+  Layers3, Move, PersonStanding, RotateCcw, Scan, Scaling, Search, Settings, SlidersHorizontal, Undo2, Upload, User,
 } from '@/components/main-panel/icons/Icons';
 import {getLayeringHideGroups} from '@/controllers/layeringHideController';
 import {getViewSettings} from '@/core/viewSettings';
@@ -46,6 +46,7 @@ import {TiltIcon} from '@/components/main-panel/Icons';
 import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
 import {PartsBrowserPanel} from '@/components/parts-browser/PartsBrowserPanel';
 import {PartsBrowserButton} from '@/components/parts-browser/PartsBrowserButton';
+import {AssetPartsSearchPanel} from '@/components/asset-search/AssetPartsSearchPanel';
 
 const settingsIcon = new URL('../assets/editor/Settings.svg', import.meta.url).href;
 const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
@@ -103,6 +104,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
     && !!CharacterAppearanceSelection;
   const eligible = !!state.canvasRect && (editing || resident);
   const [managePanel, setManagePanel] = useState<ManagePanel>(null);
+  const [assetSearchOpen, setAssetSearchOpen] = useState(false);
   const [exitMounted, setExitMounted] = useState(eligible);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const lastRectRef = useRef(state.canvasRect);
@@ -136,12 +138,16 @@ export function ToolbarSide({state}: {state: AeeState}) {
     return () => document.removeEventListener('pointerdown', closeTransientToolbar, true);
   }, [editing, state.toolbarHovered, state.toolbarPinned, toolbarAlwaysVisible]);
   useEffect(() => {
+    if (editing) setAssetSearchOpen(false);
+  }, [editing]);
+  useEffect(() => {
     if (eligible) {
       setExitMounted(true);
       if (!editing) editingRef.current = false;
       return;
     }
     setManagePanel(null);
+    setAssetSearchOpen(false);
     togglePartsBrowser(false);
     const timer = window.setTimeout(() => {
       setExitMounted(false);
@@ -199,7 +205,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
                           }}/> : null}
       <Panel className={`pointer-events-auto absolute bottom-0 left-0 top-0 z-30 w-[80px] flex-col items-center rounded-none border-y-0 border-l-0 px-[9px] py-[12px] [backface-visibility:hidden] ${editing ? '' : 'aee-panel-collapse-motion'}`}
              style={{transform: residentOpen ? 'translate3d(0,0,0)' : 'translate3d(-70px,0,0)', opacity: residentOpen ? 1 : 0}}>
-        {displayEditing ? <EditingButtons state={state} openTool={openTool}/> : <ResidentButtons state={state} managePanel={managePanel} setManagePanel={setManagePanel}/>} 
+        {displayEditing ? <EditingButtons state={state} openTool={openTool}/> : <ResidentButtons state={state} managePanel={managePanel} setManagePanel={setManagePanel} assetSearchOpen={assetSearchOpen} setAssetSearchOpen={setAssetSearchOpen}/>}
       </Panel>
       {displayEditing && state.toolbarLayout === 'free' && state.selectedLayer !== null ?
         <div className="pointer-events-auto absolute left-[87px] top-[12px] z-40">
@@ -226,6 +232,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
       </div> : null}
     </div>
     {editing ? <PartsBrowserPanel state={state} open={state.partsBrowser.open} onClose={() => togglePartsBrowser(false)}/> : null}
+    {!editing && assetSearchOpen ? <AssetPartsSearchPanel open onClose={() => setAssetSearchOpen(false)}/> : null}
   </div>;
 }
 
@@ -315,7 +322,7 @@ function ControlPage({title, children, back = false}: {title: string; children: 
   </div>;
 }
 
-function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState; managePanel: ManagePanel; setManagePanel: (panel: ManagePanel) => void}) {
+function ResidentButtons({state, managePanel, setManagePanel, assetSearchOpen, setAssetSearchOpen}: {state: AeeState; managePanel: ManagePanel; setManagePanel: (panel: ManagePanel) => void; assetSearchOpen: boolean; setAssetSearchOpen: (open: boolean) => void}) {
   const appearancePick = useSetting(settings.appearancePick);
   return <>
     <div className="flex flex-col gap-[7px]">
@@ -329,6 +336,7 @@ function ResidentButtons({state, managePanel, setManagePanel}: {state: AeeState;
       {CurrentScreen === 'Appearance' ?
         <ToolButton title={t('settings-appearance-pick')} active={appearancePick}
                     icon={<Scan/>} onClick={() => settings.appearancePick.toggle()}/> : null}
+      <ToolButton title={t('asset-parts-search-title')} selected={assetSearchOpen} icon={<Search/>} onClick={() => setAssetSearchOpen(!assetSearchOpen)}/>
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       {CurrentScreen === 'Appearance' || CurrentScreen === 'Crafting' ? <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/> : null}

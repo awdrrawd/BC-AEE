@@ -29,6 +29,7 @@ flowchart LR
 ## 主要功能入口
 
 - 外觀控制列：`components/ToolbarSide.tsx` → `controllers/uiController.ts` → `core/bc.ts`
+- 部件搜尋器：`components/ToolbarSide.tsx` → `components/asset-search/AssetPartsSearchPanel.tsx` → BC `AssetGroup` / `DrawGetImage`
 - 部件圖示與拾取：`components/parts-browser/*` → `controllers/appearancePickerController.ts` → `hooks/drawingHooks.ts`
 - 任意變形：`components/overlays/FreeTransformGizmo.tsx` → `controllers/layerGeometryController.ts` → `appearancePickerController.ts`
 - 旋轉：`components/overlays/RotationOverlay.tsx` → `controllers/uiController.ts` → `core/bc.ts`
@@ -36,6 +37,17 @@ flowchart LR
 - 檢視與背景：`components/view-controls/*` → `controllers/viewController.ts` / `backgroundController.ts`
 - 自由繪圖：`features/mask/index.ts` → `components/mask-system/freeDraw/index.ts`
 - 專屬衣櫃：`components/wardrobe/WardrobeScreen.tsx` → `controllers/wardrobeController.ts` → `core/wardrobeStore.ts`
+
+### 部件搜尋器資料流
+
+部件搜尋器是唯讀的資產瀏覽工具，不修改人物外觀，因此保留在單一 UI 模組內，直接讀取 BC 已載入的資產註冊表與圖片快取介面，不另外建立 Controller 或持久層。
+
+1. `ToolbarSide.tsx` 管理常駐工具列入口與面板開關。
+2. `AssetPartsSearchPanel.tsx` 依 `AssetGroup` 建立服裝／互動道具索引，合併同名資產在不同部位的出現位置。
+3. 搜尋同時比對 `Asset.Name`、目前語言的 `Asset.Description` 與部位描述，並提供常用繁簡字正規化及模糊字序比對。
+4. 左欄以分批與延遲載入避免一次建立全部縮圖；選定資產後才優先解析其中欄的所有部件。
+5. 部件圖依 BC 圖層命名、姿勢、父群組與型別候選路徑解析；`DrawGetImage` 負責相容 ECHO 等自訂資產映射。
+6. 中欄與右欄使用透明像素邊界自動裁切並等比例置中；第三方圖片無 CORS 標頭時退回直接顯示，不進行 alpha 裁切。
 
 ## 變形幾何規則
 

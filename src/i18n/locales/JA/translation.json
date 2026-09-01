@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "描画がライブラリ枠の上限 2 MB を超えています。",
   "free-draw-library-failed": "SPS 描画ライブラリの操作に失敗しました。",
   "free-transform-title": "自由変形", "free-transform-edit": "編集", "free-transform-active": "自由変形中", "parts-browser-title": "パーツアイコン",
-  "parts-browser-list-view": "リスト表示", "parts-browser-grid-view": "サムネイル表示", "parts-browser-magnify": "ホバーで拡大", "free-transform-rotate-handle": "回転ハンドル"
+  "parts-browser-list-view": "リスト表示", "parts-browser-grid-view": "サムネイル表示", "parts-browser-magnify": "ホバーで拡大", "free-transform-rotate-handle": "回転ハンドル",
+  "asset-parts-search-title": "パーツ検索", "asset-parts-search-placeholder": "名前または翻訳名を検索", "asset-parts-search-kind-all": "すべての衣装とアイテム", "asset-parts-search-kind-clothing": "衣装", "asset-parts-search-kind-item": "アイテム／拘束具", "asset-parts-search-kind-both": "衣装＋アイテム", "asset-parts-search-slot-all": "すべての部位", "asset-parts-search-empty": "該当する項目がありません", "asset-parts-search-parts": "すべてのパーツ", "asset-parts-search-preview": "パーツプレビュー", "asset-parts-search-locations": "使用可能な部位"
 }

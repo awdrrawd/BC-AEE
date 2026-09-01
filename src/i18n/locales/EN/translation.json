@@ -555,5 +555,16 @@
   "parts-browser-list-view": "List view",
   "parts-browser-grid-view": "Thumbnail view",
   "parts-browser-magnify": "Magnify on hover",
-  "free-transform-rotate-handle": "Rotation handle"
+  "free-transform-rotate-handle": "Rotation handle",
+  "asset-parts-search-title": "Part Search",
+  "asset-parts-search-placeholder": "Search name or translated name",
+  "asset-parts-search-kind-all": "All clothing and items",
+  "asset-parts-search-kind-clothing": "Clothing",
+  "asset-parts-search-kind-item": "Items / restraints",
+  "asset-parts-search-kind-both": "Clothing + item",
+  "asset-parts-search-slot-all": "All slots",
+  "asset-parts-search-empty": "No matching clothing or items",
+  "asset-parts-search-parts": "All parts",
+  "asset-parts-search-preview": "Part preview",
+  "asset-parts-search-locations": "Available slots"
 }

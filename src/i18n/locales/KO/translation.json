@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "그림이 라이브러리 칸의 2 MB 제한을 넘습니다.",
   "free-draw-library-failed": "SPS 그림 라이브러리 작업에 실패했습니다.",
   "free-transform-title": "자유 변형", "free-transform-edit": "편집", "free-transform-active": "자유 변형 중", "parts-browser-title": "부품 아이콘",
-  "parts-browser-list-view": "목록 보기", "parts-browser-grid-view": "썸네일 보기", "parts-browser-magnify": "마우스를 올려 확대", "free-transform-rotate-handle": "회전 핸들"
+  "parts-browser-list-view": "목록 보기", "parts-browser-grid-view": "썸네일 보기", "parts-browser-magnify": "마우스를 올려 확대", "free-transform-rotate-handle": "회전 핸들",
+  "asset-parts-search-title": "부품 검색", "asset-parts-search-placeholder": "이름 또는 번역명 검색", "asset-parts-search-kind-all": "모든 의상과 아이템", "asset-parts-search-kind-clothing": "의상", "asset-parts-search-kind-item": "아이템 / 구속구", "asset-parts-search-kind-both": "의상 + 아이템", "asset-parts-search-slot-all": "모든 부위", "asset-parts-search-empty": "검색 결과 없음", "asset-parts-search-parts": "모든 부품", "asset-parts-search-preview": "부품 미리보기", "asset-parts-search-locations": "사용 가능한 부위"
 }

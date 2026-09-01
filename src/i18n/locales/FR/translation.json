@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "Ce dessin dépasse la limite de 2 Mo de l’emplacement.",
   "free-draw-library-failed": "L’opération de la bibliothèque SPS a échoué.",
   "free-transform-title": "Transformation libre", "free-transform-edit": "Modifier", "free-transform-active": "Transformation libre active", "parts-browser-title": "Icônes des parties",
-  "parts-browser-list-view": "Vue en liste", "parts-browser-grid-view": "Vue en miniatures", "parts-browser-magnify": "Agrandir au survol", "free-transform-rotate-handle": "Poignée de rotation"
+  "parts-browser-list-view": "Vue en liste", "parts-browser-grid-view": "Vue en miniatures", "parts-browser-magnify": "Agrandir au survol", "free-transform-rotate-handle": "Poignée de rotation",
+  "asset-parts-search-title": "Recherche de parties", "asset-parts-search-placeholder": "Rechercher le nom ou sa traduction", "asset-parts-search-kind-all": "Tous les vêtements et objets", "asset-parts-search-kind-clothing": "Vêtements", "asset-parts-search-kind-item": "Objets / contraintes", "asset-parts-search-kind-both": "Vêtement + objet", "asset-parts-search-slot-all": "Tous les emplacements", "asset-parts-search-empty": "Aucun résultat", "asset-parts-search-parts": "Toutes les parties", "asset-parts-search-preview": "Aperçu de la partie", "asset-parts-search-locations": "Emplacements disponibles"
 }

@@ -28,8 +28,9 @@ An outfit-management UI separate from the game's native save slots — with onli
 
 **🖱 操作輔助 · Workflow Aids**
 
-懸停高亮、懸停試穿、服裝複製／貼上、獨立的檢視控制面板（人物位移縮放、背景、姿勢快選）等，加快換裝與比對流程。  
-Hover highlight, hover try-on, item copy/paste, and a standalone view-control panel (character offset/zoom, background, quick poses) to speed up outfit iteration.
+懸停高亮、懸停試穿、服裝複製／貼上、部件搜尋器，以及獨立的檢視控制面板（人物位移縮放、背景、姿勢快選）等，加快換裝與比對流程。部件搜尋器可依原始名稱、目前語言譯名、類型與部位尋找衣服或道具，並預覽其所有部件及出現部位。
+
+Hover highlight, hover try-on, item copy/paste, an asset-parts searcher, and a standalone view-control panel (character offset/zoom, background, quick poses) speed up outfit iteration. The searcher finds clothing and items by original name, localized description, type, or slot, then previews every part and all matching slots.
 
 **🧪 實驗性功能 · Experimental Features**
 

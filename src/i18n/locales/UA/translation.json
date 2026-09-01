@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "Малюнок перевищує ліміт комірки у 2 МБ.",
   "free-draw-library-failed": "Операція з бібліотекою SPS завершилася помилкою.",
   "free-transform-title": "Вільне перетворення", "free-transform-edit": "Редагувати", "free-transform-active": "Вільне перетворення активне", "parts-browser-title": "Піктограми частин",
-  "parts-browser-list-view": "Список", "parts-browser-grid-view": "Мініатюри", "parts-browser-magnify": "Збільшувати при наведенні", "free-transform-rotate-handle": "Маркер обертання"
+  "parts-browser-list-view": "Список", "parts-browser-grid-view": "Мініатюри", "parts-browser-magnify": "Збільшувати при наведенні", "free-transform-rotate-handle": "Маркер обертання",
+  "asset-parts-search-title": "Пошук частин", "asset-parts-search-placeholder": "Пошук назви або перекладу", "asset-parts-search-kind-all": "Увесь одяг і предмети", "asset-parts-search-kind-clothing": "Одяг", "asset-parts-search-kind-item": "Предмети / обмеження", "asset-parts-search-kind-both": "Одяг + предмет", "asset-parts-search-slot-all": "Усі слоти", "asset-parts-search-empty": "Збігів немає", "asset-parts-search-parts": "Усі частини", "asset-parts-search-preview": "Перегляд частини", "asset-parts-search-locations": "Доступні слоти"
 }

@@ -555,5 +555,16 @@
   "parts-browser-list-view": "列表视图",
   "parts-browser-grid-view": "缩略图视图",
   "parts-browser-magnify": "悬停放大",
-  "free-transform-rotate-handle": "旋转控制点"
+  "free-transform-rotate-handle": "旋转控制点",
+  "asset-parts-search-title": "部件搜索",
+  "asset-parts-search-placeholder": "搜索名称或翻译名称",
+  "asset-parts-search-kind-all": "所有衣服与道具",
+  "asset-parts-search-kind-clothing": "衣服",
+  "asset-parts-search-kind-item": "道具／拘束",
+  "asset-parts-search-kind-both": "衣服＋道具",
+  "asset-parts-search-slot-all": "所有部位",
+  "asset-parts-search-empty": "找不到符合的服装或道具",
+  "asset-parts-search-parts": "所有部件",
+  "asset-parts-search-preview": "部件预览",
+  "asset-parts-search-locations": "出现部位"
 }

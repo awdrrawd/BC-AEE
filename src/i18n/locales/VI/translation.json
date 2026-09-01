@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "Bản vẽ vượt giới hạn 2 MB của ô.",
   "free-draw-library-failed": "Thao tác thư viện SPS thất bại.",
   "free-transform-title": "Biến đổi tự do", "free-transform-edit": "Chỉnh sửa", "free-transform-active": "Đang biến đổi tự do", "parts-browser-title": "Biểu tượng bộ phận",
-  "parts-browser-list-view": "Dạng danh sách", "parts-browser-grid-view": "Dạng hình thu nhỏ", "parts-browser-magnify": "Phóng to khi di chuột", "free-transform-rotate-handle": "Điểm xoay"
+  "parts-browser-list-view": "Dạng danh sách", "parts-browser-grid-view": "Dạng hình thu nhỏ", "parts-browser-magnify": "Phóng to khi di chuột", "free-transform-rotate-handle": "Điểm xoay",
+  "asset-parts-search-title": "Tìm bộ phận", "asset-parts-search-placeholder": "Tìm tên hoặc tên dịch", "asset-parts-search-kind-all": "Mọi trang phục và vật phẩm", "asset-parts-search-kind-clothing": "Trang phục", "asset-parts-search-kind-item": "Vật phẩm / trói buộc", "asset-parts-search-kind-both": "Trang phục + vật phẩm", "asset-parts-search-slot-all": "Mọi vị trí", "asset-parts-search-empty": "Không có kết quả", "asset-parts-search-parts": "Mọi bộ phận", "asset-parts-search-preview": "Xem trước bộ phận", "asset-parts-search-locations": "Vị trí có sẵn"
 }

@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "El dibujo supera el límite de 2 MB del espacio.",
   "free-draw-library-failed": "Falló la operación de la biblioteca SPS.",
   "free-transform-title": "Transformación libre", "free-transform-edit": "Editar", "free-transform-active": "Transformación libre activa", "parts-browser-title": "Iconos de partes",
-  "parts-browser-list-view": "Vista de lista", "parts-browser-grid-view": "Vista de miniaturas", "parts-browser-magnify": "Ampliar al pasar", "free-transform-rotate-handle": "Control de rotación"
+  "parts-browser-list-view": "Vista de lista", "parts-browser-grid-view": "Vista de miniaturas", "parts-browser-magnify": "Ampliar al pasar", "free-transform-rotate-handle": "Control de rotación",
+  "asset-parts-search-title": "Buscar partes", "asset-parts-search-placeholder": "Buscar nombre o traducción", "asset-parts-search-kind-all": "Toda la ropa y objetos", "asset-parts-search-kind-clothing": "Ropa", "asset-parts-search-kind-item": "Objetos / restricciones", "asset-parts-search-kind-both": "Ropa + objeto", "asset-parts-search-slot-all": "Todas las posiciones", "asset-parts-search-empty": "Sin resultados", "asset-parts-search-parts": "Todas las partes", "asset-parts-search-preview": "Vista previa", "asset-parts-search-locations": "Posiciones disponibles"
 }

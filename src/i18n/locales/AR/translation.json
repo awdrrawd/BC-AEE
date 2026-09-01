@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "يتجاوز الرسم حد الخانة البالغ 2 ميغابايت.",
   "free-draw-library-failed": "فشلت عملية مكتبة SPS.",
   "free-transform-title": "تحويل حر", "free-transform-edit": "تحرير", "free-transform-active": "التحويل الحر نشط", "parts-browser-title": "أيقونات الأجزاء",
-  "parts-browser-list-view": "عرض القائمة", "parts-browser-grid-view": "عرض الصور المصغرة", "parts-browser-magnify": "تكبير عند التحويم", "free-transform-rotate-handle": "مقبض الدوران"
+  "parts-browser-list-view": "عرض القائمة", "parts-browser-grid-view": "عرض الصور المصغرة", "parts-browser-magnify": "تكبير عند التحويم", "free-transform-rotate-handle": "مقبض الدوران",
+  "asset-parts-search-title": "بحث الأجزاء", "asset-parts-search-placeholder": "ابحث بالاسم أو الترجمة", "asset-parts-search-kind-all": "كل الملابس والعناصر", "asset-parts-search-kind-clothing": "ملابس", "asset-parts-search-kind-item": "عناصر / قيود", "asset-parts-search-kind-both": "ملابس + عنصر", "asset-parts-search-slot-all": "كل المواضع", "asset-parts-search-empty": "لا توجد نتائج", "asset-parts-search-parts": "كل الأجزاء", "asset-parts-search-preview": "معاينة الجزء", "asset-parts-search-locations": "المواضع المتاحة"
 }

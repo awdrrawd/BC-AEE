@@ -549,5 +549,6 @@
   "free-draw-library-too-large": "Рисунок превышает лимит слота в 2 МБ.",
   "free-draw-library-failed": "Операция с библиотекой SPS завершилась ошибкой.",
   "free-transform-title": "Свободное преобразование", "free-transform-edit": "Изменить", "free-transform-active": "Свободное преобразование активно", "parts-browser-title": "Значки частей",
-  "parts-browser-list-view": "Список", "parts-browser-grid-view": "Миниатюры", "parts-browser-magnify": "Увеличивать при наведении", "free-transform-rotate-handle": "Маркер вращения"
+  "parts-browser-list-view": "Список", "parts-browser-grid-view": "Миниатюры", "parts-browser-magnify": "Увеличивать при наведении", "free-transform-rotate-handle": "Маркер вращения",
+  "asset-parts-search-title": "Поиск частей", "asset-parts-search-placeholder": "Поиск имени или перевода", "asset-parts-search-kind-all": "Вся одежда и предметы", "asset-parts-search-kind-clothing": "Одежда", "asset-parts-search-kind-item": "Предметы / ограничения", "asset-parts-search-kind-both": "Одежда + предмет", "asset-parts-search-slot-all": "Все слоты", "asset-parts-search-empty": "Совпадений нет", "asset-parts-search-parts": "Все части", "asset-parts-search-preview": "Предпросмотр части", "asset-parts-search-locations": "Доступные слоты"
 }

@@ -53,7 +53,7 @@ const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
 const neatIcon = new URL('../assets/editor/mod-Neat.svg', import.meta.url).href;
 const freeIcon = new URL('../assets/editor/mod-Free.svg', import.meta.url).href;
 const poseIcon = new URL('../assets/editor/Pose.svg', import.meta.url).href;
-const freeTransformIcon = new URL('../assets/editor/icons8-square-100.svg', import.meta.url).href;
+const freeTransformIcon = new URL('../assets/editor/free-transform.svg', import.meta.url).href;
 
 type ManagePanel = 'settings' | null;
 

@@ -11,14 +11,16 @@ export type DrawCapture = {
   /** Actual raster origin, retained for picking/outlines. */
   x: number;
   y: number;
-  /** Origin before BC's Translation, used to reproduce GLDrawImage geometry. */
-  baseX: number;
-  baseY: number;
+  /** Coordinates passed by CommonDraw to GLDrawImage. */
+  drawX: number;
+  drawY: number;
   scaleX: number;
   scaleY: number;
   rotation: number;
   translationX: number;
   translationY: number;
+  mirror: boolean;
+  invert: boolean;
   order: number;
 };
 type CanvasMap = {ox: number; oy: number; sx: number; sy: number; yStart: number};
@@ -29,6 +31,8 @@ export type CapturedLayerGeometry = {
   corners: Array<[number, number]>;
   center: [number, number];
   pivot: [number, number];
+  /** Every physical BC texture pivot represented by this geometry. */
+  pivots: Array<[number, number]>;
   width: number;
   height: number;
 };
@@ -39,6 +43,9 @@ const captures = new Map<Asset, DrawCapture[]>();
 let frame = new Map<Asset, DrawCapture[]>();
 const layerCaptures = new Map<number, DrawCapture[]>();
 let layerFrame = new Map<number, DrawCapture[]>();
+// Stable, authoritative transform source: one final draw record per physical
+// layer, matching Lian's gizmo. Picking/thumbnails keep their multi-capture data.
+const layerTransformCaptures = new Map<number, DrawCapture>();
 // Last non-transparent render for each worn group. Hover flashing can render a
 // layer with Alpha=0, so the current frame alone cannot always draw its outline.
 const lastVisibleCaptures = new Map<AssetGroupName, {asset: Asset; list: DrawCapture[]}>();
@@ -50,7 +57,6 @@ let lastPick: {x: number; y: number; key: string; groupName: AssetGroupName} | n
 let layerLabels: Array<{index: number; x: number; y: number; w: number; h: number}> = [];
 let hoveredLayerIndex: number | null = null;
 let outlineCanvas: HTMLCanvasElement | null = null;
-let layerFrameSignature = '';
 let layerContentSignature = '';
 
 const OUTLINE_WIDTH = 3;
@@ -126,19 +132,22 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
     url: source,
     x: x + translationX,
     y: y + translationY,
-    baseX: x - translationX,
-    baseY: y - translationY,
+    drawX: x,
+    drawY: y,
     scaleX: transform?.ScaleX ?? 1,
     scaleY: transform?.ScaleY ?? 1,
     rotation: transform?.Rotation ?? 0,
     translationX,
     translationY,
+    mirror: !!transform?.Mirror,
+    invert: !!transform?.Invert,
     order,
   };
   if (layerCaptureEnabled() && layerIndex >= 0) {
     const layerList = layerFrame.get(layerIndex) ?? [];
     layerList.push(capture);
     layerFrame.set(layerIndex, layerList);
+    layerTransformCaptures.set(layerIndex, capture);
   }
   // Keep transparent layers available for thumbnails, but exclude them from
   // whole-item hit testing so invisible pixels never become pick targets.
@@ -176,15 +185,12 @@ export function commitAppearancePickerFrame() {
     layerCaptures.clear();
     for (const [index, list] of layerFrame) layerCaptures.set(index, list);
     layerFrame = new Map();
-    const signature = [...layerCaptures.entries()].map(([index, list]) => `${index}:${list.map(cap => `${cap.url}:${cap.x}:${cap.y}:${cap.scaleX}:${cap.scaleY}:${cap.rotation}`).join(',')}`).join(';');
     const contentSignature = [...layerCaptures.entries()].map(([index, list]) => `${index}:${list.map(cap => cap.url).join(',')}`).join(';');
-    const geometryChanged = signature !== layerFrameSignature;
     const contentChanged = contentSignature !== layerContentSignature;
-    if (geometryChanged || contentChanged) {
-      layerFrameSignature = signature;
+    if (contentChanged) {
       layerContentSignature = contentSignature;
       const state = getState();
-      if ((geometryChanged && (state.editTool === 'gizmo' || state.activeDrag === 'rot')) || (contentChanged && state.partsBrowser.open)) {
+      if (state.partsBrowser.open) {
         mutateState(draft => { draft.layerCaptureRevision += 1; });
       }
     }
@@ -203,40 +209,37 @@ export function getCapturedTranslationFactor(): number {
 
 /** Exact transformed quad and the real full-texture rotation pivot. */
 export function getCapturedLayerGeometry(index: number): CapturedLayerGeometry | null {
-  const list = layerCaptures.get(index);
+  const cap = layerTransformCaptures.get(index);
   const map = canvasMap();
-  if (!list?.length || !map) return null;
-  const geometries: CapturedLayerGeometry[] = [];
-  for (const cap of list) {
-    const image = pickImage(cap.url);
-    if (!image) continue;
-    const alpha = alphaData(cap.url, image);
-    const tw = image.naturalWidth || image.width, th = image.naturalHeight || image.height;
-    const bounds = alpha?.bounds ?? {x: 0, y: 0, w: tw, h: th};
-    const factor = getCapturedTranslationFactor();
-    const pivotX = cap.baseX + tw / 2 + cap.translationX * factor;
-    const pivotY = cap.baseY + th / 2 + cap.translationY * factor;
-    const angle = cap.rotation * Math.PI / 180;
-    const cos = Math.cos(angle), sin = Math.sin(angle);
-    const transformPoint = (u: number, v: number): [number, number] => {
-      const dx = (u - tw / 2) * cap.scaleX;
-      const dy = (v - th / 2) * cap.scaleY;
-      const point = canvasToScreen(pivotX + dx * cos - dy * sin, pivotY + dx * sin + dy * cos, map);
-      return [point.x, point.y];
-    };
-    const x2 = bounds.x + bounds.w, y2 = bounds.y + bounds.h;
-    const corners = [transformPoint(bounds.x, bounds.y), transformPoint(x2, bounds.y), transformPoint(x2, y2), transformPoint(bounds.x, y2)];
-    const center = transformPoint(bounds.x + bounds.w / 2, bounds.y + bounds.h / 2);
-    const pivotPoint = canvasToScreen(pivotX, pivotY, map);
-    geometries.push({corners, center, pivot: [pivotPoint.x, pivotPoint.y], width: Math.abs(bounds.w * cap.scaleX * map.sx), height: Math.abs(bounds.h * cap.scaleY * map.sy)});
-  }
-  if (!geometries.length) return null;
-  if (geometries.length === 1) return geometries[0];
-  const points = geometries.flatMap(geometry => geometry.corners);
-  const left = Math.min(...points.map(point => point[0])), top = Math.min(...points.map(point => point[1]));
-  const right = Math.max(...points.map(point => point[0])), bottom = Math.max(...points.map(point => point[1]));
-  const center: [number, number] = [(left + right) / 2, (top + bottom) / 2];
-  return {corners: [[left, top], [right, top], [right, bottom], [left, bottom]], center, pivot: geometries.at(-1)!.pivot, width: right - left, height: bottom - top};
+  if (!cap || !map) return null;
+  const image = pickImage(cap.url);
+  if (!image) return null;
+  const alpha = alphaData(cap.url, image);
+  const tw = image.naturalWidth || image.width, th = image.naturalHeight || image.height;
+  const bounds = alpha?.bounds ?? {x: 0, y: 0, w: tw, h: th};
+  // Reproduce GLDrawImage's matrix from the authoritative arguments captured
+  // at its boundary. CommonDraw has already added TranslationX/Y to drawX/Y;
+  // GLDrawImage adds them again (three times for mirrored X; see BC's FIXME).
+  const gl = (globalThis as typeof globalThis & {GLDrawCanvas?: {GL?: WebGL2RenderingContext}}).GLDrawCanvas?.GL;
+  const glHeight = gl?.canvas.height ?? 1100;
+  const pivotX = (cap.mirror ? 500 - cap.drawX : cap.drawX)
+    + cap.translationX * (cap.mirror ? 3 : 1) + tw / 2;
+  const pivotY = (cap.invert ? glHeight - cap.drawY + 550 : cap.drawY)
+    + cap.translationY + th / 2;
+  const angle = cap.rotation * Math.PI / 180;
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+  const transformPoint = (u: number, v: number): [number, number] => {
+    const dx = (u - tw / 2) * cap.scaleX * (cap.mirror ? -1 : 1);
+    const dy = (v - th / 2) * cap.scaleY * (cap.invert ? -1 : 1);
+    const point = canvasToScreen(pivotX + dx * cos - dy * sin, pivotY + dx * sin + dy * cos, map);
+    return [point.x, point.y];
+  };
+  const x2 = bounds.x + bounds.w, y2 = bounds.y + bounds.h;
+  const corners = [transformPoint(bounds.x, bounds.y), transformPoint(x2, bounds.y), transformPoint(x2, y2), transformPoint(bounds.x, y2)];
+  const center = transformPoint(bounds.x + bounds.w / 2, bounds.y + bounds.h / 2);
+  const pivotPoint = canvasToScreen(pivotX, pivotY, map);
+  const pivot: [number, number] = [pivotPoint.x, pivotPoint.y];
+  return {corners, center, pivot, pivots: [pivot], width: Math.abs(bounds.w * cap.scaleX * map.sx), height: Math.abs(bounds.h * cap.scaleY * map.sy)};
 }
 
 export function getCapturedLayerImages(index: number | 'all'): Array<{url: string; capture: DrawCapture; image: HTMLImageElement; bounds: {x: number; y: number; w: number; h: number}}> {
@@ -258,6 +261,7 @@ export function invalidateAppearancePicker() {
   frame.clear();
   layerCaptures.clear();
   layerFrame.clear();
+  layerTransformCaptures.clear();
   // Keep the hit boxes for labels that are still visible on MainCanvas until
   // the next picker draw replaces them. Hover highlighting rebuilds the
   // character canvas repeatedly; clearing the boxes here created a window in

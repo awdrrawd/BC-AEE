@@ -17,9 +17,8 @@ export function RotationOverlay({state}: { state: AeeState }) {
   if (isGroupLocked(state.selectedLayer)) return null;
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const rotation = layerOverride.Rotation ?? 0;
-  const actualPivot = getSelectedLayerGeometry(state)?.pivot;
-  const pivotX = actualPivot ? actualPivot[0] * state.canvasRect.width / 2000 : null;
-  const pivotY = actualPivot ? actualPivot[1] * state.canvasRect.height / 1000 : null;
+  const geometry = getSelectedLayerGeometry(state);
+  const pivots = (geometry?.pivots ?? []).map(([x, y]) => [x * state.canvasRect!.width / 2000, y * state.canvasRect!.height / 1000] as const);
   // The circle is the angle dial, not the item's pivot. Keep the dial in its
   // stable control position and mark the real BC texture pivot separately.
   const cx = state.canvasRect.width * ROT_CX_PCT;
@@ -58,11 +57,11 @@ export function RotationOverlay({state}: { state: AeeState }) {
       </text>
       <text x={cx} y={cy + ROT_RADIUS + 18} textAnchor="middle" fill="rgba(255,255,255,0.45)"
             fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotation-overlay-handle-hint')}</text>
-      {pivotX !== null && pivotY !== null ? <>
+      {pivots.map(([pivotX, pivotY], index) => <g key={`${pivotX}:${pivotY}:${index}`}>
         <circle cx={pivotX} cy={pivotY} r={4} fill="var(--aee-accent-55)"/>
         <line x1={pivotX - 8} y1={pivotY} x2={pivotX + 8} y2={pivotY} stroke="var(--aee-accent)" strokeWidth="2.33"/>
         <line x1={pivotX} y1={pivotY - 8} x2={pivotX} y2={pivotY + 8} stroke="var(--aee-accent)" strokeWidth="2.33"/>
-      </> : null}
+      </g>)}
       <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)"
               stroke="transparent" strokeWidth="28" onPointerDown={startDrag}/>
     </svg>

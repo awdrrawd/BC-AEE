@@ -28,14 +28,14 @@ export function FreeTransformGizmo({state}: {state: AeeState}) {
   if (!geometry) return null;
   const kx = state.canvasRect.width / 2000, ky = state.canvasRect.height / 1000;
   const css = ([x, y]: Point): Point => [x * kx, y * ky];
+  const override = getLayerOverride(state.item, state.selectedLayer), base = getAssetBaseXY(state.item, state.selectedLayer);
+  const initial = {x: override.DrawingLeft?.[''] ?? base.bx, y: override.DrawingTop?.[''] ?? base.by, sx: override.ScaleX ?? 1, sy: override.ScaleY ?? 1, rot: override.Rotation ?? 0};
   const corners = geometry.corners.map(css), center = css(geometry.center), pivot = css(geometry.pivot);
+  const pivots = geometry.pivots.map(css);
   const topMid: Point = [(corners[0][0] + corners[1][0]) / 2, (corners[0][1] + corners[1][1]) / 2];
   const outward: Point = [topMid[0] - center[0], topMid[1] - center[1]];
   const length = Math.hypot(...outward) || 1;
   const rotateAt: Point = [topMid[0] + outward[0] / length * 30, topMid[1] + outward[1] / length * 30];
-  const override = getLayerOverride(state.item, state.selectedLayer), base = getAssetBaseXY(state.item, state.selectedLayer);
-  const initial = {x: override.DrawingLeft?.[''] ?? base.bx, y: override.DrawingTop?.[''] ?? base.by, sx: override.ScaleX ?? 1, sy: override.ScaleY ?? 1, rot: override.Rotation ?? 0};
-
   const dragMove = (event: ReactPointerEvent<SVGPolygonElement>) => {
     event.preventDefault(); event.stopPropagation();
     const startX = event.clientX, startY = event.clientY, factor = getCapturedTranslationFactor();
@@ -67,8 +67,10 @@ export function FreeTransformGizmo({state}: {state: AeeState}) {
       <line x1={topMid[0]} y1={topMid[1]} x2={rotateAt[0]} y2={rotateAt[1]} stroke="var(--aee-accent)" strokeWidth="2"/>
       <circle aria-label={t('free-transform-rotate-handle')} cx={rotateAt[0]} cy={rotateAt[1]} r="8" fill="var(--aee-accent)" stroke="white" strokeWidth="2" className="pointer-events-auto cursor-grab" onPointerDown={dragRotate}/>
       {HANDLES.map(([id, hx, hy, cursor]) => { const p = css(handlePoint(geometry, hx, hy)); return <rect key={id} x={p[0] - 6} y={p[1] - 6} width="12" height="12" fill="var(--aee-accent)" stroke="white" strokeWidth="2" style={{cursor}} className="pointer-events-auto" onPointerDown={dragScale(hx, hy)}/>; })}
-      <line x1={pivot[0] - 8} y1={pivot[1]} x2={pivot[0] + 8} y2={pivot[1]} stroke="var(--aee-accent)" strokeWidth="2.33"/>
-      <line x1={pivot[0]} y1={pivot[1] - 8} x2={pivot[0]} y2={pivot[1] + 8} stroke="var(--aee-accent)" strokeWidth="2.33"/>
+      {pivots.map(([px, py], index) => <g key={`${px}:${py}:${index}`}>
+        <line x1={px - 8} y1={py} x2={px + 8} y2={py} stroke="var(--aee-accent)" strokeWidth="2.33"/>
+        <line x1={px} y1={py - 8} x2={px} y2={py + 8} stroke="var(--aee-accent)" strokeWidth="2.33"/>
+      </g>)}
     </svg>
   </div>;
 }

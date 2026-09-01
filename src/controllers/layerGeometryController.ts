@@ -9,10 +9,17 @@ function unionGeometry(geometries: CapturedLayerGeometry[]): CapturedLayerGeomet
   const right = Math.max(...points.map(point => point[0]));
   const bottom = Math.max(...points.map(point => point[1]));
   const center: [number, number] = [(left + right) / 2, (top + bottom) / 2];
+  const pivots = geometries.flatMap(geometry => geometry.pivots)
+    .filter((pivot, index, list) => list.findIndex(candidate => Math.abs(candidate[0] - pivot[0]) < .5 && Math.abs(candidate[1] - pivot[1]) < .5) === index);
   return {
     corners: [[left, top], [right, top], [right, bottom], [left, bottom]],
     center,
-    pivot: center,
+    // BC has no item-wide pivot: item-level Rotation is applied separately to
+    // every physical layer around its own texture pivot. Use the first actual
+    // layer pivot as the stable interaction origin and expose all of them for
+    // an honest overlay instead of substituting the changing union centre.
+    pivot: pivots[0],
+    pivots,
     width: right - left,
     height: bottom - top,
   };

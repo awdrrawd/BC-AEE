@@ -12,6 +12,7 @@ function closeContextOverlays(draft: ReturnType<typeof getState>) {
   draft.rotationOverlayOpen = false;
   draft.opacityOverlay.open = false;
   draft.layersOverlay.open = false;
+  draft.partsBrowser.open = false;
   draft.transformOverlay.mode = null;
   draft.editTool = null;
 }
@@ -46,6 +47,7 @@ export function syncCurrentContext() {
     } else if (itemChanged) {
       draft.selectedLayer = null;
       draft.partsOpen = false;
+      draft.partsBrowser.open = false;
       closeContextOverlays(draft);
     }
   });

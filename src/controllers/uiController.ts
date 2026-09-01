@@ -3,6 +3,7 @@ import {getState, mutateState} from '@/core/store';
 import {settings} from '@/core/settings';
 import {
   applyPriority,
+  batchLayerEdits,
   clampPriority,
   ensureLayerOverrides,
   ensureOpacityArray,
@@ -35,9 +36,9 @@ import {
 } from '@/core/overlay';
 import {alignTouchBlocker, hideTouchBlocker, showTouchBlocker} from '@/controllers/dragController';
 import {clamp} from '@/util/math';
+import {clearCanvasGesture, isCanvasGestureActive} from '@/core/editorToolState';
 
 type AssetPriority = Asset & { DrawingPriority?: number };
-type ToolOverlay = 'parts' | 'opacity' | 'transform' | 'layers';
 
 export function setTab(tab: AeeTab) {
   stopHoverHighlight(true);
@@ -66,10 +67,25 @@ export function toggleCollapse() {
   });
 }
 
-function closeToolOverlays(draft: AeeState, keep: ToolOverlay) {
-  if (keep !== 'opacity') draft.opacityOverlay.open = false;
-  if (keep !== 'transform') draft.transformOverlay.mode = null;
-  if (keep !== 'layers') draft.layersOverlay.open = false;
+function clearCanvasToolState(draft: AeeState) {
+  clearCanvasGesture(draft);
+  draft.transformOverlay.mode = null;
+  draft.opacityOverlay.open = false;
+  draft.layersOverlay.open = false;
+}
+
+function finishCanvasToolTransition(active: boolean) {
+  runtime.panelHoverLayerIdx = null;
+  stopHoverHighlight(true);
+  if (active) showTouchBlocker();
+  else hideTouchBlocker();
+  refreshCurrentCharacter();
+}
+
+export function togglePartsBrowser(open?: boolean) {
+  mutateState(draft => {
+    draft.partsBrowser.open = open ?? !draft.partsBrowser.open;
+  });
 }
 
 function getClampedCurrentPanelPosition(left: number, top: number, panelWidth = TOOL_PANEL_WIDTH, panelMinHeight = TOOL_PANEL_MIN_HEIGHT) {
@@ -121,10 +137,10 @@ export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: Over
     stopHoverHighlight(true);
   }
   mutateState(draft => {
-    if (draft.editTool === 'gizmo') draft.editTool = mode;
+    clearCanvasToolState(draft);
+    draft.editTool = nextMode ? mode : null;
     draft.transformOverlay.mode = nextMode;
     if (nextMode) {
-      closeToolOverlays(draft, 'transform');
       if (draft.selectedLayer === null) draft.selectedLayer = 'all';
       if (anchor && draft.canvasRect) {
         const pos = getAnchoredPanelPosition(draft.canvasRect, anchor);
@@ -133,14 +149,15 @@ export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: Over
       }
     }
   });
-  refreshCurrentCharacter();
-  forceUiUpdate();
+  finishCanvasToolTransition(false);
 }
 
 export function closeTransformOverlay() {
   mutateState(draft => {
     draft.transformOverlay.mode = null;
+    if (draft.toolbarLayout === 'free' && (draft.editTool === 'xy' || draft.editTool === 'rot' || draft.editTool === 'scale' || draft.editTool === 'skew' || draft.editTool === 'mirror')) draft.editTool = null;
   });
+  finishCanvasToolTransition(false);
 }
 
 export function moveTransformOverlay(left: number, top: number) {
@@ -156,18 +173,14 @@ export function setActiveDrag(mode: DragMode) {
   if (mode && isGroupLocked(getState().selectedLayer)) return;
   const next = getState().activeDrag === mode ? null : mode;
   mutateState(draft => {
-    if (next && draft.editTool === 'gizmo') draft.editTool = next;
+    if (next) {
+      clearCanvasToolState(draft);
+      draft.editTool = mode;
+    }
     draft.activeDrag = next;
     draft.rotationOverlayOpen = next === 'rot';
   });
-  if (next) showTouchBlocker();
-  else hideTouchBlocker();
-  if (next) {
-    runtime.panelHoverLayerIdx = null;
-    stopHoverHighlight(true);
-  }
-  refreshCurrentCharacter();
-  forceUiUpdate();
+  finishCanvasToolTransition(!!next);
 }
 
 export function openLayersOverlay(anchor?: OverlayAnchor) {
@@ -176,10 +189,9 @@ export function openLayersOverlay(anchor?: OverlayAnchor) {
   syncCanvasRect();
   mutateState(draft => {
     const opening = !draft.layersOverlay.open;
-    draft.layersOverlay.open = opening;
+    clearCanvasToolState(draft);
     draft.editTool = opening ? 'layers' : null;
     if (!opening) return;
-    closeToolOverlays(draft, 'layers');
     draft.layersOverlay.open = true;
     if (draft.selectedLayer === null) draft.selectedLayer = 'all';
     if (anchor && draft.canvasRect) {
@@ -188,10 +200,12 @@ export function openLayersOverlay(anchor?: OverlayAnchor) {
       draft.layersOverlay.top = pos.top;
     }
   });
+  finishCanvasToolTransition(false);
 }
 
 export function closeLayersOverlay() {
   mutateState(draft => { draft.layersOverlay.open = false; if (draft.editTool === 'layers') draft.editTool = null; });
+  finishCanvasToolTransition(false);
 }
 
 export function moveLayersOverlay(left: number, top: number) {
@@ -312,8 +326,9 @@ export function openOpacityOverlay(anchor?: OverlayAnchor) {
   if (!item) return;
   syncCanvasRect();
   mutateState(draft => {
+    clearCanvasToolState(draft);
+    draft.editTool = 'opacity';
     draft.opacityOverlay.open = true;
-    closeToolOverlays(draft, 'opacity');
     if (selected === null) draft.selectedLayer = 'all';
     if (anchor && draft.canvasRect) {
       const pos = getAnchoredPanelPosition(draft.canvasRect, anchor);
@@ -321,12 +336,15 @@ export function openOpacityOverlay(anchor?: OverlayAnchor) {
       draft.opacityOverlay.top = pos.top;
     }
   });
+  finishCanvasToolTransition(false);
 }
 
 export function closeOpacityOverlay() {
   mutateState(draft => {
     draft.opacityOverlay.open = false;
+    if (draft.toolbarLayout === 'free' && draft.editTool === 'opacity') draft.editTool = null;
   });
+  finishCanvasToolTransition(false);
 }
 
 export function moveOpacityOverlay(left: number, top: number) {
@@ -411,13 +429,22 @@ function isEditPropertyKey(ctrl: string): ctrl is EditPropertyKey {
 }
 
 export function setEditProperty(ctrl: string, rawValue: number) {
+  setEditProperties({[ctrl]: rawValue});
+}
+
+export function setEditProperties(values: Record<string, number>) {
   const state = getState();
   const item = getCurrentItem();
   const idx = state.selectedLayer;
-  if (!item || idx === null || Number.isNaN(rawValue) || !isEditPropertyKey(ctrl)) return;
+  if (!item || idx === null) return;
   // Locked body parts (official FixedPosition) must not be transformed.
   if (isGroupLocked(idx)) return;
-  EDIT_PROPERTIES[ctrl].apply(item, idx, rawValue);
+  batchLayerEdits(() => {
+    for (const [ctrl, rawValue] of Object.entries(values)) {
+      if (Number.isNaN(rawValue) || !isEditPropertyKey(ctrl)) continue;
+      EDIT_PROPERTIES[ctrl].apply(item, idx, rawValue);
+    }
+  });
   forceUiUpdate();
 }
 
@@ -435,7 +462,7 @@ export function stepEditProperty(ctrl: string, delta: number) {
   forceUiUpdate();
 }
 
-export function resetEditProperty(ctrl: string) {
+export function resetEditProperty(ctrl: string, notify = true) {
   const state = getState();
   const item = getCurrentItem();
   const idx = state.selectedLayer;
@@ -491,7 +518,7 @@ export function resetEditProperty(ctrl: string) {
     setLayerOverride(item, idx, 'MirrorCopyAxisX', 0.5);
     setLayerOverride(item, idx, 'MirrorCopyAxisY', 0.5);
   }
-  forceUiUpdate();
+  if (notify) forceUiUpdate();
 }
 
 export function toggleMirror(key: 'FlipX' | 'FlipY' | 'MirrorCopy' | 'MirrorCopyV') {
@@ -511,13 +538,15 @@ export function resetSelectedTransforms() {
   if (!item || state.selectedLayer === null) return;
   // Locked body parts (official FixedPosition) must not reset transforms.
   if (isGroupLocked(state.selectedLayer)) return;
-  resetEditProperty('x');
-  resetEditProperty('y');
-  setLayerOverride(item, state.selectedLayer, 'ScaleX', 1);
-  setLayerOverride(item, state.selectedLayer, 'ScaleY', 1);
-  setLayerOverride(item, state.selectedLayer, 'Rotation', 0);
-  setLayerOverride(item, state.selectedLayer, 'SkewX', 0);
-  setLayerOverride(item, state.selectedLayer, 'SkewY', 0);
+  batchLayerEdits(() => {
+    resetEditProperty('x', false);
+    resetEditProperty('y', false);
+    setLayerOverride(item, state.selectedLayer!, 'ScaleX', 1);
+    setLayerOverride(item, state.selectedLayer!, 'ScaleY', 1);
+    setLayerOverride(item, state.selectedLayer!, 'Rotation', 0);
+    setLayerOverride(item, state.selectedLayer!, 'SkewX', 0);
+    setLayerOverride(item, state.selectedLayer!, 'SkewY', 0);
+  });
   forceUiUpdate();
 }
 
@@ -965,12 +994,14 @@ export function setToolbarPinned(pinned: boolean) {
 }
 
 export function setToolbarLayout(layout: ToolbarLayoutMode) {
+  const hadCanvasGesture = isCanvasGestureActive(getState());
   mutateState(draft => {
     draft.toolbarLayout = layout;
-    draft.transformOverlay.mode = null;
-    draft.opacityOverlay.open = false;
+    clearCanvasToolState(draft);
+    if (hadCanvasGesture) draft.editTool = null;
     if (layout === 'neat' && !draft.editTool) draft.editTool = 'xy';
   });
+  if (hadCanvasGesture) finishCanvasToolTransition(false);
 }
 
 export function selectEditTool(tool: EditToolMode, anchor?: OverlayAnchor) {
@@ -981,8 +1012,10 @@ export function selectEditTool(tool: EditToolMode, anchor?: OverlayAnchor) {
   }
   if (tool === 'opacity') {
     if (state.toolbarLayout === 'free') {
-      mutateState(draft => { draft.editTool = 'opacity'; });
-      openOpacityOverlay(anchor);
+      if (state.opacityOverlay.open) {
+        mutateState(draft => { clearCanvasToolState(draft); draft.editTool = null; });
+        finishCanvasToolTransition(false);
+      } else openOpacityOverlay(anchor);
     }
     else mutateState(draft => { draft.editTool = draft.editTool === 'opacity' ? null : 'opacity'; });
     return;
@@ -993,23 +1026,20 @@ export function selectEditTool(tool: EditToolMode, anchor?: OverlayAnchor) {
   }
   if (tool === 'layers' || tool === 'settings' || tool === 'gizmo') {
     if (tool === 'gizmo') {
-      setActiveDrag(null);
-      closeTransformOverlay();
-      closeOpacityOverlay();
-      closeLayersOverlay();
-      runtime.panelHoverLayerIdx = null;
-      stopHoverHighlight(true);
+      const opening = state.editTool !== 'gizmo';
+      mutateState(draft => {
+        clearCanvasToolState(draft);
+        draft.editTool = opening ? 'gizmo' : null;
+        if (opening && draft.selectedLayer === null) draft.selectedLayer = 'all';
+      });
+      finishCanvasToolTransition(opening);
+      return;
     }
     mutateState(draft => { draft.editTool = draft.editTool === tool ? null : tool; });
-    if (tool === 'gizmo') {
-      refreshCurrentCharacter();
-      forceUiUpdate();
-    }
     return;
   }
   if (tool === 'xy' || tool === 'rot' || tool === 'scale' || tool === 'skew' || tool === 'mirror') {
     if (state.toolbarLayout === 'free') {
-      mutateState(draft => { draft.editTool = tool; });
       toggleTransformOverlay(tool, anchor);
     }
     else toggleNeatTool(tool);

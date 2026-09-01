@@ -225,6 +225,10 @@ export interface LayersOverlayState {
   top?: number;
 }
 
+export interface PartsBrowserState {
+  open: boolean;
+}
+
 export interface TransformOverlayState {
   mode: TransformOverlayMode | null;
   left?: number;
@@ -272,6 +276,8 @@ export interface AeeState {
   colorPicker: ColorPickerState;
   opacityOverlay: OpacityOverlayState;
   layersOverlay: LayersOverlayState;
+  partsBrowser: PartsBrowserState;
+  layerCaptureRevision: number;
   transformOverlay: TransformOverlayState;
   rotationOverlayOpen: boolean;
   bg: BgState;

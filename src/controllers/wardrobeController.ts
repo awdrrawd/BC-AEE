@@ -8,7 +8,7 @@ import {
 } from '@/core/theme';
 import {reloadWardrobeData} from '@/core/wardrobeStorage';
 import {isSlotOccupied, perPage, slotName, swapOutfits} from '@/controllers/outfitsController';
-import {bumpWardrobeData, getTargetCharacter, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
+import {bumpWardrobeData, DEFAULT_RETURN_SCREEN, getTargetCharacter, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 import type {WardrobeFilter, WardrobeSortMode, WardrobeSourceId} from '@/core/types';
 import {clamp} from '@/util/math';
 import {dismissPrompt} from '@/core/prompts';
@@ -18,6 +18,11 @@ import {settings} from '@/core/settings';
 export const ZOOM_PCT_MIN = 100;
 export const ZOOM_PCT_MAX = 200;
 export const ZOOM_PCT_STEP = 10;
+
+export function exitWardrobe() {
+  const [module, name] = getWardrobeState().returnScreen ?? DEFAULT_RETURN_SCREEN;
+  CommonSetScreen(module, name);
+}
 
 export function installWardrobeSettingEffects() {
   const resizesWardrobe = [

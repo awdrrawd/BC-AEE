@@ -1,5 +1,5 @@
 import {useAeeStore} from '@/core/store';
-import {MainPanel} from '@/components/MainPanel';
+import {PartsFloat} from '@/components/main-panel/PartsFloat';
 import {ColorPicker} from '@/components/ColorPicker';
 import {ViewControls} from '@/components/ViewControls';
 import {ImportDialog} from '@/components/ImportDialog';
@@ -26,7 +26,7 @@ export function App() {
   return <div className="contents" style={uiThemeVariables(wardrobe.theme)}>
     <WardrobeScreen state={wardrobe}/>
     <ToolbarSide state={state}/>
-    <MainPanel state={state}/>
+    <PartsFloat state={state}/>
     <TransformOverlay state={state}/>
     <OpacityOverlay state={state}/>
     <LayersOverlay state={state}/>

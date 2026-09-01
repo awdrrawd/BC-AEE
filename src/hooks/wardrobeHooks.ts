@@ -1,8 +1,8 @@
 import bcAeeModSdk from '@/modsdk';
 import {getCanvasRect} from '@/core/bc';
 import {reloadWardrobeData} from '@/core/wardrobeStorage';
-import {installWardrobeSettingEffects, resetWardrobeScreen} from '@/controllers/wardrobeController';
-import {bumpWardrobeData, DEFAULT_RETURN_SCREEN, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
+import {exitWardrobe, installWardrobeSettingEffects, resetWardrobeScreen} from '@/controllers/wardrobeController';
+import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 
 const WARDROBE_SCREEN_MODULE: string = 'Character';
 const WARDROBE_SCREEN_NAME: string = 'WardrobePlus';
@@ -122,11 +122,6 @@ export function wardrobeRun() {
   setWardrobeState({canvasRect: rect});
 }
 
-export function wardrobeExit() {
-  const [module, name] = getWardrobeState().returnScreen ?? DEFAULT_RETURN_SCREEN;
-  CommonSetScreen(module, name);
-}
-
 export function wardrobeUnload() {
   setWardrobeState({active: false});
 }
@@ -144,7 +139,7 @@ export function registerWardrobeScreen() {
   const globals = window as unknown as Record<string, unknown>;
   globals[`${WARDROBE_SCREEN_NAME}Load`] = wardrobeLoad;
   globals[`${WARDROBE_SCREEN_NAME}Run`] = wardrobeRun;
-  globals[`${WARDROBE_SCREEN_NAME}Exit`] = wardrobeExit;
+  globals[`${WARDROBE_SCREEN_NAME}Exit`] = exitWardrobe;
   globals[`${WARDROBE_SCREEN_NAME}Unload`] = wardrobeUnload;
   globals[`${WARDROBE_SCREEN_NAME}Click`] = () => {};
   globals[`${WARDROBE_SCREEN_NAME}Resize`] = () => {};
@@ -174,5 +169,5 @@ export function installWardrobeHooks() {
   });
 
   window.Liko = window.Liko ?? {};
-  window.Liko.Wardrobe = {open: enterWardrobeScreen, exit: wardrobeExit};
+  window.Liko.Wardrobe = {open: enterWardrobeScreen, exit: exitWardrobe};
 }

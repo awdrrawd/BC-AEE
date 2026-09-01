@@ -11,6 +11,7 @@ import {
   setToolbarHovered,
   setToolbarLayout,
   setToolbarPinned,
+  togglePartsBrowser,
 } from '@/controllers/uiController';
 import {exportBcxAppearance, importBcxAppearanceWithCategory} from '@/controllers/importExportController';
 import {cyclePartsFilterMode, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
@@ -44,7 +45,7 @@ import {getViewSettings} from '@/core/viewSettings';
 import {TiltIcon} from '@/components/main-panel/Icons';
 import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
 import {PartsBrowserPanel} from '@/components/parts-browser/PartsBrowserPanel';
-import {FolderSearch} from 'lucide-react';
+import {PartsBrowserButton} from '@/components/parts-browser/PartsBrowserButton';
 
 const settingsIcon = new URL('../assets/editor/Settings.svg', import.meta.url).href;
 const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
@@ -101,7 +102,6 @@ export function ToolbarSide({state}: {state: AeeState}) {
     && !!CharacterAppearanceSelection;
   const eligible = !!state.canvasRect && (editing || resident);
   const [managePanel, setManagePanel] = useState<ManagePanel>(null);
-  const [partsBrowserOpen, setPartsBrowserOpen] = useState(false);
   const [exitMounted, setExitMounted] = useState(eligible);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const lastRectRef = useRef(state.canvasRect);
@@ -141,18 +141,13 @@ export function ToolbarSide({state}: {state: AeeState}) {
       return;
     }
     setManagePanel(null);
-    setPartsBrowserOpen(false);
+    togglePartsBrowser(false);
     const timer = window.setTimeout(() => {
       setExitMounted(false);
       editingRef.current = false;
     }, 320);
     return () => window.clearTimeout(timer);
   }, [editing, eligible]);
-  useEffect(() => {
-    const toggle = () => setPartsBrowserOpen(value => !value);
-    window.addEventListener('aee-toggle-parts-browser', toggle);
-    return () => window.removeEventListener('aee-toggle-parts-browser', toggle);
-  }, []);
   if ((!eligible && !exitMounted) || !lastRectRef.current) return null;
 
   const rect = state.canvasRect ?? lastRectRef.current;
@@ -164,10 +159,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
     : managePanel !== null);
   if (panelOpen) panelWidthRef.current = settingsOpen ? 500 : 350;
   const panelWidth = panelWidthRef.current;
-  const partsAction = <button type="button" aria-label={t('edit-tab-parts-section-title')}
-    data-aee-tooltip={t('edit-tab-parts-section-title')}
-    className={`flex h-[30px] w-[45px] items-center justify-center rounded border bg-(--aee-control-bg) transition ${partsBrowserOpen ? 'border-(--aee-accent) text-(--aee-accent)' : 'border-zinc-700 text-zinc-300 hover:border-(--aee-accent)'}`}
-    onClick={() => setPartsBrowserOpen(value => !value)}><FolderSearch className="h-[25px] w-[25px]"/></button>;
+  const partsAction = <PartsBrowserButton open={state.partsBrowser.open} onClick={() => togglePartsBrowser()}/>;
   const controlContent = editing ? <EditControlPanel state={state} partsAction={partsAction}/> : <SettingsTab/>;
   const controlPageKey = editing
     ? state.editTool === 'settings' || state.editTool === 'layers' || state.editTool === 'opacity' || state.editTool === 'layeringHide'
@@ -227,7 +219,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
         <div className="w-max whitespace-nowrap rounded-b-lg border-2 border-t-0 border-(--aee-accent) bg-(--aee-control-bg) px-6 py-2 text-[28px] leading-none text-(--aee-accent) shadow-[0_0_12px_var(--aee-accent-55)] [writing-mode:horizontal-tb]">{state.editTool === 'gizmo' ? t('free-transform-active') : dragLabel(state.activeDrag!)}</div>
       </div> : null}
     </div>
-    {editing ? <PartsBrowserPanel state={state} open={partsBrowserOpen} onClose={() => setPartsBrowserOpen(false)}/> : null}
+    {editing ? <PartsBrowserPanel state={state} open={state.partsBrowser.open} onClose={() => togglePartsBrowser(false)}/> : null}
   </div>;
 }
 

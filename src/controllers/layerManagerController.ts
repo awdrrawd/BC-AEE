@@ -19,7 +19,7 @@
 // change a value that BC's renderer never reads back.
 
 import {t} from '@/i18n/i18n';
-import {syncCharacterToRoom} from '@/components/mask-system/freeDraw/maskToggle';
+import {syncCharacterToRoom} from '@/features/mask';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {getState, mutateState} from '@/core/store';
 import {clampPanelPosition} from '@/core/overlay';

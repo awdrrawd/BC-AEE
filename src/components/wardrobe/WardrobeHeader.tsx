@@ -2,7 +2,7 @@ import {Camera, LogOut, Settings} from '@/components/wardrobe/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {openDialog} from '@/core/dialogs';
 import {settings, useSetting} from '@/core/settings';
-import {wardrobeExit} from '@/hooks/wardrobeHooks';
+import {exitWardrobe} from '@/controllers/wardrobeController';
 import {useStage} from '@/components/wardrobe/stageContext';
 import {Button} from '@/components/ui/Button';
 import {SettingsDialog} from '@/components/wardrobe/dialogs/SettingsDialog';
@@ -50,7 +50,7 @@ export function WardrobeHeader() {
 
       <Button density="stage"
               className="h-11 w-15"
-              onClick={wardrobeExit}
+              onClick={exitWardrobe}
               icon={<LogOut className="h-9 w-9"/>}
               aria-label={t('wardrobe-back')}
       />

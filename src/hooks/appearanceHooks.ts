@@ -10,6 +10,7 @@ import {
   syncAfterBcRender
 } from '@/controllers/uiController';
 import {getState} from '@/core/store';
+import {isCanvasGestureActive} from '@/core/editorToolState';
 import {drawAboveGridIfNeeded, removeBgHook, saveBgAndRefresh, syncViewBackground} from '@/controllers/backgroundController';
 import {closeImportDialog} from '@/controllers/importExportController';
 import {drawGroupCopyPasteButtons, handleGroupCopyPasteClick} from '@/controllers/copyPasteController';
@@ -229,6 +230,13 @@ export function installAppearanceHooks() {
       return next(args);
     }
     const isTarget = character && (character === CharacterAppearanceSelection || craftingTarget || itemColorTarget);
+    // ItemColor/Dialog previews are allowed to choose arbitrary zoom values
+    // based on the current screen and available canvas space. The view-control
+    // branches below only recognize BC's standard 1/0.95/4 scales, which left
+    // free-transform captures without a draw rectangle on other ItemColor
+    // layouts. Record the authoritative ItemColor draw unconditionally; a
+    // later standard-scale branch may replace it with the same coordinates.
+    if (itemColorTarget) captureAppearanceDraw(character, args[1], args[2], args[3], args[4]);
     const view = getViewSettings();
     const closeup = scale === 4 || (craftingTarget && Math.abs(scale - 2) < 0.05);
     if (closeup) {
@@ -493,7 +501,7 @@ function findHoveredClothItem(): DialogInventoryItem | null {
 
 function isEditingBody() {
   const state = getState();
-  return !!(state.visible && state.activeDrag);
+  return !!(state.visible && isCanvasGestureActive(state));
 }
 
 function isBodyClick() {

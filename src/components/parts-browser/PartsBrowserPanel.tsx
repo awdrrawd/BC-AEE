@@ -5,7 +5,8 @@ import {selectLayer, startHoverHighlight, stopHoverHighlight} from '@/controller
 import {Button} from '@/components/ui/Button';
 import {Grid3x2, List, Search, X} from 'lucide-react';
 import {t} from '@/i18n/i18n';
-import {getCapturedLayerThumbnail, setLayerPanelHover} from '@/controllers/appearancePickerController';
+import {setLayerPanelHover} from '@/controllers/appearancePickerController';
+import {useLayerThumbnail} from '@/components/parts-browser/useLayerThumbnail';
 
 type BrowserMode = 'list' | 'grid';
 
@@ -23,7 +24,6 @@ export function PartsBrowserPanel({state, open, onClose}: {state: AeeState; open
   const item = state.item;
   const parts = item ? [{layerId: 'all', name: t('layer-list-all-parts-row')}, ...getEditableParts(item)] : [];
   const image = item ? previewUrl(item) : '';
-  const partImage = (id: LayerId) => id === 'all' ? image : getCapturedLayerThumbnail(Number.parseInt(id, 10)) ?? image;
 
   useEffect(() => {
     if (open) return;
@@ -60,17 +60,31 @@ export function PartsBrowserPanel({state, open, onClose}: {state: AeeState; open
       <Button iconOnly tone="danger" className="h-9 w-9" onClick={onClose}><X className="h-5.5 w-5.5"/></Button>
     </div>
     <div className={`aee-scroll min-h-0 flex-1 overflow-y-auto p-3 ${mode === 'grid' ? 'grid auto-rows-min grid-cols-3 gap-3' : 'flex flex-col gap-2'}`} onMouseLeave={leave}>
-      {parts.map(part => <button key={part.layerId} type="button"
-        className={`${mode === 'grid' ? 'flex aspect-square flex-col' : 'flex h-20'} min-w-0 shrink-0 items-center overflow-hidden rounded border text-white transition ${state.selectedLayer === part.layerId ? 'border-(--aee-accent) bg-(--aee-accent-22)' : 'border-zinc-700 bg-zinc-900 hover:border-(--aee-accent-55)'}`}
-        onMouseEnter={() => enter(part.layerId, part.name)} onMouseLeave={leave} onClick={() => choose(part.layerId)}>
-        <span className={`${mode === 'grid' ? 'h-[76%] w-full' : 'h-full w-20'} shrink-0 bg-[#C4C4C4] bg-contain bg-center bg-no-repeat`} style={{backgroundImage: `url("${partImage(part.layerId)}")`}}/>
-        <span className={`${mode === 'grid' ? 'w-full px-1 text-center text-[17px]' : 'min-w-0 flex-1 px-3 text-left text-[19px]'} truncate`}>{part.name}</span>
-      </button>)}
+      {parts.map(part => <PartButton key={part.layerId} part={part} mode={mode} selected={state.selectedLayer === part.layerId}
+        fallback={image} revision={state.layerCaptureRevision} onEnter={enter} onLeave={leave} onChoose={choose}/>)}
     </div>
     {magnify && hovered ? <div className="pointer-events-none absolute right-full top-12 mr-2 w-52 rounded-lg border-2 border-(--aee-accent) bg-black/90 p-2 shadow-xl">
-      <div className="aspect-square bg-[#C4C4C4] bg-contain bg-center bg-no-repeat" style={{backgroundImage: `url("${partImage(hovered.id)}")`}}/>
+      <MagnifiedPart id={hovered.id} fallback={image} revision={state.layerCaptureRevision}/>
       <div className="mt-1 truncate text-center text-[19px] text-white">{hovered.name}</div>
     </div> : null}
   </div>
   </div>;
+}
+
+function PartButton({part, mode, selected, fallback, revision, onEnter, onLeave, onChoose}: {
+  part: {layerId: LayerId; name: string}; mode: BrowserMode; selected: boolean; fallback: string; revision: unknown;
+  onEnter: (id: LayerId, name: string) => void; onLeave: () => void; onChoose: (id: LayerId) => void;
+}) {
+  const index = part.layerId === 'all' ? 'all' : Number.parseInt(part.layerId, 10);
+  const image = useLayerThumbnail(index, fallback, revision);
+  return <button type="button" className={`${mode === 'grid' ? 'flex aspect-square flex-col' : 'flex h-20'} min-w-0 shrink-0 items-center overflow-hidden rounded border text-white transition ${selected ? 'border-(--aee-accent) bg-(--aee-accent-22)' : 'border-zinc-700 bg-zinc-900 hover:border-(--aee-accent-55)'}`}
+    onMouseEnter={() => onEnter(part.layerId, part.name)} onMouseLeave={onLeave} onClick={() => onChoose(part.layerId)}>
+    <span className={`${mode === 'grid' ? 'h-[76%] w-full' : 'h-full w-20'} shrink-0 bg-[#C4C4C4] bg-contain bg-center bg-no-repeat`} style={{backgroundImage: `url("${image}")`}}/>
+    <span className={`${mode === 'grid' ? 'w-full px-1 text-center text-[17px]' : 'min-w-0 flex-1 px-3 text-left text-[19px]'} truncate`}>{part.name}</span>
+  </button>;
+}
+
+function MagnifiedPart({id, fallback, revision}: {id: LayerId; fallback: string; revision: unknown}) {
+  const image = useLayerThumbnail(id === 'all' ? 'all' : Number.parseInt(id, 10), fallback, revision);
+  return <div className="aspect-square bg-[#C4C4C4] bg-contain bg-center bg-no-repeat" style={{backgroundImage: `url("${image}")`}}/>;
 }

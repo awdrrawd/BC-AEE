@@ -2,6 +2,7 @@ import {memo, useEffect, useRef} from 'react';
 import {resetEditProperty, setEditProperty, stepEditProperty} from '@/controllers/uiController';
 import {resetButtonClass, stepButtonClass, tallRangeClass} from '@/components/main-panel/styles';
 import {HoldButton} from '@/components/ui/HoldButton';
+import {RangeCenterMark} from '@/components/ui/RangeCenterMark';
 
 export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   label: string;
@@ -52,7 +53,7 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
       <input type="range" className={tallRangeClass} min={min} max={max} step={rangeStep}
              value={Math.max(min, Math.min(max, numericValue))}
              onChange={event => setEditProperty(ctrl, Number(event.target.value))}/>
-      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+      <RangeCenterMark/>
     </div>
   </div>;
 }, (prev, next) => prev.ctrl === next.ctrl && String(prev.value) === String(next.value));

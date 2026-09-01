@@ -10,6 +10,7 @@ import {RangeInput} from '@/components/main-panel/RangeInput';
 import {Section} from '@/components/main-panel/Section';
 import {StepPair} from '@/components/main-panel/StepPair';
 import {tallRangeClass} from '@/components/main-panel/styles';
+import {RangeCenterMark} from '@/components/ui/RangeCenterMark';
 
 export function EditSection({state, layerId, toolOnly = null, showHeader = true}: {
   state: AeeState;
@@ -48,7 +49,7 @@ export function EditSection({state, layerId, toolOnly = null, showHeader = true}
       </div>
       <div className="relative flex items-center">
         <RangeInput className={tallRangeClass} min={0} max={100} step={1} value={opacity} onChange={value => setOpacity(layerId, value)}/>
-        <span className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+        <RangeCenterMark/>
       </div>
     </div> : null}
     {locked ? <div

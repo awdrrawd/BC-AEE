@@ -4,10 +4,9 @@ import {runtime} from '@/core/runtime';
 import {getState, mutateState} from '@/core/store';
 import {getCurrentCharacter, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
-import {forceUiUpdate} from '@/core/context';
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
-type DrawCapture = {
+export type DrawCapture = {
   url: string;
   /** Actual raster origin, retained for picking/outlines. */
   x: number;
@@ -44,7 +43,6 @@ let layerFrame = new Map<number, DrawCapture[]>();
 // layer with Alpha=0, so the current frame alone cannot always draw its outline.
 const lastVisibleCaptures = new Map<AssetGroupName, {asset: Asset; list: DrawCapture[]}>();
 const alphaCache = new Map<string, AlphaData | null>();
-const layerThumbnailCache = new Map<string, string | null>();
 let drawAt: DrawAt | null = null;
 let frameDrawAt: DrawAt | null = null;
 let hovered: PickHit | null = null;
@@ -52,6 +50,8 @@ let lastPick: {x: number; y: number; key: string; groupName: AssetGroupName} | n
 let layerLabels: Array<{index: number; x: number; y: number; w: number; h: number}> = [];
 let hoveredLayerIndex: number | null = null;
 let outlineCanvas: HTMLCanvasElement | null = null;
+let layerFrameSignature = '';
+let layerContentSignature = '';
 
 const OUTLINE_WIDTH = 3;
 const OUTLINE_SAMPLES = 20;
@@ -86,7 +86,8 @@ function inSupportedAppearanceMode(): boolean {
 }
 
 export function captureAppearanceDraw(character: Character, x: number, y: number, zoom: number, heightResize?: boolean) {
-  if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || character !== pickerCharacter() || zoom > 2) return;
+  const captureLayers = layerCaptureEnabled();
+  if (!(inSupportedAppearanceMode() || captureLayers) || character !== pickerCharacter() || (!captureLayers && zoom > 2)) return;
   // Crafting draws the same preview twice. Keep its large, left-hand preview
   // as the picking surface instead of letting the later 0.9x thumbnail replace it.
   if (CurrentScreen === 'Crafting' && frameDrawAt && frameDrawAt.zoom > zoom) return;
@@ -175,26 +176,24 @@ export function commitAppearancePickerFrame() {
     layerCaptures.clear();
     for (const [index, list] of layerFrame) layerCaptures.set(index, list);
     layerFrame = new Map();
-    const state = getState();
-    if (state.editTool === 'gizmo' || state.activeDrag === 'rot') forceUiUpdate();
+    const signature = [...layerCaptures.entries()].map(([index, list]) => `${index}:${list.map(cap => `${cap.url}:${cap.x}:${cap.y}:${cap.scaleX}:${cap.scaleY}:${cap.rotation}`).join(',')}`).join(';');
+    const contentSignature = [...layerCaptures.entries()].map(([index, list]) => `${index}:${list.map(cap => cap.url).join(',')}`).join(';');
+    const geometryChanged = signature !== layerFrameSignature;
+    const contentChanged = contentSignature !== layerContentSignature;
+    if (geometryChanged || contentChanged) {
+      layerFrameSignature = signature;
+      layerContentSignature = contentSignature;
+      const state = getState();
+      if ((geometryChanged && (state.editTool === 'gizmo' || state.activeDrag === 'rot')) || (contentChanged && state.partsBrowser.open)) {
+        mutateState(draft => { draft.layerCaptureRevision += 1; });
+      }
+    }
   }
   const wornAssets = new Set(pickerCharacter()?.Appearance.map(item => item.Asset) ?? []);
   for (const [groupName, record] of lastVisibleCaptures) {
     if (!wornAssets.has(record.asset)) lastVisibleCaptures.delete(groupName);
   }
   hovered = inSupportedAppearanceMode() ? pickAt(MouseX, MouseY)[0] ?? null : null;
-}
-
-/** Tight visible bounds of one captured item layer in MainCanvas coordinates. */
-export function getCapturedLayerBounds(index: number): ScreenRect | null {
-  const geometry = getCapturedLayerGeometry(index);
-  if (!geometry) return null;
-  return {
-    left: Math.min(...geometry.corners.map(point => point[0])),
-    top: Math.min(...geometry.corners.map(point => point[1])),
-    right: Math.max(...geometry.corners.map(point => point[0])),
-    bottom: Math.max(...geometry.corners.map(point => point[1])),
-  };
 }
 
 export function getCapturedTranslationFactor(): number {
@@ -207,8 +206,8 @@ export function getCapturedLayerGeometry(index: number): CapturedLayerGeometry |
   const list = layerCaptures.get(index);
   const map = canvasMap();
   if (!list?.length || !map) return null;
-  for (let captureIndex = list.length - 1; captureIndex >= 0; captureIndex--) {
-    const cap = list[captureIndex];
+  const geometries: CapturedLayerGeometry[] = [];
+  for (const cap of list) {
     const image = pickImage(cap.url);
     if (!image) continue;
     const alpha = alphaData(cap.url, image);
@@ -229,50 +228,29 @@ export function getCapturedLayerGeometry(index: number): CapturedLayerGeometry |
     const corners = [transformPoint(bounds.x, bounds.y), transformPoint(x2, bounds.y), transformPoint(x2, y2), transformPoint(bounds.x, y2)];
     const center = transformPoint(bounds.x + bounds.w / 2, bounds.y + bounds.h / 2);
     const pivotPoint = canvasToScreen(pivotX, pivotY, map);
-    return {corners, center, pivot: [pivotPoint.x, pivotPoint.y], width: bounds.w * cap.scaleX * map.sx, height: bounds.h * cap.scaleY * map.sy};
+    geometries.push({corners, center, pivot: [pivotPoint.x, pivotPoint.y], width: Math.abs(bounds.w * cap.scaleX * map.sx), height: Math.abs(bounds.h * cap.scaleY * map.sy)});
   }
-  return null;
+  if (!geometries.length) return null;
+  if (geometries.length === 1) return geometries[0];
+  const points = geometries.flatMap(geometry => geometry.corners);
+  const left = Math.min(...points.map(point => point[0])), top = Math.min(...points.map(point => point[1]));
+  const right = Math.max(...points.map(point => point[0])), bottom = Math.max(...points.map(point => point[1]));
+  const center: [number, number] = [(left + right) / 2, (top + bottom) / 2];
+  return {corners: [[left, top], [right, top], [right, bottom], [left, bottom]], center, pivot: geometries.at(-1)!.pivot, width: right - left, height: bottom - top};
 }
 
-/** Alpha-cropped white-backed thumbnail built from the same layer captures used by picking. */
-export function getCapturedLayerThumbnail(index: number, max = 160): string | null {
-  const list = layerCaptures.get(index);
-  if (!list?.length) return null;
-  // A transform changes capture coordinates every frame, but not the source
-  // pixels used by this tightly-cropped thumbnail. Key by source URLs so
-  // moving/scaling/rotating an item does not regenerate every card as a PNG.
-  const cacheKey = `${max}:${list.map(cap => cap.url).join('|')}`;
-  if (layerThumbnailCache.has(cacheKey)) return layerThumbnailCache.get(cacheKey) ?? null;
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  const drawable: Array<{cap: DrawCapture; image: HTMLImageElement}> = [];
+export function getCapturedLayerImages(index: number | 'all'): Array<{url: string; capture: DrawCapture; image: HTMLImageElement; bounds: {x: number; y: number; w: number; h: number}}> {
+  const list = index === 'all' ? [...layerCaptures.values()].flat() : layerCaptures.get(index);
+  if (!list?.length) return [];
+  const drawable: Array<{url: string; capture: DrawCapture; image: HTMLImageElement; bounds: {x: number; y: number; w: number; h: number}}> = [];
   for (const cap of list) {
     const image = pickImage(cap.url);
     if (!image) continue;
     const alpha = alphaData(cap.url, image);
     const bounds = alpha?.bounds ?? {x: 0, y: 0, w: image.naturalWidth || image.width, h: image.naturalHeight || image.height};
-    minX = Math.min(minX, cap.x + bounds.x); minY = Math.min(minY, cap.y + bounds.y);
-    maxX = Math.max(maxX, cap.x + bounds.x + bounds.w); maxY = Math.max(maxY, cap.y + bounds.y + bounds.h);
-    drawable.push({cap, image});
+    drawable.push({url: cap.url, capture: cap, image, bounds});
   }
-  if (!drawable.length || !Number.isFinite(minX)) return null;
-  const width = Math.max(1, maxX - minX), height = Math.max(1, maxY - minY);
-  const scale = Math.min(max / width, max / height, 1);
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.ceil(width * scale)); canvas.height = Math.max(1, Math.ceil(height * scale));
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-  ctx.fillStyle = '#C4C4C4'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.scale(scale, scale);
-  for (const {cap, image} of drawable) ctx.drawImage(image, cap.x - minX, cap.y - minY);
-  try {
-    const result = canvas.toDataURL('image/png');
-    if (layerThumbnailCache.size >= 512) layerThumbnailCache.clear();
-    layerThumbnailCache.set(cacheKey, result);
-    return result;
-  } catch {
-    layerThumbnailCache.set(cacheKey, null);
-    return null;
-  }
+  return drawable;
 }
 
 export function invalidateAppearancePicker() {

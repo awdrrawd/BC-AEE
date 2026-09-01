@@ -1,10 +1,11 @@
-import type {MouseEvent as ReactMouseEvent} from 'react';
+import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {AeeState} from '@/core/types';
 import {getLayerOverride, isGroupLocked} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {setEditProperty} from '@/controllers/uiController';
 import {setRotationDragging} from '@/controllers/dragController';
-import {getCapturedLayerGeometry} from '@/controllers/appearancePickerController';
+import {getSelectedLayerGeometry} from '@/controllers/layerGeometryController';
+import {beginPointerDrag} from '@/controllers/pointerDragController';
 
 const ROT_CX_PCT = 0.5;
 const ROT_CY_PCT = 0.89;
@@ -16,15 +17,7 @@ export function RotationOverlay({state}: { state: AeeState }) {
   if (isGroupLocked(state.selectedLayer)) return null;
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const rotation = layerOverride.Rotation ?? 0;
-  const geometries = state.selectedLayer === 'all'
-    ? state.layers.map((_, index) => getCapturedLayerGeometry(index)).filter((geometry): geometry is NonNullable<typeof geometry> => !!geometry)
-    : [getCapturedLayerGeometry(Number.parseInt(state.selectedLayer, 10))].filter((geometry): geometry is NonNullable<typeof geometry> => !!geometry);
-  const allPoints = geometries.flatMap(geometry => geometry.corners);
-  const wholeCenter = allPoints.length ? [
-    (Math.min(...allPoints.map(point => point[0])) + Math.max(...allPoints.map(point => point[0]))) / 2,
-    (Math.min(...allPoints.map(point => point[1])) + Math.max(...allPoints.map(point => point[1]))) / 2,
-  ] : null;
-  const actualPivot = state.selectedLayer === 'all' ? wholeCenter : geometries[0]?.pivot;
+  const actualPivot = getSelectedLayerGeometry(state)?.pivot;
   const pivotX = actualPivot ? actualPivot[0] * state.canvasRect.width / 2000 : null;
   const pivotY = actualPivot ? actualPivot[1] * state.canvasRect.height / 1000 : null;
   // The circle is the angle dial, not the item's pivot. Keep the dial in its
@@ -41,19 +34,12 @@ export function RotationOverlay({state}: { state: AeeState }) {
     return Math.round(angle);
   };
 
-  const startDrag = (event: ReactMouseEvent) => {
+  const startDrag = (event: ReactPointerEvent<SVGCircleElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setRotationDragging(true);
     setEditProperty('rot', calcAngle(event.clientX, event.clientY));
-    const onMove = (ev: MouseEvent) => setEditProperty('rot', calcAngle(ev.clientX, ev.clientY));
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove, true);
-      document.removeEventListener('mouseup', onUp, true);
-      setRotationDragging(false);
-    };
-    document.addEventListener('mousemove', onMove, true);
-    document.addEventListener('mouseup', onUp, true);
+    beginPointerDrag(event.nativeEvent, ev => setEditProperty('rot', calcAngle(ev.clientX, ev.clientY)), () => setRotationDragging(false));
   };
 
   return <div className="fixed z-1000002 pointer-events-none" style={{
@@ -78,7 +64,7 @@ export function RotationOverlay({state}: { state: AeeState }) {
         <line x1={pivotX} y1={pivotY - 8} x2={pivotX} y2={pivotY + 8} stroke="var(--aee-accent)" strokeWidth="2.33"/>
       </> : null}
       <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)"
-              stroke="transparent" strokeWidth="28" onMouseDown={startDrag}/>
+              stroke="transparent" strokeWidth="28" onPointerDown={startDrag}/>
     </svg>
   </div>;
 }

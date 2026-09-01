@@ -178,6 +178,22 @@ export function setLayerOpacityAtIndex(item: Item, layerIndex: number, value: nu
     && Array.isArray(ItemColorState.opacity)) ItemColorState.opacity[slot] = clamped;
 }
 
+let layerEditBatchDepth = 0;
+let layerEditRefreshPending = false;
+
+export function batchLayerEdits<T>(edit: () => T): T {
+  layerEditBatchDepth += 1;
+  try {
+    return edit();
+  } finally {
+    layerEditBatchDepth -= 1;
+    if (layerEditBatchDepth === 0 && layerEditRefreshPending) {
+      layerEditRefreshPending = false;
+      refreshAfterLayerEdit();
+    }
+  }
+}
+
 export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverrideKey, value: AeeLayerOverride[LayerOverrideKey]) {
   ensureLayerOverrides(item);
   const count = item.Asset?.Layer?.length || 1;
@@ -255,6 +271,10 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
 }
 
 export function refreshAfterLayerEdit() {
+  if (layerEditBatchDepth > 0) {
+    layerEditRefreshPending = true;
+    return;
+  }
   refreshCurrentCharacter(false);
   if (runtime.itemColorChar) {
     runtime.itemColorDirty = true;

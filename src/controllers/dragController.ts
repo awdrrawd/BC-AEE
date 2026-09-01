@@ -1,6 +1,7 @@
 import type {LayerId} from '@/core/types';
 import {
   getAssetBaseXY,
+  batchLayerEdits,
   getCanvas,
   getCanvasRect,
   getCurrentItem,
@@ -11,6 +12,7 @@ import {
 import {getState, mutateState} from '@/core/store';
 import {forceUiUpdate} from '@/core/context';
 import {settings} from '@/core/settings';
+import {clearCanvasGesture, isCanvasGestureActive} from '@/core/editorToolState';
 
 interface BaseDragState {
   layerId: LayerId;
@@ -112,7 +114,7 @@ function isAeeEditing() {
   // Intercept the game canvas only while an AEE gesture explicitly owns it.
   // Ordinary colour-picker use is confined to AEE's own DOM; only its
   // eyedropper intentionally captures the rest of the screen.
-  return !!(state.activeDrag || state.colorPicker.eyedropperActive || rotationDragging);
+  return !!(isCanvasGestureActive(state) || state.colorPicker.eyedropperActive || rotationDragging);
 }
 
 const BC_UI_SELECTOR = '.screen-main-container, .screen-main, fieldset[name="color-picker"], [role="menu"], [role="menuitem"], [role="radiogroup"]';
@@ -143,9 +145,8 @@ function getEventPoint(event: Event): {cx: number; cy: number} | null {
   return null;
 }
 
-function shouldIntercept(event: Event): boolean {
+function isCanvasEditingPoint(event: Event): boolean {
   if (!isAeeEditing()) return false;
-  if (isOwnUiTarget(event)) return false;
   const point = getEventPoint(event);
   if (!point) return false;
   const canvas = getCanvas();
@@ -156,6 +157,10 @@ function shouldIntercept(event: Event): boolean {
   if (point.cx < rect.left + 300 * sx || point.cx > rect.left + 1700 * sx
     || point.cy < rect.top + 50 * sy || point.cy > rect.top + 950 * sy) return false;
   return true;
+}
+
+function shouldIntercept(event: Event): boolean {
+  return !isOwnUiTarget(event) && isCanvasEditingPoint(event);
 }
 
 function canStartCanvasDrag(event: MouseEvent | PointerEvent) {
@@ -249,8 +254,10 @@ function moveXyDrag(event: MouseEvent) {
   // private LayerOverrides. Writing LayerOverrides directly made a canvas drag
   // invisible whenever a slider had already set a native position: the native
   // value won the draw and the drag was ignored.
-  setLayerOverride(item, xyDragState.layerId, 'DrawingLeft', {'': nextX});
-  setLayerOverride(item, xyDragState.layerId, 'DrawingTop', {'': nextY});
+  batchLayerEdits(() => {
+    setLayerOverride(item, xyDragState!.layerId, 'DrawingLeft', {'': nextX});
+    setLayerOverride(item, xyDragState!.layerId, 'DrawingTop', {'': nextY});
+  });
   forceUiUpdate();
 }
 
@@ -272,8 +279,10 @@ function moveScaleDrag(event: MouseEvent) {
     newSX = Math.max(0.05, +(scaleDragState.origSX + dx).toFixed(2));
     newSY = Math.max(0.05, +(scaleDragState.origSY + dy).toFixed(2));
   }
-  setLayerOverride(item, scaleDragState.layerId as LayerId, 'ScaleX', newSX);
-  setLayerOverride(item, scaleDragState.layerId as LayerId, 'ScaleY', newSY);
+  batchLayerEdits(() => {
+    setLayerOverride(item, scaleDragState!.layerId as LayerId, 'ScaleX', newSX);
+    setLayerOverride(item, scaleDragState!.layerId as LayerId, 'ScaleY', newSY);
+  });
   forceUiUpdate();
 }
 
@@ -283,8 +292,10 @@ function moveSkewDrag(event: MouseEvent) {
   const degPerPx = 0.3;
   const dx = (event.clientX - skewDragState.startX) * degPerPx;
   const dy = (event.clientY - skewDragState.startY) * degPerPx;
-  setLayerOverride(item, skewDragState.layerId as LayerId, 'SkewX', +(skewDragState.origSX + dx).toFixed(1));
-  setLayerOverride(item, skewDragState.layerId as LayerId, 'SkewY', +(skewDragState.origSY + dy).toFixed(1));
+  batchLayerEdits(() => {
+    setLayerOverride(item, skewDragState!.layerId as LayerId, 'SkewX', +(skewDragState!.origSX + dx).toFixed(1));
+    setLayerOverride(item, skewDragState!.layerId as LayerId, 'SkewY', +(skewDragState!.origSY + dy).toFixed(1));
+  });
   forceUiUpdate();
 }
 
@@ -295,8 +306,10 @@ function moveMirrorDrag(event: MouseEvent) {
   const rect = canvas.getBoundingClientRect();
   const dx = (event.clientX - mirrorDragState.startX) / rect.width;
   const dy = (event.clientY - mirrorDragState.startY) / rect.height;
-  setLayerOverride(item, mirrorDragState.layerId, 'MirrorCopyAxisX', +(mirrorDragState.origX + dx).toFixed(2));
-  setLayerOverride(item, mirrorDragState.layerId, 'MirrorCopyAxisY', +(mirrorDragState.origY + dy).toFixed(2));
+  batchLayerEdits(() => {
+    setLayerOverride(item, mirrorDragState!.layerId, 'MirrorCopyAxisX', +(mirrorDragState!.origX + dx).toFixed(2));
+    setLayerOverride(item, mirrorDragState!.layerId, 'MirrorCopyAxisY', +(mirrorDragState!.origY + dy).toFixed(2));
+  });
   forceUiUpdate();
 }
 
@@ -380,7 +393,7 @@ export function installDragHandlers() {
   }, true);
 
   document.addEventListener('contextmenu', event => {
-    if (!settings.rightClickExitDrag.get() || !getState().activeDrag || !shouldIntercept(event)) return;
+    if (!settings.rightClickExitDrag.get() || !isCanvasGestureActive(getState()) || !isCanvasEditingPoint(event)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     xyDragState = null;
@@ -389,8 +402,7 @@ export function installDragHandlers() {
     mirrorDragState = null;
     rotationDragging = false;
     mutateState(draft => {
-      draft.activeDrag = null;
-      draft.rotationOverlayOpen = false;
+      clearCanvasGesture(draft);
     });
     hideTouchBlocker();
   }, true);

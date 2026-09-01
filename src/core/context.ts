@@ -1,4 +1,4 @@
-import {getAppearanceMode, getCanvasRect, getCurrentGroup, getCurrentItem, isEditableAppearanceContext} from '@/core/bc';
+import {getAppearanceMode, getCanvasRect, getCurrentGroup, getCurrentItem, isEditableAppearanceContext, isSimpleColorItem} from '@/core/bc';
 import {getState, mutateState, setState} from '@/core/store';
 import {runtime} from '@/core/runtime';
 import {getLayerPickerSetting} from '@/core/viewSettings';
@@ -45,7 +45,7 @@ export function syncCurrentContext() {
     if (!visible) {
       closeContextOverlays(draft);
     } else if (itemChanged) {
-      draft.selectedLayer = null;
+      draft.selectedLayer = mode === 'Color' && isSimpleColorItem(item) ? 'all' : null;
       draft.partsOpen = false;
       draft.partsBrowser.open = false;
       closeContextOverlays(draft);

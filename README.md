@@ -92,8 +92,9 @@ Experimental features (transform, mirror, free draw) are rendered locally by AEE
 
 ## 🙏 技術來源 · Credits
 
-懸停外框與畫布拾取功能（alpha 遮罩、像素命中、重疊部件輪換等）參考並改寫自 **星漣 XinLian132243 / BCMod**：<https://github.com/XinLian132243/BCMod>  
-The hover-outline and canvas-picking implementation was adapted from **XinLian132243 (星漣) / BCMod**: <https://github.com/XinLian132243/BCMod>
+懸停外框、畫布拾取與任意變形功能（alpha 遮罩、像素命中、重疊部件輪換、拖移／縮放／旋轉控制框等）參考並改寫自 **星漣 XinLian132243 / BCMod**：<https://github.com/XinLian132243/BCMod>
+
+The hover outline, canvas picking, and free-transform controls were adapted from **XinLian132243 (星漣) / BCMod**: <https://github.com/XinLian132243/BCMod>
 
 ---
 

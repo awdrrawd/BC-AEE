@@ -17,13 +17,21 @@ function previewUrl(item: Item): string {
   return `${AssetGetPreviewPath(item.Asset)}/${item.Asset.Name}${suffix}.png`;
 }
 
+/** Best-effort source art for an inactive named layer (which has no draw capture). */
+function layerSourceUrl(item: Item, layerId: LayerId): string {
+  if (layerId === 'all') return previewUrl(item);
+  const layer = item.Asset.Layer?.[Number.parseInt(layerId, 10)];
+  if (!layer?.Name) return '';
+  const assetPath = AssetGetPreviewPath(item.Asset).replace(/\/Preview\/?$/, '');
+  return `${assetPath}/${item.Asset.Name}_${layer.Name}.png`;
+}
+
 export function PartsBrowserPanel({state, open, onClose}: {state: AeeState; open: boolean; onClose: () => void}) {
   const [mode, setMode] = useState<BrowserMode>('list');
   const [magnify, setMagnify] = useState(false);
   const [hovered, setHovered] = useState<{id: LayerId; name: string} | null>(null);
   const item = state.item;
   const parts = item ? [{layerId: 'all', name: t('layer-list-all-parts-row')}, ...getEditableParts(item)] : [];
-  const image = item ? previewUrl(item) : '';
 
   useEffect(() => {
     if (open) return;
@@ -61,10 +69,10 @@ export function PartsBrowserPanel({state, open, onClose}: {state: AeeState; open
     </div>
     <div className={`aee-scroll min-h-0 flex-1 overflow-y-auto p-3 ${mode === 'grid' ? 'grid auto-rows-min grid-cols-3 gap-3' : 'flex flex-col gap-2'}`} onMouseLeave={leave}>
       {parts.map(part => <PartButton key={part.layerId} part={part} mode={mode} selected={state.selectedLayer === part.layerId}
-        fallback={image} revision={state.layerCaptureRevision} onEnter={enter} onLeave={leave} onChoose={choose}/>)}
+        fallback={item ? layerSourceUrl(item, part.layerId) : ''} revision={state.layerCaptureRevision} onEnter={enter} onLeave={leave} onChoose={choose}/>)}
     </div>
     {magnify && hovered ? <div className="pointer-events-none absolute right-full top-12 mr-2 w-52 rounded-lg border-2 border-(--aee-accent) bg-black/90 p-2 shadow-xl">
-      <MagnifiedPart id={hovered.id} fallback={image} revision={state.layerCaptureRevision}/>
+      <MagnifiedPart id={hovered.id} fallback={item ? layerSourceUrl(item, hovered.id) : ''} revision={state.layerCaptureRevision}/>
       <div className="mt-1 truncate text-center text-[19px] text-white">{hovered.name}</div>
     </div> : null}
   </div>
@@ -79,12 +87,12 @@ function PartButton({part, mode, selected, fallback, revision, onEnter, onLeave,
   const image = useLayerThumbnail(index, fallback, revision);
   return <button type="button" className={`${mode === 'grid' ? 'flex aspect-square flex-col' : 'flex h-20'} min-w-0 shrink-0 items-center overflow-hidden rounded border text-white transition ${selected ? 'border-(--aee-accent) bg-(--aee-accent-22)' : 'border-zinc-700 bg-zinc-900 hover:border-(--aee-accent-55)'}`}
     onMouseEnter={() => onEnter(part.layerId, part.name)} onMouseLeave={onLeave} onClick={() => onChoose(part.layerId)}>
-    <span className={`${mode === 'grid' ? 'h-[76%] w-full' : 'h-full w-20'} shrink-0 bg-[#C4C4C4] bg-contain bg-center bg-no-repeat`} style={{backgroundImage: `url("${image}")`}}/>
+    <span className={`${mode === 'grid' ? 'h-[76%] w-full' : 'h-full w-20'} shrink-0 bg-[#C4C4C4] bg-contain bg-center bg-no-repeat`} style={image ? {backgroundImage: `url("${image}")`} : undefined}/>
     <span className={`${mode === 'grid' ? 'w-full px-1 text-center text-[17px]' : 'min-w-0 flex-1 px-3 text-left text-[19px]'} truncate`}>{part.name}</span>
   </button>;
 }
 
 function MagnifiedPart({id, fallback, revision}: {id: LayerId; fallback: string; revision: unknown}) {
   const image = useLayerThumbnail(id === 'all' ? 'all' : Number.parseInt(id, 10), fallback, revision);
-  return <div className="aspect-square bg-[#C4C4C4] bg-contain bg-center bg-no-repeat" style={{backgroundImage: `url("${image}")`}}/>;
+  return <div className="aspect-square bg-[#C4C4C4] bg-contain bg-center bg-no-repeat" style={image ? {backgroundImage: `url("${image}")`} : undefined}/>;
 }

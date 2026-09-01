@@ -39,6 +39,8 @@ flowchart LR
 
 ## 變形幾何規則
 
+任意變形功能參考並改寫自 **星漣 XinLian132243 / BCMod** 的圖層變形工具。
+
 1. `drawingHooks.ts` 在 `GLDrawImage` 邊界取得 BC 實際繪製輸入。
 2. `appearancePickerController.ts` 保留兩種 capture：多張資料供拾取/縮圖；每實體層一張穩定資料供變形幾何。
 3. 單層 pivot 必須重現 BC 的 WebGL 矩陣，不可使用 alpha bounds 或可見矩形中心推測。

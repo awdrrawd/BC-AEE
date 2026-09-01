@@ -469,6 +469,17 @@ export function getEditableParts(item: Item | null): {layerId: string; name: str
   return parts;
 }
 
+/** Mirrors BC's ItemColor simple-mode test without relying on screen function names. */
+export function isSimpleColorItem(item: Item | null): boolean {
+  if (!item) return false;
+  if ((ItemColorItem === item || runtime.itemColorItem === item) && ItemColorState) {
+    return ItemColorState.simpleMode;
+  }
+  return (item.Asset?.Layer ?? []).filter(layer =>
+    !layer.CopyLayerColor && layer.AllowColorize && !layer.HideColoring
+  ).length === 1;
+}
+
 function getColorIndicesForPart(item: Item, layerIdx: string): number[] {
   const layers = item.Asset?.Layer ?? [];
   const indices = new Set<number>();

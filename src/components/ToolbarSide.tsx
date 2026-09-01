@@ -52,6 +52,7 @@ const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
 const neatIcon = new URL('../assets/editor/mod-Neat.svg', import.meta.url).href;
 const freeIcon = new URL('../assets/editor/mod-Free.svg', import.meta.url).href;
 const poseIcon = new URL('../assets/editor/Pose.svg', import.meta.url).href;
+const freeTransformIcon = new URL('../assets/editor/icons8-square-100.svg', import.meta.url).href;
 
 type ManagePanel = 'settings' | null;
 
@@ -155,7 +156,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
   const exiting = !eligible;
   const residentOpen = !exiting && (editing || toolbarAlwaysVisible || state.toolbarHovered || state.toolbarPinned || settingsOpen || state.charControl.open);
   const panelOpen = !exiting && (editing
-    ? state.toolbarLayout === 'neat' || state.editTool === 'settings' || state.editTool === 'layeringHide' || state.editTool === 'gizmo'
+    ? state.toolbarLayout === 'neat' || state.editTool === 'settings' || state.editTool === 'layeringHide'
     : managePanel !== null);
   if (panelOpen) panelWidthRef.current = settingsOpen ? 500 : 350;
   const panelWidth = panelWidthRef.current;
@@ -200,6 +201,11 @@ export function ToolbarSide({state}: {state: AeeState}) {
              style={{transform: residentOpen ? 'translate3d(0,0,0)' : 'translate3d(-70px,0,0)', opacity: residentOpen ? 1 : 0}}>
         {displayEditing ? <EditingButtons state={state} openTool={openTool}/> : <ResidentButtons state={state} managePanel={managePanel} setManagePanel={setManagePanel}/>} 
       </Panel>
+      {displayEditing && state.toolbarLayout === 'free' && state.selectedLayer !== null ?
+        <div className="pointer-events-auto absolute left-[87px] top-[12px] z-40">
+          <ToolButton title={t('free-transform-title')} selected={state.editTool === 'gizmo'}
+                      disabled={!!state.activeDrag} icon={<SvgIcon src={freeTransformIcon}/>} onClick={openTool('gizmo')}/>
+        </div> : null}
       <div className={`aee-panel-collapse-motion absolute left-[80px] top-0 z-10 h-[1000px] overflow-hidden ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
            style={{width: panelWidth, transform: panelOpen ? 'translate3d(0,0,0)' : 'translate3d(calc(-100% - 80px),0,0)', opacity: panelOpen ? 1 : 0}}>
         <Panel className="aee-control flex h-full w-full flex-col overflow-hidden rounded-none border-y-0 border-l-0 p-0">

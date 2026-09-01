@@ -37,7 +37,7 @@ import {alignTouchBlocker, hideTouchBlocker, showTouchBlocker} from '@/controlle
 import {clamp} from '@/util/math';
 
 type AssetPriority = Asset & { DrawingPriority?: number };
-type ToolOverlay = 'parts' | 'opacity' | 'transform';
+type ToolOverlay = 'parts' | 'opacity' | 'transform' | 'layers';
 
 export function setTab(tab: AeeTab) {
   stopHoverHighlight(true);
@@ -69,6 +69,7 @@ export function toggleCollapse() {
 function closeToolOverlays(draft: AeeState, keep: ToolOverlay) {
   if (keep !== 'opacity') draft.opacityOverlay.open = false;
   if (keep !== 'transform') draft.transformOverlay.mode = null;
+  if (keep !== 'layers') draft.layersOverlay.open = false;
 }
 
 function getClampedCurrentPanelPosition(left: number, top: number, panelWidth = TOOL_PANEL_WIDTH, panelMinHeight = TOOL_PANEL_MIN_HEIGHT) {
@@ -115,7 +116,12 @@ export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: Over
   syncCanvasRect();
   const current = getState();
   const nextMode = current.transformOverlay.mode === mode ? null : mode;
+  if (nextMode) {
+    runtime.panelHoverLayerIdx = null;
+    stopHoverHighlight(true);
+  }
   mutateState(draft => {
+    if (draft.editTool === 'gizmo') draft.editTool = mode;
     draft.transformOverlay.mode = nextMode;
     if (nextMode) {
       closeToolOverlays(draft, 'transform');
@@ -127,6 +133,8 @@ export function toggleTransformOverlay(mode: TransformOverlayMode, anchor?: Over
       }
     }
   });
+  refreshCurrentCharacter();
+  forceUiUpdate();
 }
 
 export function closeTransformOverlay() {
@@ -148,11 +156,47 @@ export function setActiveDrag(mode: DragMode) {
   if (mode && isGroupLocked(getState().selectedLayer)) return;
   const next = getState().activeDrag === mode ? null : mode;
   mutateState(draft => {
+    if (next && draft.editTool === 'gizmo') draft.editTool = next;
     draft.activeDrag = next;
     draft.rotationOverlayOpen = next === 'rot';
   });
   if (next) showTouchBlocker();
   else hideTouchBlocker();
+  if (next) {
+    runtime.panelHoverLayerIdx = null;
+    stopHoverHighlight(true);
+  }
+  refreshCurrentCharacter();
+  forceUiUpdate();
+}
+
+export function openLayersOverlay(anchor?: OverlayAnchor) {
+  const item = getCurrentItem();
+  if (!item) return;
+  syncCanvasRect();
+  mutateState(draft => {
+    const opening = !draft.layersOverlay.open;
+    draft.layersOverlay.open = opening;
+    draft.editTool = opening ? 'layers' : null;
+    if (!opening) return;
+    closeToolOverlays(draft, 'layers');
+    draft.layersOverlay.open = true;
+    if (draft.selectedLayer === null) draft.selectedLayer = 'all';
+    if (anchor && draft.canvasRect) {
+      const pos = getAnchoredPanelPosition(draft.canvasRect, anchor);
+      draft.layersOverlay.left = pos.left;
+      draft.layersOverlay.top = pos.top;
+    }
+  });
+}
+
+export function closeLayersOverlay() {
+  mutateState(draft => { draft.layersOverlay.open = false; if (draft.editTool === 'layers') draft.editTool = null; });
+}
+
+export function moveLayersOverlay(left: number, top: number) {
+  const pos = getClampedCurrentPanelPosition(left, top);
+  mutateState(draft => { draft.layersOverlay.left = pos.left; draft.layersOverlay.top = pos.top; });
 }
 
 export function setScaleLock(value?: boolean) {
@@ -943,8 +987,24 @@ export function selectEditTool(tool: EditToolMode, anchor?: OverlayAnchor) {
     else mutateState(draft => { draft.editTool = draft.editTool === 'opacity' ? null : 'opacity'; });
     return;
   }
-  if (tool === 'layers' || tool === 'settings') {
+  if (tool === 'layers' && state.toolbarLayout === 'free') {
+    openLayersOverlay(anchor);
+    return;
+  }
+  if (tool === 'layers' || tool === 'settings' || tool === 'gizmo') {
+    if (tool === 'gizmo') {
+      setActiveDrag(null);
+      closeTransformOverlay();
+      closeOpacityOverlay();
+      closeLayersOverlay();
+      runtime.panelHoverLayerIdx = null;
+      stopHoverHighlight(true);
+    }
     mutateState(draft => { draft.editTool = draft.editTool === tool ? null : tool; });
+    if (tool === 'gizmo') {
+      refreshCurrentCharacter();
+      forceUiUpdate();
+    }
     return;
   }
   if (tool === 'xy' || tool === 'rot' || tool === 'scale' || tool === 'skew' || tool === 'mirror') {

@@ -10,6 +10,7 @@ export function FloatingPanel({
                                 width = TOOL_PANEL_WIDTH,
                                 title,
                                 subtitle,
+                                headerActions,
                                 onClose,
                                 onMove,
                                 className = '',
@@ -22,6 +23,7 @@ export function FloatingPanel({
   width?: number;
   title: string;
   subtitle?: string;
+  headerActions?: ReactNode;
   onClose: () => void;
   onMove: (left: number, top: number) => void;
   className?: string;
@@ -65,6 +67,7 @@ export function FloatingPanel({
           className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold uppercase text-[var(--aee-accent)]">{title}</span>
         {subtitle ? <span
           className="max-w-24 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] text-zinc-500">{subtitle}</span> : null}
+        {headerActions}
         <button type="button"
           className="h-[25px] w-[35px] rounded border border-red-800 bg-red-950/60 text-red-200 transition hover:border-red-300 hover:bg-red-900"
           style={{width: 35 / scale, height: 25 / scale, minHeight: 25 / scale, padding: 0, fontSize: 18 / scale, lineHeight: 1}}

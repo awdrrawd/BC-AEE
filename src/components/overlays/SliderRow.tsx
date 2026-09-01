@@ -64,7 +64,7 @@ export const SliderRow = memo(function SliderRow({label, value, min, max, step, 
       <input ref={rangeRef} type="range" className={tallRangeClass} min={min} max={max} step={step}
              defaultValue={rangeValue} onChange={event => onChange(Number(event.target.value))}
              onPointerDown={event => event.stopPropagation()}/>
-      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
     </div>
   </div>;
 }, (prev, next) => prev.value === next.value && prev.min === next.min && prev.max === next.max && prev.display === next.display && prev.inputValue === next.inputValue && prev.stepDelta === next.stepDelta);

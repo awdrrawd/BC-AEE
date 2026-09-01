@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "Удалить этот сохранённый рисунок?",
   "free-draw-library-cleared": "Сохранённый рисунок удалён",
   "free-draw-library-too-large": "Рисунок превышает лимит слота в 2 МБ.",
-  "free-draw-library-failed": "Операция с библиотекой SPS завершилась ошибкой."
+  "free-draw-library-failed": "Операция с библиотекой SPS завершилась ошибкой.",
+  "free-transform-title": "Свободное преобразование", "free-transform-edit": "Изменить", "free-transform-active": "Свободное преобразование активно", "parts-browser-title": "Значки частей",
+  "parts-browser-list-view": "Список", "parts-browser-grid-view": "Миниатюры", "parts-browser-magnify": "Увеличивать при наведении", "free-transform-rotate-handle": "Маркер вращения"
 }

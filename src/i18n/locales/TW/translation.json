@@ -547,5 +547,13 @@
   "import-dialog-total-count": "已選 {selected}／總數 {total}",
   "layer-manager-total-count": "顯示 {filtered}／總數 {total}",
   "settings-hide-unnecessary-appearance-buttons": "隱藏不必要按鈕",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "隱藏原版的隨機服裝、服裝複製與貼上按鈕。"
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "隱藏原版的隨機服裝、服裝複製與貼上按鈕。",
+  "free-transform-title": "任意變形",
+  "free-transform-edit": "編輯",
+  "free-transform-active": "任意變形中",
+  "parts-browser-title": "部件圖示",
+  "parts-browser-list-view": "清單檢視",
+  "parts-browser-grid-view": "縮圖檢視",
+  "parts-browser-magnify": "懸停放大",
+  "free-transform-rotate-handle": "旋轉控制點"
 }

@@ -34,7 +34,7 @@ export function PriorityRow({item, layerId, name}: { item: Item; layerId: LayerI
     <div className="relative flex items-center">
       <RangeInput className={tallRangeClass} min={-99} max={99} step={1} value={priority.current} onChange={next => setPriority(layerId, next)}/>
       <span
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
     </div>
   </div>;
 }

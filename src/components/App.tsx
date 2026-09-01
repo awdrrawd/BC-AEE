@@ -16,6 +16,8 @@ import {uiThemeVariables} from '@/core/theme';
 import {FreeDrawLibraryPanel} from '@/components/free-draw/FreeDrawLibraryPanel';
 import {ToolbarSide} from '@/components/ToolbarSide';
 import {AeeTooltip} from '@/components/ui/AeeTooltip';
+import {FreeTransformGizmo} from '@/components/overlays/FreeTransformGizmo';
+import {LayersOverlay} from '@/components/overlays/LayersOverlay';
 
 export function App() {
   const state = useAeeStore();
@@ -27,7 +29,9 @@ export function App() {
     <MainPanel state={state}/>
     <TransformOverlay state={state}/>
     <OpacityOverlay state={state}/>
+    <LayersOverlay state={state}/>
     <RotationOverlay state={state}/>
+    <FreeTransformGizmo state={state}/>
     <ColorPicker state={state}/>
     <ViewControls state={state}/>
     <ImportDialog state={state}/>

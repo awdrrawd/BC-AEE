@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "Effacer ce dessin enregistré ?",
   "free-draw-library-cleared": "Dessin enregistré effacé",
   "free-draw-library-too-large": "Ce dessin dépasse la limite de 2 Mo de l’emplacement.",
-  "free-draw-library-failed": "L’opération de la bibliothèque SPS a échoué."
+  "free-draw-library-failed": "L’opération de la bibliothèque SPS a échoué.",
+  "free-transform-title": "Transformation libre", "free-transform-edit": "Modifier", "free-transform-active": "Transformation libre active", "parts-browser-title": "Icônes des parties",
+  "parts-browser-list-view": "Vue en liste", "parts-browser-grid-view": "Vue en miniatures", "parts-browser-magnify": "Agrandir au survol", "free-transform-rotate-handle": "Poignée de rotation"
 }

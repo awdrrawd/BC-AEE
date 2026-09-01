@@ -48,7 +48,7 @@ export function EditSection({state, layerId, toolOnly = null, showHeader = true}
       </div>
       <div className="relative flex items-center">
         <RangeInput className={tallRangeClass} min={0} max={100} step={1} value={opacity} onChange={value => setOpacity(layerId, value)}/>
-        <span className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+        <span className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
       </div>
     </div> : null}
     {locked ? <div

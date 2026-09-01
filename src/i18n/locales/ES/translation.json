@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "¿Borrar este dibujo guardado?",
   "free-draw-library-cleared": "Dibujo guardado borrado",
   "free-draw-library-too-large": "El dibujo supera el límite de 2 MB del espacio.",
-  "free-draw-library-failed": "Falló la operación de la biblioteca SPS."
+  "free-draw-library-failed": "Falló la operación de la biblioteca SPS.",
+  "free-transform-title": "Transformación libre", "free-transform-edit": "Editar", "free-transform-active": "Transformación libre activa", "parts-browser-title": "Iconos de partes",
+  "parts-browser-list-view": "Vista de lista", "parts-browser-grid-view": "Vista de miniaturas", "parts-browser-magnify": "Ampliar al pasar", "free-transform-rotate-handle": "Control de rotación"
 }

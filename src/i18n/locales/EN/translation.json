@@ -547,5 +547,13 @@
   "import-dialog-total-count": "Selected {selected} / Total {total}",
   "layer-manager-total-count": "Showing {filtered} / Total {total}",
   "settings-hide-unnecessary-appearance-buttons": "Hide unnecessary buttons",
-  "settings-hide-unnecessary-appearance-buttons-tooltip": "Hide the original random outfit, clothing copy, and paste buttons."
+  "settings-hide-unnecessary-appearance-buttons-tooltip": "Hide the original random outfit, clothing copy, and paste buttons.",
+  "free-transform-title": "Free Transform",
+  "free-transform-edit": "Edit",
+  "free-transform-active": "Free Transform Active",
+  "parts-browser-title": "Part Icons",
+  "parts-browser-list-view": "List view",
+  "parts-browser-grid-view": "Thumbnail view",
+  "parts-browser-magnify": "Magnify on hover",
+  "free-transform-rotate-handle": "Rotation handle"
 }

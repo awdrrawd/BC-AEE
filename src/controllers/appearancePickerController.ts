@@ -4,13 +4,35 @@ import {runtime} from '@/core/runtime';
 import {getState, mutateState} from '@/core/store';
 import {getCurrentCharacter, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
+import {forceUiUpdate} from '@/core/context';
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
-type DrawCapture = {url: string; x: number; y: number; order: number};
+type DrawCapture = {
+  url: string;
+  /** Actual raster origin, retained for picking/outlines. */
+  x: number;
+  y: number;
+  /** Origin before BC's Translation, used to reproduce GLDrawImage geometry. */
+  baseX: number;
+  baseY: number;
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
+  translationX: number;
+  translationY: number;
+  order: number;
+};
 type CanvasMap = {ox: number; oy: number; sx: number; sy: number; yStart: number};
 type AlphaData = {bounds: {x: number; y: number; w: number; h: number}; mask: Uint8Array; mw: number; mh: number; scale: number};
 type PickHit = {asset: Asset; group: AssetGroup; area: number; order: number};
 type ScreenRect = {left: number; top: number; right: number; bottom: number};
+export type CapturedLayerGeometry = {
+  corners: Array<[number, number]>;
+  center: [number, number];
+  pivot: [number, number];
+  width: number;
+  height: number;
+};
 type LabelRow = {index: number; minX: number; maxX: number; anchorY: number; label: string};
 type LabelLayout = LabelRow & {side: 'left' | 'right'; x: number; y: number; w: number; h: number};
 
@@ -22,6 +44,7 @@ let layerFrame = new Map<number, DrawCapture[]>();
 // layer with Alpha=0, so the current frame alone cannot always draw its outline.
 const lastVisibleCaptures = new Map<AssetGroupName, {asset: Asset; list: DrawCapture[]}>();
 const alphaCache = new Map<string, AlphaData | null>();
+const layerThumbnailCache = new Map<string, string | null>();
 let drawAt: DrawAt | null = null;
 let frameDrawAt: DrawAt | null = null;
 let hovered: PickHit | null = null;
@@ -40,13 +63,14 @@ export function appearancePickerEnabled(): boolean {
 
 function layerPickerEnabled(): boolean {
   const state = getState();
-  return state.visible && !!state.item && !state.activeDrag && !state.colorPicker.open && state.layerPickerMode !== 'off';
+  return state.visible && !!state.item && !state.activeDrag && !state.transformOverlay.mode && state.editTool !== 'gizmo' && !state.colorPicker.open && state.layerPickerMode !== 'off';
 }
 
 function layerCaptureEnabled(): boolean {
   const state = getState();
-  return state.visible && !!state.item && !state.activeDrag
-    && (state.layerPickerMode !== 'off' || settings.hoverOutlineColor.get() !== 'off');
+  return state.visible && !!state.item
+    && (state.layerPickerMode !== 'off' || settings.hoverOutlineColor.get() !== 'off'
+      || !!state.activeDrag || !!state.transformOverlay.mode || state.editTool === 'gizmo');
 }
 
 /** Active Appearance character, or the ItemColor/Dialog character. */
@@ -72,7 +96,6 @@ export function captureAppearanceDraw(character: Character, x: number, y: number
 export function captureAppearanceImage(source: unknown, x: number, y: number, options?: DrawOptions) {
   const character = pickerCharacter();
   if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || runtime.currentRenderChar !== character || typeof source !== 'string') return;
-  if (options?.Alpha === 0) return;
   const state = getState();
   const sameTrackedAsset = runtime.currentDrawLayerItem?.Asset === state.item?.Asset;
   const trackedLayerIndex = sameTrackedAsset
@@ -89,15 +112,36 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   // GLDrawImage applies the same translation once more after CommonDraw has
   // already included it in x/y (see BC's FIXME beside its matrix setup).
   // Record the actual raster origin produced by that matrix.
-  const transform = options as (DrawOptions & {TranslationX?: number; TranslationY?: number}) | undefined;
+  const transform = options as (DrawOptions & {
+    TranslationX?: number;
+    TranslationY?: number;
+    ScaleX?: number;
+    ScaleY?: number;
+    Rotation?: number;
+  }) | undefined;
   const translationX = transform?.TranslationX ?? 0;
   const translationY = transform?.TranslationY ?? 0;
-  const capture = {url: source, x: x + translationX, y: y + translationY, order};
+  const capture = {
+    url: source,
+    x: x + translationX,
+    y: y + translationY,
+    baseX: x - translationX,
+    baseY: y - translationY,
+    scaleX: transform?.ScaleX ?? 1,
+    scaleY: transform?.ScaleY ?? 1,
+    rotation: transform?.Rotation ?? 0,
+    translationX,
+    translationY,
+    order,
+  };
   if (layerCaptureEnabled() && layerIndex >= 0) {
     const layerList = layerFrame.get(layerIndex) ?? [];
     layerList.push(capture);
     layerFrame.set(layerIndex, layerList);
   }
+  // Keep transparent layers available for thumbnails, but exclude them from
+  // whole-item hit testing so invisible pixels never become pick targets.
+  if (options?.Alpha === 0) return;
   // Whole-item picking needs an asset owner. Per-layer picking can still use
   // CommonDraw's authoritative item/layer context for non-standard URLs.
   if (!asset) return;
@@ -131,12 +175,104 @@ export function commitAppearancePickerFrame() {
     layerCaptures.clear();
     for (const [index, list] of layerFrame) layerCaptures.set(index, list);
     layerFrame = new Map();
+    const state = getState();
+    if (state.editTool === 'gizmo' || state.activeDrag === 'rot') forceUiUpdate();
   }
   const wornAssets = new Set(pickerCharacter()?.Appearance.map(item => item.Asset) ?? []);
   for (const [groupName, record] of lastVisibleCaptures) {
     if (!wornAssets.has(record.asset)) lastVisibleCaptures.delete(groupName);
   }
   hovered = inSupportedAppearanceMode() ? pickAt(MouseX, MouseY)[0] ?? null : null;
+}
+
+/** Tight visible bounds of one captured item layer in MainCanvas coordinates. */
+export function getCapturedLayerBounds(index: number): ScreenRect | null {
+  const geometry = getCapturedLayerGeometry(index);
+  if (!geometry) return null;
+  return {
+    left: Math.min(...geometry.corners.map(point => point[0])),
+    top: Math.min(...geometry.corners.map(point => point[1])),
+    right: Math.max(...geometry.corners.map(point => point[0])),
+    bottom: Math.max(...geometry.corners.map(point => point[1])),
+  };
+}
+
+export function getCapturedTranslationFactor(): number {
+  const gl = (globalThis as typeof globalThis & {GLDrawCanvas?: {GL?: WebGL2RenderingContext}}).GLDrawCanvas;
+  return GLVersion !== 'No WebGL' && gl?.GL && !gl.GL.isContextLost() ? 2 : 1;
+}
+
+/** Exact transformed quad and the real full-texture rotation pivot. */
+export function getCapturedLayerGeometry(index: number): CapturedLayerGeometry | null {
+  const list = layerCaptures.get(index);
+  const map = canvasMap();
+  if (!list?.length || !map) return null;
+  for (let captureIndex = list.length - 1; captureIndex >= 0; captureIndex--) {
+    const cap = list[captureIndex];
+    const image = pickImage(cap.url);
+    if (!image) continue;
+    const alpha = alphaData(cap.url, image);
+    const tw = image.naturalWidth || image.width, th = image.naturalHeight || image.height;
+    const bounds = alpha?.bounds ?? {x: 0, y: 0, w: tw, h: th};
+    const factor = getCapturedTranslationFactor();
+    const pivotX = cap.baseX + tw / 2 + cap.translationX * factor;
+    const pivotY = cap.baseY + th / 2 + cap.translationY * factor;
+    const angle = cap.rotation * Math.PI / 180;
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    const transformPoint = (u: number, v: number): [number, number] => {
+      const dx = (u - tw / 2) * cap.scaleX;
+      const dy = (v - th / 2) * cap.scaleY;
+      const point = canvasToScreen(pivotX + dx * cos - dy * sin, pivotY + dx * sin + dy * cos, map);
+      return [point.x, point.y];
+    };
+    const x2 = bounds.x + bounds.w, y2 = bounds.y + bounds.h;
+    const corners = [transformPoint(bounds.x, bounds.y), transformPoint(x2, bounds.y), transformPoint(x2, y2), transformPoint(bounds.x, y2)];
+    const center = transformPoint(bounds.x + bounds.w / 2, bounds.y + bounds.h / 2);
+    const pivotPoint = canvasToScreen(pivotX, pivotY, map);
+    return {corners, center, pivot: [pivotPoint.x, pivotPoint.y], width: bounds.w * cap.scaleX * map.sx, height: bounds.h * cap.scaleY * map.sy};
+  }
+  return null;
+}
+
+/** Alpha-cropped white-backed thumbnail built from the same layer captures used by picking. */
+export function getCapturedLayerThumbnail(index: number, max = 160): string | null {
+  const list = layerCaptures.get(index);
+  if (!list?.length) return null;
+  // A transform changes capture coordinates every frame, but not the source
+  // pixels used by this tightly-cropped thumbnail. Key by source URLs so
+  // moving/scaling/rotating an item does not regenerate every card as a PNG.
+  const cacheKey = `${max}:${list.map(cap => cap.url).join('|')}`;
+  if (layerThumbnailCache.has(cacheKey)) return layerThumbnailCache.get(cacheKey) ?? null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const drawable: Array<{cap: DrawCapture; image: HTMLImageElement}> = [];
+  for (const cap of list) {
+    const image = pickImage(cap.url);
+    if (!image) continue;
+    const alpha = alphaData(cap.url, image);
+    const bounds = alpha?.bounds ?? {x: 0, y: 0, w: image.naturalWidth || image.width, h: image.naturalHeight || image.height};
+    minX = Math.min(minX, cap.x + bounds.x); minY = Math.min(minY, cap.y + bounds.y);
+    maxX = Math.max(maxX, cap.x + bounds.x + bounds.w); maxY = Math.max(maxY, cap.y + bounds.y + bounds.h);
+    drawable.push({cap, image});
+  }
+  if (!drawable.length || !Number.isFinite(minX)) return null;
+  const width = Math.max(1, maxX - minX), height = Math.max(1, maxY - minY);
+  const scale = Math.min(max / width, max / height, 1);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.ceil(width * scale)); canvas.height = Math.max(1, Math.ceil(height * scale));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.fillStyle = '#C4C4C4'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(scale, scale);
+  for (const {cap, image} of drawable) ctx.drawImage(image, cap.x - minX, cap.y - minY);
+  try {
+    const result = canvas.toDataURL('image/png');
+    if (layerThumbnailCache.size >= 512) layerThumbnailCache.clear();
+    layerThumbnailCache.set(cacheKey, result);
+    return result;
+  } catch {
+    layerThumbnailCache.set(cacheKey, null);
+    return null;
+  }
 }
 
 export function invalidateAppearancePicker() {
@@ -158,7 +294,7 @@ export function drawAppearancePickerOutline() {
     const index = pickLayerAt(MouseX, MouseY)[0];
     if (index != null) drawLayerOutline(index);
   }
-  if (settings.hoverOutlineColor.get() !== 'off' && state.visible && state.item && runtime.panelHoverLayerIdx !== null) {
+  if (settings.hoverOutlineColor.get() !== 'off' && state.visible && state.item && !state.activeDrag && !state.transformOverlay.mode && state.editTool !== 'gizmo' && runtime.panelHoverLayerIdx !== null) {
     const indices = runtime.panelHoverLayerIdx === 'all'
       ? [...layerCaptures.keys()]
       : getLayerGroupMembers(state.item, Number.parseInt(runtime.panelHoverLayerIdx, 10));

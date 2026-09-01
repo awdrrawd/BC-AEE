@@ -35,7 +35,7 @@ export const MirrorAxisInput = memo(function MirrorAxisInput({label, ctrl, value
     <div className="relative flex items-center">
       <input type="range" min={-10} max={10} step={0.01} value={value} className={tallRangeClass}
              onChange={event => setEditProperty(ctrl, Number(event.target.value))}/>
-      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
     </div>
   </div>;
 }, (prev, next) => prev.ctrl === next.ctrl && prev.value === next.value);

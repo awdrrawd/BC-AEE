@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "Очистити цей збережений малюнок?",
   "free-draw-library-cleared": "Збережений малюнок очищено",
   "free-draw-library-too-large": "Малюнок перевищує ліміт комірки у 2 МБ.",
-  "free-draw-library-failed": "Операція з бібліотекою SPS завершилася помилкою."
+  "free-draw-library-failed": "Операція з бібліотекою SPS завершилася помилкою.",
+  "free-transform-title": "Вільне перетворення", "free-transform-edit": "Редагувати", "free-transform-active": "Вільне перетворення активне", "parts-browser-title": "Піктограми частин",
+  "parts-browser-list-view": "Список", "parts-browser-grid-view": "Мініатюри", "parts-browser-magnify": "Збільшувати при наведенні", "free-transform-rotate-handle": "Маркер обертання"
 }

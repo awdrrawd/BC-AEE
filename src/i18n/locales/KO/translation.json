@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "이 저장된 그림을 삭제할까요?",
   "free-draw-library-cleared": "저장된 그림을 삭제했습니다",
   "free-draw-library-too-large": "그림이 라이브러리 칸의 2 MB 제한을 넘습니다.",
-  "free-draw-library-failed": "SPS 그림 라이브러리 작업에 실패했습니다."
+  "free-draw-library-failed": "SPS 그림 라이브러리 작업에 실패했습니다.",
+  "free-transform-title": "자유 변형", "free-transform-edit": "편집", "free-transform-active": "자유 변형 중", "parts-browser-title": "부품 아이콘",
+  "parts-browser-list-view": "목록 보기", "parts-browser-grid-view": "썸네일 보기", "parts-browser-magnify": "마우스를 올려 확대", "free-transform-rotate-handle": "회전 핸들"
 }

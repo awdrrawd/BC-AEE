@@ -4,6 +4,7 @@ import {getLayerOverride, isGroupLocked} from '@/core/bc';
 import {t} from '@/i18n/i18n';
 import {setEditProperty} from '@/controllers/uiController';
 import {setRotationDragging} from '@/controllers/dragController';
+import {getCapturedLayerGeometry} from '@/controllers/appearancePickerController';
 
 const ROT_CX_PCT = 0.5;
 const ROT_CY_PCT = 0.89;
@@ -15,6 +16,19 @@ export function RotationOverlay({state}: { state: AeeState }) {
   if (isGroupLocked(state.selectedLayer)) return null;
   const layerOverride = getLayerOverride(state.item, state.selectedLayer);
   const rotation = layerOverride.Rotation ?? 0;
+  const geometries = state.selectedLayer === 'all'
+    ? state.layers.map((_, index) => getCapturedLayerGeometry(index)).filter((geometry): geometry is NonNullable<typeof geometry> => !!geometry)
+    : [getCapturedLayerGeometry(Number.parseInt(state.selectedLayer, 10))].filter((geometry): geometry is NonNullable<typeof geometry> => !!geometry);
+  const allPoints = geometries.flatMap(geometry => geometry.corners);
+  const wholeCenter = allPoints.length ? [
+    (Math.min(...allPoints.map(point => point[0])) + Math.max(...allPoints.map(point => point[0]))) / 2,
+    (Math.min(...allPoints.map(point => point[1])) + Math.max(...allPoints.map(point => point[1]))) / 2,
+  ] : null;
+  const actualPivot = state.selectedLayer === 'all' ? wholeCenter : geometries[0]?.pivot;
+  const pivotX = actualPivot ? actualPivot[0] * state.canvasRect.width / 2000 : null;
+  const pivotY = actualPivot ? actualPivot[1] * state.canvasRect.height / 1000 : null;
+  // The circle is the angle dial, not the item's pivot. Keep the dial in its
+  // stable control position and mark the real BC texture pivot separately.
   const cx = state.canvasRect.width * ROT_CX_PCT;
   const cy = state.canvasRect.height * ROT_CY_PCT;
   const rad = rotation * Math.PI / 180;
@@ -58,7 +72,11 @@ export function RotationOverlay({state}: { state: AeeState }) {
       </text>
       <text x={cx} y={cy + ROT_RADIUS + 18} textAnchor="middle" fill="rgba(255,255,255,0.45)"
             fontFamily="Segoe UI, sans-serif" fontSize="11">{t('rotation-overlay-handle-hint')}</text>
-      <circle cx={cx} cy={cy} r={4} fill="var(--aee-accent-55)"/>
+      {pivotX !== null && pivotY !== null ? <>
+        <circle cx={pivotX} cy={pivotY} r={4} fill="var(--aee-accent-55)"/>
+        <line x1={pivotX - 8} y1={pivotY} x2={pivotX + 8} y2={pivotY} stroke="var(--aee-accent)" strokeWidth="2.33"/>
+        <line x1={pivotX} y1={pivotY - 8} x2={pivotX} y2={pivotY + 8} stroke="var(--aee-accent)" strokeWidth="2.33"/>
+      </> : null}
       <circle className="pointer-events-auto cursor-crosshair" cx={cx} cy={cy} r={ROT_RADIUS} fill="rgba(0,0,0,0.01)"
               stroke="transparent" strokeWidth="28" onMouseDown={startDrag}/>
     </svg>

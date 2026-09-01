@@ -43,6 +43,8 @@ import {getLayeringHideGroups} from '@/controllers/layeringHideController';
 import {getViewSettings} from '@/core/viewSettings';
 import {TiltIcon} from '@/components/main-panel/Icons';
 import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
+import {PartsBrowserPanel} from '@/components/parts-browser/PartsBrowserPanel';
+import {FolderSearch} from 'lucide-react';
 
 const settingsIcon = new URL('../assets/editor/Settings.svg', import.meta.url).href;
 const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
@@ -99,6 +101,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
     && !!CharacterAppearanceSelection;
   const eligible = !!state.canvasRect && (editing || resident);
   const [managePanel, setManagePanel] = useState<ManagePanel>(null);
+  const [partsBrowserOpen, setPartsBrowserOpen] = useState(false);
   const [exitMounted, setExitMounted] = useState(eligible);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const lastRectRef = useRef(state.canvasRect);
@@ -138,22 +141,34 @@ export function ToolbarSide({state}: {state: AeeState}) {
       return;
     }
     setManagePanel(null);
+    setPartsBrowserOpen(false);
     const timer = window.setTimeout(() => {
       setExitMounted(false);
       editingRef.current = false;
     }, 320);
     return () => window.clearTimeout(timer);
   }, [editing, eligible]);
+  useEffect(() => {
+    const toggle = () => setPartsBrowserOpen(value => !value);
+    window.addEventListener('aee-toggle-parts-browser', toggle);
+    return () => window.removeEventListener('aee-toggle-parts-browser', toggle);
+  }, []);
   if ((!eligible && !exitMounted) || !lastRectRef.current) return null;
 
   const rect = state.canvasRect ?? lastRectRef.current;
   const scale = rect.width / 2000;
   const exiting = !eligible;
   const residentOpen = !exiting && (editing || toolbarAlwaysVisible || state.toolbarHovered || state.toolbarPinned || settingsOpen || state.charControl.open);
-  const panelOpen = !exiting && (editing ? state.toolbarLayout === 'neat' || state.editTool === 'settings' : managePanel !== null);
+  const panelOpen = !exiting && (editing
+    ? state.toolbarLayout === 'neat' || state.editTool === 'settings' || state.editTool === 'layeringHide' || state.editTool === 'gizmo'
+    : managePanel !== null);
   if (panelOpen) panelWidthRef.current = settingsOpen ? 500 : 350;
   const panelWidth = panelWidthRef.current;
-  const controlContent = editing ? <EditControlPanel state={state}/> : <SettingsTab/>;
+  const partsAction = <button type="button" aria-label={t('edit-tab-parts-section-title')}
+    data-aee-tooltip={t('edit-tab-parts-section-title')}
+    className={`flex h-[30px] w-[45px] items-center justify-center rounded border bg-(--aee-control-bg) transition ${partsBrowserOpen ? 'border-(--aee-accent) text-(--aee-accent)' : 'border-zinc-700 text-zinc-300 hover:border-(--aee-accent)'}`}
+    onClick={() => setPartsBrowserOpen(value => !value)}><FolderSearch className="h-[25px] w-[25px]"/></button>;
+  const controlContent = editing ? <EditControlPanel state={state} partsAction={partsAction}/> : <SettingsTab/>;
   const controlPageKey = editing
     ? state.editTool === 'settings' || state.editTool === 'layers' || state.editTool === 'opacity' || state.editTool === 'layeringHide'
       ? state.editTool
@@ -208,10 +223,11 @@ export function ToolbarSide({state}: {state: AeeState}) {
         </Panel>
       </div>
       <ToolbarViewFlyout state={state} open={state.charControl.open}/>
-      {editing && state.activeDrag ? <div className="pointer-events-none absolute top-0 w-max font-bold" style={{left: 1000, transform: 'translateX(-50%)'}}>
-        <div className="w-max whitespace-nowrap rounded-b-lg border-2 border-t-0 border-(--aee-accent) bg-(--aee-control-bg) px-6 py-2 text-[28px] leading-none text-(--aee-accent) shadow-[0_0_12px_var(--aee-accent-55)] [writing-mode:horizontal-tb]">{dragLabel(state.activeDrag)}</div>
+      {editing && (state.activeDrag || state.editTool === 'gizmo') ? <div className="pointer-events-none absolute top-0 w-max font-bold" style={{left: 1000, transform: 'translateX(-50%)'}}>
+        <div className="w-max whitespace-nowrap rounded-b-lg border-2 border-t-0 border-(--aee-accent) bg-(--aee-control-bg) px-6 py-2 text-[28px] leading-none text-(--aee-accent) shadow-[0_0_12px_var(--aee-accent-55)] [writing-mode:horizontal-tb]">{state.editTool === 'gizmo' ? t('free-transform-active') : dragLabel(state.activeDrag!)}</div>
       </div> : null}
     </div>
+    {editing ? <PartsBrowserPanel state={state} open={partsBrowserOpen} onClose={() => setPartsBrowserOpen(false)}/> : null}
   </div>;
 }
 
@@ -244,14 +260,14 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
   </div>;
 }
 
-function EditControlPanel({state}: {state: AeeState}) {
+function EditControlPanel({state, partsAction}: {state: AeeState; partsAction: ReactNode}) {
   if (state.editTool === 'opacity') return <ControlPage title={t('main-panel-tab-opacity')} back><OpacityTab state={state}/></ControlPage>;
   if (state.editTool === 'layers') return <ControlPage title={t('main-panel-tab-layers')} back><LayersTab state={state}/></ControlPage>;
   if (state.editTool === 'layeringHide' && state.item) return <ControlPage title={t('layering-hide-title')} back><LayeringHidePanel item={state.item}/></ControlPage>;
   if (state.editTool === 'settings') return <ControlPage title={t('main-panel-tab-settings')}><SettingsTab/></ControlPage>;
   const layerId = state.selectedLayer;
   if (layerId === null) return <div className="flex min-h-full flex-col">
-    <Section title={t('edit-tab-parts-section-title')}>
+    <Section title={t('edit-tab-parts-section-title')} action={partsAction}>
       <LayerList item={state.item} selectedLayer={state.selectedLayer}/>
     </Section>
   </div>;
@@ -265,7 +281,7 @@ function EditControlPanel({state}: {state: AeeState}) {
         <button type="button" className="flex h-[30px] w-[45px] items-center justify-center rounded border border-(--aee-accent-55) bg-(--aee-control-bg) text-zinc-200 hover:border-(--aee-accent)"
                 style={{width: 45, height: 30, minHeight: 30, padding: 0}}
                 title={t('main-panel-deselect-button-title')} onClick={leaveSelectedPart}><Undo2 className="h-4.5 w-4.5"/></button>
-        <span className="min-w-0 truncate text-center text-sm font-bold text-(--aee-accent)">{layerName}</span>
+        <span className="min-w-0 truncate text-center text-sm font-bold text-white">{layerName}</span>
         <button className="relative h-[30px] w-[45px] shrink-0 justify-self-end overflow-hidden rounded border border-(--aee-accent-55) bg-[repeating-conic-gradient(#222_0%_25%,#111_0%_50%)] bg-size-[6px_6px] hover:border-(--aee-accent)"
                 style={{width: 45, height: 30, minHeight: 30, padding: 0}}
                 onClick={() => openLayerColorPicker(layerId)}><span className="absolute inset-0" style={layerColor ? {background: layerColor} : undefined}/></button>
@@ -274,10 +290,15 @@ function EditControlPanel({state}: {state: AeeState}) {
     <div className="divide-y divide-zinc-800">
       <OpacityRow layerId={layerId} name={t('main-panel-tab-opacity')} value={opacity} display={`${opacity}%`}/>
       <PriorityRow item={state.item} layerId={layerId} name={t('main-panel-tab-layers')}/>
+      <div className="flex items-center justify-between border-b border-zinc-700 px-2.5 py-2">
+        <span className="text-sm text-zinc-100">{t('free-transform-title')}</span>
+        <button type="button" className={`h-5 rounded border px-1.5 text-[11px] transition ${state.editTool === 'gizmo' ? 'border-teal-300 text-teal-300' : 'border-zinc-700 text-zinc-400 hover:border-teal-300 hover:text-teal-300'}`}
+          onClick={() => selectEditTool('gizmo')}>{t('free-transform-edit')}</button>
+      </div>
       {(['xy', 'rot', 'scale', 'skew', 'mirror'] as const).map(tool => state.editTools.includes(tool)
         ? <EditSection key={tool} state={state} layerId={layerId} toolOnly={tool} showHeader={false}/> : null)}
     </div>
-    <Section title={t('edit-tab-parts-section-title')}>
+    <Section title={t('edit-tab-parts-section-title')} action={partsAction}>
       <LayerList item={state.item} selectedLayer={state.selectedLayer}/>
     </Section>
   </div>;
@@ -326,7 +347,7 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
   return <>
     <div className="flex flex-col gap-[7px]">
       <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<SvgIcon src={partIcon}/>} onClick={openTool('parts')}/>
-      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag}
+      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag || !!state.transformOverlay.mode || state.editTool === 'gizmo'}
                   active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
                   icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
       <ToolButton title={t('toggle-bar-position-button-title')} disabled={!selected} selected={selected && selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>

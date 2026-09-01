@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "Diese gespeicherte Zeichnung löschen?",
   "free-draw-library-cleared": "Gespeicherte Zeichnung gelöscht",
   "free-draw-library-too-large": "Die Zeichnung überschreitet das 2-MB-Limit dieses Platzes.",
-  "free-draw-library-failed": "Aktion in der SPS-Zeichenbibliothek fehlgeschlagen."
+  "free-draw-library-failed": "Aktion in der SPS-Zeichenbibliothek fehlgeschlagen.",
+  "free-transform-title": "Frei transformieren", "free-transform-edit": "Bearbeiten", "free-transform-active": "Freie Transformation aktiv", "parts-browser-title": "Teilesymbole",
+  "parts-browser-list-view": "Listenansicht", "parts-browser-grid-view": "Miniaturansicht", "parts-browser-magnify": "Beim Überfahren vergrößern", "free-transform-rotate-handle": "Drehgriff"
 }

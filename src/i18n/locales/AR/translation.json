@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "هل تريد مسح هذا الرسم المحفوظ؟",
   "free-draw-library-cleared": "مُسح الرسم المحفوظ",
   "free-draw-library-too-large": "يتجاوز الرسم حد الخانة البالغ 2 ميغابايت.",
-  "free-draw-library-failed": "فشلت عملية مكتبة SPS."
+  "free-draw-library-failed": "فشلت عملية مكتبة SPS.",
+  "free-transform-title": "تحويل حر", "free-transform-edit": "تحرير", "free-transform-active": "التحويل الحر نشط", "parts-browser-title": "أيقونات الأجزاء",
+  "parts-browser-list-view": "عرض القائمة", "parts-browser-grid-view": "عرض الصور المصغرة", "parts-browser-magnify": "تكبير عند التحويم", "free-transform-rotate-handle": "مقبض الدوران"
 }

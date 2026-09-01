@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "この保存済み描画を削除しますか？",
   "free-draw-library-cleared": "保存済み描画を削除しました",
   "free-draw-library-too-large": "描画がライブラリ枠の上限 2 MB を超えています。",
-  "free-draw-library-failed": "SPS 描画ライブラリの操作に失敗しました。"
+  "free-draw-library-failed": "SPS 描画ライブラリの操作に失敗しました。",
+  "free-transform-title": "自由変形", "free-transform-edit": "編集", "free-transform-active": "自由変形中", "parts-browser-title": "パーツアイコン",
+  "parts-browser-list-view": "リスト表示", "parts-browser-grid-view": "サムネイル表示", "parts-browser-magnify": "ホバーで拡大", "free-transform-rotate-handle": "回転ハンドル"
 }

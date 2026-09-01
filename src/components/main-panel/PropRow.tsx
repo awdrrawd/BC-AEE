@@ -52,7 +52,7 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
       <input type="range" className={tallRangeClass} min={min} max={max} step={rangeStep}
              value={Math.max(min, Math.min(max, numericValue))}
              onChange={event => setEditProperty(ctrl, Number(event.target.value))}/>
-      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[19px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
+      <span className="pointer-events-none absolute left-1/2 top-1/2 h-[13px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded bg-(--aee-accent)"/>
     </div>
   </div>;
 }, (prev, next) => prev.ctrl === next.ctrl && String(prev.value) === String(next.value));

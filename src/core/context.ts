@@ -11,6 +11,7 @@ function closeContextOverlays(draft: ReturnType<typeof getState>) {
   draft.activeDrag = null;
   draft.rotationOverlayOpen = false;
   draft.opacityOverlay.open = false;
+  draft.layersOverlay.open = false;
   draft.transformOverlay.mode = null;
   draft.editTool = null;
 }

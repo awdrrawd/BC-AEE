@@ -547,5 +547,7 @@
   "free-draw-library-clear-confirm": "Xóa bản vẽ đã lưu này?",
   "free-draw-library-cleared": "Đã xóa bản vẽ đã lưu",
   "free-draw-library-too-large": "Bản vẽ vượt giới hạn 2 MB của ô.",
-  "free-draw-library-failed": "Thao tác thư viện SPS thất bại."
+  "free-draw-library-failed": "Thao tác thư viện SPS thất bại.",
+  "free-transform-title": "Biến đổi tự do", "free-transform-edit": "Chỉnh sửa", "free-transform-active": "Đang biến đổi tự do", "parts-browser-title": "Biểu tượng bộ phận",
+  "parts-browser-list-view": "Dạng danh sách", "parts-browser-grid-view": "Dạng hình thu nhỏ", "parts-browser-magnify": "Phóng to khi di chuột", "free-transform-rotate-handle": "Điểm xoay"
 }

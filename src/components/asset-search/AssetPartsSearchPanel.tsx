@@ -2,6 +2,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {Search, X} from 'lucide-react';
 import {t} from '@/i18n/i18n';
 import {Panel} from '@/components/ui/Panel';
+import {fuzzyMatch, hasSearchText} from './searchText';
 
 type Kind = 'all' | 'clothing' | 'item';
 type Occurrence = {asset: Asset; group: AssetGroup};
@@ -9,22 +10,6 @@ type AssetEntry = {name: string; description: string; occurrences: Occurrence[]}
 type PartEntry = {key: string; name: string; images: string[]};
 
 const ASSET_BATCH_SIZE = 12;
-
-const HAN_GROUPS = ['项項', '链鏈鍊', '发髮', '饰飾', '装裝', '裤褲', '袜襪', '带帶', '绳繩', '锁鎖', '颈頸', '头頭', '脸臉', '体體', '内內', '后後', '环環', '纹紋', '边邊', '层層', '单單', '双雙', '长長', '短短', '开開', '关關', '华華', '丽麗', '剑劍', '钟鐘鍾', '银銀', '宝寶', '贝貝', '龙龍', '凤鳳', '马馬', '门門', '风風', '叶葉', '丝絲', '网網', '钉釘', '钩鉤', '针針', '铁鐵', '铜銅', '铠鎧', '镣鐐', '护護', '绑綁', '缚縛', '紧緊', '松鬆', '启啟', '闭閉', '隐隱', '显顯', '颜顏'];
-const HAN_MAP = new Map<string, string>();
-for (const group of HAN_GROUPS) for (const char of group) HAN_MAP.set(char, group[0]);
-
-function normalize(value: string): string {
-  return [...value.normalize('NFKC').toLocaleLowerCase()].map(char => HAN_MAP.get(char) ?? char).join('').replace(/[\s_:：·'"()（）-]|\[|\]/g, '');
-}
-
-function fuzzyMatch(haystack: string, needle: string): boolean {
-  const text = normalize(haystack), query = normalize(needle);
-  if (!query || text.includes(query)) return true;
-  let cursor = 0;
-  for (const char of text) if (char === query[cursor]) cursor++;
-  return cursor === query.length;
-}
 
 function isClothing(group: AssetGroup): boolean {
   return group.Clothing || group.Underwear;
@@ -240,7 +225,7 @@ export function AssetPartsSearchPanel({open, onClose}: {open: boolean; onClose: 
     return [...groups].sort((a, b) => a[1].localeCompare(b[1]));
   }, [entries]);
   const filtered = useMemo(() => entries.filter(entry => {
-    const hasQuery = normalize(query).length > 0;
+    const hasQuery = hasSearchText(query);
     if (!hasQuery && slot === '-') return false;
     const occurrences = entry.occurrences.filter(({group}) =>
       (kind === 'all' || (kind === 'clothing' ? isClothing(group) : isItem(group)))

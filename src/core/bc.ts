@@ -7,6 +7,11 @@ import {clamp} from '@/util/math';
 // NOT locked here (Penis was never in this set; Pussy removed to align with R131).
 // BodyUpper/BodyLower/Nipples/Head stay locked — official R131 still disables them.
 export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Head']);
+// Temporary exceptions to the native Layering AllowNone gate. Remove entries
+// individually as BC enables their native controls; see docs/transform-whitelist.md.
+const TRANSFORM_GROUP_WHITELIST = new Set([
+  'HairFront', 'HairBack', 'Eyes', 'Eyes2', 'Eyebrows', 'Mouth',
+]);
 const AEE_EXTENDED_ITEM_ASSETS = new Set(['Plushie', '玩偶']);
 
 // Hard caps for the native R131 Translation/Scale/Rotation properties, mirrored
@@ -546,14 +551,16 @@ export function isGroupLocked(_layerId?: LayerId): boolean {
   void _layerId; // retained for the existing per-layer caller API
   const groupName = getCurrentGroupName();
   if (groupName && LOCKED_GROUPS.has(groupName)) return true;
-  // Match R131 Layering._IsBlacklisted/_GetTabContents. FixedPosition controls
+  // Match R131 Layering._IsBlacklisted/_GetTabContents, except for the explicit
+  // hair/face whitelist. FixedPosition controls
   // how an image is anchored while drawing; it is NOT a Layering permission.
   // Treating it as one locked several newly-adjustable R131 items in AEE.
   const item = getCurrentItem();
   const group = item?.Asset?.Group;
   if (!group || !item.Asset) return false;
   const isPussy = group.Name === 'Pussy';
-  return (!!groupName && !group.AllowNone && !isPussy) || !!item.Asset.DynamicAfterDraw;
+  const allowsTransform = isPussy || TRANSFORM_GROUP_WHITELIST.has(group.Name);
+  return (!group.AllowNone && !allowsTransform) || !!item.Asset.DynamicAfterDraw;
 }
 
 export function clampPriority(value: number) {

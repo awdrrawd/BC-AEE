@@ -103,8 +103,6 @@ export const settings = {
   itemLayerPickerMode: value<LayerPickerMode>('itemLayerPickerMode', 'off'),
   craftingLayerPickerMode: value<LayerPickerMode>('craftingLayerPickerMode', 'off'),
   hoverTryOn: bool('hoverTryOn', false),
-  // On/off state of the Public/Private hover-try-on button (separate from the master switch above).
-  hoverTryOnActive: bool('hoverTryOnActive', true),
   // Master switch: when ON, the character-preview toggle button is shown next
   // to hover-try-on. The in-game button toggles `characterPreviewActive`.
   hairCharacterPreview: bool('hairCharacterPreview', false),

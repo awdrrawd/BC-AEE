@@ -602,7 +602,6 @@ export function installSettingEffects() {
     if (!enabled) stopHoverCharHighlight();
   });
   settings.hoverTryOn.onChange(enabled => {
-    runtime.hoverTryOnEnabled = enabled && settings.hoverTryOnActive.get();
     if (!enabled) stopHoverTryOn();
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
@@ -911,15 +910,29 @@ export function stopHoverTryOn(redraw = true) {
   runtime.hoverTryOnCharacter = null;
 }
 
-export function isHoverTryOnEnabled(): boolean {
-  return settings.hoverTryOn.get() && runtime.hoverTryOnEnabled;
+export type HoverTryOnScope = 'clothing' | 'item';
+
+export function isHoverTryOnEnabled(scope: HoverTryOnScope): boolean {
+  const active = scope === 'clothing'
+    ? runtime.hoverTryOnClothingEnabled
+    : runtime.hoverTryOnItemEnabled;
+  return settings.hoverTryOn.get() && active;
 }
 
-export function toggleHoverTryOn(): void {
-  runtime.hoverTryOnEnabled = !runtime.hoverTryOnEnabled;
-  settings.hoverTryOnActive.set(runtime.hoverTryOnEnabled);
-  saveAppearanceQuickSetting('hoverTryOnEnabled', runtime.hoverTryOnEnabled);
-  if (!runtime.hoverTryOnEnabled) stopHoverTryOn();
+export function toggleHoverTryOn(scope: HoverTryOnScope): void {
+  const clothing = scope === 'clothing';
+  const active = clothing
+    ? !runtime.hoverTryOnClothingEnabled
+    : !runtime.hoverTryOnItemEnabled;
+  if (clothing) {
+    runtime.hoverTryOnClothingEnabled = active;
+    saveAppearanceQuickSetting('hoverTryOnClothingEnabled', active);
+  } else {
+    runtime.hoverTryOnItemEnabled = active;
+    saveAppearanceQuickSetting('hoverTryOnItemEnabled', active);
+  }
+  const activeScope: HoverTryOnScope = runtime.hoverTryOnRestraint ? 'item' : 'clothing';
+  if (!active && runtime.hoverTryOnActive && activeScope === scope) stopHoverTryOn();
 }
 
 export function toggleCharacterPreviewActive(): void {

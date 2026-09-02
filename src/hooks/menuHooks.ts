@@ -27,8 +27,8 @@ const EXTENDED_FACE_PREVIEW_GROUPS = new Set([
   '新前发_Luzi_stack', '新后发_Luzi_stack',
 ]);
 
-function hoverTryOnIcon(): string {
-  return isHoverTryOnEnabled() ? 'Icons/Public.png' : 'Icons/Private.png';
+function hoverTryOnIcon(scope: 'clothing' | 'item'): string {
+  return isHoverTryOnEnabled(scope) ? 'Icons/Public.png' : 'Icons/Private.png';
 }
 
 function characterPreviewIcon(): string {
@@ -132,7 +132,7 @@ export function installMenuHooks() {
       drawPartsFilterBadge(partsFilterX, 25);
     }
     if (hoverTryOnIndex >= 0 && !isAppearanceOverlayActive()) {
-      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
+      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon('clothing'), t('settings-hover-tryon-tooltip'));
     }
     if (charPreviewIndex >= 0 && !isAppearanceOverlayActive()) {
       DrawButton(x + 117 * charPreviewIndex, 25, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
@@ -164,7 +164,7 @@ export function installMenuHooks() {
         return;
       }
       if (AppearanceMenu[index] === HOVER_TRY_ON_BUTTON && !isAppearanceOverlayActive()) {
-        toggleHoverTryOn();
+        toggleHoverTryOn('clothing');
         return;
       }
       if (AppearanceMenu[index] === CHARACTER_PREVIEW_BUTTON && !isAppearanceOverlayActive()) {
@@ -188,7 +188,7 @@ export function installMenuHooks() {
       DialogMenuButton = menu;
     }
     if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
-      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon(), t('settings-hover-tryon-tooltip'));
+      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon('item'), t('settings-hover-tryon-tooltip'));
     }
     return result;
   });
@@ -204,7 +204,7 @@ export function installMenuHooks() {
 
   bcAeeModSdk.hookFunction('DialogClick', 10, (args, next) => {
     if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && MouseIn(dialogHoverTryOnButtonX(), 15, 90, 90)) {
-      toggleHoverTryOn();
+      toggleHoverTryOn('item');
       return;
     }
     return next(args);

@@ -4,7 +4,8 @@ import {runtime} from '@/core/runtime';
 const EXTENSION_KEY = 'AEE';
 
 interface AppearanceQuickSettings {
-  hoverTryOnEnabled?: boolean;
+  hoverTryOnClothingEnabled?: boolean;
+  hoverTryOnItemEnabled?: boolean;
   characterPreviewActive?: boolean;
 }
 
@@ -20,12 +21,14 @@ function record(): AppearanceQuickSettings | null {
 export function loadAppearanceQuickSettings() {
   const saved = record();
   if (!saved) return;
-  if (typeof saved.hoverTryOnEnabled === 'boolean') {
-    runtime.hoverTryOnEnabled = saved.hoverTryOnEnabled;
-    settings.hoverTryOnActive.set(saved.hoverTryOnEnabled);
-  } else {
-    runtime.hoverTryOnEnabled = settings.hoverTryOnActive.get();
-  }
+  const clothing = typeof saved.hoverTryOnClothingEnabled === 'boolean'
+    ? saved.hoverTryOnClothingEnabled
+    : false;
+  const item = typeof saved.hoverTryOnItemEnabled === 'boolean'
+    ? saved.hoverTryOnItemEnabled
+    : false;
+  runtime.hoverTryOnClothingEnabled = clothing;
+  runtime.hoverTryOnItemEnabled = item;
   if (typeof saved.characterPreviewActive === 'boolean') settings.characterPreviewActive.set(saved.characterPreviewActive, false);
 }
 

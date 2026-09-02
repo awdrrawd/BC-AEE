@@ -399,7 +399,7 @@ function installDialogHoverTryOnHandlers() {
   };
 
   document.addEventListener('pointerover', event => {
-    if (!isHoverTryOnEnabled() || CommonIsMobile) return;
+    if (!isHoverTryOnEnabled('item') || CommonIsMobile) return;
     const button = getButton(event.target);
     if (!button || (event.relatedTarget instanceof Node && button.contains(event.relatedTarget))) return;
     if (button.getAttribute('aria-checked') === 'true') {
@@ -463,7 +463,7 @@ function handleHoverCharHighlight(isAppearance: boolean) {
 }
 
 function handleHoverTryOn() {
-  if (!isHoverTryOnEnabled()
+  if (!isHoverTryOnEnabled('clothing')
     || CharacterAppearanceMode !== 'Cloth'
     || !CharacterAppearanceSelection
     || CommonIsMobile

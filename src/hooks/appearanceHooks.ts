@@ -219,51 +219,39 @@ export function installAppearanceHooks() {
   bcAeeModSdk.hookFunction('DrawCharacter', 1, (args, next) => {
     const character = args[0];
     const scale = args[3];
-    // Dialog-based Item editing does not run AppearanceRun, but it still draws
-    // the edited character through DrawCharacter. Capture that exact draw
-    // rectangle so labels and hit boxes use the current Dialog coordinates
-    // instead of a stale Appearance-screen map.
     const craftingTarget = CurrentScreen === 'Crafting' && character === CraftingPreview;
     const itemColorTarget = !runtime.inAppearanceRun && character === runtime.itemColorChar;
-    if (!runtime.inAppearanceRun && !craftingTarget && !itemColorTarget) {
-      captureAppearanceDraw(character, args[1], args[2], scale, args[4]);
-      return next(args);
-    }
+    const controlsActive = runtime.inAppearanceRun || craftingTarget || itemColorTarget;
     const isTarget = character && (character === CharacterAppearanceSelection || craftingTarget || itemColorTarget);
-    // ItemColor/Dialog previews are allowed to choose arbitrary zoom values
-    // based on the current screen and available canvas space. The view-control
-    // branches below only recognize BC's standard 1/0.95/4 scales, which left
-    // free-transform captures without a draw rectangle on other ItemColor
-    // layouts. Record the authoritative ItemColor draw unconditionally; a
-    // later standard-scale branch may replace it with the same coordinates.
-    if (itemColorTarget) captureAppearanceDraw(character, args[1], args[2], args[3], args[4]);
-    const view = getViewSettings();
-    const closeup = scale === 4 || (craftingTarget && Math.abs(scale - 2) < 0.05);
-    if (closeup) {
-      if (!isTarget) return next(args);
-      if (view.hideCloseup.get()) return;
-      return next(args);
-    }
-    if (Math.abs(scale - 1) < 0.1 || Math.abs(scale - 0.95) < 0.05) {
-      if (!isTarget) return next(args);
-      if (view.hideFullbody.get()) return;
-      const previewOffset = runtime.offsetPreview;
-      const offsetX = previewOffset?.x ?? view.charOffsetX.get();
-      const offsetY = previewOffset?.y ?? view.charOffsetY.get();
-      const charScale = view.charScale.get();
-      const hasOffset = offsetX !== 0 || offsetY !== 0 || charScale !== 1;
-      if (hasOffset) {
-        const nextArgs: (typeof args) = [...args];
-        nextArgs[1] = args[1] + offsetX;
-        nextArgs[2] = args[2] + offsetY;
-        nextArgs[3] = args[3] * charScale;
-        captureAppearanceDraw(character, nextArgs[1], nextArgs[2], nextArgs[3], nextArgs[4]);
-        return next(nextArgs);
+    let drawArgs = args;
+    let capture = true;
+
+    if (controlsActive && isTarget) {
+      const view = getViewSettings();
+      const closeup = scale === 4 || (craftingTarget && Math.abs(scale - 2) < 0.05);
+      if (closeup) {
+        if (view.hideCloseup.get()) return;
+        // Wardrobe closeups are secondary; ItemColor/Crafting can use a
+        // closeup when it is the only visible preview of the edited item.
+        capture = itemColorTarget || craftingTarget;
+      } else if (Math.abs(scale - 1) < 0.1 || Math.abs(scale - 0.95) < 0.05) {
+        if (view.hideFullbody.get()) return;
+        const offsetX = runtime.offsetPreview?.x ?? view.charOffsetX.get();
+        const offsetY = runtime.offsetPreview?.y ?? view.charOffsetY.get();
+        const charScale = view.charScale.get();
+        if (offsetX !== 0 || offsetY !== 0 || charScale !== 1) {
+          drawArgs = [...args];
+          drawArgs[1] += offsetX;
+          drawArgs[2] += offsetY;
+          drawArgs[3] *= charScale;
+        }
       }
-      captureAppearanceDraw(character, args[1], args[2], args[3], args[4]);
-      return next(args);
     }
-    return next(args);
+
+    // One capture point, after visibility and offsets. The picker validates
+    // the edited character and accepts arbitrary ItemColor/Dialog zooms.
+    if (capture) captureAppearanceDraw(character, drawArgs[1], drawArgs[2], drawArgs[3], drawArgs[4]);
+    return next(drawArgs);
   });
 
   bcAeeModSdk.hookFunction('DrawImageCanvas', 2, (args, next) => {

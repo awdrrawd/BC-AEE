@@ -5,11 +5,12 @@ import {captureAppearanceImage, invalidateAppearancePicker} from '@/controllers/
 import {renderGlImage} from '@/hooks/renderHooks';
 import {recordDrawImage} from '@/core/drawImageTracker';
 import {withPickerMatrices} from '@/core/pickerTransform';
+import {getCurrentCharacter} from '@/core/bc';
 
 export function installDrawingHooks() {
   bcAeeModSdk.hookFunction('CharacterLoadCanvas', 5, (args, next) => {
     const character = args[0];
-    if (character === CharacterAppearanceSelection) invalidateAppearancePicker();
+    if (character === getCurrentCharacter()) invalidateAppearancePicker();
     if (character) runtime.currentRenderChar = character;
     return withRestraintsHidden(character, () => next(args));
   });

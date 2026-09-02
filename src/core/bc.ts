@@ -100,6 +100,11 @@ export function getCurrentCharacter(): Character | null {
   if (DialogMenuMode === 'extended' && DialogFocusItem) {
     try { return CharacterGetCurrent() || null; } catch { return null; }
   }
+  // AppearanceSelection can still point to Player after leaving the wardrobe.
+  // Resolve the owner of the active color-edited item before that stale value.
+  if (runtime.itemColorChar && runtime.itemColorItem && runtime.itemColorItem === getCurrentItem()) {
+    return runtime.itemColorChar;
+  }
   return CharacterAppearanceSelection || runtime.itemColorChar || null;
 }
 

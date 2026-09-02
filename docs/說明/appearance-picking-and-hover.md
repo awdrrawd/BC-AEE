@@ -120,7 +120,9 @@ BC 同一畫面更新可能額外呼叫 `DrawCharacter`，卻沒有產生可捕�
 - Appearance 普通模式：開關整件拾取後，游標狀態與點擊行為同步停止／恢復。
 - 服裝編輯：normal／detail 都能選到正確 layer。
 - Item Dialog：detail 標籤持續顯示，文字與空白區均可點擊。
+- 編輯他人道具：先開過自己的外觀頁再進入對方的 ItemColor，任意變形外框應出現；刷新自己不可清除對方的圖層快取。`getCurrentCharacter()` 優先使用目前編輯物件的 ItemColor 擁有者，避免殘留的 `CharacterAppearanceSelection` 指向自己。可執行 `node scripts/test-editor-character.mjs` 驗證角色選擇與刷新目標。
 - 啟用位移後：物件、標籤錨點、外框與命中區同步移動。
+- Crafting：只記錄通過顯示判斷且套用視圖偏移後的 DrawCharacter 座標；雙預覽以最後繪製的全身預覽為編輯目標，不以倍率大小選取。隱藏近景時不可擷取其位置；只顯示近景時使用近景位置。`node scripts/test-crafting-preview.mjs` 涵蓋預覽顯示組合、偏移與縮放，使用者已確認 Crafting 對齊。DrawCharacter 的顯示與偏移處理共用單一擷取出口，避免各分支再加入提前擷取的補丁。
 - 旋轉、非等比縮放、翻轉與斜切後：可見像素可選取、透明區域與舊位置不誤判；紫色外框跟隨圖案。
 - 鏡像複製：原圖與副本皆可命中同一物件／圖層，外框涵蓋兩者。
 - 開始拖曳：拾取暫停；結束拖曳：原模式恢復。

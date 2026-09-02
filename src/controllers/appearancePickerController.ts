@@ -96,9 +96,8 @@ function inSupportedAppearanceMode(): boolean {
 export function captureAppearanceDraw(character: Character, x: number, y: number, zoom: number, heightResize?: boolean) {
   const captureLayers = layerCaptureEnabled();
   if (!(inSupportedAppearanceMode() || captureLayers) || character !== pickerCharacter() || (!captureLayers && zoom > 2)) return;
-  // Crafting draws the same preview twice. Keep its large, left-hand preview
-  // as the picking surface instead of letting the later 0.9x thumbnail replace it.
-  if (CurrentScreen === 'Crafting' && frameDrawAt && frameDrawAt.zoom > zoom) return;
+  // Use the last visible draw. Crafting paints its closeup first and its
+  // full-body preview last; a hidden closeup must never own this mapping.
   frameDrawAt = {x, y, zoom, heightResize};
 }
 

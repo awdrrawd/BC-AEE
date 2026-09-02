@@ -22,6 +22,10 @@ function isItem(group: AssetGroup): boolean {
   return group.IsItem();
 }
 
+function matchesKind(group: AssetGroup, kind: Kind): boolean {
+  return kind === 'all' || (kind === 'clothing' ? isClothing(group) : isItem(group));
+}
+
 function buildEntries(): AssetEntry[] {
   const entries = new Map<string, AssetEntry>();
   for (const group of AssetGroup) {
@@ -221,16 +225,21 @@ export function AssetPartsSearchPanel({open, onClose}: {open: boolean; onClose: 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const slots = useMemo(() => {
     const groups = new Map<string, string>();
-    for (const entry of entries) for (const {group} of entry.occurrences) groups.set(group.Name, group.Description || group.Name);
+    for (const entry of entries) for (const {group} of entry.occurrences) {
+      if (matchesKind(group, kind)) groups.set(group.Name, group.Description || group.Name);
+    }
     return [...groups].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [entries]);
-  const filtered = useMemo(() => entries.filter(entry => {
+  }, [entries, kind]);
+  const filtered = useMemo(() => entries.flatMap(entry => {
     const hasQuery = hasSearchText(query);
-    if (!hasQuery && slot === '-') return false;
+    if (!hasQuery && slot === '-') return [];
     const occurrences = entry.occurrences.filter(({group}) =>
-      (kind === 'all' || (kind === 'clothing' ? isClothing(group) : isItem(group)))
+      matchesKind(group, kind)
       && (slot === '-' || slot === 'all' || group.Name === slot));
-    return occurrences.length > 0 && fuzzyMatch(`${entry.name} ${entry.description} ${entry.occurrences.map(({asset, group}) => `${asset.Description} ${group.Name} ${group.Description}`).join(' ')}`, query);
+    if (!occurrences.length) return [];
+    const description = occurrences[0].asset.Description || entry.name;
+    return fuzzyMatch(`${entry.name} ${description} ${occurrences.map(({asset, group}) => `${asset.Description} ${group.Name} ${group.Description}`).join(' ')}`, query)
+      ? [{...entry, description, occurrences}] : [];
   }), [entries, kind, query, slot]);
   const shown = filtered.slice(0, visibleCount);
   const selected = selectedName ? filtered.find(entry => entry.name === selectedName) ?? null : null;
@@ -266,7 +275,7 @@ export function AssetPartsSearchPanel({open, onClose}: {open: boolean; onClose: 
         <section className="flex min-h-0 min-w-0 flex-col border-r border-zinc-700">
           <div className="grid shrink-0 gap-2 border-b border-zinc-700 p-3">
             <label className="relative min-w-0"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"/><input value={query} onChange={event => {setQuery(event.target.value); resetSelection();}} placeholder={t('asset-parts-search-placeholder')} className="h-10 min-w-0 w-full rounded border border-zinc-600 bg-zinc-950 pl-9 pr-3 outline-none focus:border-(--aee-accent)"/></label>
-            <select value={kind} onChange={event => {setKind(event.target.value as Kind); resetSelection();}} className="h-10 min-w-0 w-full rounded border border-zinc-600 bg-zinc-950 px-3"><option value="all">{t('asset-parts-search-kind-all')}</option><option value="clothing">{t('asset-parts-search-kind-clothing')}</option><option value="item">{t('asset-parts-search-kind-item')}</option></select>
+            <select value={kind} onChange={event => {setKind(event.target.value as Kind); setSlot('-'); resetSelection();}} className="h-10 min-w-0 w-full rounded border border-zinc-600 bg-zinc-950 px-3"><option value="all">{t('asset-parts-search-kind-all')}</option><option value="clothing">{t('asset-parts-search-kind-clothing')}</option><option value="item">{t('asset-parts-search-kind-item')}</option></select>
             <select value={slot} onChange={event => {setSlot(event.target.value); resetSelection();}} className="h-10 min-w-0 w-full rounded border border-zinc-600 bg-zinc-950 px-3"><option value="-">-</option><option value="all">{t('asset-parts-search-slot-all')}</option>{slots.map(([name, label]) => <option key={name} value={name}>{label} ({name})</option>)}</select>
           </div>
           <div ref={listRef} className="aee-scroll min-h-0 flex-1 overflow-y-auto p-2">

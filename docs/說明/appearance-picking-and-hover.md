@@ -1,6 +1,6 @@
 # AEE 拾取與懸停實作說明
 
-本文件描述 AEE 目前的服裝／道具拾取、部件標籤、懸停閃爍與外框流程。它記錄完成後的架構，不記錄試錯過程；未完成項目另見 `unfinished-items.md`。
+本文件描述 AEE 目前的服裝／道具拾取、部件標籤、懸停閃爍與外框流程。它記錄完成後的架構，不記錄試錯過程；未完成項目另見 [未完成事項](../代改進/unfinished-items.md)。
 
 ## 功能邊界
 
@@ -108,8 +108,9 @@ BC 同一畫面更新可能額外呼叫 `DrawCharacter`，卻沒有產生可捕�
 
 ## 已知限制與後續風險
 
-1. 精準像素命中目前已跟隨 BC 的 Translation，但尚未完整反算原生 Rotation、Scale、Mirror／Invert，以及 AEE 的 skew、flip、mirror-copy 矩陣。變形幅度大時，命中與外框可能偏離實際像素。
-2. BC 原始 `GLDrawImage` 對 Mirror + Translation 有官方 FIXME，使用額外倍數修正；AEE 若補齊矩陣命中，必須以該版本的實際 shader matrix 為準。
+1. 2026-09-02 起，GLDrawImage 的 capture 會收集最終 shader matrix，包含 AEE skew／flip 與 mirror-copy 的額外繪製。像素點擊反算至原圖 alpha mask；外框與詳細標籤使用相同矩陣。自動回歸通過，使用者已確認遊戲內修復。
+2. BC 原始 `GLDrawImage` 對 Mirror + Translation 有官方 FIXME；拾取直接使用最終矩陣，不再自行猜測倍數。矩陣擷取只在當次 GLDrawImage 呼叫內有效，以免混入其他角色或後處理。缺少矩陣時保留原有位移 fallback；此 fallback 不保證非標準繪製的完整變形。
+   BC 將正常／眨眼畫面並排放在 WebGL 畫布；擷取矩陣後必須扣除 `GLDrawImage` 第六參數 `offsetX`，才是角色座標。回歸測試涵蓋 1000px 畫布的兩個區域、未旋轉與旋轉，以及 drawing hook 的參數傳遞。
 3. 動態 AfterDraw canvas、模組化物品及第三方 mod 可能不使用標準 URL 或標準 GL 路徑；`DrawImageCanvas` 與 current layer context 是必要 fallback。
 4. `Alpha=0` 的閃爍 frame 不可覆蓋最後可見 capture，否則外框會跟著消失。
 5. 不應在每次 requestAnimationFrame 重建 alpha mask；目前 `alphaCache` 以 URL 快取並限制數量。
@@ -120,6 +121,8 @@ BC 同一畫面更新可能額外呼叫 `DrawCharacter`，卻沒有產生可捕�
 - 服裝編輯：normal／detail 都能選到正確 layer。
 - Item Dialog：detail 標籤持續顯示，文字與空白區均可點擊。
 - 啟用位移後：物件、標籤錨點、外框與命中區同步移動。
+- 旋轉、非等比縮放、翻轉與斜切後：可見像素可選取、透明區域與舊位置不誤判；紫色外框跟隨圖案。
+- 鏡像複製：原圖與副本皆可命中同一物件／圖層，外框涵蓋兩者。
 - 開始拖曳：拾取暫停；結束拖曳：原模式恢復。
 - 面板列懸停：外框與可選閃爍指向相同 layer group。
 - 移除或更換物品：舊外框、標籤及點擊框不殘留。

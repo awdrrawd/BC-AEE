@@ -101,8 +101,9 @@ The hover outline, canvas picking, and free-transform controls were adapted from
 
 ## 🧭 開發文件 · Developer Documentation
 
-- [AEE 架構與擴充指南](./docs/architecture.md)
-- [互動式功能分支圖](./docs/aee-architecture.html)
+- [AEE 架構與擴充指南](./docs/說明/architecture.md)
+- [文件分類與未完成事項](./docs/README.md)
+- [互動式功能分支圖](./docs/說明/aee-architecture.html)
 
 ---
 

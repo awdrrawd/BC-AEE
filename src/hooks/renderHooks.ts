@@ -1,5 +1,6 @@
 import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
+import {recordPickerMatrix} from '@/core/pickerTransform';
 import type {
   AeeLayerOverride,
   BeforeDrawParams,
@@ -241,9 +242,10 @@ function installWebGlPrototypePatch() {
         runtime.mirrorCopyFlags = null;
       }
 
-      return runtime.originalUniformMatrix4fv!.call(this, location, transpose, matrix);
+      data = matrix;
     }
 
+    recordPickerMatrix(this, data);
     return runtime.originalUniformMatrix4fv!.call(this, location, transpose, data);
   };
 
@@ -263,6 +265,7 @@ function installWebGlPrototypePatch() {
         matrix[4] = -matrix[4];
         matrix[5] = -matrix[5];
       }
+      recordPickerMatrix(this, matrix);
       runtime.originalUniformMatrix4fv!.call(this, runtime.lastMatrixLocation, false, matrix);
       runtime.originalDrawArrays!.call(this, mode, first, count);
       runtime.originalUniformMatrix4fv!.call(this, runtime.lastMatrixLocation, false, runtime.lastMatrixData);

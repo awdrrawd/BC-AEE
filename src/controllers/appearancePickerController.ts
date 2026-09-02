@@ -4,11 +4,13 @@ import {runtime} from '@/core/runtime';
 import {getState, mutateState} from '@/core/store';
 import {getCurrentCharacter, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
+import {applyPickerMatrix, invertPickerPoint, type PickerMatrix} from '@/core/pickerTransform';
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
 export type DrawCapture = {
+  matrices: PickerMatrix[];
   url: string;
-  /** Actual raster origin, retained for picking/outlines. */
+  /** Translation-only fallback when no shader matrix was captured. */
   x: number;
   y: number;
   /** Coordinates passed by CommonDraw to GLDrawImage. */
@@ -113,12 +115,8 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
     : matchCurrentItemLayer(source, state.item);
   const asset = matchAsset(source, character);
   const order = asset ? appearanceImageOrder(asset, source, character) : (layerIndex >= 0 ? layerOrder(layerIndex, character) : -1);
-  // CommonDraw has already applied TranslationX/Y to the coordinates passed
-  // to GLDrawImage. Keep those final draw coordinates: subtracting the
-  // translation here leaves picking, labels and outlines at the old position.
-  // GLDrawImage applies the same translation once more after CommonDraw has
-  // already included it in x/y (see BC's FIXME beside its matrix setup).
-  // Record the actual raster origin produced by that matrix.
+  // Retain the legacy translation fallback and gizmo inputs. Picking and
+  // outlines use final shader matrices populated during the scoped GL draw.
   const transform = options as (DrawOptions & {
     TranslationX?: number;
     TranslationY?: number;
@@ -128,7 +126,8 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   }) | undefined;
   const translationX = transform?.TranslationX ?? 0;
   const translationY = transform?.TranslationY ?? 0;
-  const capture = {
+  const capture: DrawCapture = {
+    matrices: [],
     url: source,
     x: x + translationX,
     y: y + translationY,
@@ -151,13 +150,14 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   }
   // Keep transparent layers available for thumbnails, but exclude them from
   // whole-item hit testing so invisible pixels never become pick targets.
-  if (options?.Alpha === 0) return;
+  if (options?.Alpha === 0) return capture;
   // Whole-item picking needs an asset owner. Per-layer picking can still use
   // CommonDraw's authoritative item/layer context for non-standard URLs.
-  if (!asset) return;
+  if (!asset) return capture;
   const list = frame.get(asset) ?? [];
   list.push(capture);
   frame.set(asset, list);
+  return capture;
 }
 
 export function commitAppearancePickerFrame() {
@@ -290,52 +290,7 @@ export function drawAppearancePickerOutline() {
   const map = canvasMap();
   if (!list?.length || !map) return;
 
-  const drawable: Array<{cap: DrawCapture; image: CanvasImageSource; width: number; height: number}> = [];
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const cap of list) {
-    const image = pickImage(cap.url);
-    if (!image) continue;
-    const width = image.naturalWidth || image.width;
-    const height = image.naturalHeight || image.height;
-    const p1 = canvasToScreen(cap.x, cap.y, map);
-    const p2 = canvasToScreen(cap.x + width, cap.y + height, map);
-    minX = Math.min(minX, p1.x); minY = Math.min(minY, p1.y);
-    maxX = Math.max(maxX, p2.x); maxY = Math.max(maxY, p2.y);
-    drawable.push({cap, image, width, height});
-  }
-  if (!drawable.length || !Number.isFinite(minX)) return;
-  const pad = OUTLINE_WIDTH + 2;
-  const bx = Math.max(0, Math.floor(minX - pad));
-  const by = Math.max(0, Math.floor(minY - pad));
-  const bw = Math.min(2000, Math.ceil(maxX + pad)) - bx;
-  const bh = Math.min(1000, Math.ceil(maxY + pad)) - by;
-  const off = getOutlineCanvas(bw, bh);
-  if (!off || bw <= 0 || bh <= 0) return;
-
-  const blit = (dx: number, dy: number) => {
-    for (const entry of drawable) {
-      const point = canvasToScreen(entry.cap.x, entry.cap.y, map);
-      off.ctx.save();
-      off.ctx.translate(point.x - bx + dx, point.y - by + dy);
-      off.ctx.scale(map.sx, map.sy);
-      off.ctx.drawImage(entry.image, 0, 0);
-      off.ctx.restore();
-    }
-  };
-  off.ctx.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < OUTLINE_SAMPLES; i++) {
-    const angle = i / OUTLINE_SAMPLES * Math.PI * 2;
-    blit(Math.cos(angle) * OUTLINE_WIDTH, Math.sin(angle) * OUTLINE_WIDTH);
-  }
-  off.ctx.globalCompositeOperation = 'destination-out';
-  blit(0, 0);
-  off.ctx.globalCompositeOperation = 'source-in';
-  off.ctx.fillStyle = outlineColor();
-  off.ctx.fillRect(0, 0, bw, bh);
-  MainCanvas.save();
-  MainCanvas.globalAlpha = 0.9;
-  MainCanvas.drawImage(off.canvas, 0, 0, bw, bh, bx, by, bw, bh);
-  MainCanvas.restore();
+  drawCaptureOutline(list, map);
 }
 
 export function handleAppearancePickerClick(x = MouseX, y = MouseY): boolean {
@@ -395,8 +350,7 @@ function pickLayerAt(x: number, y: number): number[] {
       const bounds = alpha?.bounds ?? (width && height ? {x: 0, y: 0, w: width, h: height} : null);
       if (!bounds) continue;
       area += bounds.w * bounds.h;
-      const px = point.x - cap.x, py = point.y - cap.y;
-      if (px >= bounds.x && py >= bounds.y && px < bounds.x + bounds.w && py < bounds.y + bounds.h && opaqueAt(alpha, px, py)) opaque = true;
+      if (captureOpaqueAt(cap, width, height, bounds, alpha, point)) opaque = true;
     }
     if (opaque) hits.push({index, order: layerOrder(index), area});
   }
@@ -435,10 +389,9 @@ function drawDetailedLayerPicker() {
       const height = image?.naturalHeight || image?.height || 0;
       const bounds = alpha?.bounds ?? (width && height ? {x: 0, y: 0, w: width, h: height} : null);
       if (!bounds) continue;
-      const p1 = canvasToScreen(cap.x + bounds.x, cap.y + bounds.y, map);
-      const p2 = canvasToScreen(cap.x + bounds.x + bounds.w, cap.y + bounds.y + bounds.h, map);
-      minX = Math.min(minX, p1.x); minY = Math.min(minY, p1.y);
-      maxX = Math.max(maxX, p2.x); maxY = Math.max(maxY, p2.y);
+      const rect = captureScreenBounds(cap, width, height, bounds, map);
+      minX = Math.min(minX, rect.left); minY = Math.min(minY, rect.top);
+      maxX = Math.max(maxX, rect.right); maxY = Math.max(maxY, rect.bottom);
     }
     if (!Number.isFinite(minX)) continue;
     rows.push({index, minX, maxX, anchorY: (minY + maxY) / 2, label: getLayerDisplayName(state.layers[index], String(index))});
@@ -634,35 +587,65 @@ function syncLabelHover(index: number | null) {
 function drawLayerOutline(index: number) {
   const list = layerCaptures.get(index);
   const map = canvasMap();
-  if (!list?.length || !map) return;
-  const drawable: Array<{cap: DrawCapture; image: HTMLImageElement}> = [];
+  if (list?.length && map) drawCaptureOutline(list, map);
+}
+
+function captureMatrices(cap: DrawCapture, width: number, height: number): PickerMatrix[] {
+  if (!width || !height) return [];
+  return cap.matrices.length
+    ? cap.matrices.map(m => [m[0] / width, m[1] / width, m[2] / height, m[3] / height, m[4], m[5]])
+    : [[1, 0, 0, 1, cap.x, cap.y]];
+}
+
+function captureScreenBounds(cap: DrawCapture, width: number, height: number,
+  bounds: AlphaData['bounds'], map: CanvasMap) {
+  const points = captureMatrices(cap, width, height).flatMap(matrix =>
+    [[bounds.x, bounds.y], [bounds.x + bounds.w, bounds.y],
+      [bounds.x + bounds.w, bounds.y + bounds.h], [bounds.x, bounds.y + bounds.h]].map(([x, y]) => {
+      const point = applyPickerMatrix(matrix, x, y);
+      return canvasToScreen(point.x, point.y, map);
+    }));
+  return {left: Math.min(...points.map(p => p.x)), top: Math.min(...points.map(p => p.y)),
+    right: Math.max(...points.map(p => p.x)), bottom: Math.max(...points.map(p => p.y))};
+}
+
+function captureOpaqueAt(cap: DrawCapture, width: number, height: number,
+  bounds: AlphaData['bounds'], alpha: AlphaData | null, point: {x: number; y: number}) {
+  return captureMatrices(cap, width, height).some(matrix => {
+    const p = invertPickerPoint(matrix, point.x, point.y);
+    return p !== null && p.x >= bounds.x && p.y >= bounds.y
+      && p.x < bounds.x + bounds.w && p.y < bounds.y + bounds.h && opaqueAt(alpha, p.x, p.y);
+  });
+}
+
+/** Outline, labels and hit testing share the same final draw matrices. */
+function drawCaptureOutline(list: DrawCapture[], map: CanvasMap) {
+  const drawable: Array<{matrix: PickerMatrix; image: HTMLImageElement}> = [];
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const cap of list) {
     const image = pickImage(cap.url);
     if (!image) continue;
-    const alpha = alphaData(cap.url, image);
-    const bounds = alpha?.bounds ?? {x: 0, y: 0, w: image.naturalWidth || image.width, h: image.naturalHeight || image.height};
-    const p1 = canvasToScreen(cap.x + bounds.x, cap.y + bounds.y, map);
-    const p2 = canvasToScreen(cap.x + bounds.x + bounds.w, cap.y + bounds.y + bounds.h, map);
-    minX = Math.min(minX, p1.x); minY = Math.min(minY, p1.y);
-    maxX = Math.max(maxX, p2.x); maxY = Math.max(maxY, p2.y);
-    drawable.push({cap, image});
+    const width = image.naturalWidth || image.width, height = image.naturalHeight || image.height;
+    const bounds = alphaData(cap.url, image)?.bounds ?? {x: 0, y: 0, w: width, h: height};
+    const rect = captureScreenBounds(cap, width, height, bounds, map);
+    minX = Math.min(minX, rect.left); minY = Math.min(minY, rect.top);
+    maxX = Math.max(maxX, rect.right); maxY = Math.max(maxY, rect.bottom);
+    for (const matrix of captureMatrices(cap, width, height)) drawable.push({matrix, image});
   }
-  if (!drawable.length) return;
+  if (!drawable.length || !Number.isFinite(minX)) return;
   const pad = OUTLINE_WIDTH + 2;
   const bx = Math.max(0, Math.floor(minX - pad)), by = Math.max(0, Math.floor(minY - pad));
   const bw = Math.min(2000, Math.ceil(maxX + pad)) - bx, bh = Math.min(1000, Math.ceil(maxY + pad)) - by;
   const off = getOutlineCanvas(bw, bh);
   if (!off) return;
   const blit = (dx: number, dy: number) => {
-    for (const entry of drawable) {
-      const point = canvasToScreen(entry.cap.x, entry.cap.y, map);
-      off.ctx.save();
-      off.ctx.translate(point.x - bx + dx, point.y - by + dy);
-      off.ctx.scale(map.sx, map.sy);
-      off.ctx.drawImage(entry.image, 0, 0);
-      off.ctx.restore();
+    for (const {matrix: m, image} of drawable) {
+      const origin = canvasToScreen(m[4], m[5], map);
+      off.ctx.setTransform(m[0] * map.sx, m[1] * map.sy, m[2] * map.sx, m[3] * map.sy,
+        origin.x - bx + dx, origin.y - by + dy);
+      off.ctx.drawImage(image, 0, 0);
     }
+    off.ctx.resetTransform();
   };
   off.ctx.globalCompositeOperation = 'lighter';
   for (let sample = 0; sample < OUTLINE_SAMPLES; sample++) {
@@ -674,7 +657,10 @@ function drawLayerOutline(index: number) {
   off.ctx.globalCompositeOperation = 'source-in';
   off.ctx.fillStyle = outlineColor();
   off.ctx.fillRect(0, 0, bw, bh);
+  MainCanvas.save();
+  MainCanvas.globalAlpha = 0.9;
   MainCanvas.drawImage(off.canvas, 0, 0, bw, bh, bx, by, bw, bh);
+  MainCanvas.restore();
 }
 
 function openItemEditor(group: AssetGroup): boolean {
@@ -709,10 +695,7 @@ function pickAt(x: number, y: number): PickHit[] {
       const bounds = alpha?.bounds ?? (width && height ? {x: 0, y: 0, w: width, h: height} : null);
       if (!bounds) continue;
       area += bounds.w * bounds.h;
-      const px = point.x - cap.x;
-      const py = point.y - cap.y;
-      if (px < bounds.x || py < bounds.y || px >= bounds.x + bounds.w || py >= bounds.y + bounds.h) continue;
-      if (opaqueAt(alpha, px, py)) {
+      if (captureOpaqueAt(cap, width, height, bounds, alpha, point)) {
         opaque = true;
         hitOrder = Math.max(hitOrder, cap.order);
       }

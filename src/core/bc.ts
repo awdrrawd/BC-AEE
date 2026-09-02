@@ -8,7 +8,7 @@ import {clamp} from '@/util/math';
 // BodyUpper/BodyLower/Nipples/Head stay locked — official R131 still disables them.
 export const LOCKED_GROUPS = new Set(['BodyUpper', 'BodyLower', 'Nipples', 'Head']);
 // Temporary exceptions to the native Layering AllowNone gate. Remove entries
-// individually as BC enables their native controls; see docs/transform-whitelist.md.
+// individually as BC enables their native controls; see docs/持續追蹤/transform-whitelist.md.
 const TRANSFORM_GROUP_WHITELIST = new Set([
   'HairFront', 'HairBack', 'Eyes', 'Eyes2', 'Eyebrows', 'Mouth',
 ]);

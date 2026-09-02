@@ -50,6 +50,8 @@ BC 的 `AccountUpdate` 仍可能因其他模組或道具資料超過約 180K。�
 
 ## 尚未實作
 
+統一追蹤於[未完成事項](../代改進/unfinished-items.md)。
+
 - 自動批次遷移其他尚未重新確認的舊 `CustomDraw`。目前每個槽在玩家重新確認時個別遷移。
 - Blob URL 的主動回收；目前由頁面工作階段結束時統一釋放。
 - 全域 AccountUpdate 180K 保護。

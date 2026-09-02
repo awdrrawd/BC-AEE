@@ -4,6 +4,7 @@ import {withRestraintsHidden} from '@/controllers/hideRestraintsController';
 import {captureAppearanceImage, invalidateAppearancePicker} from '@/controllers/appearancePickerController';
 import {renderGlImage} from '@/hooks/renderHooks';
 import {recordDrawImage} from '@/core/drawImageTracker';
+import {withPickerMatrices} from '@/core/pickerTransform';
 
 export function installDrawingHooks() {
   bcAeeModSdk.hookFunction('CharacterLoadCanvas', 5, (args, next) => {
@@ -15,7 +16,7 @@ export function installDrawingHooks() {
 
   bcAeeModSdk.hookFunction('GLDrawImage', 2, (args, next) => {
     recordDrawImage(args[0]);
-    captureAppearanceImage(args[0], args[2], args[3], args[4]);
-    return renderGlImage(args, next);
+    const capture = captureAppearanceImage(args[0], args[2], args[3], args[4]);
+    return withPickerMatrices(capture?.matrices, () => renderGlImage(args, next), args[5] ?? 0);
   });
 }

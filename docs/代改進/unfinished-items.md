@@ -31,31 +31,27 @@
 - 圖層管理器開啟／關閉。
 - 快速連點開關時不閃跳、不留下透明但可點擊的 DOM。
 
-## 2. 文字圖層變形
+## 2. 舊 CustomDraw 批次遷移
 
-### 目前狀態
+- 尚未自動批次遷移未重新確認的舊繪圖；目前玩家逐槽重新確認時遷移。
+- 來源：[SPS 自由繪圖](../說明/sps-free-draw.md)。
 
-- AEE 不對具有 `Text`、`Text2`、`Text3` 的 `DynamicAfterDraw` 道具解除變形鎖定。
-- 曾測試允許編輯原生 `TranslationX`／`TranslationY` 等數值，但 R131 的文字渲染沒有套用位移，因此已撤回 UI 與例外判斷。
+## 3. Blob URL 主動回收
 
-### 後續條件
+- 文件記錄目前由頁面工作階段結束時釋放，尚未主動回收。
+- 改進時需確認快取與畫面不再引用 URL，避免回收後圖片消失。
+- 來源：[SPS 自由繪圖](../說明/sps-free-draw.md)。
 
-- R132 預計由官方接手文字圖層的變形渲染。
-- R131 後續也可能提前修復，需以實際遊戲版本測試為準。
-- 官方能正確渲染前，不應再次提供只有數值變化、畫面沒有變化的編輯入口。
-- 官方支援後應直接使用原生 Layering properties，不另建 AEE 私有文字位移格式。
+## 4. 全域 AccountUpdate 容量保護
 
-## 3. LSCG 圖層面板隱藏穩定性
+- 自由繪圖現有預警不能涵蓋其他模組或道具造成的完整 payload 超限。
+- 待在共用人物保存／AccountUpdate 層檢查實際傳輸資料，並回報來源與大小；文件記錄約 180K，實作前應重新核對遊戲限制。
+- 來源：[SPS 自由繪圖](../說明/sps-free-draw.md)。
 
-### 目前狀態
+## 持續追蹤與驗證狀態
 
-- AEE 會檢查 LSCG Global／Opacity 模組及 AEE 替代工具是否存在。
-- `MutationObserver` 會處理 LSCG 延遲建立或重新建立 `#lscg-layers` 的情況。
+本清單於 2026-09-02 依 DOCS 彙整，未重新以程式與實機逐項驗證。上游文字變形與 LSCG 面板穩定性移至[相容性追蹤](../持續追蹤/upstream-compatibility.md)；頭髮／五官白名單退場與遊戲內驗收另見[白名單追蹤](../持續追蹤/transform-whitelist.md)。
 
-### 後續觀察
+## 已完成實作說明索引
 
-若仍出現短暫閃現，應考慮與 LSCG 協作，在 `OpacityModule.ShowDomUI()` 前加入可取消事件，從建立來源阻止面板，而不是在 DOM 建立後隱藏。
-
-## 已完成項目索引
-
-- 服裝／道具拾取、詳細標籤、懸停閃爍與外框：`docs/appearance-picking-and-hover.md`
+- 服裝／道具拾取、詳細標籤、懸停閃爍與外框：[外觀拾取與懸停](../說明/appearance-picking-and-hover.md)

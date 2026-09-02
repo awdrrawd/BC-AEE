@@ -2,7 +2,7 @@
 
 互動版功能分支圖：[開啟 AEE 架構圖](./aee-architecture.html)
 
-相容性例外：[頭髮與五官變形白名單及退場規則](./transform-whitelist.md)
+相容性例外：[頭髮與五官變形白名單及退場規則](../持續追蹤/transform-whitelist.md)
 
 左側依功能分類選擇；右側束狀圖依序顯示功能、模組責任與實際檔案。點擊任一模組或檔案節點，下方會列出完整路徑與可開啟的檔案連結。
 
@@ -86,4 +86,4 @@ flowchart TD
 - [SPS 自由繪圖](./sps-free-draw.md)
 - [圖層隱藏](./layering-hide.md)
 - [圖示管理](./icon-organization.md)
-- [未完成項目](./unfinished-items.md)
+- [未完成項目](../代改進/unfinished-items.md)

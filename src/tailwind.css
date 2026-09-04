@@ -95,8 +95,8 @@
     margin-top: -9.5px;
     appearance: none;
     background: var(--aee-accent);
-    -webkit-mask: url('./assets/editor/gemini-ai.svg') center / contain no-repeat;
-    mask: url('./assets/editor/gemini-ai.svg') center / contain no-repeat;
+    -webkit-mask: url('./assets/aee/drag-slider.svg') center / contain no-repeat;
+    mask: url('./assets/aee/drag-slider.svg') center / contain no-repeat;
     filter: drop-shadow(0 0 3px var(--aee-accent-55));
 }
 
@@ -114,7 +114,7 @@
     border: 0;
     border-radius: 0;
     background: var(--aee-accent);
-    mask: url('./assets/editor/gemini-ai.svg') center / contain no-repeat;
+    mask: url('./assets/aee/drag-slider.svg') center / contain no-repeat;
     filter: drop-shadow(0 0 3px var(--aee-accent-55));
 }
 

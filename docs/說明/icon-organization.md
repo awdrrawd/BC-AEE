@@ -11,7 +11,7 @@
 
 - React UI 使用的 SVG 寫成 TSX 元件，透過 `currentColor` 繼承按鈕狀態，不再經過 `<img>` 與 CSS 反色。
 - BC Canvas 使用的 SVG 保持 markup/data URL；例如自由繪圖與 `controllers/copyPasteIcons.ts`。
-- CSS mask 使用的 `assets/editor/gemini-ai.svg` 保持 SVG 檔案，因為 CSS 需要可引用的資源 URL。
+- Range input 的拖曳滑塊使用 `assets/aee/drag-slider.svg` 作為 CSS mask。CSS 需要可引用的資源 URL，因此保留 SVG 檔案。
 - BC 原生 PNG 與角色資產預覽維持圖片 URL，不轉成元件。
 
 `npm run lint` 會執行 `scripts/check-icon-organization.mjs`，拒絕在上述三個 React 類別入口以外直接引用 `lucide-react`，也會拒絕在 `iconSources.ts` 以外硬編碼靜態 BC 圖示路徑。動態姿勢路徑由 `viewController.ts` 依姿勢名稱組合，屬於明確例外。

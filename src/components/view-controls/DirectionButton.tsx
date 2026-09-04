@@ -1,4 +1,4 @@
-import {ChevronDown, ChevronLeft, ChevronRight, ChevronUp} from '@/components/view-controls/Icons';
+import {ChevronDown, ChevronLeft, ChevronRight, ChevronUp} from '@/components/main-panel/icons/Icons';
 import {IconButton} from '@/components/ui/Button';
 
 type Direction = 'up' | 'down' | 'left' | 'right';

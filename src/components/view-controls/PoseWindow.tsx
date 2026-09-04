@@ -3,7 +3,7 @@ import type {AeeState} from '@/core/types';
 import {t} from '@/i18n/i18n';
 import {movePoseWindow, POSES, togglePoseWindow} from '@/controllers/viewController';
 import {PoseButton} from '@/components/view-controls/PoseButton';
-import {X} from '@/components/view-controls/Icons';
+import {X} from '@/components/main-panel/icons/Icons';
 import {Panel} from '@/components/ui/Panel';
 import {useAnimatedPresence} from '@/components/view-controls/useAnimatedPresence';
 

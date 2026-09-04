@@ -20,7 +20,7 @@ import {
 import {BgSection} from '@/components/view-controls/BgSection';
 import {ColorSwatch, TextInput} from '@/components/ui/Fields';
 import {Button} from '@/components/ui/Button';
-import {X} from '@/components/view-controls/Icons';
+import {X} from '@/components/main-panel/icons/Icons';
 import {Panel} from '@/components/ui/Panel';
 import {RangeInput} from '@/components/main-panel/RangeInput';
 import {useSetting} from '@/core/settings';

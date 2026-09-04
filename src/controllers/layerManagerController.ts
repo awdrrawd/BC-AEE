@@ -25,7 +25,6 @@ import {getState, mutateState} from '@/core/store';
 import {clampPanelPosition} from '@/core/overlay';
 import type {LayerManagerFilterMode, LayerManagerSortDirection} from '@/core/types';
 
-export const LAYER_MANAGER_ICON = 'Icons/Layering.png';
 export const LAYER_MANAGER_PANEL_WIDTH = 560;
 export const LAYER_MANAGER_PANEL_MIN_HEIGHT = 420;
 

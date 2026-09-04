@@ -14,7 +14,7 @@ import {
 } from '@/controllers/uiController';
 import {IconButton} from '@/components/ui/Button';
 import {ChevronLeft, ChevronRight, Layers, Move, Palette, Scaling} from '@/components/main-panel/icons/Icons';
-import {TransparentIcon, TiltIcon, RotateIcon} from '@/components/main-panel/Icons';
+import {RotateIcon, TiltIcon, TransparentIcon} from '@/components/main-panel/TransformIcons';
 
 export function ToggleBar({state}: { state: AeeState }) {
   // Locked body parts (official FixedPosition) must not expose transform tools.

@@ -9,7 +9,7 @@
     "sync-version": "node scripts/sync-version.mjs",
     "prebuild": "node scripts/sync-version.mjs",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-icon-organization.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

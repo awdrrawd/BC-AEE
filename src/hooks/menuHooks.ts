@@ -4,13 +4,14 @@ import {importBcxFromText} from '@/controllers/importExportController';
 import {clearCopyBuffer, drawCopyBufferPreview, isAppearanceOverlayActive, isCopyActive} from '@/controllers/copyPasteController';
 import {CLEAR_ICON} from '@/controllers/copyPasteIcons';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
-import {cyclePartsFilterMode, drawPartsFilterBadge, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
-import {LAYER_MANAGER_ICON, layerManagerTooltip, openLayerManagerPanel} from '@/controllers/layerManagerController';
-import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, toggleHideRestraints} from '@/controllers/hideRestraintsController';
+import {cyclePartsFilterMode, drawPartsFilterBadge, partsFilterTooltip} from '@/controllers/partsFilterController';
+import {layerManagerTooltip, openLayerManagerPanel} from '@/controllers/layerManagerController';
+import {hideRestraintsTooltip, isHideRestraintsActive, toggleHideRestraints} from '@/controllers/hideRestraintsController';
 import {t} from '@/i18n/i18n';
 import {enterWardrobeScreen} from '@/hooks/wardrobeHooks';
 import {settings} from '@/core/settings';
 import {isHoverTryOnEnabled, toggleHoverTryOn, toggleCharacterPreviewActive} from '@/controllers/uiController';
+import {GAME_ICONS} from '@/components/icons/iconSources';
 
 const HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn';
 const DIALOG_HOVER_TRY_ON_BUTTON = 'AEE_HoverTryOn' as DialogMenuButtonType;
@@ -28,11 +29,11 @@ const EXTENDED_FACE_PREVIEW_GROUPS = new Set([
 ]);
 
 function hoverTryOnIcon(scope: 'clothing' | 'item'): string {
-  return isHoverTryOnEnabled(scope) ? 'Icons/Public.png' : 'Icons/Private.png';
+  return isHoverTryOnEnabled(scope) ? GAME_ICONS.public : GAME_ICONS.private;
 }
 
 function characterPreviewIcon(): string {
-  return settings.characterPreviewActive.get() ? 'Icons/Character.png' : 'Icons/CharacterOff.png';
+  return settings.characterPreviewActive.get() ? GAME_ICONS.character : GAME_ICONS.characterOff;
 }
 
 /** BC lays this menu out from the end, so inserting these controls at the
@@ -121,15 +122,15 @@ export function installMenuHooks() {
     }
     if (hideRestraintsIndex >= 0 && !isAppearanceOverlayActive()) {
       const hideRestraintsX = x + 117 * hideRestraintsIndex;
-      DrawButton(hideRestraintsX, 25, 90, 90, '', isHideRestraintsActive() ? '#FFB0B0' : 'White', hideRestraintsIcon(), hideRestraintsTooltip());
+      DrawButton(hideRestraintsX, 25, 90, 90, '', isHideRestraintsActive() ? '#FFB0B0' : 'White', GAME_ICONS.hideRestraints, hideRestraintsTooltip());
     }
     if (layerManagerIndex >= 0 && !isAppearanceOverlayActive()) {
       const layerManagerX = x + 117 * layerManagerIndex;
-      DrawButton(layerManagerX, 25, 90, 90, '', 'White', LAYER_MANAGER_ICON, layerManagerTooltip());
+      DrawButton(layerManagerX, 25, 90, 90, '', 'White', GAME_ICONS.layering, layerManagerTooltip());
     }
     if (partsFilterIndex >= 0 && !isAppearanceOverlayActive()) {
       const partsFilterX = x + 117 * partsFilterIndex;
-      DrawButton(partsFilterX, 25, 90, 90, '', 'White', partsFilterIcon(), partsFilterTooltip());
+      DrawButton(partsFilterX, 25, 90, 90, '', 'White', GAME_ICONS.dress, partsFilterTooltip());
       drawPartsFilterBadge(partsFilterX, 25);
     }
     if (hoverTryOnIndex >= 0 && !isAppearanceOverlayActive()) {

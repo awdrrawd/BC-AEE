@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {Search, X} from 'lucide-react';
+import {Search, X} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {Panel} from '@/components/ui/Panel';
 import {fuzzyMatch, hasSearchText} from './searchText';

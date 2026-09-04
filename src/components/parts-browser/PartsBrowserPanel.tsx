@@ -3,7 +3,7 @@ import type {AeeState, LayerId} from '@/core/types';
 import {getEditableParts} from '@/core/bc';
 import {selectLayer, startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
 import {Button} from '@/components/ui/Button';
-import {Grid3x2, List, Search, X} from 'lucide-react';
+import {Grid3x2, List, Search, X} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {setLayerPanelHover} from '@/controllers/appearancePickerController';
 import {useLayerThumbnail} from '@/components/parts-browser/useLayerThumbnail';

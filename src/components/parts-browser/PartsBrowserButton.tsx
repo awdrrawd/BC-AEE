@@ -1,4 +1,4 @@
-import {FolderSearch} from 'lucide-react';
+import {FolderSearch} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 
 export function PartsBrowserButton({open, onClick}: {open: boolean; onClick: () => void}) {

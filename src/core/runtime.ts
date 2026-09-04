@@ -4,7 +4,6 @@ type ColorPickerLiveChange = (hex: string, preview?: boolean) => void;
 type HoverFlashData = { item: Item; overrides: Map<number, number> };
 
 export interface Runtime {
-  initialized: boolean;
   currentRenderChar: Character | null;
   assetGroupMap: Map<string, string>;
   itemColorChar: Character | null;
@@ -57,7 +56,6 @@ export interface Runtime {
 }
 
 export const runtime: Runtime = {
-  initialized: false,
   currentRenderChar: null,
   assetGroupMap: new Map<string, string>(),
   itemColorChar: null,

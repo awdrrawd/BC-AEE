@@ -28,6 +28,12 @@ flowchart LR
 | `components/` | React 顯示、表單與 Overlay | 直接修改 BC Property |
 | `util/` | 無狀態或低副作用的共用轉換 | 功能狀態機 |
 
+## 執行期攔截原則
+
+AEE 不使用 ModSDK `patchFunction` 的字串取代。遊戲函式擴充一律使用可串接的 `hookFunction`。遮罩系統原本名為 `installImagePatch` 的流程實際只安裝 `GLDrawLoadImage`、`DrawGetImage` 與 `GLDrawAppearanceBuild` hooks，現已改名為 `installImageHooks`。
+
+有兩處直接覆寫瀏覽器 prototype，屬於正式渲染邊界而非測試補丁：`renderHooks.ts` 攔截 WebGL matrix/draw call，以實作斜切、鏡像副本與精準拾取；`backgroundController.ts` 在啟用自訂背景期間攔截 canvas `drawImage`，離開畫面即還原原函式。BC 沒有提供對等 hook，兩者都保存原函式、限制作用範圍並在卸載／離開時恢復或停止作用。
+
 ## 主要功能入口
 
 - 外觀控制列：`components/ToolbarSide.tsx` → `controllers/uiController.ts` → `core/bc.ts`

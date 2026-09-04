@@ -3,7 +3,7 @@
 // into AEE's hook installer (see src/hooks/index.ts).
 
 import bcAeeModSdk from '@/modsdk';
-import {installImagePatch, bustMaskTexture} from './masking';
+import {installImageHooks, bustMaskTexture} from './masking';
 import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
 import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames, setFreeDrawAvailability} from './freeDraw';
 import {settings} from '@/core/settings';
@@ -252,9 +252,9 @@ export function installMaskSystem() {
 
 
   // BC assets / draw functions may not be ready the instant the bundle loads;
-  // retry until image patch + registration + hook are all in place.
+  // retry until image hooks, registration, and draw hooks are all in place.
   const timer = setInterval(() => {
-    const patch = installImagePatch();
+    const imageHooksReady = installImageHooks();
     const registered = registerAll();
     tryHookDrawCharacter();
     tryHookSanitize();
@@ -262,11 +262,11 @@ export function installMaskSystem() {
     tryHookAppearanceSync();
     const peerDetectionReady = installPeerDetection(); // idempotent; learns which room members run AEE
 
-    if (patch && registered && !callbacksInstalled) {
+    if (imageHooksReady && registered && !callbacksInstalled) {
       callbacksInstalled = true;
       installFreeDrawCallbacks();
     }
-    if (patch && registered && drawHooked && sanitizeHooked && callbacksInstalled
+    if (imageHooksReady && registered && drawHooked && sanitizeHooked && callbacksInstalled
       && assetReloadHooked && appearanceSyncHooked && peerDetectionReady) {
       clearInterval(timer);
     }

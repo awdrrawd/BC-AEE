@@ -3,8 +3,6 @@ import type {PartsFilterMode} from '@/core/types';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {t} from '@/i18n/i18n';
 
-const PARTS_FILTER_ICON = 'Icons/Dress.png';
-
 const MODE_ORDER: PartsFilterMode[] = ['all', 'has', 'empty'];
 
 const MODE_LABEL: Record<PartsFilterMode, string> = {
@@ -76,10 +74,6 @@ export function drawPartsFilterBadge(x: number, y: number) {
     ? (MouseIn(x, y, PARTS_FILTER_BUTTON_SIZE, PARTS_FILTER_BUTTON_SIZE) ? '#FFFFFF' : '#000000')
     : MODE_COLOR[mode];
   DrawTextFit(MODE_LABEL[mode], x + 45, y + 78, 80, color);
-}
-
-export function partsFilterIcon(): string {
-  return PARTS_FILTER_ICON;
 }
 
 export function partsFilterTooltip(): string {

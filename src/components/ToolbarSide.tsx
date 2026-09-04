@@ -14,9 +14,9 @@ import {
   togglePartsBrowser,
 } from '@/controllers/uiController';
 import {exportBcxAppearance, importBcxAppearanceWithCategory} from '@/controllers/importExportController';
-import {cyclePartsFilterMode, partsFilterIcon, partsFilterTooltip} from '@/controllers/partsFilterController';
-import {hideRestraintsIcon, hideRestraintsTooltip, isHideRestraintsActive, toggleHideRestraints} from '@/controllers/hideRestraintsController';
-import {LAYER_MANAGER_ICON, toggleLayerManagerPanel} from '@/controllers/layerManagerController';
+import {cyclePartsFilterMode, partsFilterTooltip} from '@/controllers/partsFilterController';
+import {hideRestraintsTooltip, isHideRestraintsActive, toggleHideRestraints} from '@/controllers/hideRestraintsController';
+import {toggleLayerManagerPanel} from '@/controllers/layerManagerController';
 import {
   toggleBgSubOpen, toggleCharControlOpen, toggleGridBg, toggleHide, toggleHideSubOpen,
   toggleImageBg, toggleOffsetPanel, togglePoseWindow, toggleSolidBg,
@@ -42,18 +42,12 @@ import {
 } from '@/components/main-panel/icons/Icons';
 import {getLayeringHideGroups} from '@/controllers/layeringHideController';
 import {getViewSettings} from '@/core/viewSettings';
-import {TiltIcon} from '@/components/main-panel/Icons';
-import {RotateIcon, TransparentIcon} from '@/components/main-panel/Icons';
+import {RotateIcon, TiltIcon, TransparentIcon} from '@/components/main-panel/TransformIcons';
+import {FreeLayoutIcon, FreeTransformIcon, NeatLayoutIcon, PartsIcon, PoseIcon, SettingsIcon} from '@/components/main-panel/EditorIcons';
 import {PartsBrowserPanel} from '@/components/parts-browser/PartsBrowserPanel';
 import {PartsBrowserButton} from '@/components/parts-browser/PartsBrowserButton';
 import {AssetPartsSearchPanel} from '@/components/asset-search/AssetPartsSearchPanel';
-
-const settingsIcon = new URL('../assets/editor/Settings.svg', import.meta.url).href;
-const partIcon = new URL('../assets/editor/part.svg', import.meta.url).href;
-const neatIcon = new URL('../assets/editor/mod-Neat.svg', import.meta.url).href;
-const freeIcon = new URL('../assets/editor/mod-Free.svg', import.meta.url).href;
-const poseIcon = new URL('../assets/editor/Pose.svg', import.meta.url).href;
-const freeTransformIcon = new URL('../assets/editor/free-transform.svg', import.meta.url).href;
+import {GAME_ICONS} from '@/components/icons/iconSources';
 
 type ManagePanel = 'settings' | null;
 
@@ -84,10 +78,6 @@ function ToolButton({title, icon, selected, active, disabled = false, activeTone
     onClick={onClick}>
     <span className="flex h-[34px] w-[34px] items-center justify-center [&>svg]:h-full [&>svg]:w-full [&>img]:h-full [&>img]:w-full [&>img]:object-contain">{icon}</span>
   </button>;
-}
-
-function SvgIcon({src}: {src: string}) {
-  return <img src={src} alt="" draggable={false} className="invert opacity-90"/>;
 }
 
 function GameIcon({src}: {src: string}) {
@@ -210,7 +200,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
       {displayEditing && state.toolbarLayout === 'free' && state.selectedLayer !== null ?
         <div className="pointer-events-auto absolute left-[87px] top-[12px] z-40">
           <ToolButton title={t('free-transform-title')} selected={state.editTool === 'gizmo'}
-                      disabled={!!state.activeDrag} icon={<SvgIcon src={freeTransformIcon}/>} onClick={openTool('gizmo')}/>
+                      disabled={!!state.activeDrag} icon={<FreeTransformIcon/>} onClick={openTool('gizmo')}/>
         </div> : null}
       <div className={`aee-panel-collapse-motion absolute left-[80px] top-0 z-10 h-[1000px] overflow-hidden ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
            style={{width: panelWidth, transform: panelOpen ? 'translate3d(0,0,0)' : 'translate3d(calc(-100% - 80px),0,0)', opacity: panelOpen ? 1 : 0}}>
@@ -254,7 +244,7 @@ function ToolbarViewFlyout({state, open}: {state: AeeState; open: boolean}) {
         <ControlButton active={state.bg.settingsOpen} label={t('char-control-background-settings-button')} icon={<Settings className="h-full w-full"/>} onClick={() => openBgSettings()}/>
       </div>
     </div>
-    <ControlButton active={state.pose.open} label={t('char-control-pose-button')} icon={<SvgIcon src={poseIcon}/>} onClick={() => togglePoseWindow()}/>
+    <ControlButton active={state.pose.open} label={t('char-control-pose-button')} icon={<PoseIcon/>} onClick={() => togglePoseWindow()}/>
     <div className="relative">
       <ControlButton active={state.charControl.hideSubOpen || hideCloseup || hideFullbody} label={t('char-control-hide-menu-button')} icon={hideCloseup || hideFullbody ? <EyeOff className="h-full w-full"/> : <Eye className="h-full w-full"/>} onClick={toggleHideSubOpen}/>
       <div className={`aee-panel-collapse-motion absolute bottom-full left-1/2 mb-2 flex -translate-x-1/2 flex-col-reverse gap-[9px] rounded-lg border border-zinc-700 bg-zinc-950/95 p-[5px] shadow-xl ${state.charControl.hideSubOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}>
@@ -328,11 +318,11 @@ function ResidentButtons({state, managePanel, setManagePanel, assetSearchOpen, s
     <div className="flex flex-col gap-[7px]">
       <ToolButton title={t('menu-export-tooltip')} icon={<Upload/>} onClick={() => exportBcxAppearance(CharacterAppearanceSelection)}/>
       <ToolButton title={t('menu-import-tooltip')} icon={<Download/>} onClick={() => CharacterAppearanceSelection && void importBcxAppearanceWithCategory(CharacterAppearanceSelection)}/>
-      <ToolButton title={t('layer-manager-title')} active={state.layerManager.open} icon={<GameIcon src={LAYER_MANAGER_ICON}/>} onClick={() => toggleLayerManagerPanel()}/>
+      <ToolButton title={t('layer-manager-title')} active={state.layerManager.open} icon={<GameIcon src={GAME_ICONS.layering}/>} onClick={() => toggleLayerManagerPanel()}/>
       <ToolButton title={partsFilterTooltip()} active={state.partsFilterMode !== 'all'}
                   activeTone={state.partsFilterMode === 'empty' ? 'orange' : 'purple'}
-                  icon={<GameIcon src={partsFilterIcon()}/>} onClick={() => cyclePartsFilterMode()}/>
-      <ToolButton title={hideRestraintsTooltip()} active={isHideRestraintsActive()} icon={<GameIcon src={hideRestraintsIcon()}/>} onClick={() => toggleHideRestraints()}/>
+                  icon={<GameIcon src={GAME_ICONS.dress}/>} onClick={() => cyclePartsFilterMode()}/>
+      <ToolButton title={hideRestraintsTooltip()} active={isHideRestraintsActive()} icon={<GameIcon src={GAME_ICONS.hideRestraints}/>} onClick={() => toggleHideRestraints()}/>
       {CurrentScreen === 'Appearance' ?
         <ToolButton title={t('settings-appearance-pick')} active={appearancePick}
                     icon={<Scan/>} onClick={() => settings.appearancePick.toggle()}/> : null}
@@ -340,7 +330,7 @@ function ResidentButtons({state, managePanel, setManagePanel, assetSearchOpen, s
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       {CurrentScreen === 'Appearance' || CurrentScreen === 'Crafting' ? <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/> : null}
-      <ToolButton title={t('main-panel-tab-settings')} selected={managePanel === 'settings'} icon={<SvgIcon src={settingsIcon}/>} onClick={() => setManagePanel(managePanel === 'settings' ? null : 'settings')}/>
+      <ToolButton title={t('main-panel-tab-settings')} selected={managePanel === 'settings'} icon={<SettingsIcon/>} onClick={() => setManagePanel(managePanel === 'settings' ? null : 'settings')}/>
     </div>
   </>;
 }
@@ -352,7 +342,7 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
     : state.transformOverlay.mode === tool || (state.opacityOverlay.open && tool === 'opacity');
   return <>
     <div className="flex flex-col gap-[7px]">
-      <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<SvgIcon src={partIcon}/>} onClick={openTool('parts')}/>
+      <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<PartsIcon/>} onClick={openTool('parts')}/>
       <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag || !!state.transformOverlay.mode || state.editTool === 'gizmo'}
                   active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
                   icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
@@ -366,15 +356,15 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
       <ToolButton title={t('main-panel-tab-layers')} selected={state.editTool === 'layers'} icon={<Layers3/>} onClick={openTool('layers')}/>
       {getLayeringHideGroups(state.item).length > 0
         ? <ToolButton title={t('layering-hide-title')} selected={state.editTool === 'layeringHide'}
-                      icon={<GameIcon src="Icons/Private.png"/>} onClick={openTool('layeringHide')}/>
+                      icon={<GameIcon src={GAME_ICONS.private}/>} onClick={openTool('layeringHide')}/>
         : null}
       {selected ? <ToolButton title={t('toggle-bar-reset-transforms-button-title')} icon={<RotateCcw/>} onClick={() => resetSelectedTransforms()}/> : null}
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       <ToolButton title={state.toolbarLayout === 'neat' ? t('toolbar-mode-neat') : t('toolbar-mode-free')}
-                  icon={<SvgIcon src={state.toolbarLayout === 'neat' ? neatIcon : freeIcon}/>} onClick={() => setToolbarLayout(state.toolbarLayout === 'neat' ? 'free' : 'neat')}/>
+                  icon={state.toolbarLayout === 'neat' ? <NeatLayoutIcon/> : <FreeLayoutIcon/>} onClick={() => setToolbarLayout(state.toolbarLayout === 'neat' ? 'free' : 'neat')}/>
       <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
-      <ToolButton title={t('main-panel-tab-settings')} selected={state.editTool === 'settings'} icon={<SvgIcon src={settingsIcon}/>} onClick={openTool('settings')}/>
+      <ToolButton title={t('main-panel-tab-settings')} selected={state.editTool === 'settings'} icon={<SettingsIcon/>} onClick={openTool('settings')}/>
     </div>
   </>;
 }

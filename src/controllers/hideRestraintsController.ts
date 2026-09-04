@@ -3,8 +3,6 @@ import {t} from '@/i18n/i18n';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
 
-const HIDE_RESTRAINTS_ICON = 'Icons/Kidnap.png';
-
 function isGroupsScreen(): boolean {
   return CharacterAppearanceMode === '' && !isAppearanceOverlayActive();
 }
@@ -15,10 +13,6 @@ export function isHideRestraintsAvailable(): boolean {
 
 export function isHideRestraintsActive(): boolean {
   return runtime.hideRestraints;
-}
-
-export function hideRestraintsIcon(): string {
-  return HIDE_RESTRAINTS_ICON;
 }
 
 export function hideRestraintsTooltip(): string {

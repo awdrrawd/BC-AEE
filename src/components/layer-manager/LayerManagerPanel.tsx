@@ -18,7 +18,7 @@ import type {LayerManagerFilterMode} from '@/core/types';
 import {Button} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
 import {TextInput} from '@/components/ui/Fields';
-import {ArrowDown, ArrowUp} from '@/components/layer-manager/Icons';
+import {ArrowDown, ArrowUp} from '@/components/main-panel/icons/Icons';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
 
 const FILTER_MODES: LayerManagerFilterMode[] = ['all', 'custom', 'default'];

@@ -20,6 +20,7 @@ import {
 import {SHAPE_TOOLS, SHAPE_EMOJI} from '../shapes';
 import {ICON} from '../icons';
 import {t} from '@/i18n/i18n';
+import {GAME_ICONS} from '@/components/icons/iconSources';
 import {openColorPicker as openAeeColorPicker} from '@/controllers/uiController';
 import {runtime} from '@/core/runtime';
 import {A, undo, redo, clearBoard, scratch, preview, previewCtx} from './slots';
@@ -159,11 +160,11 @@ export function slotDraw() {
   }
 
   // Row 1
-  DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', 'Icons/Private.png', t('free-draw-mask-tooltip'));
+  DrawButton(MASK_X, TOOLBAR_Y1, ICON_W, ICON_H, '', active.isMask ? '#4CAF50' : 'White', GAME_ICONS.private, t('free-draw-mask-tooltip'));
   drawIconBtn(TOOLBAR_UNDO_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.undo, t('free-draw-undo-tooltip'));
   drawIconBtn(TOOLBAR_REDO_X, TOOLBAR_Y1, ICON_W, ICON_H, active.redoStack.length ? 'White' : '#DDDDDD', ICON.redo, t('free-draw-redo-tooltip'));
-  DrawButton(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Trash.png', t('free-draw-clear-tooltip'));
-  DrawButton(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Cancel.png', t('free-draw-cancel-tooltip'));
+  DrawButton(TOOLBAR_CLEAR_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', GAME_ICONS.trash, t('free-draw-clear-tooltip'));
+  DrawButton(TOOLBAR_CANCEL_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', GAME_ICONS.cancel, t('free-draw-cancel-tooltip'));
   drawIconBtn(IMAGE_X, TOOLBAR_Y1, ICON_W, ICON_H, 'White', ICON.image, t('free-draw-image-tooltip'));
   drawIconBtn(SYMMETRY_X, TOOLBAR_Y1, ICON_W, ICON_H, State.symmetry ? 'cyan' : 'White', ICON.symmetry, t('free-draw-symmetry-tooltip'));
 
@@ -240,8 +241,8 @@ export function slotDraw() {
     DrawText(`${State.thickness}px`, cx, cy - screenR - 22, contrastColor(State.color) === 'white' ? 'black' : 'white');
   }
 
-  DrawButton(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Accept.png', t('free-draw-accept-tooltip'));
-  DrawButton(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', 'Icons/Exit.png', t('free-draw-exit-tooltip'));
+  DrawButton(ACCEPT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', GAME_ICONS.accept, t('free-draw-accept-tooltip'));
+  DrawButton(EXIT_ICON_X, TOOLBAR_Y1, ICON_W, ICON_H, '', 'White', GAME_ICONS.exit, t('free-draw-exit-tooltip'));
 
 }
 

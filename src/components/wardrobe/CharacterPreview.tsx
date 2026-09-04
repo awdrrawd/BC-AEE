@@ -109,9 +109,17 @@ export class CharacterPreview extends Component<Props, State> {
 
     this.observer = new IntersectionObserver(
       entries => {
-        if (!entries.some(entry => entry.isIntersecting)) return;
-        this.visible = true;
-        this.sync();
+        const visible = entries.some(entry => entry.isIntersecting);
+        if (visible === this.visible) return;
+        this.visible = visible;
+        if (visible) {
+          this.sync();
+          return;
+        }
+        CharacterPreview.live.delete(this);
+        this.awaiting = [];
+        this.built = null;
+        this.release();
       },
       {rootMargin: '200px'},
     );

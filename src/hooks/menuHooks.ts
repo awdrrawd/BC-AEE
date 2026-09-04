@@ -35,6 +35,18 @@ function characterPreviewIcon(): string {
   return settings.characterPreviewActive.get() ? 'Icons/Character.png' : 'Icons/CharacterOff.png';
 }
 
+/** BC lays this menu out from the end, so inserting these controls at the
+ * beginning places them at the visual end for both self and other characters. */
+export function injectClothingPreviewButtons(menu: typeof AppearanceMenu, hoverTryOn: boolean, characterPreview: boolean) {
+  let insertIndex = 0;
+  if (hoverTryOn && !menu.includes(HOVER_TRY_ON_BUTTON)) {
+    menu.splice(insertIndex++, 0, HOVER_TRY_ON_BUTTON);
+  }
+  if (characterPreview && !menu.includes(CHARACTER_PREVIEW_BUTTON)) {
+    menu.splice(insertIndex, 0, CHARACTER_PREVIEW_BUTTON);
+  }
+}
+
 function dialogHoverTryOnButtonX(): number {
   const index = DialogMenuButton.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
   return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
@@ -67,19 +79,8 @@ export function installMenuHooks() {
     if (CharacterAppearanceMode === '' && settings.hairCharacterPreview.get()) {
       AppearanceMenu = AppearanceMenu.filter(button => button !== 'Character');
     }
-    if (CharacterAppearanceMode === 'Cloth' && settings.hoverTryOn.get()) {
-      const randomIndex = AppearanceMenu.indexOf('WearRandom');
-      if (randomIndex >= 0) AppearanceMenu[randomIndex] = HOVER_TRY_ON_BUTTON;
-    }
-    if (CharacterAppearanceMode === 'Cloth' && settings.hairCharacterPreview.get()) {
-      const hoverIndex = AppearanceMenu.indexOf(HOVER_TRY_ON_BUTTON);
-      if (hoverIndex >= 0) {
-        AppearanceMenu.splice(hoverIndex + 1, 0, CHARACTER_PREVIEW_BUTTON);
-      } else {
-        const randomIndex = AppearanceMenu.indexOf('WearRandom');
-        if (randomIndex >= 0) AppearanceMenu[randomIndex] = CHARACTER_PREVIEW_BUTTON;
-        else AppearanceMenu.unshift(CHARACTER_PREVIEW_BUTTON);
-      }
+    if (CharacterAppearanceMode === 'Cloth') {
+      injectClothingPreviewButtons(AppearanceMenu, settings.hoverTryOn.get(), settings.hairCharacterPreview.get());
     }
     if (settings.hideUnnecessaryAppearanceButtons.get()) {
       const hidden = new Set(['WearRandom', 'Random', 'Copy', 'Paste']);

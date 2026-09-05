@@ -563,6 +563,10 @@ export function isGroupLocked(_layerId?: LayerId): boolean {
   const item = getCurrentItem();
   const group = item?.Asset?.Group;
   if (!group || !item.Asset) return false;
+  // Props (including mod assets) must remain editable even when their group
+  // cannot be removed or they draw custom text/effects after the base image.
+  // Removable appearance assets cover clothing and decorative mod groups too.
+  if (group.Category === 'Item' || group.Clothing || group.AllowNone) return false;
   const isPussy = group.Name === 'Pussy';
   const allowsTransform = isPussy || TRANSFORM_GROUP_WHITELIST.has(group.Name);
   return (!group.AllowNone && !allowsTransform) || !!item.Asset.DynamicAfterDraw;

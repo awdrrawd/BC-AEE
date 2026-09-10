@@ -1,4 +1,4 @@
-import type {PointerEvent as ReactPointerEvent} from 'react';
+import {useEffect, useRef, useState, type PointerEvent as ReactPointerEvent} from 'react';
 import type {AeeState} from '@/core/types';
 import {type CapturedLayerGeometry, getCapturedTranslationFactor} from '@/controllers/appearancePickerController';
 import {getSelectedLayerGeometry} from '@/controllers/layerGeometryController';
@@ -23,6 +23,19 @@ function handlePoint(g: CapturedLayerGeometry, hx: number, hy: number): Point {
 }
 
 export function FreeTransformGizmo({state}: {state: AeeState}) {
+  const [dragging, setDragging] = useState(false);
+  const finishDrag = useRef<(() => void) | null>(null);
+  useEffect(() => () => { finishDrag.current?.(); }, [state.editTool, state.item, state.selectedLayer]);
+  const startDrag = (event: ReactPointerEvent<SVGElement>, onMove: (event: PointerEvent) => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    finishDrag.current?.();
+    setDragging(true);
+    finishDrag.current = beginPointerDrag(event.nativeEvent, onMove, () => {
+      finishDrag.current = null;
+      setDragging(false);
+    });
+  };
   if (state.editTool !== 'gizmo' || !state.canvasRect || !state.item || state.selectedLayer === null || isGroupLocked(state.selectedLayer)) return null;
   const geometry = getSelectedLayerGeometry(state);
   if (!geometry) return null;
@@ -37,15 +50,13 @@ export function FreeTransformGizmo({state}: {state: AeeState}) {
   const length = Math.hypot(...outward) || 1;
   const rotateAt: Point = [topMid[0] + outward[0] / length * 30, topMid[1] + outward[1] / length * 30];
   const dragMove = (event: ReactPointerEvent<SVGPolygonElement>) => {
-    event.preventDefault(); event.stopPropagation();
     const startX = event.clientX, startY = event.clientY, factor = getCapturedTranslationFactor();
-    beginPointerDrag(event.nativeEvent, ev => setEditProperties({x: initial.x + (ev.clientX - startX) / kx / factor, y: initial.y + (ev.clientY - startY) / ky / factor}));
+    startDrag(event, ev => setEditProperties({x: initial.x + (ev.clientX - startX) / kx / factor, y: initial.y + (ev.clientY - startY) / ky / factor}));
   };
   const dragScale = (hx: number, hy: number) => (event: ReactPointerEvent<SVGRectElement>) => {
-    event.preventDefault(); event.stopPropagation();
     const startX = event.clientX, startY = event.clientY;
     const angle = state.selectedLayer === 'all' ? 0 : initial.rot * Math.PI / 180;
-    beginPointerDrag(event.nativeEvent, ev => {
+    startDrag(event, ev => {
       const dx = (ev.clientX - startX) / kx, dy = (ev.clientY - startY) / ky;
       const localX = dx * Math.cos(angle) + dy * Math.sin(angle), localY = -dx * Math.sin(angle) + dy * Math.cos(angle);
       const values: Record<string, number> = {};
@@ -55,18 +66,19 @@ export function FreeTransformGizmo({state}: {state: AeeState}) {
     });
   };
   const dragRotate = (event: ReactPointerEvent<SVGCircleElement>) => {
-    event.preventDefault(); event.stopPropagation();
     const px = state.canvasRect!.left + pivot[0], py = state.canvasRect!.top + pivot[1];
     const start = Math.atan2(event.clientY - py, event.clientX - px);
-    beginPointerDrag(event.nativeEvent, ev => setEditProperty('rot', initial.rot + (Math.atan2(ev.clientY - py, ev.clientX - px) - start) * 180 / Math.PI));
+    startDrag(event, ev => setEditProperty('rot', initial.rot + (Math.atan2(ev.clientY - py, ev.clientX - px) - start) * 180 / Math.PI));
   };
 
   return <div className="fixed z-1000003 pointer-events-none" style={{left: state.canvasRect.left, top: state.canvasRect.top, width: state.canvasRect.width, height: state.canvasRect.height}}>
     <svg className="h-full w-full overflow-visible">
-      <polygon points={corners.map(p => p.join(',')).join(' ')} fill="rgba(0,0,0,.02)" stroke="var(--aee-accent)" strokeWidth="2" className="pointer-events-auto cursor-move" onPointerDown={dragMove}/>
-      <line x1={topMid[0]} y1={topMid[1]} x2={rotateAt[0]} y2={rotateAt[1]} stroke="var(--aee-accent)" strokeWidth="2"/>
-      <circle aria-label={t('free-transform-rotate-handle')} cx={rotateAt[0]} cy={rotateAt[1]} r="8" fill="var(--aee-accent)" stroke="white" strokeWidth="2" className="pointer-events-auto cursor-grab" onPointerDown={dragRotate}/>
-      {HANDLES.map(([id, hx, hy, cursor]) => { const p = css(handlePoint(geometry, hx, hy)); return <rect key={id} x={p[0] - 6} y={p[1] - 6} width="12" height="12" fill="var(--aee-accent)" stroke="white" strokeWidth="2" style={{cursor}} className="pointer-events-auto" onPointerDown={dragScale(hx, hy)}/>; })}
+      <polygon points={corners.map(p => p.join(',')).join(' ')} fill={dragging ? "none" : "rgba(0,0,0,.02)"} stroke="var(--aee-accent)" strokeWidth={dragging ? 1 : 2} strokeDasharray={dragging ? "4 4" : undefined} className="pointer-events-auto cursor-move" onPointerDown={dragMove}/>
+      <g visibility={dragging ? "hidden" : undefined}>
+        <line x1={topMid[0]} y1={topMid[1]} x2={rotateAt[0]} y2={rotateAt[1]} stroke="var(--aee-accent)" strokeWidth="2"/>
+        <circle aria-label={t('free-transform-rotate-handle')} cx={rotateAt[0]} cy={rotateAt[1]} r="8" fill="var(--aee-accent)" stroke="white" strokeWidth="2" className="pointer-events-auto cursor-grab" onPointerDown={dragRotate}/>
+        {HANDLES.map(([id, hx, hy, cursor]) => { const p = css(handlePoint(geometry, hx, hy)); return <rect key={id} x={p[0] - 6} y={p[1] - 6} width="12" height="12" fill="var(--aee-accent)" stroke="white" strokeWidth="2" style={{cursor}} className="pointer-events-auto" onPointerDown={dragScale(hx, hy)}/>; })}
+      </g>
       {pivots.map(([px, py], index) => <g key={`${px}:${py}:${index}`}>
         <line x1={px - 8} y1={py} x2={px + 8} y2={py} stroke="var(--aee-accent)" strokeWidth="2.33"/>
         <line x1={px} y1={py - 8} x2={px} y2={py + 8} stroke="var(--aee-accent)" strokeWidth="2.33"/>

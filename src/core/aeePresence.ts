@@ -17,8 +17,7 @@ const INTERVAL = 30_000;
 const TTL = 75_000;
 const peers = new Map<number, {expires: number; version: string; freeDraw: boolean}>();
 let installed = false;
-let nonce = '';
-let lastRequest = 0;
+const requests = new Map<string, number>();
 
 function localActive(): boolean {
   return installed && bcModSdk.getModsInfo().some(mod => mod.name === 'Liko - AEE');
@@ -66,8 +65,10 @@ function send(payload: object, target?: number): void {
 
 function requestStatus(): void {
   if (!localActive() || !inRoom()) return;
-  nonce = crypto.randomUUID();
-  lastRequest = Date.now();
+  const now = Date.now();
+  for (const [key, expires] of requests) if (expires < now) requests.delete(key);
+  const nonce = crypto.randomUUID();
+  requests.set(nonce, now + INTERVAL);
   send({type: 'request', nonce});
 }
 
@@ -89,8 +90,10 @@ export function installPeerDetection(): boolean {
           ? parsed as Record<string, unknown> : {};
         if (message.type === 'request' && typeof message.nonce === 'string' && message.nonce.length <= 64) {
           send({type: 'reply', nonce: message.nonce, version: MOD_VERSION, freeDraw: settings.enableFreeDraw.get()}, data.Sender);
-        } else if (message.type === 'reply' && nonce && message.nonce === nonce
-          && Date.now() - lastRequest <= INTERVAL && typeof message.version === 'string'
+        } else if (message.type === 'changed') {
+          requestStatus();
+        } else if (message.type === 'reply' && typeof message.nonce === 'string'
+          && (requests.get(message.nonce) ?? 0) >= Date.now() && typeof message.version === 'string'
           && message.version.length <= 64 && typeof message.freeDraw === 'boolean') {
           peers.set(data.Sender, {expires: Date.now() + TTL, version: message.version, freeDraw: message.freeDraw});
         }
@@ -98,10 +101,10 @@ export function installPeerDetection(): boolean {
     }
     return next(args);
   });
-  bcAeeModSdk.hookFunction('ChatRoomSync', 0, (args, next) => {
+  bcAeeModSdk.hookFunction('ChatRoomSync', 0, async (args, next) => {
     peers.clear();
-    nonce = '';
-    const result = next(args);
+    requests.clear();
+    const result = await next(args);
     shareAeeSettings();
     requestStatus();
     return result;
@@ -118,12 +121,13 @@ export function installPeerDetection(): boolean {
     return result;
   });
   const tick = () => {
-    if (!localActive() || !inRoom()) { peers.clear(); nonce = ''; }
+    if (!localActive() || !inRoom()) { peers.clear(); requests.clear(); }
     if (!localActive()) return;
     shareAeeSettings();
     requestStatus();
   };
   setInterval(tick, INTERVAL);
+  settings.enableFreeDraw.onChange(() => send({type: 'changed'}));
   tick();
   return true;
 }

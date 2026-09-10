@@ -51,7 +51,7 @@ assert.equal(api.getAeeStatus(other).enabled, true);
 hooks.get('ChatRoomSyncMemberLeave')([{SourceMemberNumber: 2}], () => {});
 assert.equal(api.getAeeStatus(other).enabled, false);
 reply();
-hooks.get('ChatRoomSync')([], () => {});
+await hooks.get('ChatRoomSync')([], async () => {});
 assert.equal(api.getAeeStatus(other).enabled, false, 'room sync clears old confirmations');
 reply();
 inRoom = false;

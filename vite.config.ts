@@ -41,7 +41,7 @@ export default defineConfig({
     cors: true,
   },
   build: {
-    sourcemap: true,
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       input: 'src/main.tsx',

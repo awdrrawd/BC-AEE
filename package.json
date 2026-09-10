@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "predev": "node scripts/sync-version.mjs",
-    "dev": "tsc -b && vite build && concurrently -k -n build,serve \"vite build --watch\" \"vite preview --port 5174\"",
+    "dev": "tsc -b && vite build --sourcemap && concurrently -k -n build,serve \"vite build --watch --sourcemap\" \"vite preview --port 5174\"",
     "sync-version": "node scripts/sync-version.mjs",
     "prebuild": "node scripts/sync-version.mjs",
     "build": "tsc -b && vite build",

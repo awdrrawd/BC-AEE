@@ -8,7 +8,7 @@ import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from '
 import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames, setFreeDrawAvailability} from './freeDraw';
 import {settings} from '@/core/settings';
 import {installMaskTranslations} from './translations';
-import {installPeerDetection, isAeeMember} from './peers';
+import {installPeerDetection, isAeeMember} from '@/core/aeePresence';
 import {
   SG_MASK_GROUP,
   SG_ASSET,

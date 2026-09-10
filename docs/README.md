@@ -13,6 +13,7 @@
 - [架構與擴充指南](./說明/architecture.md)
 - [互動式功能分支圖](./說明/aee-architecture.html)
 - [外觀拾取與懸停](./說明/appearance-picking-and-hover.md)
+- [AEE 狀態 API 與分享資料](./說明/aee-status-api.md)
 - [自由繪圖遮罩](./說明/free-draw-mask.md)
 - [SPS 自由繪圖](./說明/sps-free-draw.md)
 - [圖層隱藏](./說明/layering-hide.md)

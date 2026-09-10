@@ -1,3 +1,5 @@
+import {installPeerDetection} from '@/core/aeePresence';
+import {installAeeGroupAccess} from '@/components/mask-system/access';
 import {installRenderHooks} from '@/hooks/renderHooks';
 import {installAppearanceHooks} from '@/hooks/appearanceHooks';
 import {installItemColorHooks} from '@/hooks/itemColorHooks';
@@ -30,6 +32,8 @@ export function installAeeHooks() {
   installWardrobeHooks();
   installFontHooks();
   initItemFonts();
+  installPeerDetection();
+  installAeeGroupAccess();
   installMaskSystem();
   installOnboarding();
 }

@@ -111,12 +111,10 @@ export const drawMaskGroupName = (group: AssetGroupName | string) => `${group as
 export const drawVisibleGroupName = (group: AssetGroupName | string) => `${group as string}Vis`;
 export const isDrawMaskGroupName = (name: string) => name.startsWith(DRAW_GROUP_PREFIX) && name.endsWith('Mask');
 
-// Runtime registration / peer-handshake timings. They share one owner so retry
+// Runtime registration timings. They share one owner so retry
 // behaviour cannot silently drift across the mask modules.
 export const MASK_INSTALL_RETRY_MS = 500;
 export const MASK_SYNC_REPUSH_DELAY_MS = 600;
-export const MASK_PEER_ANNOUNCE_INTERVAL_MS = 4000;
-export const MASK_PEER_ANNOUNCE_DELAY_MS = 600;
 
 export const DRAW_X = 500, DRAW_Y = 0;
 export const BOARD_W = 250, BOARD_H = 500;

@@ -1,3 +1,4 @@
+import {shareAeeSettings} from '@/core/aeePresence';
 import {settings} from '@/core/settings';
 import {
   customFontFamily,
@@ -9,8 +10,6 @@ import {clearAllFonts, ensureCustomFontLoaded, isCustomFontReady, setFontErrorLi
 import {t} from '@/i18n/i18n';
 import {showToast} from '@/util/toast';
 
-// OnlineSharedSettings key that carries the wearer's chosen item font to other players.
-const SHARED_FONT_KEY = 'AEEItemFont';
 
 export function initItemFonts() {
   // When a font finishes loading (or the cache is cleared), redraw so items pick up the change.
@@ -56,11 +55,7 @@ export function selectItemFont(id: string) {
 
   // Broadcast the choice so others see our items in this font (unknown font ⇒ they get default).
   try {
-    Player.OnlineSharedSettings ??= {} as Character['OnlineSharedSettings'];
-    const shared = Player.OnlineSharedSettings as unknown as Record<string, unknown>;
-    if (id === DEFAULT_FONT_ID) delete shared[SHARED_FONT_KEY];
-    else shared[SHARED_FONT_KEY] = id;
-    ServerAccountUpdate.QueueData({OnlineSharedSettings: Player.OnlineSharedSettings});
+    shareAeeSettings();
   } catch (error) {
     console.warn('🐈‍⬛ [AEE] Failed to share the item font choice', error);
   }
@@ -94,8 +89,7 @@ function fontIdForCharacter(character: Character | null | undefined): string {
   if (character && character === Player) return own;
   // Off: draw everyone's items in the viewer's own font. On: honour each wearer's shared choice.
   if (!settings.loadOthersFont.get()) return own;
-  const shared = character?.OnlineSharedSettings as unknown as Record<string, unknown> | undefined;
-  const id = shared?.[SHARED_FONT_KEY];
+  const id = character?.OnlineSharedSettings?.AEE?.ItemFont;
   return typeof id === 'string' ? id : DEFAULT_FONT_ID;
 }
 

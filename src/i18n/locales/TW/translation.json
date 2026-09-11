@@ -92,7 +92,7 @@
   "settings-hide-restraints": "隱藏拘束物品按鈕",
   "settings-enable-wardrobe": "增強衣櫃",
   "settings-enable-free-draw": "啟用自由繪圖擴充服裝",
-  "settings-enable-free-draw-tooltip": "提供可隨意繪圖／遮罩／上傳圖片的欄位，僅 AEE 用戶且啟用功能時能看到。",
+  "settings-enable-free-draw-tooltip": "提供可隨意繪圖／遮罩／上傳圖片的欄位，僅 AEE 用戶且啟用功能時能看到。 部位僅在目標用戶啟用 AEE 與自由繪圖時顯示；否則隱藏。",
   "settings-item-font-label": "物品字體",
   "settings-item-font-default": "預設",
   "settings-item-font-system-group": "系統字體",
@@ -567,5 +567,8 @@
   "asset-parts-search-empty": "找不到符合的服裝或道具",
   "asset-parts-search-parts": "所有部件",
   "asset-parts-search-preview": "部件預覽",
-  "asset-parts-search-locations": "出現部位"
+  "asset-parts-search-locations": "出現部位",
+  "aee-access-unavailable": "未偵測到啟用中的 AEE（可能未安裝或未啟用），無法使用拓展部位。",
+  "aee-access-drawing-disabled": "AEE 已啟用，但自由繪圖已停用，無法使用繪圖部位。",
+  "aee-access-settings-pending": "AEE 已啟用，但尚未取得自由繪圖設定，請稍候或確認對方已更新 AEE。"
 }

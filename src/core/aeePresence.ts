@@ -6,6 +6,7 @@ import {DEFAULT_FONT_ID} from '@/core/fonts';
 export interface AeeSharedSettings {
   Version: string;
   ItemFont?: string;
+  FreeDraw: boolean;
 }
 
 declare global {
@@ -15,7 +16,7 @@ declare global {
 const PREFIX = 'LikoAEE:status:';
 const INTERVAL = 30_000;
 const TTL = 75_000;
-const peers = new Map<number, {expires: number; version: string; freeDraw: boolean}>();
+const peers = new Map<number, {expires: number; version: string}>();
 let installed = false;
 const requests = new Map<string, number>();
 
@@ -35,7 +36,7 @@ export function shareAeeSettings(): void {
   Player.OnlineSharedSettings ??= {} as CharacterOnlineSharedSettings;
   const shared = Player.OnlineSharedSettings;
   const font = settings.itemFont.get();
-  const next: AeeSharedSettings = {Version: MOD_VERSION};
+  const next: AeeSharedSettings = {Version: MOD_VERSION, FreeDraw: settings.enableFreeDraw.get()};
   if (font && font !== DEFAULT_FONT_ID) next.ItemFont = font;
   if (JSON.stringify(shared.AEE) === JSON.stringify(next) && shared.AEEItemFont == null) return;
   shared.AEE = next;
@@ -50,7 +51,10 @@ export function getAeeStatus(character: Character | number | null | undefined) {
   if (own) return {enabled: localActive(), version: MOD_VERSION, freeDraw: localActive() && settings.enableFreeDraw.get()};
   const peer = member != null && roomMember(member) ? peers.get(member) : undefined;
   const enabled = localActive() && !!peer && peer.expires > Date.now();
-  return {enabled, version: enabled ? peer.version : null, freeDraw: enabled && peer.freeDraw};
+  // A saved setting is meaningful only after a live AEE response. Use the
+  // room's current character, not a possibly stale editor clone.
+  const shared = enabled ? ChatRoomCharacter.find(c => c.MemberNumber === member)?.OnlineSharedSettings?.AEE : undefined;
+  return {enabled, version: enabled ? peer.version : null, freeDraw: enabled ? shared?.FreeDraw : false};
 }
 
 export function isAeeMember(member: number | null | undefined): boolean {
@@ -94,8 +98,8 @@ export function installPeerDetection(): boolean {
           requestStatus();
         } else if (message.type === 'reply' && typeof message.nonce === 'string'
           && (requests.get(message.nonce) ?? 0) >= Date.now() && typeof message.version === 'string'
-          && message.version.length <= 64 && typeof message.freeDraw === 'boolean') {
-          peers.set(data.Sender, {expires: Date.now() + TTL, version: message.version, freeDraw: message.freeDraw});
+          && message.version.length <= 64) {
+          peers.set(data.Sender, {expires: Date.now() + TTL, version: message.version});
         }
       } catch { /* Ignore malformed third-party payloads. */ }
     }
@@ -127,7 +131,10 @@ export function installPeerDetection(): boolean {
     requestStatus();
   };
   setInterval(tick, INTERVAL);
-  settings.enableFreeDraw.onChange(() => send({type: 'changed'}));
+  settings.enableFreeDraw.onChange(() => {
+    shareAeeSettings();
+    send({type: 'changed'});
+  });
   tick();
   return true;
 }

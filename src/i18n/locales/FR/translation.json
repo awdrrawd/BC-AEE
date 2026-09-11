@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "Impossible de prélever : la toile est corrompue par une image cross-origin — recharge la page et réessaie.",
   "experimental-feature-tooltip": "Ceci est une extension AEE. Les utilisateurs sans AEE installé ne verront pas l'effet de modification.",
   "settings-enable-free-draw": "Activer les vêtements de dessin libre étendus",
-  "settings-enable-free-draw-tooltip": "Ajoute des emplacements pour dessiner librement, masquer et téléverser des images. Seuls les utilisateurs AEE ayant activé cette fonction peuvent les voir.",
+  "settings-enable-free-draw-tooltip": "Ajoute des emplacements pour dessiner librement, masquer et téléverser des images. Seuls les utilisateurs AEE ayant activé cette fonction peuvent les voir. Les emplacements sont affichés uniquement si la personne ciblée a activé AEE et le dessin libre ; sinon, ils sont masqués.",
   "layer-manager-sort-asc": "Priorité : croissante",
   "layer-manager-sort-desc": "Priorité : décroissante",
   "layer-manager-open-color-tooltip": "Ouvrir l’éditeur de couleur de cet objet",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "L’opération de la bibliothèque SPS a échoué.",
   "free-transform-title": "Transformation libre", "free-transform-edit": "Modifier", "free-transform-active": "Transformation libre active", "parts-browser-title": "Icônes des parties",
   "parts-browser-list-view": "Vue en liste", "parts-browser-grid-view": "Vue en miniatures", "parts-browser-magnify": "Agrandir au survol", "free-transform-rotate-handle": "Poignée de rotation",
-  "asset-parts-search-title": "Recherche de parties", "asset-parts-search-placeholder": "Rechercher le nom ou sa traduction", "asset-parts-search-kind-all": "Tous les vêtements et objets", "asset-parts-search-kind-clothing": "Vêtements", "asset-parts-search-kind-item": "Objets / contraintes", "asset-parts-search-kind-both": "Vêtement + objet", "asset-parts-search-slot-all": "Tous les emplacements", "asset-parts-search-empty": "Aucun résultat", "asset-parts-search-parts": "Toutes les parties", "asset-parts-search-preview": "Aperçu de la partie", "asset-parts-search-locations": "Emplacements disponibles"
+  "asset-parts-search-title": "Recherche de parties", "asset-parts-search-placeholder": "Rechercher le nom ou sa traduction", "asset-parts-search-kind-all": "Tous les vêtements et objets", "asset-parts-search-kind-clothing": "Vêtements", "asset-parts-search-kind-item": "Objets / contraintes", "asset-parts-search-kind-both": "Vêtement + objet", "asset-parts-search-slot-all": "Tous les emplacements", "asset-parts-search-empty": "Aucun résultat", "asset-parts-search-parts": "Toutes les parties", "asset-parts-search-preview": "Aperçu de la partie", "asset-parts-search-locations": "Emplacements disponibles",
+  "aee-access-unavailable": "Aucun AEE actif détecté (peut-être non installé ou désactivé). Les emplacements supplémentaires sont indisponibles.",
+  "aee-access-drawing-disabled": "AEE est actif, mais le dessin libre est désactivé. Les emplacements de dessin sont indisponibles.",
+  "aee-access-settings-pending": "AEE est actif, mais le réglage du dessin libre n’est pas encore disponible. Patientez ou vérifiez que l’autre personne a mis AEE à jour."
 }

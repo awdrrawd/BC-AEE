@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "تعذّر التقاط اللون: اللوحة ملوّثة بصورة من مصدر خارجي — أعد تحميل الصفحة وحاول مجددًا.",
   "experimental-feature-tooltip": "هذه الميزة من امتداد AEE. المستخدمون الذين لم يثبّتوا AEE لن يروا تأثير التعديل.",
   "settings-enable-free-draw": "تفعيل ملابس الرسم الحر الموسّعة",
-  "settings-enable-free-draw-tooltip": "يضيف خانات للرسم الحر والأقنعة ورفع الصور. لا يراها إلا مستخدمو AEE الذين فعّلوا هذه الميزة.",
+  "settings-enable-free-draw-tooltip": "يضيف خانات للرسم الحر والأقنعة ورفع الصور. لا يراها إلا مستخدمو AEE الذين فعّلوا هذه الميزة. تظهر الخانات فقط إذا فعّل المستخدم المستهدف كلاً من AEE والرسم الحر؛ وإلا تُخفى.",
   "layer-manager-sort-asc": "الأولوية: تصاعديًا",
   "layer-manager-sort-desc": "الأولوية: تنازليًا",
   "layer-manager-open-color-tooltip": "فتح محرر ألوان هذا العنصر",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "فشلت عملية مكتبة SPS.",
   "free-transform-title": "تحويل حر", "free-transform-edit": "تحرير", "free-transform-active": "التحويل الحر نشط", "parts-browser-title": "أيقونات الأجزاء",
   "parts-browser-list-view": "عرض القائمة", "parts-browser-grid-view": "عرض الصور المصغرة", "parts-browser-magnify": "تكبير عند التحويم", "free-transform-rotate-handle": "مقبض الدوران",
-  "asset-parts-search-title": "بحث الأجزاء", "asset-parts-search-placeholder": "ابحث بالاسم أو الترجمة", "asset-parts-search-kind-all": "كل الملابس والعناصر", "asset-parts-search-kind-clothing": "ملابس", "asset-parts-search-kind-item": "عناصر / قيود", "asset-parts-search-kind-both": "ملابس + عنصر", "asset-parts-search-slot-all": "كل المواضع", "asset-parts-search-empty": "لا توجد نتائج", "asset-parts-search-parts": "كل الأجزاء", "asset-parts-search-preview": "معاينة الجزء", "asset-parts-search-locations": "المواضع المتاحة"
+  "asset-parts-search-title": "بحث الأجزاء", "asset-parts-search-placeholder": "ابحث بالاسم أو الترجمة", "asset-parts-search-kind-all": "كل الملابس والعناصر", "asset-parts-search-kind-clothing": "ملابس", "asset-parts-search-kind-item": "عناصر / قيود", "asset-parts-search-kind-both": "ملابس + عنصر", "asset-parts-search-slot-all": "كل المواضع", "asset-parts-search-empty": "لا توجد نتائج", "asset-parts-search-parts": "كل الأجزاء", "asset-parts-search-preview": "معاينة الجزء", "asset-parts-search-locations": "المواضع المتاحة",
+  "aee-access-unavailable": "لم يُكتشف AEE نشط (قد يكون غير مثبت أو معطلاً). الخانات الإضافية غير متاحة.",
+  "aee-access-drawing-disabled": "AEE نشط، لكن الرسم الحر معطل. خانات الرسم غير متاحة.",
+  "aee-access-settings-pending": "AEE نشط، لكن إعداد الرسم الحر لم يصل بعد. يرجى الانتظار أو التأكد من أن اللاعب الآخر حدّث AEE."
 }

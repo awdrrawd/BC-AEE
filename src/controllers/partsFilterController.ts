@@ -1,3 +1,4 @@
+import {canUseAeeGroup} from '@/components/mask-system/access';
 import {getState, mutateState} from '@/core/store';
 import type {PartsFilterMode} from '@/core/types';
 import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
@@ -46,15 +47,14 @@ function groupHasItem(character: Character, group: AssetGroup): boolean {
 }
 
 function filterGroups(character: Character, groups: readonly AssetGroup[], mode: PartsFilterMode): AssetGroup[] {
-  if (mode === 'all') return groups as AssetGroup[];
-  const wantWorn = mode === 'has';
-  return groups.filter(group => groupHasItem(character, group) === wantWorn);
+  return groups.filter(group => canUseAeeGroup(character, group.Name)
+    && (mode === 'all' || groupHasItem(character, group) === (mode === 'has')));
 }
 
 export function withFilteredGroups<T>(fn: () => T): T {
   const character = CharacterAppearanceSelection;
   const state = getState();
-  if (!character || state.partsFilterMode === 'all' || !isPartsFilterAvailable()) return fn();
+  if (!character || !isPartsFilterAvailable()) return fn();
   const original = CharacterAppearanceGroups;
   const filtered = filterGroups(character, original, state.partsFilterMode);
   if (CharacterAppearanceOffset >= filtered.length) CharacterAppearanceOffset = 0;

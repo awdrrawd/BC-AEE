@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "Không thể lấy màu: khung vẽ bị nhiễm bởi ảnh khác nguồn — hãy tải lại trang rồi thử lại.",
   "experimental-feature-tooltip": "Tính năng này là tính năng mở rộng của AEE. Người dùng chưa cài AEE sẽ không thấy hiệu quả chỉnh sửa.",
   "settings-enable-free-draw": "Bật trang phục vẽ tự do mở rộng",
-  "settings-enable-free-draw-tooltip": "Thêm các ô để vẽ tự do, tạo mặt nạ và tải ảnh lên. Chỉ người dùng AEE đã bật tính năng này mới có thể nhìn thấy.",
+  "settings-enable-free-draw-tooltip": "Thêm các ô để vẽ tự do, tạo mặt nạ và tải ảnh lên. Chỉ người dùng AEE đã bật tính năng này mới có thể nhìn thấy. Chỉ hiển thị các ô khi người dùng được chọn bật cả AEE và vẽ tự do; nếu không, các ô sẽ bị ẩn.",
   "layer-manager-sort-asc": "Ưu tiên: tăng dần",
   "layer-manager-sort-desc": "Ưu tiên: giảm dần",
   "layer-manager-open-color-tooltip": "Mở trình chỉnh màu của vật phẩm này",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "Thao tác thư viện SPS thất bại.",
   "free-transform-title": "Biến đổi tự do", "free-transform-edit": "Chỉnh sửa", "free-transform-active": "Đang biến đổi tự do", "parts-browser-title": "Biểu tượng bộ phận",
   "parts-browser-list-view": "Dạng danh sách", "parts-browser-grid-view": "Dạng hình thu nhỏ", "parts-browser-magnify": "Phóng to khi di chuột", "free-transform-rotate-handle": "Điểm xoay",
-  "asset-parts-search-title": "Tìm bộ phận", "asset-parts-search-placeholder": "Tìm tên hoặc tên dịch", "asset-parts-search-kind-all": "Mọi trang phục và vật phẩm", "asset-parts-search-kind-clothing": "Trang phục", "asset-parts-search-kind-item": "Vật phẩm / trói buộc", "asset-parts-search-kind-both": "Trang phục + vật phẩm", "asset-parts-search-slot-all": "Mọi vị trí", "asset-parts-search-empty": "Không có kết quả", "asset-parts-search-parts": "Mọi bộ phận", "asset-parts-search-preview": "Xem trước bộ phận", "asset-parts-search-locations": "Vị trí có sẵn"
+  "asset-parts-search-title": "Tìm bộ phận", "asset-parts-search-placeholder": "Tìm tên hoặc tên dịch", "asset-parts-search-kind-all": "Mọi trang phục và vật phẩm", "asset-parts-search-kind-clothing": "Trang phục", "asset-parts-search-kind-item": "Vật phẩm / trói buộc", "asset-parts-search-kind-both": "Trang phục + vật phẩm", "asset-parts-search-slot-all": "Mọi vị trí", "asset-parts-search-empty": "Không có kết quả", "asset-parts-search-parts": "Mọi bộ phận", "asset-parts-search-preview": "Xem trước bộ phận", "asset-parts-search-locations": "Vị trí có sẵn",
+  "aee-access-unavailable": "Không phát hiện AEE đang hoạt động (có thể chưa cài hoặc đã tắt). Không thể dùng các ô mở rộng.",
+  "aee-access-drawing-disabled": "AEE đang hoạt động nhưng vẽ tự do đã tắt. Không thể dùng các ô vẽ.",
+  "aee-access-settings-pending": "AEE đang hoạt động nhưng chưa nhận được cài đặt vẽ tự do. Hãy chờ hoặc kiểm tra xem người chơi kia đã cập nhật AEE chưa."
 }

@@ -92,7 +92,7 @@
   "settings-hide-restraints": "Hide restraints toggle button",
   "settings-enable-wardrobe": "Enhanced wardrobe",
   "settings-enable-free-draw": "Enable extended free-draw clothing",
-  "settings-enable-free-draw-tooltip": "Adds slots for free drawing, masking, and image uploads. Only AEE users with this feature enabled can see them.",
+  "settings-enable-free-draw-tooltip": "Adds slots for free drawing, masking, and image uploads. Only AEE users with this feature enabled can see them. Slots are shown only when the target user has both AEE and free drawing enabled; otherwise they are hidden.",
   "settings-item-font-label": "Item font",
   "settings-item-font-default": "Default",
   "settings-item-font-system-group": "System fonts",
@@ -567,5 +567,8 @@
   "asset-parts-search-empty": "No matching clothing or items",
   "asset-parts-search-parts": "All parts",
   "asset-parts-search-preview": "Part preview",
-  "asset-parts-search-locations": "Available slots"
+  "asset-parts-search-locations": "Available slots",
+  "aee-access-unavailable": "No active AEE detected (it may be uninstalled or disabled). Extended slots are unavailable.",
+  "aee-access-drawing-disabled": "AEE is active, but free drawing is disabled. Drawing slots are unavailable.",
+  "aee-access-settings-pending": "AEE is active, but its free-drawing setting is not available yet. Please wait or check that the other player has updated AEE."
 }

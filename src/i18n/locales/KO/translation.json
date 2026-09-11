@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "색을 가져올 수 없음: 캔버스가 교차 출처 이미지로 오염되었습니다. 페이지를 새로고침한 뒤 다시 시도하세요.",
   "experimental-feature-tooltip": "이 기능은 AEE 확장 기능입니다. AEE가 설치되지 않은 사용자는 편집 효과를 볼 수 없습니다.",
   "settings-enable-free-draw": "자유 그리기 확장 의상 활성화",
-  "settings-enable-free-draw-tooltip": "자유 그리기, 마스크 및 이미지 업로드 슬롯을 추가합니다. AEE 사용자이면서 이 기능을 활성화한 경우에만 표시됩니다.",
+  "settings-enable-free-draw-tooltip": "자유 그리기, 마스크 및 이미지 업로드 슬롯을 추가합니다. AEE 사용자이면서 이 기능을 활성화한 경우에만 표시됩니다. 대상 사용자가 AEE와 자유 그리기를 모두 활성화한 경우에만 슬롯을 표시하며, 그 외에는 숨깁니다.",
   "layer-manager-sort-asc": "우선순위: 오름차순",
   "layer-manager-sort-desc": "우선순위: 내림차순",
   "layer-manager-open-color-tooltip": "이 아이템의 색상 편집기 열기",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "SPS 그림 라이브러리 작업에 실패했습니다.",
   "free-transform-title": "자유 변형", "free-transform-edit": "편집", "free-transform-active": "자유 변형 중", "parts-browser-title": "부품 아이콘",
   "parts-browser-list-view": "목록 보기", "parts-browser-grid-view": "썸네일 보기", "parts-browser-magnify": "마우스를 올려 확대", "free-transform-rotate-handle": "회전 핸들",
-  "asset-parts-search-title": "부품 검색", "asset-parts-search-placeholder": "이름 또는 번역명 검색", "asset-parts-search-kind-all": "모든 의상과 아이템", "asset-parts-search-kind-clothing": "의상", "asset-parts-search-kind-item": "아이템 / 구속구", "asset-parts-search-kind-both": "의상 + 아이템", "asset-parts-search-slot-all": "모든 부위", "asset-parts-search-empty": "검색 결과 없음", "asset-parts-search-parts": "모든 부품", "asset-parts-search-preview": "부품 미리보기", "asset-parts-search-locations": "사용 가능한 부위"
+  "asset-parts-search-title": "부품 검색", "asset-parts-search-placeholder": "이름 또는 번역명 검색", "asset-parts-search-kind-all": "모든 의상과 아이템", "asset-parts-search-kind-clothing": "의상", "asset-parts-search-kind-item": "아이템 / 구속구", "asset-parts-search-kind-both": "의상 + 아이템", "asset-parts-search-slot-all": "모든 부위", "asset-parts-search-empty": "검색 결과 없음", "asset-parts-search-parts": "모든 부품", "asset-parts-search-preview": "부품 미리보기", "asset-parts-search-locations": "사용 가능한 부위",
+  "aee-access-unavailable": "실행 중인 AEE가 감지되지 않습니다(미설치 또는 비활성화 상태일 수 있습니다). 확장 슬롯을 사용할 수 없습니다.",
+  "aee-access-drawing-disabled": "AEE는 실행 중이지만 자유 그리기가 비활성화되어 있습니다. 그리기 슬롯을 사용할 수 없습니다.",
+  "aee-access-settings-pending": "AEE는 실행 중이지만 자유 그리기 설정을 아직 받지 못했습니다. 잠시 기다리거나 상대방의 AEE 업데이트 여부를 확인하세요."
 }

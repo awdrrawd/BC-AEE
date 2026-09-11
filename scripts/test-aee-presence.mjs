@@ -6,7 +6,7 @@ import ts from 'typescript';
 let now = 1000, active = true, inRoom = true, freeDraw = true, font = 'default';
 const hooks = new Map(), sent = [], timers = [];
 const player = {MemberNumber: 1, OnlineSharedSettings: {AEEItemFont: 'old', OtherMod: true}};
-const other = {MemberNumber: 2, OnlineSharedSettings: {AEE: {Version: 'old', Enabled: true}}};
+const other = {MemberNumber: 2, OnlineSharedSettings: {AEE: {Version: 'old', Enabled: true, FreeDraw: true}}};
 const globals = {window: {Liko: {AEE: {}}}, Player: player, ChatRoomCharacter: [player, other],
   ChatRoomMessage() {}, ChatRoomSync() {},
   ServerPlayerIsInChatRoom: () => inRoom,
@@ -67,7 +67,13 @@ const access = load('src/components/mask-system/access.ts', {...dependencies,
     drawMaskGroupName: group => group + 'Mask', drawVisibleGroupName: group => group + 'Vis'},
 });
 access.installAeeGroupAccess();
+assert.equal(hooks.has('AppearanceLoad'), false, 'entering appearance must not show long status notices');
 assert.equal(access.canUseAeeGroup(other, 'ItemCanvas1'), true);
+other.OnlineSharedSettings.AEE.FreeDraw = false;
+assert.equal(access.getAeeGroupBlockReason(other, 'ItemCanvas1'), 'aee-access-drawing-disabled');
+delete other.OnlineSharedSettings.AEE.FreeDraw;
+assert.equal(access.getAeeGroupBlockReason(other, 'ItemCanvas1'), 'aee-access-settings-pending');
+other.OnlineSharedSettings.AEE.FreeDraw = true;
 freeDraw = false;
 assert.equal(access.canUseAeeGroup(player, 'ItemCanvas1'), false);
 assert.equal(access.canUseAeeGroup(player, 'SingleGloveFX'), true);
@@ -75,6 +81,7 @@ active = false;
 assert.equal(api.getAeeStatus(player).enabled, false, 'SDK unload disables local status');
 assert.equal(api.getAeeStatus(other).enabled, false);
 assert.equal(access.canUseAeeGroup(other, 'ItemCanvas1'), false);
+assert.equal(access.getAeeGroupBlockReason(other, 'ItemCanvas1'), 'aee-access-unavailable', 'live status takes priority over saved settings');
 assert.equal(access.canUseAeeGroup(other, 'Cloth'), true);
 let calls = 0;
 assert.equal(hooks.get('InventoryWear')([other, 'DrawingBoard', 'ItemCanvas1'], () => ++calls), null);

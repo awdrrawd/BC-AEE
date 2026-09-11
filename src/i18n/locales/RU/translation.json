@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "Не удаётся взять цвет: холст испорчен изображением с другого источника — перезагрузите страницу и повторите.",
   "experimental-feature-tooltip": "Это расширение AEE. Пользователи без установленного AEE не увидят эффект правки.",
   "settings-enable-free-draw": "Включить расширенную одежду для свободного рисования",
-  "settings-enable-free-draw-tooltip": "Добавляет слоты для свободного рисования, масок и загрузки изображений. Их видят только пользователи AEE с включённой функцией.",
+  "settings-enable-free-draw-tooltip": "Добавляет слоты для свободного рисования, масок и загрузки изображений. Их видят только пользователи AEE с включённой функцией. Слоты отображаются, только если у выбранного пользователя включены AEE и свободное рисование; иначе они скрыты.",
   "layer-manager-sort-asc": "Приоритет: по возрастанию",
   "layer-manager-sort-desc": "Приоритет: по убыванию",
   "layer-manager-open-color-tooltip": "Открыть редактор цвета этого предмета",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "Операция с библиотекой SPS завершилась ошибкой.",
   "free-transform-title": "Свободное преобразование", "free-transform-edit": "Изменить", "free-transform-active": "Свободное преобразование активно", "parts-browser-title": "Значки частей",
   "parts-browser-list-view": "Список", "parts-browser-grid-view": "Миниатюры", "parts-browser-magnify": "Увеличивать при наведении", "free-transform-rotate-handle": "Маркер вращения",
-  "asset-parts-search-title": "Поиск частей", "asset-parts-search-placeholder": "Поиск имени или перевода", "asset-parts-search-kind-all": "Вся одежда и предметы", "asset-parts-search-kind-clothing": "Одежда", "asset-parts-search-kind-item": "Предметы / ограничения", "asset-parts-search-kind-both": "Одежда + предмет", "asset-parts-search-slot-all": "Все слоты", "asset-parts-search-empty": "Совпадений нет", "asset-parts-search-parts": "Все части", "asset-parts-search-preview": "Предпросмотр части", "asset-parts-search-locations": "Доступные слоты"
+  "asset-parts-search-title": "Поиск частей", "asset-parts-search-placeholder": "Поиск имени или перевода", "asset-parts-search-kind-all": "Вся одежда и предметы", "asset-parts-search-kind-clothing": "Одежда", "asset-parts-search-kind-item": "Предметы / ограничения", "asset-parts-search-kind-both": "Одежда + предмет", "asset-parts-search-slot-all": "Все слоты", "asset-parts-search-empty": "Совпадений нет", "asset-parts-search-parts": "Все части", "asset-parts-search-preview": "Предпросмотр части", "asset-parts-search-locations": "Доступные слоты",
+  "aee-access-unavailable": "Активный AEE не обнаружен (возможно, не установлен или отключён). Дополнительные слоты недоступны.",
+  "aee-access-drawing-disabled": "AEE активен, но свободное рисование отключено. Слоты рисования недоступны.",
+  "aee-access-settings-pending": "AEE активен, но настройка свободного рисования ещё не получена. Подождите или убедитесь, что другой игрок обновил AEE."
 }

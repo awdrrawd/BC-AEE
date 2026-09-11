@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "No se puede seleccionar: el lienzo está contaminado por una imagen de origen cruzado; recarga la página e inténtalo de nuevo.",
   "experimental-feature-tooltip": "Esta función es una extensión de AEE. Quienes no tengan AEE instalado no verán el efecto de la edición.",
   "settings-enable-free-draw": "Activar ropa ampliada de dibujo libre",
-  "settings-enable-free-draw-tooltip": "Añade espacios para dibujo libre, máscaras y carga de imágenes. Solo los usuarios de AEE con esta función activada pueden verlos.",
+  "settings-enable-free-draw-tooltip": "Añade espacios para dibujo libre, máscaras y carga de imágenes. Solo los usuarios de AEE con esta función activada pueden verlos. Las ranuras solo se muestran si la persona seleccionada tiene AEE y el dibujo libre activados; de lo contrario, se ocultan.",
   "layer-manager-sort-asc": "Prioridad: ascendente",
   "layer-manager-sort-desc": "Prioridad: descendente",
   "layer-manager-open-color-tooltip": "Abrir el editor de color de este objeto",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "Falló la operación de la biblioteca SPS.",
   "free-transform-title": "Transformación libre", "free-transform-edit": "Editar", "free-transform-active": "Transformación libre activa", "parts-browser-title": "Iconos de partes",
   "parts-browser-list-view": "Vista de lista", "parts-browser-grid-view": "Vista de miniaturas", "parts-browser-magnify": "Ampliar al pasar", "free-transform-rotate-handle": "Control de rotación",
-  "asset-parts-search-title": "Buscar partes", "asset-parts-search-placeholder": "Buscar nombre o traducción", "asset-parts-search-kind-all": "Toda la ropa y objetos", "asset-parts-search-kind-clothing": "Ropa", "asset-parts-search-kind-item": "Objetos / restricciones", "asset-parts-search-kind-both": "Ropa + objeto", "asset-parts-search-slot-all": "Todas las posiciones", "asset-parts-search-empty": "Sin resultados", "asset-parts-search-parts": "Todas las partes", "asset-parts-search-preview": "Vista previa", "asset-parts-search-locations": "Posiciones disponibles"
+  "asset-parts-search-title": "Buscar partes", "asset-parts-search-placeholder": "Buscar nombre o traducción", "asset-parts-search-kind-all": "Toda la ropa y objetos", "asset-parts-search-kind-clothing": "Ropa", "asset-parts-search-kind-item": "Objetos / restricciones", "asset-parts-search-kind-both": "Ropa + objeto", "asset-parts-search-slot-all": "Todas las posiciones", "asset-parts-search-empty": "Sin resultados", "asset-parts-search-parts": "Todas las partes", "asset-parts-search-preview": "Vista previa", "asset-parts-search-locations": "Posiciones disponibles",
+  "aee-access-unavailable": "No se detecta AEE activo (puede no estar instalado o estar desactivado). Las ranuras adicionales no están disponibles.",
+  "aee-access-drawing-disabled": "AEE está activo, pero el dibujo libre está desactivado. Las ranuras de dibujo no están disponibles.",
+  "aee-access-settings-pending": "AEE está activo, pero aún no se ha recibido la opción de dibujo libre. Espera o comprueba que la otra persona haya actualizado AEE."
 }

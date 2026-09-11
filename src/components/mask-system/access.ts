@@ -7,14 +7,20 @@ const drawingGroups = new Set<string>([
 ]);
 
 /** Ordinary BC groups keep BC permissions; custom groups require a live capable wearer. */
-export function canUseAeeGroup(character: Character | number, group: string): boolean {
-  if (group !== SG_MASK_GROUP && !drawingGroups.has(group)) return true;
+export function getAeeGroupBlockReason(character: Character | number, group: string): string | null {
+  if (group !== SG_MASK_GROUP && !drawingGroups.has(group)) return null;
   const status = getAeeStatus(character);
-  return status.enabled && (group === SG_MASK_GROUP || status.freeDraw);
+  if (!status.enabled) return 'aee-access-unavailable';
+  if (group === SG_MASK_GROUP || status.freeDraw === true) return null;
+  return status.freeDraw === false ? 'aee-access-drawing-disabled' : 'aee-access-settings-pending';
+}
+
+export function canUseAeeGroup(character: Character | number, group: string): boolean {
+  return getAeeGroupBlockReason(character, group) === null;
 }
 
 export function installAeeGroupAccess(): void {
-  Object.assign(window.Liko.AEE, {canUseGroup: canUseAeeGroup});
+  Object.assign(window.Liko.AEE, {canUseGroup: canUseAeeGroup, getGroupBlockReason: getAeeGroupBlockReason});
   bcAeeModSdk.hookFunction('AppearanceGroupAllowed', 1, (args, next) =>
     canUseAeeGroup(args[0], args[1]) && next(args));
   bcAeeModSdk.hookFunction('InventoryAllow', 1, (args, next) =>

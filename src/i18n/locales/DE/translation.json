@@ -504,7 +504,7 @@
   "color-picker-eyedropper-taint": "Farbaufnahme nicht möglich: Die Leinwand ist durch ein Cross-Origin-Bild verunreinigt – Seite neu laden und erneut versuchen.",
   "experimental-feature-tooltip": "Dies ist eine AEE-Erweiterung. Nutzer ohne AEE sehen den Bearbeitungseffekt nicht.",
   "settings-enable-free-draw": "Erweiterte Freihand-Kleidung aktivieren",
-  "settings-enable-free-draw-tooltip": "Fügt Plätze zum freien Zeichnen, Maskieren und Hochladen von Bildern hinzu. Nur AEE-Nutzer mit aktivierter Funktion können sie sehen.",
+  "settings-enable-free-draw-tooltip": "Fügt Plätze zum freien Zeichnen, Maskieren und Hochladen von Bildern hinzu. Nur AEE-Nutzer mit aktivierter Funktion können sie sehen. Die Slots werden nur angezeigt, wenn die Zielperson AEE und freies Zeichnen aktiviert hat; andernfalls bleiben sie verborgen.",
   "layer-manager-sort-asc": "Priorität: aufsteigend",
   "layer-manager-sort-desc": "Priorität: absteigend",
   "layer-manager-open-color-tooltip": "Farbeditor dieses Gegenstands öffnen",
@@ -551,5 +551,8 @@
   "free-draw-library-failed": "Aktion in der SPS-Zeichenbibliothek fehlgeschlagen.",
   "free-transform-title": "Frei transformieren", "free-transform-edit": "Bearbeiten", "free-transform-active": "Freie Transformation aktiv", "parts-browser-title": "Teilesymbole",
   "parts-browser-list-view": "Listenansicht", "parts-browser-grid-view": "Miniaturansicht", "parts-browser-magnify": "Beim Überfahren vergrößern", "free-transform-rotate-handle": "Drehgriff",
-  "asset-parts-search-title": "Teilesuche", "asset-parts-search-placeholder": "Name oder Übersetzung suchen", "asset-parts-search-kind-all": "Alle Kleidung und Gegenstände", "asset-parts-search-kind-clothing": "Kleidung", "asset-parts-search-kind-item": "Gegenstände / Fesseln", "asset-parts-search-kind-both": "Kleidung + Gegenstand", "asset-parts-search-slot-all": "Alle Plätze", "asset-parts-search-empty": "Keine passenden Einträge", "asset-parts-search-parts": "Alle Teile", "asset-parts-search-preview": "Teilevorschau", "asset-parts-search-locations": "Verfügbare Plätze"
+  "asset-parts-search-title": "Teilesuche", "asset-parts-search-placeholder": "Name oder Übersetzung suchen", "asset-parts-search-kind-all": "Alle Kleidung und Gegenstände", "asset-parts-search-kind-clothing": "Kleidung", "asset-parts-search-kind-item": "Gegenstände / Fesseln", "asset-parts-search-kind-both": "Kleidung + Gegenstand", "asset-parts-search-slot-all": "Alle Plätze", "asset-parts-search-empty": "Keine passenden Einträge", "asset-parts-search-parts": "Alle Teile", "asset-parts-search-preview": "Teilevorschau", "asset-parts-search-locations": "Verfügbare Plätze",
+  "aee-access-unavailable": "Kein aktives AEE erkannt (möglicherweise nicht installiert oder deaktiviert). Erweiterte Slots sind nicht verfügbar.",
+  "aee-access-drawing-disabled": "AEE ist aktiv, aber freies Zeichnen ist deaktiviert. Zeichen-Slots sind nicht verfügbar.",
+  "aee-access-settings-pending": "AEE ist aktiv, aber die Einstellung für freies Zeichnen fehlt noch. Bitte warten oder prüfen, ob die andere Person AEE aktualisiert hat."
 }

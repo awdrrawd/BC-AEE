@@ -82,6 +82,11 @@
 .aee-scroll::-webkit-scrollbar-thumb { background: var(--aee-accent-65); border-radius: 4px; }
 .aee-scroll::-webkit-scrollbar-thumb:hover { background: var(--aee-accent); }
 
+.aee-tall-range,
+.aee-rhombus-range {
+    --aee-range-thumb-mask: url('./components/main-panel/icons/drag-slider.svg');
+}
+
 .aee-tall-range::-webkit-slider-runnable-track {
     height: 5px;
     border-radius: 999px;
@@ -95,8 +100,8 @@
     margin-top: -9.5px;
     appearance: none;
     background: var(--aee-accent);
-    -webkit-mask: url('./assets/aee/drag-slider.svg') center / contain no-repeat;
-    mask: url('./assets/aee/drag-slider.svg') center / contain no-repeat;
+    -webkit-mask: var(--aee-range-thumb-mask) center / contain no-repeat;
+    mask: var(--aee-range-thumb-mask) center / contain no-repeat;
     filter: drop-shadow(0 0 3px var(--aee-accent-55));
 }
 
@@ -114,7 +119,7 @@
     border: 0;
     border-radius: 0;
     background: var(--aee-accent);
-    mask: url('./assets/aee/drag-slider.svg') center / contain no-repeat;
+    mask: var(--aee-range-thumb-mask) center / contain no-repeat;
     filter: drop-shadow(0 0 3px var(--aee-accent-55));
 }
 

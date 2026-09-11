@@ -206,7 +206,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
            style={{width: panelWidth, transform: panelOpen ? 'translate3d(0,0,0)' : 'translate3d(calc(-100% - 80px),0,0)', opacity: panelOpen ? 1 : 0}}>
         <Panel className="aee-control flex h-full w-full flex-col overflow-hidden rounded-none border-y-0 border-l-0 p-0">
           <div className="relative flex h-[52px] shrink-0 items-center justify-center border-b border-zinc-700 bg-zinc-950/80">
-            <span className="aee-wave-text text-[26px] font-bold">AEE v{state.version}</span>
+            <span className="aee-wave-text text-[26px] font-bold" style={{animationPlayState: panelOpen ? 'running' : 'paused'}}>AEE v{state.version}</span>
           </div>
           <div className="aee-scroll min-h-0 flex-1 overscroll-contain overflow-y-auto"
                style={{WebkitOverflowScrolling: 'touch'}}>

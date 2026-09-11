@@ -197,7 +197,7 @@
   transition-property: transform, opacity, width;
   transition-duration: .3s;
   transition-timing-function: cubic-bezier(.22, 1, .36, 1);
-  will-change: transform, opacity;
+  /* Let the browser manage compositing instead of reserving it for every idle panel. */
   backface-visibility: hidden;
 }
 

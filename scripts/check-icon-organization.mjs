@@ -23,7 +23,7 @@ const svgOwners = new Set([
   'components/main-panel/EditorIcons.tsx',
   'components/main-panel/TransformIcons.tsx',
   'components/wardrobe/icons/LayoutIcon.tsx',
-  'components/mask-system/icons.tsx',
+  'components/mask-system/icons.ts',
   // Interactive geometry overlays are not reusable icons.
   'components/overlays/FreeTransformGizmo.tsx',
   'components/overlays/RotationOverlay.tsx',

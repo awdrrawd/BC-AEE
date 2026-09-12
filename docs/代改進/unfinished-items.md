@@ -59,3 +59,7 @@
 ## 已完成實作說明索引
 
 - 服裝／道具拾取、詳細標籤、懸停閃爍與外框：[外觀拾取與懸停](../說明/appearance-picking-and-hover.md)
+
+## ESLint 10／React Hooks 7 規則遷移
+
+使用 `reactHooks.configs.flat['recommended-latest']`，避免誤用 legacy plugins 陣列設定。新版啟用的 `use-memo`、`refs`、`immutability`、`set-state-in-effect` 暫設為 warning；Hooks 呼叫順序與依賴檢查保持既有設定。此次檢查有 41 則 Compiler 規則警告，尚未解決，需逐項調整並驗證拖曳、面板切換、衣櫃與外部資料同步後，才恢復為 error。不可用批次移動到 effect 或延遲 setState 的方式僅消除警告。

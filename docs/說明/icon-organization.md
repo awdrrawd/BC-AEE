@@ -5,7 +5,7 @@
 圖示依用途分成四個大類，避免每個小功能各建一層轉送檔案：
 
 1. **AEE**：`components/main-panel/icons/Icons.tsx` 統一匯出 Lucide 圖示；`EditorIcons.tsx` 與 `TransformIcons.tsx` 保存 AEE 自製 React SVG 元件。
-2. **自由繪圖**：`components/mask-system/icons.tsx` 保存 SVG markup，並產生 data URL 給 BC Canvas `DrawButton` 使用。Canvas 不接受 React 元件，因此這一類不轉成 TSX 元件。
+2. **自由繪圖**：`components/mask-system/icons.ts` 保存 SVG markup，並產生 data URL 給 BC Canvas `DrawButton` 使用。Canvas 不接受 React 元件，因此這一類不轉成 TSX 元件。
 3. **衣櫃**：`components/wardrobe/icons/Icons.tsx` 匯出 Lucide 圖示；`LayoutIcon.tsx` 保存衣櫃自製 React SVG 元件。
 4. **重複使用**：`components/icons/Icons.tsx` 放跨大類共用的 React 圖示；`components/icons/iconSources.ts` 集中 BC 內建 `Icons/*.png` 路徑。
 

@@ -1,6 +1,6 @@
 # 架構檢查與調整順序
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html) · [架構指南](../說明/architecture.md)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html) · [架構指南](../說明/architecture.md)
 
 檢查日期：2026-09-12。範圍是目前工作樹的程式入口、模組依賴、生命週期、文件與建置流程；不包含遊戲伺服器或第三方模組的實機驗收。
 

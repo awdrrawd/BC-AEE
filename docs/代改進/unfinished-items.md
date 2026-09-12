@@ -1,6 +1,6 @@
 # AEE 未完成事項
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 架構層級的改善另見[架構檢查與調整順序](./architecture-review.md)。
 

@@ -1,6 +1,6 @@
 # SPS 自由繪圖設計
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 自由繪圖預設保存在服裝的內嵌資料中，只有玩家手動選擇 SPS，或預估 AccountUpdate 達到 160K 安全線時才改用公開 SPS 引用。
 

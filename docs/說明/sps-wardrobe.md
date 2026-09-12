@@ -1,6 +1,6 @@
 # SPS 衣櫃保存與容量
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 ## 容量規則
 

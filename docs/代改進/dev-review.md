@@ -1,6 +1,6 @@
 # dev 分支審查與移植順序
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html) · [架構指南](../說明/architecture.md)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html) · [架構指南](../說明/architecture.md)
 
 檢查日期：2026-09-12。以下審查描述移植前的基準；本輪已開始實作，最新行為見 [SPS 衣櫃保存與容量](../說明/sps-wardrobe.md) 與 [SPS 自由繪圖](../說明/sps-free-draw.md)。本次是程式與 Git 差異審查，未執行 dev 的 OAuth 登入、雲端寫入或資料遷移，也未完成遊戲內驗收。以下「值得移植」不代表 dev 原實作可直接合併。
 

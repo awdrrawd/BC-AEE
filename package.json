@@ -42,7 +42,7 @@
     "lucide-static": "^1.43.0",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.3.0",
-    "typescript": "~5.8.3",
+    "typescript": "~7.0.2",
     "typescript-eslint": "^8.70.0",
     "vite": "^7.0.4"
   }

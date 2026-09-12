@@ -24,7 +24,7 @@ export function exportBcxAppearance(character: Character | null | undefined) {
 }
 
 export async function importBcxAppearanceWithCategory(character: Character) {
-  let clipboardText = '';
+  let clipboardText: string;
   try {
     clipboardText = (await navigator.clipboard.readText()).trim();
   } catch (error) {

@@ -397,7 +397,7 @@ function installDialogHoverTryOnHandlers() {
     if (button.getAttribute('aria-disabled') === 'true') return;
     const index = Number.parseInt(button.dataset.index ?? '', 10);
     const item = Number.isInteger(index) ? DialogInventory?.[index] : null;
-    let character: Character | null = null;
+    let character: Character | null;
     try {
       character = typeof CurrentCharacter !== 'undefined' ? CurrentCharacter : null;
     } catch {

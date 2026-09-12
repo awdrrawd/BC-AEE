@@ -440,7 +440,7 @@ function migrateLegacyExtensionWardrobe() {
   const raw = extensionSettings()?.[LEGACY_EXTENSION_WARDROBE_KEY] as Partial<StoredExtensionWardrobe> | undefined;
   if (!raw || typeof raw.w !== 'string' || !raw.w || !Player.Wardrobe) return;
 
-  let legacy: ItemBundle[][] = [];
+  let legacy: ItemBundle[][];
   try {
     legacy = CharacterDecompressWardrobe(raw.w);
   } catch (error) {

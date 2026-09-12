@@ -24,6 +24,7 @@
 - [設定與資料儲存原則](./說明/settings-storage.md)
 - [自由繪圖遮罩](./說明/free-draw-mask.md)
 - [SPS 自由繪圖](./說明/sps-free-draw.md)
+- [SPS 衣櫃保存與容量](./說明/sps-wardrobe.md)
 - [圖層隱藏](./說明/layering-hide.md)
 - [圖示管理](./說明/icon-organization.md)
 

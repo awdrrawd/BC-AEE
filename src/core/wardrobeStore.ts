@@ -9,6 +9,9 @@ export const DEFAULT_RETURN_SCREEN: [string, string] = ['Character', 'Appearance
 
 export interface WardrobeState {
   active: boolean;
+  saving: boolean;
+  spsStatus: 'idle' | 'loading' | 'ready' | 'error';
+  spsError: string;
   canvasRect: CanvasRect | null;
   theme: UiTheme;
   search: string;
@@ -36,6 +39,9 @@ export interface WardrobeState {
 
 const initialState: WardrobeState = {
   active: false,
+  saving: false,
+  spsStatus: 'idle',
+  spsError: '',
   canvasRect: null,
   theme: readUiTheme(),
   search: '',

@@ -570,5 +570,9 @@
   "asset-parts-search-locations": "Available slots",
   "aee-access-unavailable": "No active AEE detected (it may be uninstalled or disabled). Extended slots are unavailable.",
   "aee-access-drawing-disabled": "AEE is active, but free drawing is disabled. Drawing slots are unavailable.",
-  "aee-access-settings-pending": "AEE is active, but its free-drawing setting is not available yet. Please wait or check that the other player has updated AEE."
+  "aee-access-settings-pending": "AEE is active, but its free-drawing setting is not available yet. Please wait or check that the other player has updated AEE.",
+  "wardrobe-saving": "Saving wardrobe…",
+  "wardrobe-loading": "Loading wardrobe…",
+  "wardrobe-retry": "Reload",
+  "wardrobe-sps-overflow": "The legacy wardrobe contains data beyond slot 984. Migration stopped; original data is preserved. Export or reorganize it using the previous version first."
 }

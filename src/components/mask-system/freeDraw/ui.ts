@@ -23,7 +23,7 @@ import {t} from '@/i18n/i18n';
 import {GAME_ICONS} from '@/components/icons/iconSources';
 import {openColorPicker as openAeeColorPicker} from '@/controllers/uiController';
 import {runtime} from '@/core/runtime';
-import {A, undo, redo, clearBoard, scratch, preview, previewCtx} from './slots';
+import {A, getActiveSession, undo, redo, clearBoard, scratch, preview, previewCtx} from './slots';
 import {strokeInProgress} from './input';
 import {State} from './editorState';
 import {getBoardScreenRect, getBoardViewportRect, getPickerLayout, getPickerItemRect, updateStrokeFromPointerX, colorForFill, contrastColor, inBoardArea} from './geometry';
@@ -247,7 +247,8 @@ export function slotDraw() {
 }
 
 export function slotClick() {
-  if (!A) return;
+  const session = getActiveSession();
+  if (!A || !session || session.phase !== 'editing') return;
   // BC fires this Click callback for every click on the item screen — including
   // the exact same click that just finished a box-select drag (pointerup already
   // ran onSelectPointerUp() and set selPhase to 'floating'). Committing here
@@ -315,6 +316,9 @@ export function slotClick() {
 
 export function onKeyDown(evt: KeyboardEvent) {
   if (evt.key === 'Escape' && DialogFocusItem?.Asset?.Group && DRAW_GROUPS.includes(DialogFocusItem.Asset.Group.Name)) {
-    leaveEditor();
+    const session = getActiveSession();
+    if (!session || session.phase !== 'editing') return;
+    evt.preventDefault();
+    cancelEditingAndExit();
   }
 }

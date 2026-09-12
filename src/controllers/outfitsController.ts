@@ -1,3 +1,4 @@
+import {wardrobeMutation, wardrobeIdentity} from '@/core/wardrobeMutation';
 import {t} from '@/i18n/i18n';
 import {bundleAppearance, decodeBundles, encodeBundle, stripLock, wearBundle} from '@/util/appearanceBundle';
 import {showToast} from '@/util/toast';
@@ -188,24 +189,34 @@ interface SlotSnapshot {
   index: number;
   outfit: ItemBundle[];
   name: string;
+  meta: ReturnType<typeof getSlotMeta>;
+  current: () => boolean;
 }
 
 function snapshotSlots(source: WardrobeSource, indices: readonly number[]): SlotSnapshot[] {
-  return indices.map(index => ({index, outfit: source.outfitAt(index), name: source.nameAt(index)}));
+  return indices.map(index => ({index, outfit: structuredClone(source.outfitAt(index)), name: source.nameAt(index),
+    meta: structuredClone(getSlotMeta(source.id, index)), current: wardrobeIdentity()}));
 }
 
 /**
  * Persists the slots covered by the snapshots, rolling the in-memory slots back
  * when the underlying storage rejects the write (quota / server size cap).
  */
-function commitWardrobeChanges(source: WardrobeSource, snapshots: readonly SlotSnapshot[]): boolean {
-  if (source.persist(snapshots.map(snapshot => snapshot.index))) return true;
-  snapshots.forEach(snapshot => source.writeSlot(snapshot.index, snapshot.outfit, snapshot.name));
+async function commitWardrobeChanges(source: WardrobeSource, snapshots: readonly SlotSnapshot[]): Promise<boolean> {
+  try {
+    if (await source.persist(snapshots.map(snapshot => snapshot.index))) return snapshots.every(snapshot => snapshot.current());
+  } catch (error) { console.warn('🐈‍⬛ [AEE] Wardrobe save failed', error); }
+  for (const snapshot of snapshots) {
+    if (!snapshot.current()) continue;
+    source.writeSlot(snapshot.index, snapshot.outfit, snapshot.name);
+    setSlotMeta(source.id, snapshot.index, snapshot.meta);
+  }
+  bumpWardrobeData();
   showToast(t(source.id === 'online' ? 'wardrobe-toast-online-full' : 'wardrobe-toast-save-failed'));
   return false;
 }
 
-export function saveOutfit(index: number, name: string) {
+async function saveOutfitImpl(index: number, name: string) {
   const source = activeWardrobeSource();
   if (index < 0 || index >= source.size()) return;
   const character = getTargetCharacter();
@@ -220,7 +231,7 @@ export function saveOutfit(index: number, name: string) {
     }
     const snapshots = snapshotSlots(source, [index]);
     source.writeSlot(index, bundle, resolved);
-    if (!commitWardrobeChanges(source, snapshots)) return;
+    if (!await commitWardrobeChanges(source, snapshots)) return;
   } catch (error) {
     console.error('🐈‍⬛ [AEE] ❌ Failed to save the outfit', error);
     showToast(t('wardrobe-toast-save-failed'));
@@ -229,21 +240,22 @@ export function saveOutfit(index: number, name: string) {
 
   bumpWardrobeData();
   showToast(t('wardrobe-toast-saved'));
+  return true;
 }
 
 /** Metadata-only save from the edit panel: replaces just the outfit's name and tags. */
-export function saveOutfitMeta(index: number, name: string, tags: string[]) {
+async function saveOutfitMetaImpl(index: number, name: string, tags: string[]) {
   const source = activeWardrobeSource();
   if (index < 0 || index >= source.size() || !isSlotOccupied(index)) return;
 
   const resolved = name.trim().slice(0, 40) || slotName(index);
   const snapshots = snapshotSlots(source, [index]);
   source.writeSlot(index, source.outfitAt(index), resolved);
-  if (!commitWardrobeChanges(source, snapshots)) return;
-
   setSlotMeta(source.id, index, {tags});
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-saved'));
+  return true;
 }
 
 export function tryOnOutfit(index: number) {
@@ -263,42 +275,51 @@ export function tryOnOutfit(index: number) {
   bumpWardrobeData();
 }
 
-export function deleteOutfit(index: number) {
+async function deleteOutfitImpl(index: number) {
   if (index < 0 || !isSlotOccupied(index)) return;
 
   const source = activeWardrobeSource();
   const snapshots = snapshotSlots(source, [index]);
   source.writeSlot(index, [], '');
-  if (!commitWardrobeChanges(source, snapshots)) return;
-
   setSlotMeta(source.id, index, {favorite: false, tags: []});
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   if (getWardrobeState().selection === index) setWardrobeState({selection: -1, name: ''});
   bumpWardrobeData();
+  return true;
 }
 
-export function swapOutfits(a: number, b: number) {
+async function swapOutfitsImpl(a: number, b: number) {
   const source = activeWardrobeSource();
   if (a < 0 || b < 0 || a >= source.size() || b >= source.size() || a === b) return;
 
   const snapshots = snapshotSlots(source, [a, b]);
   source.swap(a, b);
-  if (!commitWardrobeChanges(source, snapshots)) return;
-
   const meta = getSlotMeta(source.id, a);
   setSlotMeta(source.id, a, getSlotMeta(source.id, b));
   setSlotMeta(source.id, b, meta);
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
+  return true;
 }
 
-export function toggleFavorite(index: number) {
+async function toggleFavoriteImpl(index: number) {
   const source = activeWardrobeSource();
+  if (index < 0 || index >= source.size()) return;
+  const snapshots = snapshotSlots(source, [index]);
   setSlotMeta(source.id, index, {favorite: !getSlotMeta(source.id, index).favorite});
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
+  return true;
 }
 
-export function setSlotTags(index: number, tags: string[]) {
-  setSlotMeta(activeWardrobeSource().id, index, {tags});
+async function setSlotTagsImpl(index: number, tags: string[]) {
+  const source = activeWardrobeSource();
+  if (index < 0 || index >= source.size()) return;
+  const snapshots = snapshotSlots(source, [index]);
+  setSlotMeta(source.id, index, {tags});
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
+  return true;
 }
 
 export function knownTags(): string[] {
@@ -374,7 +395,7 @@ export function importCodeToWorn(code: string) {
   showToast(t('wardrobe-toast-imported'));
 }
 
-export function importOutfitFromCode(index: number, code: string) {
+async function importOutfitFromCodeImpl(index: number, code: string) {
   const source = activeWardrobeSource();
   const bundle = decodeBundles(code)?.[0];
   if (!bundle || index < 0 || index >= source.size()) {
@@ -383,9 +404,10 @@ export function importOutfitFromCode(index: number, code: string) {
   }
   const snapshots = snapshotSlots(source, [index]);
   source.writeSlot(index, bundle, snapshots[0].name);
-  if (!commitWardrobeChanges(source, snapshots)) return;
+  if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-imported'));
+  return true;
 }
 
 export function exportWardrobeToFile(source: WardrobeSource = activeWardrobeSource()) {
@@ -439,7 +461,7 @@ export function readImportCode(code: string): PendingImport[] | null {
   return outfits.map(outfit => ({outfit}));
 }
 
-export function applyImports(plan: readonly { pending: PendingImport; target: number }[], source: WardrobeSource = activeWardrobeSource()): number {
+async function applyImportsImpl(plan: readonly { pending: PendingImport; target: number }[], source: WardrobeSource = activeWardrobeSource()): Promise<number> {
   const entries = plan.filter(({target}) => target >= 0 && target < source.size());
   if (!entries.length) return 0;
 
@@ -447,12 +469,43 @@ export function applyImports(plan: readonly { pending: PendingImport; target: nu
   for (const {pending, target} of entries) {
     source.writeSlot(target, pending.outfit, pending.name ? pending.name.slice(0, 40) : source.nameAt(target));
   }
-  if (!commitWardrobeChanges(source, snapshots)) return 0;
-
   for (const {pending, target} of entries) {
     if (pending.meta) setSlotMeta(source.id, target, pending.meta);
   }
+  if (!await commitWardrobeChanges(source, snapshots)) return 0;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-import-count', {n: entries.length}));
   return entries.length;
+}
+
+export async function saveOutfit(index: number, name: string) {
+  return wardrobeMutation(false, async () => (await saveOutfitImpl(index, name)) === true);
+}
+
+export async function saveOutfitMeta(index: number, name: string, tags: string[]) {
+  return wardrobeMutation(false, async () => (await saveOutfitMetaImpl(index, name, tags)) === true);
+}
+
+export async function deleteOutfit(index: number) {
+  return wardrobeMutation(false, async () => (await deleteOutfitImpl(index)) === true);
+}
+
+export async function swapOutfits(a: number, b: number) {
+  return wardrobeMutation(false, async () => (await swapOutfitsImpl(a, b)) === true);
+}
+
+export async function toggleFavorite(index: number) {
+  return wardrobeMutation(false, async () => (await toggleFavoriteImpl(index)) === true);
+}
+
+export async function setSlotTags(index: number, tags: string[]) {
+  return wardrobeMutation(false, async () => (await setSlotTagsImpl(index, tags)) === true);
+}
+
+export async function importOutfitFromCode(index: number, code: string) {
+  return wardrobeMutation(false, async () => (await importOutfitFromCodeImpl(index, code)) === true);
+}
+
+export async function applyImports(plan: readonly {pending: PendingImport; target: number}[], source: WardrobeSource = activeWardrobeSource()): Promise<number> {
+  return wardrobeMutation(0, () => applyImportsImpl(plan, source), source);
 }

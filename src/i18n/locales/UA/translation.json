@@ -554,5 +554,9 @@
   "asset-parts-search-title": "Пошук частин", "asset-parts-search-placeholder": "Пошук назви або перекладу", "asset-parts-search-kind-all": "Увесь одяг і предмети", "asset-parts-search-kind-clothing": "Одяг", "asset-parts-search-kind-item": "Предмети / обмеження", "asset-parts-search-kind-both": "Одяг + предмет", "asset-parts-search-slot-all": "Усі слоти", "asset-parts-search-empty": "Збігів немає", "asset-parts-search-parts": "Усі частини", "asset-parts-search-preview": "Перегляд частини", "asset-parts-search-locations": "Доступні слоти",
   "aee-access-unavailable": "Активний AEE не виявлено (можливо, не встановлено або вимкнено). Додаткові слоти недоступні.",
   "aee-access-drawing-disabled": "AEE активний, але вільне малювання вимкнено. Слоти малювання недоступні.",
-  "aee-access-settings-pending": "AEE активний, але налаштування вільного малювання ще не отримано. Зачекайте або перевірте, чи інший гравець оновив AEE."
+  "aee-access-settings-pending": "AEE активний, але налаштування вільного малювання ще не отримано. Зачекайте або перевірте, чи інший гравець оновив AEE.",
+  "wardrobe-saving": "Збереження гардероба…",
+  "wardrobe-loading": "Завантаження гардероба…",
+  "wardrobe-retry": "Перезавантажити",
+  "wardrobe-sps-overflow": "У старому гардеробі є дані після комірки 984. Перенесення зупинено, оригінали збережено. Експортуйте або впорядкуйте одяг у попередній версії."
 }

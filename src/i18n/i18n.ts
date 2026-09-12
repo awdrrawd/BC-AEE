@@ -1,3 +1,4 @@
+import './flags-engine.js';
 import i18next, {type TOptions} from 'i18next';
 import {initReactI18next} from 'react-i18next';
 import {emitAeeStoreChange} from '@/core/store';

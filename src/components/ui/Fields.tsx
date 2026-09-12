@@ -2,6 +2,7 @@ import {
   Children, forwardRef, isValidElement, type CSSProperties, type InputHTMLAttributes, type OptionHTMLAttributes,
   type ReactElement, type ReactNode, useEffect, useRef, useState,
 } from 'react';
+import {CountryLabel} from './CountryLabel';
 import cn from '@/util/cn';
 import {Check, ChevronDown} from '@/components/icons/Icons';
 
@@ -92,7 +93,7 @@ export function Select({density = 'compact', className, children, value, onValue
         densityClass[density],
       )}>
       {selected?.color ? <span className="h-4 w-4 shrink-0 rounded border border-white/35" style={{backgroundColor: selected.color}}/> : null}
-      <span className="min-w-0 flex-1 truncate">{selected?.label}</span>
+      <span className="min-w-0 flex-1 truncate">{<CountryLabel label={selected?.label}/>}</span>
       <ChevronDown className={cn('h-4 w-4 shrink-0 text-(--aee-accent) transition-transform', open && 'rotate-180')}/>
     </button>
     {open ? <div role="listbox" aria-label={ariaLabel}
@@ -112,7 +113,7 @@ export function Select({density = 'compact', className, children, value, onValue
           option.disabled && 'opacity-40',
         )}>
         {option.color ? <span className="h-4 w-4 shrink-0 rounded border border-white/35" style={{backgroundColor: option.color}}/> : null}
-        <span className="flex-1">{option.label}</span>
+        <span className="flex-1">{<CountryLabel label={option.label}/>}</span>
         <Check className={cn('h-3.5 w-3.5 shrink-0', option.value === String(value) ? 'opacity-100' : 'opacity-0')}/>
       </button>)}
     </div> : null}

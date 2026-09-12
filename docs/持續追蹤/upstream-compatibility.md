@@ -1,6 +1,6 @@
 # 上游與模組相容性追蹤
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 以下沿用既有文件的觀察，整理日期為 2026-09-02；版本預期不代表已確認發布或修復。
 

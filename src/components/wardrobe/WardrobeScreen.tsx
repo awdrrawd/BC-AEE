@@ -1,3 +1,5 @@
+import {t} from '@/i18n/i18n';
+import {setWardrobeSource} from '@/controllers/wardrobeController';
 import {useEffect, useMemo} from 'react';
 import cn from '@/util/cn';
 import {filterSlots, isOutfitListCollapsed, pageCount, perPage} from '@/controllers/outfitsController';
@@ -86,8 +88,15 @@ export function WardrobeScreen({state}: { state: WardrobeState }) {
 
   return <WardrobeStage canvasRect={state.canvasRect}>
     <WardrobeHeader/>
-    {body}
-    <DialogHost/>
+    <div className="flex min-h-0 flex-1 flex-col" inert={state.saving || (state.source === 'sps' && state.spsStatus !== 'ready')}>
+      {body}
+    </div>
+    <div inert={state.saving}><DialogHost/></div>
+    {state.saving || (state.source === 'sps' && state.spsStatus !== 'ready') ? <div
+      role="status" aria-live="polite" className="absolute left-1/2 top-20 z-50 -translate-x-1/2 rounded-xl bg-zinc-950 px-6 py-3 text-xl text-white">
+      {t(state.saving ? 'wardrobe-saving' : state.spsStatus === 'error' ? state.spsError || 'wardrobe-toast-sps-load-failed' : 'wardrobe-loading')}
+      {!state.saving && state.spsStatus === 'error' ? <button className="ml-4 underline" onClick={() => setWardrobeSource('sps')}>{t('wardrobe-retry')}</button> : null}
+    </div> : null}
     {prompt ? <PromptDialog prompt={prompt} scale="stage"/> : null}
   </WardrobeStage>;
 }

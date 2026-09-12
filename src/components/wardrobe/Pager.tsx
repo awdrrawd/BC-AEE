@@ -49,7 +49,7 @@ export function Pager({state, slots}: { state: WardrobeState; slots: number[] })
     />
     <Button density="stage"
             style={square}
-            disabled={current === 0}
+            disabled={pages <= 1}
             onClick={() => goToPage(current - 1, pages)}
             icon={<ChevronLeft className="h-5 w-5"/>}
             aria-label="previous page"
@@ -77,7 +77,7 @@ export function Pager({state, slots}: { state: WardrobeState; slots: number[] })
 
     <Button density="stage"
             style={square}
-            disabled={current >= pages - 1}
+            disabled={pages <= 1}
             onClick={() => goToPage(current + 1, pages)}
             icon={<ChevronRight className="h-5 w-5"/>}
             aria-label="next page"

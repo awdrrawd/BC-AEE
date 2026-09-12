@@ -1,8 +1,8 @@
 # DOCS 索引
 
-[互動架構圖](./architecture/index.html) · [架構與擴充指南](./說明/architecture.md)
+[互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html) · [架構與擴充指南](./說明/architecture.md)
 
-架構圖可在本機直接以瀏覽器開啟 `architecture/index.html`，不需安裝依賴。GitHub 的 Markdown 連結會開啟 HTML 原始碼頁；互動操作請使用本機瀏覽器。圖中的功能可透過網址片段（例如 `#transform`）直接定位。
+上方連結開啟 GitHub Pages 的互動網頁；`github.com/.../blob/...` 則是檢視原始碼。也可在本機直接以瀏覽器開啟 `architecture/index.html`，不需安裝依賴。圖中的功能可透過網址片段（例如 `#transform`）直接定位。
 
 ## 代改進
 
@@ -18,12 +18,13 @@
 
 - [GitHub Actions 與手動設定](./說明/github-actions.md)
 - [架構與擴充指南](./說明/architecture.md)
-- [互動式功能分支圖](./architecture/index.html)
+- [互動式功能分支圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 - [外觀拾取與懸停](./說明/appearance-picking-and-hover.md)
 - [AEE 狀態 API 與分享資料](./說明/aee-status-api.md)
 - [設定與資料儲存原則](./說明/settings-storage.md)
 - [自由繪圖遮罩](./說明/free-draw-mask.md)
 - [SPS 自由繪圖](./說明/sps-free-draw.md)
+- [SPS 衣櫃保存與容量](./說明/sps-wardrobe.md)
 - [圖層隱藏](./說明/layering-hide.md)
 - [圖示管理](./說明/icon-organization.md)
 

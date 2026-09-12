@@ -570,5 +570,9 @@
   "asset-parts-search-locations": "出现部位",
   "aee-access-unavailable": "未检测到运行中的 AEE（可能未安装或未启用），无法使用扩展部位。",
   "aee-access-drawing-disabled": "AEE 已启用，但自由绘图已停用，无法使用绘图部位。",
-  "aee-access-settings-pending": "AEE 已启用，但尚未取得自由绘图设置，请稍候或确认对方已更新 AEE。"
+  "aee-access-settings-pending": "AEE 已启用，但尚未取得自由绘图设置，请稍候或确认对方已更新 AEE。",
+  "wardrobe-saving": "正在保存衣柜…",
+  "wardrobe-loading": "正在加载衣柜…",
+  "wardrobe-retry": "重新加载",
+  "wardrobe-sps-overflow": "旧衣柜在第 984 格以后仍有数据，已停止迁移并保留来源。请先使用旧版导出或整理服装。"
 }

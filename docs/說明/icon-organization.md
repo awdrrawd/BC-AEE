@@ -1,6 +1,6 @@
 # Icon organization
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 圖示依用途分成四個大類，避免每個小功能各建一層轉送檔案：
 

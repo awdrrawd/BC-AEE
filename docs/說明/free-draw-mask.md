@@ -1,6 +1,6 @@
 # 自由繪圖遮罩維護說明
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 本文件記錄 AEE 自由繪圖的顯示、遮罩與順位設計。修改相關程式前，請先確認下列行為仍然成立。
 

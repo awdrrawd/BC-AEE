@@ -1,8 +1,8 @@
 # dev 分支審查與移植順序
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html) · [架構指南](../說明/architecture.md)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html) · [架構指南](../說明/architecture.md)
 
-檢查日期：2026-09-12。本次是程式與 Git 差異審查，未執行 dev 的 OAuth 登入、雲端寫入或資料遷移，也未完成遊戲內驗收。以下「值得移植」不代表 dev 原實作可直接合併。
+檢查日期：2026-09-12。以下審查描述移植前的基準；本輪已開始實作，最新行為見 [SPS 衣櫃保存與容量](../說明/sps-wardrobe.md) 與 [SPS 自由繪圖](../說明/sps-free-draw.md)。本次是程式與 Git 差異審查，未執行 dev 的 OAuth 登入、雲端寫入或資料遷移，也未完成遊戲內驗收。以下「值得移植」不代表 dev 原實作可直接合併。
 
 ## 比較基準與分支處理
 
@@ -10,7 +10,7 @@
 - dev：`801179f432b9c6c9349716d6169878ed91d9861e`。
 - dev 落後 main 54 筆，獨有 1 筆提交：`feat: integrate studio OAuth for wardrobe management and enhance loading states`，相對共同祖先改動 40 個檔案（1594 行新增、551 行刪除）。提交標題未涵蓋全部變更，還包括繪圖狀態機與兩種雲端格式遷移。
 - `origin/fix/eslint-upgrad` 落後 main 7 筆、沒有獨有提交，已可刪除；本次未刪除遠端分支。
-- 已從上述 main 建立 `codex/dev-review`，本分支只新增審查文件。dev 保留作為來源參考；未整筆 cherry-pick 或合併。
+- 已從上述 main 建立 `codex/dev-review`，本分支先完成審查文件，再依使用者授權進行功能修改。dev 保留作為來源參考；未整筆 cherry-pick 或合併。
 
 審查同時使用共同祖先到 dev 的變更，以及 main 與 dev 的最終檔案差異。後者顯示 dev 缺少新的 CI、文件整理、圖示重構與多項功能修正，因此不能用 dev 整份目錄覆蓋 main。Git 三方合併並不必然刪除 main 的新增檔案，但仍不能替代對行為及格式相容性的檢查。
 
@@ -30,7 +30,7 @@
 | 網路或登入失敗能恢復，切帳號不沿用舊身分 | main OAuth 的 identityPromise 為全域、tokenCache 只依 resource；沒有帳號維度或明確失敗重置 | 認證生命週期與帳號綁定，失敗可重試、401 有界更新、逾時可取消。保留 adapter 邊界不等於認定現有 adapter 無須修正；是否採官方完整 client 應依契約驗證決定。 |
 | 大圖與長時間使用仍可靠 | 估算錯誤可回傳 0，SPS Blob URL 快取無界 | 估算失敗明確阻擋不安全保存；有使用者引用的 URL 不提前 revoke，且未使用的資源能回收。 |
 
-截至本報告，以上功能修正尚未在本審查分支實作。推送本分支只會分享文件，不能視為完成 dev 的功能訴求。應以這張表作為後續功能 PR 的範圍與驗收依據，原 dev 程式僅作設計參考。
+這張表記錄最初確認的訴求。現已實作單槽記錄／索引、100→984 容量、等待保存、SPS metadata 隔離、帳號範圍認證、繪圖 session、容量估算失敗保護及內容 hash 圖片；實機验收、跨裝置條件提交與雲端清理仍未完成。
 
 ## 值得重新實作的部分
 
@@ -86,4 +86,4 @@ dev 把 npm test 設為 `vitest run src` 並新增 Vitest，但該獨有提交�
 
 每批保留現有 lint、scripts tests、docs、architecture browser 與 build 門檻。儲存與繪圖還需新增針對實際失敗模式的測試，以及遊戲內驗收；架構圖瀏覽器測試不能替代功能驗收。
 
-本次完成範圍為分支比較、核心資料路徑與 UI 呼叫方式的靜態審查，以及本報告；上述功能移植均尚未實作。遠端 main、dev 與使用者雲端資料未修改。
+本輪已在同一分支進行上述功能修改；保留本審查作為設計依據，原 dev 的固定 journal、自動刪舊資料與 vendor OAuth 未採用。遠端 main、dev 與使用者雲端資料未修改。

@@ -1,6 +1,6 @@
 # 設定與資料儲存原則
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 ## 本地共用偏好
 

@@ -554,5 +554,9 @@
   "asset-parts-search-title": "بحث الأجزاء", "asset-parts-search-placeholder": "ابحث بالاسم أو الترجمة", "asset-parts-search-kind-all": "كل الملابس والعناصر", "asset-parts-search-kind-clothing": "ملابس", "asset-parts-search-kind-item": "عناصر / قيود", "asset-parts-search-kind-both": "ملابس + عنصر", "asset-parts-search-slot-all": "كل المواضع", "asset-parts-search-empty": "لا توجد نتائج", "asset-parts-search-parts": "كل الأجزاء", "asset-parts-search-preview": "معاينة الجزء", "asset-parts-search-locations": "المواضع المتاحة",
   "aee-access-unavailable": "لم يُكتشف AEE نشط (قد يكون غير مثبت أو معطلاً). الخانات الإضافية غير متاحة.",
   "aee-access-drawing-disabled": "AEE نشط، لكن الرسم الحر معطل. خانات الرسم غير متاحة.",
-  "aee-access-settings-pending": "AEE نشط، لكن إعداد الرسم الحر لم يصل بعد. يرجى الانتظار أو التأكد من أن اللاعب الآخر حدّث AEE."
+  "aee-access-settings-pending": "AEE نشط، لكن إعداد الرسم الحر لم يصل بعد. يرجى الانتظار أو التأكد من أن اللاعب الآخر حدّث AEE.",
+  "wardrobe-saving": "جارٍ حفظ خزانة الملابس…",
+  "wardrobe-loading": "جارٍ تحميل خزانة الملابس…",
+  "wardrobe-retry": "إعادة التحميل",
+  "wardrobe-sps-overflow": "تحتوي الخزانة القديمة على بيانات بعد الخانة 984. تم إيقاف النقل مع الاحتفاظ بالبيانات الأصلية. يرجى تصدير الملابس أو إعادة ترتيبها باستخدام الإصدار السابق."
 }

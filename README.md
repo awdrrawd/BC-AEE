@@ -103,7 +103,7 @@ The hover outline, canvas picking, and free-transform controls were adapted from
 
 - [AEE 架構與擴充指南](./docs/說明/architecture.md)
 - [文件分類與未完成事項](./docs/README.md)
-- [互動式功能分支圖](./docs/architecture/index.html)
+- [互動式功能分支圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 ---
 

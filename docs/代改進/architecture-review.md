@@ -1,6 +1,6 @@
 # 架構檢查與調整順序
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html) · [架構指南](../說明/architecture.md)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html) · [架構指南](../說明/architecture.md)
 
 檢查日期：2026-09-12。範圍是目前工作樹的程式入口、模組依賴、生命週期、文件與建置流程；不包含遊戲伺服器或第三方模組的實機驗收。
 
@@ -10,7 +10,7 @@
 
 | 順序 | 現況與證據 | 建議及完成條件 |
 | --- | --- | --- |
-| 1 | `components/mask-system/freeDraw/spsDrawing.ts` 的 `cache` 保存每個內容 hash 的 Blob URL，尚無容量限制與回收；圖片匯入的短期 URL 已有回收，不能混為一談。 | 由 SPS 圖片快取管理引用與淘汰，確認 BC 圖片快取及角色不再使用後才 revoke；測試換槽、跨房與重複載入後圖片正確且資源不持續增加。 |
+| 1 | `components/mask-system/freeDraw/spsDrawing.ts` 已改用 96 筆 Data URL LRU，淘汰不撤銷其他渲染器仍使用的來源；短期匯入 URL 維持回收。 | 繼續實機量測 BC 與遮罩等下游快取；驗證換槽、跨房與超過 96 張後圖片正確，總記憶體不持續增加。 |
 | 2 | `controllers/uiController.ts` 同時管理 Property 編輯、面板定位、懸停與試穿，已有 1081 行；`appearancePickerController.ts` 有 865 行，結合 capture、命中測試、外框與 UI 狀態。 | 依功能拆出 hover／try-on 與編輯命令，保留原公開 API 作轉接；幾何純函式繼續集中 `core/pickerTransform.ts`。以現有 hover、transform、item identity 回歸腳本確認行為。行數只是定位線索，不是單獨拆檔的理由。 |
 | 3 | `features/mask/index.ts` 只有兩個轉匯出，真實功能與儲存仍在 `components/mask-system/`，hooks 也直接匯入其 access 模組。 | 先補足功能公開入口，減少外部對內部路徑的直接依賴，再逐步搬移非 UI 模組到 `features/mask/`；UI 留在 components，遷移一組就測一組。 |
 | 4 | `hooks/index.ts` 集中初始化，但 `app.tsx` 沒有統一卸載流程；WebGL prototype 包裝保留至頁面結束，各 listener、timer、cache 的清理由功能自行管理。 | 如果需要熱重載或動態停用，讓安裝函式回傳可重複執行的 dispose，集中反向清理；還原 prototype 前確認仍是自己的 wrapper，避免覆蓋其他模組。首次安裝、重複安裝、停止後重啟均須驗證。 |

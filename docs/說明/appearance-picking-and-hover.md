@@ -1,6 +1,6 @@
 # AEE 拾取與懸停實作說明
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 本文件描述 AEE 目前的服裝／道具拾取、部件標籤、懸停閃爍與外框流程。它記錄完成後的架構，不記錄試錯過程；未完成項目另見 [未完成事項](../代改進/unfinished-items.md)。
 

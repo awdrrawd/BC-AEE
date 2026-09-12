@@ -554,5 +554,9 @@
   "asset-parts-search-title": "パーツ検索", "asset-parts-search-placeholder": "名前または翻訳名を検索", "asset-parts-search-kind-all": "すべての衣装とアイテム", "asset-parts-search-kind-clothing": "衣装", "asset-parts-search-kind-item": "アイテム／拘束具", "asset-parts-search-kind-both": "衣装＋アイテム", "asset-parts-search-slot-all": "すべての部位", "asset-parts-search-empty": "該当する項目がありません", "asset-parts-search-parts": "すべてのパーツ", "asset-parts-search-preview": "パーツプレビュー", "asset-parts-search-locations": "使用可能な部位",
   "aee-access-unavailable": "動作中の AEE が検出されません（未インストールまたは無効の可能性があります）。拡張スロットは使用できません。",
   "aee-access-drawing-disabled": "AEE は動作中ですが、自由描画は無効です。描画スロットは使用できません。",
-  "aee-access-settings-pending": "AEE は動作中ですが、自由描画の設定をまだ取得できません。しばらく待つか、相手が AEE を更新したか確認してください。"
+  "aee-access-settings-pending": "AEE は動作中ですが、自由描画の設定をまだ取得できません。しばらく待つか、相手が AEE を更新したか確認してください。",
+  "wardrobe-saving": "ワードローブを保存中…",
+  "wardrobe-loading": "ワードローブを読み込み中…",
+  "wardrobe-retry": "再読み込み",
+  "wardrobe-sps-overflow": "旧ワードローブの984番目以降にデータがあります。移行を停止し、元データを保持しました。旧バージョンでエクスポートまたは整理してください。"
 }

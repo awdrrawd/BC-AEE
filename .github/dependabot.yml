@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Taipei
+    open-pull-requests-limit: 5
+    groups:
+      npm-compatible:
+        patterns: ['*']
+        exclude-patterns: ['bc-stubs']
+        update-types: [minor, patch]
+    # bc-stubs and major upgrades remain separate, reviewable PRs.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Taipei
+    groups:
+      actions:
+        patterns: ['*']
+    open-pull-requests-limit: 2

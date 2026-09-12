@@ -1,10 +1,20 @@
 # AEE 架構與擴充指南
 
-互動版功能分支圖：[開啟 AEE 架構圖](./aee-architecture.html)
+[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+
+互動版功能分支圖：[開啟 AEE 架構圖](../architecture/index.html)
 
 相容性例外：[頭髮與五官變形白名單及退場規則](../持續追蹤/transform-whitelist.md)
 
 左側依功能分類選擇；右側束狀圖依序顯示功能、模組責任與實際檔案。點擊任一模組或檔案節點，下方會列出完整路徑與可開啟的檔案連結。
+
+## 啟動與實際分層
+
+`main.tsx` 先檢查並保留 `window.Liko.AEE` 命名空間，避免重複載入，再動態匯入 `app.tsx`。後者建立 Shadow DOM、掛載 React 與拖曳捲動，最後由 `hooks/index.ts` 集中安裝遊戲整合。這個安裝入口同時協調 controller 初始化、字型、同伴偵測、遮罩與 onboarding，不只是 hooks 清單。
+
+下表是維護方向，並非嚴格依賴規則：`core/externalStore.ts` 與 `settings.ts` 已提供 React 訂閱，`core/dialogs.tsx` 接受 ReactNode；`components/mask-system/` 仍包含非 UI 的渲染、儲存與編輯流程，`features/mask/index.ts` 目前只是公開轉匯出入口。
+
+具體證據與分階段建議見[架構檢查與調整順序](../代改進/architecture-review.md)。
 
 ## 總體資料流
 
@@ -32,7 +42,7 @@ flowchart LR
 
 AEE 不使用 ModSDK `patchFunction` 的字串取代。遊戲函式擴充一律使用可串接的 `hookFunction`。遮罩系統原本名為 `installImagePatch` 的流程實際只安裝 `GLDrawLoadImage`、`DrawGetImage` 與 `GLDrawAppearanceBuild` hooks，現已改名為 `installImageHooks`。
 
-有兩處直接覆寫瀏覽器 prototype，屬於正式渲染邊界而非測試補丁：`renderHooks.ts` 攔截 WebGL matrix/draw call，以實作斜切、鏡像副本與精準拾取；`backgroundController.ts` 在啟用自訂背景期間攔截 canvas `drawImage`，離開畫面即還原原函式。BC 沒有提供對等 hook，兩者都保存原函式、限制作用範圍並在卸載／離開時恢復或停止作用。
+有兩處直接覆寫瀏覽器 prototype，屬於正式渲染邊界而非測試補丁：`renderHooks.ts` 攔截 WebGL matrix/draw call，以實作斜切、鏡像副本與精準拾取；`backgroundController.ts` 在啟用自訂背景期間攔截 canvas `drawImage`，離開畫面即還原原函式。BC 沒有提供對等 hook，兩者都保存原函式並限制作用範圍。背景攔截有畫面離開時的還原流程；WebGL 包裝目前保留至頁面工作階段結束，不能將離開外觀畫面描述為插件卸載。整體尚未提供統一的 dispose 入口。
 
 ## 主要功能入口
 
@@ -84,6 +94,15 @@ flowchart TD
 ```
 
 新增模組時，優先建立單一公開入口；避免 UI 跨越 Controller 直接呼叫 Hook，也避免不同功能各自複製 BC Property 的讀寫規則。
+
+## 文件與驗證維護
+
+- 互動圖的唯一內容來源為 `docs/architecture/index.html`；`docs/aee-architecture.html` 僅保留舊網址轉跳。
+- 圖中的連線表示「功能 → 責任 → 相關檔案」，不是編譯器 import 依賴圖；UI／Core 等標籤描述責任，可能與現有目錄不同。
+- SVG 不設定固定 `viewBox`，與絕對定位的節點共用 CSS 像素座標。修改節點寬度、欄位或間距時須同步調整 `renderGraph()` 的端點。
+- 新增／移動模組時更新圖中的 `features`、本指南及專題文件；各份 Markdown 頂部保留架構圖與索引連結。
+- `npm test` 統一執行回歸腳本；`npm run check:docs`、`npm run check:i18n` 與 `npm run test:architecture` 檢查文件、翻譯及架構圖。CI 與部署條件見 [GitHub Actions 與手動設定](./github-actions.md)。
+- 現有 GitHub Pages 工作流只上傳 `dist/`，沒有發布 `docs/`；本次架構圖可本機直接開啟，不宣稱已上線。正式網站內容在 `site/`、`pages/` 與 `public/`，不應與開發文件入口混淆。
 
 ## 文件索引
 

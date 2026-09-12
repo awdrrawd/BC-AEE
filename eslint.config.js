@@ -8,6 +8,9 @@ import { globalIgnores } from 'eslint/config'
 export default tseslint.config([
   globalIgnores([
       'dist',
+      'playwright-report',
+      'test-results',
+      '.playwright-browsers',
       'src/declare/bcmodsdk.d.ts'
   ]),
   {

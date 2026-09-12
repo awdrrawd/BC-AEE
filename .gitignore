@@ -7,3 +7,8 @@
 !/dist/assets/app.js
 /node_modules
 /BondageClub
+
+# Browser test output and local browser downloads
+/playwright-report/
+/test-results/
+/.playwright-browsers/

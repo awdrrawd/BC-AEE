@@ -1,5 +1,7 @@
 # 頭髮與五官變形白名單
 
+[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+
 ## 用途與範圍
 
 AEE 在 `src/core/bc.ts` 的 `TRANSFORM_GROUP_WHITELIST` 暫時開放以下原生群組：

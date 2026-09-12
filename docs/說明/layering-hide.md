@@ -1,5 +1,7 @@
 # 服裝隱藏（Layering Hide）
 
+[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+
 ## 目的
 
 AEE 允許使用者修改一件服裝原本會隱藏的外觀部位。設定跟隨服裝保存，不依賴 AEE 的一般偏好設定；只安裝 AEE 時也能套用，並與 WCE／LCE 使用的服裝格式相容。

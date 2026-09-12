@@ -10,7 +10,12 @@
     "prebuild": "node scripts/sync-version.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint . && node scripts/check-icon-organization.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node scripts/run-tests.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "test:architecture": "playwright test",
+    "report:size": "node scripts/report-bundle-size.mjs"
   },
   "dependencies": {
     "@bc-studio/oauth-core": "^0.1.2",
@@ -22,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^25.3.0",
     "@types/react": "^19.1.8",

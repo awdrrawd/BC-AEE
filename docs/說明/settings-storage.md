@@ -1,5 +1,7 @@
 # 設定與資料儲存原則
 
+[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+
 ## 本地共用偏好
 
 `src/core/settings.ts` 使用 `localStorage` 的 `liko-aee-settings`，同一瀏覽器設定檔、同一網站來源內的帳戶共用。

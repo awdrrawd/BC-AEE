@@ -1,5 +1,7 @@
 # Icon organization
 
+[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+
 圖示依用途分成四個大類，避免每個小功能各建一層轉送檔案：
 
 1. **AEE**：`components/main-panel/icons/Icons.tsx` 統一匯出 Lucide 圖示；`EditorIcons.tsx` 與 `TransformIcons.tsx` 保存 AEE 自製 React SVG 元件。

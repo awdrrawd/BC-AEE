@@ -24,7 +24,6 @@ import {
 import {runtime} from '@/core/runtime';
 import {forceUiUpdate, syncCanvasRect, syncCurrentContext} from '@/core/context';
 import {clearCopyBuffer} from '@/controllers/copyPasteController';
-import {loadAppearanceQuickSettings, saveAppearanceQuickSetting} from '@/core/appearanceQuickSettings';
 import {getLayerPickerSetting} from '@/core/viewSettings';
 import {
   clampPanelPosition,
@@ -595,7 +594,6 @@ export function resetPriority(layerId: LayerId) {
 }
 
 export function installSettingEffects() {
-  loadAppearanceQuickSettings();
   settings.hoverHighlight.onChange(enabled => {
     if (!enabled) stopHoverHighlight(true);
   });
@@ -923,31 +921,20 @@ export type HoverTryOnScope = 'clothing' | 'item';
 
 export function isHoverTryOnEnabled(scope: HoverTryOnScope): boolean {
   const active = scope === 'clothing'
-    ? runtime.hoverTryOnClothingEnabled
-    : runtime.hoverTryOnItemEnabled;
+    ? settings.hoverTryOnClothingEnabled.get()
+    : settings.hoverTryOnItemEnabled.get();
   return settings.hoverTryOn.get() && active;
 }
 
 export function toggleHoverTryOn(scope: HoverTryOnScope): void {
-  const clothing = scope === 'clothing';
-  const active = clothing
-    ? !runtime.hoverTryOnClothingEnabled
-    : !runtime.hoverTryOnItemEnabled;
-  if (clothing) {
-    runtime.hoverTryOnClothingEnabled = active;
-    saveAppearanceQuickSetting('hoverTryOnClothingEnabled', active);
-  } else {
-    runtime.hoverTryOnItemEnabled = active;
-    saveAppearanceQuickSetting('hoverTryOnItemEnabled', active);
-  }
+  const setting = scope === 'clothing' ? settings.hoverTryOnClothingEnabled : settings.hoverTryOnItemEnabled;
+  const active = setting.toggle();
   const activeScope: HoverTryOnScope = runtime.hoverTryOnRestraint ? 'item' : 'clothing';
   if (!active && runtime.hoverTryOnActive && activeScope === scope) stopHoverTryOn();
 }
 
 export function toggleCharacterPreviewActive(): void {
-  const active = !settings.characterPreviewActive.get();
-  settings.characterPreviewActive.set(active);
-  saveAppearanceQuickSetting('characterPreviewActive', active);
+  settings.characterPreviewActive.toggle();
 }
 
 function restoreTryOnGroup(character: Character, group: AssetGroupName, backup: Item | null) {

@@ -225,8 +225,9 @@ export function installMenuHooks() {
     if (isExtendedFaceGroup) {
       return true;
     }
-    if (isClothingGroup && settings.characterPreviewActive.get()) {
-      return true;
+    if (isClothingGroup) {
+      // Own both states while BC's native preview button is hidden.
+      return settings.characterPreviewActive.get();
     }
     return next(args);
   });

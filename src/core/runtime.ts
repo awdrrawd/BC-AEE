@@ -29,8 +29,6 @@ export interface Runtime {
   hoverCharTimer: number | null;
   hoverCharStartTime: number | null;
   hoverTryOnActive: boolean;
-  hoverTryOnClothingEnabled: boolean;
-  hoverTryOnItemEnabled: boolean;
   hoverTryOnGroup: AssetGroupName | null;
   hoverTryOnAsset: string | null;
   hoverTryOnBackup: Item | null;
@@ -81,8 +79,6 @@ export const runtime: Runtime = {
   hoverCharTimer: null,
   hoverCharStartTime: null,
   hoverTryOnActive: false,
-  hoverTryOnClothingEnabled: false,
-  hoverTryOnItemEnabled: false,
   hoverTryOnGroup: null,
   hoverTryOnAsset: null,
   hoverTryOnBackup: null,

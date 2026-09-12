@@ -2,6 +2,8 @@ import {useSyncExternalStore} from 'react';
 import type {UiStyle} from '@/core/theme';
 import type {LayerPickerMode, WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
 
+// Device/browser preferences are shared across accounts. Account-owned data
+// belongs in wardrobe storage; public capability snapshots belong in aeePresence.
 const STORAGE_KEY = 'liko-aee-settings';
 
 export interface CtrlPos {
@@ -110,6 +112,8 @@ export const settings = {
   itemLayerPickerMode: value<LayerPickerMode>('itemLayerPickerMode', 'off'),
   craftingLayerPickerMode: value<LayerPickerMode>('craftingLayerPickerMode', 'off'),
   hoverTryOn: bool('hoverTryOn', false),
+  hoverTryOnClothingEnabled: bool('hoverTryOnClothingEnabled', false),
+  hoverTryOnItemEnabled: bool('hoverTryOnItemEnabled', false),
   // Master switch: when ON, the character-preview toggle button is shown next
   // to hover-try-on. The in-game button toggles `characterPreviewActive`.
   hairCharacterPreview: bool('hairCharacterPreview', false),

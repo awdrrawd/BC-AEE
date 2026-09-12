@@ -49,7 +49,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:architecture
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: architecture-report
@@ -76,7 +76,7 @@ jobs:
       - run: npm run report:size
       - name: Check generated version metadata
         run: git diff --exit-code -- README.md
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         with:
           path: dist/
@@ -97,7 +97,7 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - name: Deploy checked artifact
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

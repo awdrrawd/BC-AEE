@@ -554,5 +554,9 @@
   "asset-parts-search-title": "Поиск частей", "asset-parts-search-placeholder": "Поиск имени или перевода", "asset-parts-search-kind-all": "Вся одежда и предметы", "asset-parts-search-kind-clothing": "Одежда", "asset-parts-search-kind-item": "Предметы / ограничения", "asset-parts-search-kind-both": "Одежда + предмет", "asset-parts-search-slot-all": "Все слоты", "asset-parts-search-empty": "Совпадений нет", "asset-parts-search-parts": "Все части", "asset-parts-search-preview": "Предпросмотр части", "asset-parts-search-locations": "Доступные слоты",
   "aee-access-unavailable": "Активный AEE не обнаружен (возможно, не установлен или отключён). Дополнительные слоты недоступны.",
   "aee-access-drawing-disabled": "AEE активен, но свободное рисование отключено. Слоты рисования недоступны.",
-  "aee-access-settings-pending": "AEE активен, но настройка свободного рисования ещё не получена. Подождите или убедитесь, что другой игрок обновил AEE."
+  "aee-access-settings-pending": "AEE активен, но настройка свободного рисования ещё не получена. Подождите или убедитесь, что другой игрок обновил AEE.",
+  "wardrobe-saving": "Сохранение гардероба…",
+  "wardrobe-loading": "Загрузка гардероба…",
+  "wardrobe-retry": "Перезагрузить",
+  "wardrobe-sps-overflow": "В старом гардеробе есть данные после ячейки 984. Перенос остановлен, исходные данные сохранены. Экспортируйте или упорядочьте одежду в предыдущей версии."
 }

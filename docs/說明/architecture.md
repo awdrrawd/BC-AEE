@@ -1,8 +1,8 @@
 # AEE 架構與擴充指南
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
-互動版功能分支圖：[開啟 AEE 架構圖](../architecture/index.html)
+互動版功能分支圖：[開啟 AEE 架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 相容性例外：[頭髮與五官變形白名單及退場規則](../持續追蹤/transform-whitelist.md)
 
@@ -102,7 +102,7 @@ flowchart TD
 - SVG 不設定固定 `viewBox`，與絕對定位的節點共用 CSS 像素座標。修改節點寬度、欄位或間距時須同步調整 `renderGraph()` 的端點。
 - 新增／移動模組時更新圖中的 `features`、本指南及專題文件；各份 Markdown 頂部保留架構圖與索引連結。
 - `npm test` 統一執行回歸腳本；`npm run check:docs`、`npm run check:i18n` 與 `npm run test:architecture` 檢查文件、翻譯及架構圖。CI 與部署條件見 [GitHub Actions 與手動設定](./github-actions.md)。
-- 現有 GitHub Pages 工作流只上傳 `dist/`，沒有發布 `docs/`；本次架構圖可本機直接開啟，不宣稱已上線。正式網站內容在 `site/`、`pages/` 與 `public/`，不應與開發文件入口混淆。
+- GitHub Pages 上傳 `dist/`；`scripts/build-docs.mjs` 在 npm postbuild 把架構圖與舊路徑轉址放入 `dist/docs/`。需合併 main 並成功部署後，線上入口才會更新。其他 Markdown 與原始碼仍由 GitHub 提供。
 
 ## 文件索引
 

@@ -1,6 +1,6 @@
 # 頭髮與五官變形白名單
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 ## 用途與範圍
 

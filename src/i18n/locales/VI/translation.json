@@ -554,5 +554,9 @@
   "asset-parts-search-title": "Tìm bộ phận", "asset-parts-search-placeholder": "Tìm tên hoặc tên dịch", "asset-parts-search-kind-all": "Mọi trang phục và vật phẩm", "asset-parts-search-kind-clothing": "Trang phục", "asset-parts-search-kind-item": "Vật phẩm / trói buộc", "asset-parts-search-kind-both": "Trang phục + vật phẩm", "asset-parts-search-slot-all": "Mọi vị trí", "asset-parts-search-empty": "Không có kết quả", "asset-parts-search-parts": "Mọi bộ phận", "asset-parts-search-preview": "Xem trước bộ phận", "asset-parts-search-locations": "Vị trí có sẵn",
   "aee-access-unavailable": "Không phát hiện AEE đang hoạt động (có thể chưa cài hoặc đã tắt). Không thể dùng các ô mở rộng.",
   "aee-access-drawing-disabled": "AEE đang hoạt động nhưng vẽ tự do đã tắt. Không thể dùng các ô vẽ.",
-  "aee-access-settings-pending": "AEE đang hoạt động nhưng chưa nhận được cài đặt vẽ tự do. Hãy chờ hoặc kiểm tra xem người chơi kia đã cập nhật AEE chưa."
+  "aee-access-settings-pending": "AEE đang hoạt động nhưng chưa nhận được cài đặt vẽ tự do. Hãy chờ hoặc kiểm tra xem người chơi kia đã cập nhật AEE chưa.",
+  "wardrobe-saving": "Đang lưu tủ đồ…",
+  "wardrobe-loading": "Đang tải tủ đồ…",
+  "wardrobe-retry": "Tải lại",
+  "wardrobe-sps-overflow": "Tủ đồ cũ có dữ liệu sau ô 984. Đã dừng chuyển đổi và giữ nguyên dữ liệu gốc. Hãy xuất hoặc sắp xếp lại trang phục bằng phiên bản trước."
 }

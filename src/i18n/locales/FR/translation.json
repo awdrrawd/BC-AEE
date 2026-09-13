@@ -554,5 +554,9 @@
   "asset-parts-search-title": "Recherche de parties", "asset-parts-search-placeholder": "Rechercher le nom ou sa traduction", "asset-parts-search-kind-all": "Tous les vêtements et objets", "asset-parts-search-kind-clothing": "Vêtements", "asset-parts-search-kind-item": "Objets / contraintes", "asset-parts-search-kind-both": "Vêtement + objet", "asset-parts-search-slot-all": "Tous les emplacements", "asset-parts-search-empty": "Aucun résultat", "asset-parts-search-parts": "Toutes les parties", "asset-parts-search-preview": "Aperçu de la partie", "asset-parts-search-locations": "Emplacements disponibles",
   "aee-access-unavailable": "Aucun AEE actif détecté (peut-être non installé ou désactivé). Les emplacements supplémentaires sont indisponibles.",
   "aee-access-drawing-disabled": "AEE est actif, mais le dessin libre est désactivé. Les emplacements de dessin sont indisponibles.",
-  "aee-access-settings-pending": "AEE est actif, mais le réglage du dessin libre n’est pas encore disponible. Patientez ou vérifiez que l’autre personne a mis AEE à jour."
+  "aee-access-settings-pending": "AEE est actif, mais le réglage du dessin libre n’est pas encore disponible. Patientez ou vérifiez que l’autre personne a mis AEE à jour.",
+  "wardrobe-saving": "Enregistrement de la garde-robe…",
+  "wardrobe-loading": "Chargement de la garde-robe…",
+  "wardrobe-retry": "Recharger",
+  "wardrobe-sps-overflow": "L’ancienne garde-robe contient des données au-delà de l’emplacement 984. La migration est arrêtée et les originaux sont conservés. Exportez ou réorganisez les tenues avec la version précédente."
 }

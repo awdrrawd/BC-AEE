@@ -554,5 +554,9 @@
   "asset-parts-search-title": "Teilesuche", "asset-parts-search-placeholder": "Name oder Übersetzung suchen", "asset-parts-search-kind-all": "Alle Kleidung und Gegenstände", "asset-parts-search-kind-clothing": "Kleidung", "asset-parts-search-kind-item": "Gegenstände / Fesseln", "asset-parts-search-kind-both": "Kleidung + Gegenstand", "asset-parts-search-slot-all": "Alle Plätze", "asset-parts-search-empty": "Keine passenden Einträge", "asset-parts-search-parts": "Alle Teile", "asset-parts-search-preview": "Teilevorschau", "asset-parts-search-locations": "Verfügbare Plätze",
   "aee-access-unavailable": "Kein aktives AEE erkannt (möglicherweise nicht installiert oder deaktiviert). Erweiterte Slots sind nicht verfügbar.",
   "aee-access-drawing-disabled": "AEE ist aktiv, aber freies Zeichnen ist deaktiviert. Zeichen-Slots sind nicht verfügbar.",
-  "aee-access-settings-pending": "AEE ist aktiv, aber die Einstellung für freies Zeichnen fehlt noch. Bitte warten oder prüfen, ob die andere Person AEE aktualisiert hat."
+  "aee-access-settings-pending": "AEE ist aktiv, aber die Einstellung für freies Zeichnen fehlt noch. Bitte warten oder prüfen, ob die andere Person AEE aktualisiert hat.",
+  "wardrobe-saving": "Garderobe wird gespeichert…",
+  "wardrobe-loading": "Garderobe wird geladen…",
+  "wardrobe-retry": "Neu laden",
+  "wardrobe-sps-overflow": "Die alte Garderobe enthält Daten nach Platz 984. Die Migration wurde gestoppt und die Originaldaten bleiben erhalten. Bitte mit der vorherigen Version exportieren oder neu ordnen."
 }

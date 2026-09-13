@@ -47,8 +47,8 @@ export function ImportDialog({initial, onClose}: { initial: readonly PendingImpo
     if (code?.trim()) load(readImportCode(code.trim()));
   };
 
-  const confirm = () => {
-    applyImports(entries.filter(entry => entry.selected && entry.target >= 0), source);
+  const confirm = async () => {
+    if (!await applyImports(entries.filter(entry => entry.selected && entry.target >= 0), source)) return;
     onClose();
   };
 

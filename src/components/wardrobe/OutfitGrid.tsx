@@ -224,8 +224,8 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
     }
     // Convert the screen-space delta into stage units so the grid tracks the finger 1:1.
     const travel = dy / (scale || 1);
-    const max = current > 0 ? height : 0;
-    const min = current < pages - 1 ? -height : 0;
+    const max = pages > 1 ? height : 0;
+    const min = pages > 1 ? -height : 0;
     dragY.current = clamp(travel, min, max);
     // Mount only the neighbour actually being revealed (drag down → prev above, up → next below).
     if (dragY.current > 0) setNeighborDir(-1);
@@ -240,10 +240,10 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
     dragging.current = false;
     const d = dragY.current;
     const threshold = height * COMMIT_FRACTION;
-    if (d >= threshold && current > 0) {
+    if (d >= threshold && pages > 1) {
       pending.current = -1;
       paint(height, true);
-    } else if (d <= -threshold && current < pages - 1) {
+    } else if (d <= -threshold && pages > 1) {
       pending.current = 1;
       paint(-height, true);
     } else {
@@ -274,8 +274,9 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
   };
 
   const renderPage = (pageIndex: number) => {
-    if (pageIndex < 0 || pageIndex >= pages) return null;
-    const cards = slots.slice(pageIndex * size, pageIndex * size + size);
+    // Keep the neighbour at its virtual position while displaying the wrapped page.
+    const actualPage = ((pageIndex % pages) + pages) % pages;
+    const cards = slots.slice(actualPage * size, actualPage * size + size);
     return <div
       key={pageIndex}
       className="absolute inset-x-0 grid gap-2.5"

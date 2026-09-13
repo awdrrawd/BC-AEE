@@ -1,7 +1,6 @@
-// Per-character visible overlay + mask-shape composites. Both decode each
-// character's own Property.CustomDraw (BC caches GL layer textures by URL
-// globally, so a real per-character layer is impossible — we read each
-// character's synced drawing here instead).
+// Per-character image-provider and mask-shape composites. Both decode each
+// character's own Property.CustomDraw/SPS reference; the provider supplies the
+// result to the real Vis or Mask companion layer.
 
 import type {AnyProps} from './types';
 import {
@@ -9,7 +8,7 @@ import {
 } from '../constants';
 import {MaskImageProviders, TRANSPARENT_DATAURL, bustMaskTexture, getBuildingChar} from '../masking';
 import {LRUCache} from '../lruCache';
-import {slots, A, slotComposite, findSlotItem} from './slots';
+import {slots, getActiveSession, isSessionPreviewReady, slotComposite, findSlotItem} from './slots';
 import {isSlotMasked} from './maskToggle';
 import {safeCurrentCharacter} from './currentCharacter';
 import {settings} from '@/core/settings';
@@ -24,7 +23,10 @@ slots.forEach((slot) => {
     if (!settings.enableFreeDraw.get()) return TRANSPARENT_DATAURL;
     const cur = safeCurrentCharacter();
     const C = getBuildingChar() || cur;
-    if (A === slot && C === cur) return slotComposite(slot); // live during local edit
+    const session = getActiveSession();
+    if (isSessionPreviewReady(session) && session.slot === slot && C === session.character) {
+      return slotComposite(slot);
+    }
     const item = C ? findSlotItem(C, slot) : null;
     const p = item?.Property as AnyProps | undefined;
     const compressed = p?.[PROP_KEY] as string | undefined;
@@ -119,7 +121,7 @@ function getOrBuildMaskComposite(compressed: string, offX: number, offY: number)
 export function renderOverlay(C: Character | null) {
   if (!settings.enableFreeDraw.get()) return;
   if (!C || !Array.isArray(C.Appearance)) return;
-  const cur = safeCurrentCharacter();
+  const session = getActiveSession();
   for (const slot of slots) {
     const item = findSlotItem(C, slot);
     if (!item) continue;
@@ -127,7 +129,7 @@ export function renderOverlay(C: Character | null) {
     const compressed = p?.[PROP_KEY] as string | undefined;
     const source = compressed || cachedSpsDrawUrl(p);
     const offX = (p?.OffsetX as number) || 0, offY = (p?.OffsetY as number) || 0;
-    const editingThis = (A === slot && C === cur);
+    const editingThis = isSessionPreviewReady(session) && session.slot === slot && C === session.character;
 
     // Build this character's mask-shape composite (needed by the mask provider,
     // for masked characters too). Skip while locally editing (live shape used).

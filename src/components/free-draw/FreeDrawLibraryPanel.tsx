@@ -2,7 +2,9 @@ import {useCallback, useEffect, useMemo, useState, type SyntheticEvent} from 're
 import {t} from '@/i18n/i18n';
 import {askConfirm, askText} from '@/core/prompts';
 import {showToast} from '@/util/toast';
-import {A, invalidateSlot, pushUndo} from '@/components/mask-system/freeDraw/slots';
+import {
+  A, getActiveSession, invalidateSlot, isCurrentSession, pushUndo,
+} from '@/components/mask-system/freeDraw/slots';
 import {afterEdit} from '@/components/mask-system/freeDraw/editing';
 import {State} from '@/components/mask-system/freeDraw/editorState';
 import {
@@ -33,7 +35,7 @@ export function FreeDrawLibraryPanel() {
   const [, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
-  const [usage, setUsage] = useState(0);
+  const [usage, setUsage] = useState<number | null>(null);
 
   const libraryError = useCallback((error: unknown) => {
     console.warn('🐈‍⬛ [AEE] Free-draw library operation failed', error);
@@ -44,9 +46,15 @@ export function FreeDrawLibraryPanel() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setTick(value => value + 1);
-      if (!A) return;
-      try { setUsage(projectedAppearanceBytes(canvasEmbeddedData(A.canvas))); }
-      catch { setUsage(0); }
+      const session = getActiveSession();
+      if (!session) { setUsage(null); return; }
+      try {
+        const compressed = session.hasDrawing ? canvasEmbeddedData(session.slot.canvas) : '';
+        setUsage(projectedAppearanceBytes(compressed, session));
+      } catch {
+        // Unknown is not a measured zero or a fabricated threshold value.
+        setUsage(null);
+      }
     }, 500);
     return () => window.clearInterval(timer);
   }, []);
@@ -58,20 +66,22 @@ export function FreeDrawLibraryPanel() {
   }, [activeSlot, libraryError]);
 
   const recall = async (index: number) => {
-    if (!A || busy) return;
+    const session = getActiveSession();
+    if (!session || session.phase !== 'editing' || busy) return;
     setBusy(true);
     try {
       const blob = await recallLibrarySlot(index);
-      if (!blob) return;
+      if (!blob || !isCurrentSession(session) || session.phase !== 'editing') return;
       const url = URL.createObjectURL(blob);
       try {
         const image = await new Promise<HTMLImageElement>((resolve, reject) => {
           const value = new Image(); value.onload = () => resolve(value); value.onerror = reject; value.src = url;
         });
+        if (!isCurrentSession(session) || session.phase !== 'editing') return;
         pushUndo();
-        A.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
-        A.ctx.drawImage(image, 0, 0, BOARD_W, BOARD_H);
-        invalidateSlot(A);
+        session.slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
+        session.slot.ctx.drawImage(image, 0, 0, BOARD_W, BOARD_H);
+        invalidateSlot(session.slot);
         afterEdit();
       } finally { URL.revokeObjectURL(url); }
     } catch (error) { libraryError(error); }
@@ -79,12 +89,13 @@ export function FreeDrawLibraryPanel() {
   };
 
   const save = async (index: number, currentName: string) => {
-    if (!A || busy) return;
+    const session = getActiveSession();
+    if (!session || session.phase !== 'editing' || busy) return;
     const name = await askText(t('free-draw-library-name-prompt'), currentName || t('free-draw-library-default-name', {slot: index + 1}));
-    if (name === null || !A) return;
+    if (name === null || !isCurrentSession(session) || session.phase !== 'editing') return;
     setBusy(true);
     try {
-      await saveLibrarySlot(index, name, A.canvas);
+      await saveLibrarySlot(index, name, session.slot.canvas);
       showToast(t('free-draw-library-saved'));
       setTick(value => value + 1);
     } catch (error) { libraryError(error); }
@@ -108,8 +119,8 @@ export function FreeDrawLibraryPanel() {
   const scaleY = rect.height / 1000;
   const pages = Array.from({length: 6}, (_, page) => peekLibraryPage(page));
   const entries = pages.every((value): value is LibraryEntry[] => value !== null) ? pages.flat() : null;
-  const accent = usage >= APPEARANCE_UPLOAD_BYTES ? '#ef4444' : usage >= APPEARANCE_WARN_BYTES ? '#facc15' : '#22c55e';
-  const pct = Math.min(100, usage / APPEARANCE_UPLOAD_BYTES * 100);
+  const accent = usage === null ? '#facc15' : usage >= APPEARANCE_UPLOAD_BYTES ? '#ef4444' : usage >= APPEARANCE_WARN_BYTES ? '#facc15' : '#22c55e';
+  const pct = Math.min(100, (usage ?? 0) / APPEARANCE_UPLOAD_BYTES * 100);
   const stop = (event: SyntheticEvent) => event.stopPropagation();
 
   return <section className="fixed z-1000001 flex h-[1000px] w-[430px] flex-col overflow-hidden border-r-2 border-[var(--aee-accent)] bg-[#100d18]/96 text-lg text-white shadow-2xl backdrop-blur"
@@ -150,7 +161,7 @@ export function FreeDrawLibraryPanel() {
 
       <footer className="pointer-events-none shrink-0 border-t-2 bg-[#17131f] px-4 py-4" style={{borderColor: accent}}>
       <div className="mb-2 flex items-center justify-between text-lg font-bold">
-        <span>{t('free-draw-size-title')}</span><span style={{color: accent}}>{formatBytesK(usage)} / 160K</span>
+        <span>{t('free-draw-size-title')}</span><span style={{color: accent}}>{usage === null ? '—' : formatBytesK(usage)} / 160K</span>
       </div>
       <div className="h-3 overflow-hidden rounded-full bg-black/60"><div className="h-full rounded-full transition-[width] duration-300" style={{width: `${pct}%`, backgroundColor: accent}}/></div>
       </footer>

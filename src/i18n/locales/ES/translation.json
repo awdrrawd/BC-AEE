@@ -554,5 +554,9 @@
   "asset-parts-search-title": "Buscar partes", "asset-parts-search-placeholder": "Buscar nombre o traducción", "asset-parts-search-kind-all": "Toda la ropa y objetos", "asset-parts-search-kind-clothing": "Ropa", "asset-parts-search-kind-item": "Objetos / restricciones", "asset-parts-search-kind-both": "Ropa + objeto", "asset-parts-search-slot-all": "Todas las posiciones", "asset-parts-search-empty": "Sin resultados", "asset-parts-search-parts": "Todas las partes", "asset-parts-search-preview": "Vista previa", "asset-parts-search-locations": "Posiciones disponibles",
   "aee-access-unavailable": "No se detecta AEE activo (puede no estar instalado o estar desactivado). Las ranuras adicionales no están disponibles.",
   "aee-access-drawing-disabled": "AEE está activo, pero el dibujo libre está desactivado. Las ranuras de dibujo no están disponibles.",
-  "aee-access-settings-pending": "AEE está activo, pero aún no se ha recibido la opción de dibujo libre. Espera o comprueba que la otra persona haya actualizado AEE."
+  "aee-access-settings-pending": "AEE está activo, pero aún no se ha recibido la opción de dibujo libre. Espera o comprueba que la otra persona haya actualizado AEE.",
+  "wardrobe-saving": "Guardando el armario…",
+  "wardrobe-loading": "Cargando el armario…",
+  "wardrobe-retry": "Recargar",
+  "wardrobe-sps-overflow": "El armario antiguo contiene datos después del espacio 984. Se detuvo la migración y se conservaron los originales. Exporta u organiza la ropa con la versión anterior."
 }

@@ -116,11 +116,6 @@ export function resetWardrobeScreen(target: Character) {
   dismissPrompt();
 }
 
-/** Marks that a try-on changed the worn look, so the revert control can appear. */
-export function markTriedOn() {
-  if (!getWardrobeState().triedOn) setWardrobeState({triedOn: true});
-}
-
 /** Restores the character to exactly how it looked when the wardrobe was opened. */
 export function revertTryOn() {
   const {entryAppearance, target} = getWardrobeState();
@@ -149,7 +144,11 @@ export function setSearch(search: string) {
 
 export function setWardrobeSource(source: WardrobeSourceId) {
   if (source === 'sps' && !settings.wardrobeSpsEnabled.get()) return;
-  if (source === getWardrobeState().source) return;
+  if (getWardrobeState().saving) return;
+  if (source === getWardrobeState().source) {
+    if (source === 'sps' && getWardrobeState().spsStatus === 'error') reloadWardrobeData();
+    return;
+  }
   settings.wardrobeSource.set(source);
   setWardrobeState({source, selection: -1, name: targetCharacterName(), editing: false, offset: 0, reorderMode: false, reorderFirst: -1});
   bumpWardrobeData();
@@ -172,7 +171,9 @@ export function setSortMode(sortMode: WardrobeSortMode) {
 }
 
 export function goToPage(page: number, pageCount: number) {
-  setWardrobeState({offset: clamp(page, 0, pageCount - 1) * perPage()});
+  const count = Math.max(1, pageCount);
+  const wrapped = ((page % count) + count) % count;
+  setWardrobeState({offset: wrapped * perPage()});
 }
 
 /** The dressed character's name, used as the default outfit name for empty/unselected slots. */
@@ -257,8 +258,9 @@ export function markOrSwap(index: number) {
     return;
   }
   if (reorderFirst === index) return;
-  swapOutfits(reorderFirst, index);
-  setWardrobeState({reorderMode: false, reorderFirst: -1});
+  void swapOutfits(reorderFirst, index).then(saved => {
+    if (saved) setWardrobeState({reorderMode: false, reorderFirst: -1});
+  });
 }
 
 export function setZoom(zoomPct: number) {

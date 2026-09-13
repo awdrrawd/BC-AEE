@@ -1,6 +1,6 @@
 # GitHub Actions 與手動設定
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 設定日期：2026-09-12。程式與工作流已寫入專案；需要提交並推送到 GitHub 才會開始執行。本文件沒有宣稱已變更遠端 Settings 或成功部署。
 
@@ -18,7 +18,7 @@
 
 `pull_request` 指向 main 時執行檢查與建置；main push 執行檢查、建置與部署。Actions 頁面的 **Run workflow** 可手動執行；選擇 main 會在通過後部署，其他分支只檢查與建置。新的 PR 提交取消同一 PR 的舊檢查，main 執行不主動中止進行中的部署。
 
-瀏覽器測試直接開啟本機 HTML，不需要 BC 帳號、遊戲伺服器或另起網站。這些測試不取代遊戲內及第三方模組驗收。`docs/` 本次仍沒有納入 Pages artifact，架構圖依然可直接在本機開啟。
+瀏覽器測試直接開啟本機 HTML，不需要 BC 帳號、遊戲伺服器或另起網站。這些測試不取代遊戲內及第三方模組驗收。`npm run build` 的 postbuild 會把架構圖與舊路徑轉址放入 `dist/docs/`，隨既有 Pages artifact 發布。Markdown 與原始碼仍在 GitHub 檢視；發布版架構圖中的檔案連結會指向倉庫。
 
 ## 你需要在 GitHub 設定的部分
 

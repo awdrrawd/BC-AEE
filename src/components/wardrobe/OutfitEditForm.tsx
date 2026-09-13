@@ -13,9 +13,8 @@ export function OutfitEditForm({slot}: { slot: number }) {
   const [name, setName] = useState(() => slotName(slot));
   const [tags, setTags] = useState(() => getSlotMeta(activeWardrobeSource().id, slot).tags);
 
-  const save = () => {
-    saveOutfitMeta(slot, name, tags);
-    stopEditingOutfit();
+  const save = async () => {
+    if (await saveOutfitMeta(slot, name, tags)) stopEditingOutfit();
   };
 
   return <>

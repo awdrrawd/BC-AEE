@@ -1,14 +1,11 @@
-// Free-draw ×3. Each slot = TWO assets:
+// Free-draw ×3. Each slot = THREE assets:
 //   - DrawingBoard (plain Extended item, in ItemCanvasN) → our drawing editor.
 //     The drawing itself lives in its Property.CustomDraw (compressed dataURL).
 //   - Mask companion (ItemCanvasNMask, hidden group) → destination-out hiding.
+//   - Vis companion (ItemCanvasNVis, hidden group) → real sortable draw layer.
 //
-// The VISIBLE drawing is painted PER-CHARACTER in a DrawCharacter hook
-// (renderOverlay), decoding each character's own Property.CustomDraw. We do NOT
-// use a real image layer for it: BC caches a layer's GL texture by URL globally,
-// so every character sharing the asset would show one image and remote viewers
-// couldn't see per-character drawings. The manual overlay reads each character's
-// synced Property, so other AEE players see everyone's drawings.
+// Both companions obtain their per-character texture from MaskImageProviders;
+// renderOverlay primes decoded-image/composite caches for those providers.
 //
 // Transforms are self-contained: move = offsetX/Y (drag with the 位移 mode or
 // the arrow buttons); rotate/scale/mirror bake into the board-canvas pixels.
@@ -48,7 +45,10 @@ export function installFreeDrawCallbacks() {
         if (typeof DialogLeaveFocusItem === 'function') DialogLeaveFocusItem();
         return;
       }
-      try { slotLoad(i); } catch (e) { console.error('[AEE Mask] Load 錯誤：', e); }
+      void slotLoad(i).catch(e => {
+        console.error('[AEE Mask] Load 錯誤：', e);
+        slotExit();
+      });
     };
     g[`${prefix}Draw`] = () => { try { slotDraw(); } catch (e) { console.error('[AEE Mask] Draw 錯誤：', e); } };
     g[`${prefix}Click`] = () => { try { slotClick(); } catch (e) { console.error('[AEE Mask] Click 錯誤：', e); } };

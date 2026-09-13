@@ -79,15 +79,16 @@ function encode(entries: LibraryEntry[]): ArrayBuffer {
 
 async function loadGroup(group: number): Promise<LibraryEntry[]> {
   if (group < 0 || group >= GROUPS) throw new Error('bad_library_group');
+  const owner = currentOwner();
   const hit = groups.get(group);
   if (hit) return hit;
   const active = pending.get(group);
   if (active) return active;
-  const owner = currentOwner();
   const work = readSpsPublic(owner, `${PREFIX}${group + 1}`).then(decode).then(entries => {
+    if (Player?.MemberNumber !== owner || cachedOwner !== owner) throw new Error('sps_account_changed');
     groups.set(group, entries);
     return entries;
-  }).finally(() => pending.delete(group));
+  }).finally(() => { if (pending.get(group) === work) pending.delete(group); });
   pending.set(group, work);
   return work;
 }
@@ -105,25 +106,32 @@ function canvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('canvas_encode_failed')), 'image/png'));
 }
 
-export async function saveLibrarySlot(index: number, name: string, canvas: HTMLCanvasElement): Promise<void> {
+async function saveLibrarySlotImpl(index: number, name: string, canvas: HTMLCanvasElement): Promise<void> {
   const group = Math.floor(index / PER_GROUP);
   const local = index % PER_GROUP;
-  const entries = [...await loadGroup(group)];
+  const check = libraryIdentity();
   const blob = await canvasBlob(canvas);
+  check();
+  const entries = [...await loadGroup(group)];
   if (blob.size > IMAGE_LIMIT) throw new Error('freedraw_library_image_too_large');
   const data = new Uint8Array(await blob.arrayBuffer());
   const hash = hex(new Uint8Array(await crypto.subtle.digest('SHA-256', data)));
   entries[local] = {name: name.trim().slice(0, 60), mime: blob.type || 'image/png', hash, data};
+  check();
   await writeSpsPublic(`${PREFIX}${group + 1}`, encode(entries));
+  check();
   groups.set(group, entries);
 }
 
-export async function clearLibrarySlot(index: number): Promise<void> {
+async function clearLibrarySlotImpl(index: number): Promise<void> {
   const group = Math.floor(index / PER_GROUP);
   const local = index % PER_GROUP;
+  const check = libraryIdentity();
   const entries = [...await loadGroup(group)];
   entries[local] = empty();
+  check();
   await writeSpsPublic(`${PREFIX}${group + 1}`, encode(entries));
+  check();
   groups.set(group, entries);
 }
 
@@ -131,4 +139,23 @@ export async function recallLibrarySlot(index: number): Promise<Blob | null> {
   const entries = await loadGroup(Math.floor(index / PER_GROUP));
   const entry = entries[index % PER_GROUP];
   return entry?.data.length ? new Blob([entry.data], {type: entry.mime || 'image/png'}) : null;
+}
+
+function libraryIdentity() {
+  const player = Player;
+  const owner = currentOwner();
+  return () => { if (Player !== player || Player.MemberNumber !== owner) throw new Error('sps_account_changed'); };
+}
+let writing = false;
+async function libraryWrite(index: number, work: () => Promise<void>) {
+  if (!Number.isInteger(index) || index < 0 || index >= GROUPS * PER_GROUP) throw new Error('bad_library_slot');
+  if (writing) throw new Error('sps_busy');
+  writing = true;
+  try { await work(); } finally { writing = false; }
+}
+export function saveLibrarySlot(index: number, name: string, canvas: HTMLCanvasElement): Promise<void> {
+  return libraryWrite(index, () => saveLibrarySlotImpl(index, name, canvas));
+}
+export function clearLibrarySlot(index: number): Promise<void> {
+  return libraryWrite(index, () => clearLibrarySlotImpl(index));
 }

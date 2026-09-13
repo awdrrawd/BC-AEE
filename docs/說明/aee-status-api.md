@@ -1,6 +1,6 @@
 # AEE 狀態 API 與分享資料
 
-[文件索引](../README.md) · [互動架構圖](../architecture/index.html)
+[文件索引](../README.md) · [互動架構圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)
 
 ## 公開 API
 

@@ -16,6 +16,7 @@
 
 已實作功能的架構、資料格式與操作／維護說明。
 
+- [DEV 功能移植驗收指南](./說明/dev-acceptance.md)
 - [GitHub Actions 與手動設定](./說明/github-actions.md)
 - [架構與擴充指南](./說明/architecture.md)
 - [互動式功能分支圖](https://awdrrawd.github.io/BC-AEE/docs/architecture/index.html)

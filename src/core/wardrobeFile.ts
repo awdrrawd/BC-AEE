@@ -1,5 +1,6 @@
 import type {PendingImport, WardrobeSlotMeta} from '@/core/types';
 import {decodeBundles} from '@/util/appearanceBundle';
+import {recoverSpsArchive} from '@/core/spsMaintenance';
 import {activeWardrobeSource, getSlotMeta, type WardrobeSource} from '@/core/wardrobeStorage';
 
 const FILE_FORMAT = 'aee-wardrobe';
@@ -86,7 +87,7 @@ export function downloadJson(fileName: string, json: string) {
   downloadBlob(fileName, new Blob([json], {type: 'application/json'}));
 }
 
-export function parseWardrobeFile(text: string): PendingImport[] | null {
+export async function parseWardrobeFile(text: string): Promise<PendingImport[] | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
@@ -97,6 +98,10 @@ export function parseWardrobeFile(text: string): PendingImport[] | null {
     /* not JSON: fall through to the code reader */
   }
 
+  if (parsed && typeof parsed === 'object' && 'format' in parsed && parsed.format === 'aee-sps-archive') {
+    // Invalid archives must fail as a whole, rather than silently importing a partial snapshot.
+    return recoverSpsArchive(parsed);
+  }
   const fromFile = parsed && readWardrobeFile(parsed);
   if (fromFile?.length) return fromFile;
 

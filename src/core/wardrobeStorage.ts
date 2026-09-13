@@ -303,18 +303,21 @@ const localSource: WardrobeSource = {
 let spsStore: SpsWardrobe | null = null;
 let spsAccount: number | undefined;
 let spsLoading: Promise<void> | null = null;
+let spsPlayer: typeof Player | undefined;
 function spsReady() {
-  return !!spsStore?.ready && spsAccount === Player?.MemberNumber
+  return !!spsStore?.ready && spsPlayer === Player && spsAccount === Player?.MemberNumber
     && getWardrobeState().spsStatus === 'ready';
 }
 function reloadSpsWardrobe() {
+  const player = Player;
   const owner = Player?.MemberNumber;
-  if (spsLoading && owner === spsAccount) return;
-  if (getWardrobeState().saving && owner === spsAccount) return;
+  if (spsLoading && owner === spsAccount && spsPlayer === player) return;
+  if (getWardrobeState().saving && owner === spsAccount && spsPlayer === player) return;
+  spsPlayer = player;
   spsAccount = owner;
   const store = new SpsWardrobe({read: readSpsText, write: writeSpsText, list: listSpsKeys,
     check() {
-      if (typeof owner !== 'number' || Player?.MemberNumber !== owner || spsStore !== store) {
+      if (typeof owner !== 'number' || Player !== player || Player?.MemberNumber !== owner || spsStore !== store) {
         throw new Error('sps_account_changed');
       }
     },

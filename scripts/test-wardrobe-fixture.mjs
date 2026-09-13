@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createWardrobeTestFile} from './create-wardrobe-test-file.mjs';
+const input={format:'aee-wardrobe',version:1,slots:[{outfit:[{Group:'Cloth',Name:'Sample',Property:{Color:'red'}}]}]};
+const result=createWardrobeTestFile(input,89);
+assert.equal(result.slots.length,89);
+assert.equal(result.slots[88].index,88);
+assert.equal(result.slots[0].favorite,true);
+assert.equal(result.slots[1].favorite,false);
+result.slots[0].outfit[0].Property.Color='blue';
+assert.equal(input.slots[0].outfit[0].Property.Color,'red');
+assert.equal(result.slots[1].outfit[0].Property.Color,'red');
+assert.equal(createWardrobeTestFile(input,99,90).slots.at(-1).index,188);
+assert.equal(createWardrobeTestFile(input,984).slots.at(-1).index,983);
+for(const [count,start] of [[0,0],[985,0],[2,983],[1,-1],[1.5,0]]) assert.throws(()=>createWardrobeTestFile(input,count,start));
+assert.throws(()=>createWardrobeTestFile({format:'aee-sps-archive'},1));
+console.log('Wardrobe test fixtures: valid ranges, metadata and independent copies passed');

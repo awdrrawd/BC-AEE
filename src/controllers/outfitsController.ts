@@ -438,7 +438,7 @@ function writeWardrobeFile(slots: ReturnType<typeof collectWardrobeSlots>, sourc
 export async function readImportFile(file: File): Promise<PendingImport[] | null> {
   let outfits: PendingImport[] | null = null;
   try {
-    outfits = parseWardrobeFile(await file.text());
+    outfits = await parseWardrobeFile(await file.text());
   } catch (error) {
     console.warn('🐈‍⬛ [AEE] Failed to read the wardrobe file', error);
   }

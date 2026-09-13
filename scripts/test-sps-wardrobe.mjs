@@ -69,3 +69,17 @@ await assert.rejects(new SpsWardrobe(io).load(),/invalid_legacy/);
 data.clear();data.set('liko-aee:wardon/5',legacy);
 await assert.rejects(new SpsWardrobe(io).load(),/overflow/);
 console.log('SPS capacity, atomic publication, failures, identity and legacy preservation passed');
+// An observed concurrent publication during load must leave the snapshot non-editable.
+const published=JSON.stringify({version:2,revision:'a',capacity:100,slots:{}});
+let indexReads=0;
+const raced=new SpsWardrobe({...io,read:async()=>++indexReads===1?published:published.replace('"a"','"b"')});
+await assert.rejects(raced.load(),/remote_changed/);
+assert.equal(raced.ready,false);
+// Publication while migrating an index-less wardrobe is also detected.
+indexReads=0;
+const legacyRace=new SpsWardrobe({...io,list:async()=>[],read:async()=>++indexReads===1?null:published});
+await assert.rejects(legacyRace.load(),/remote_changed/);
+assert.equal(legacyRace.ready,false);
+const invalid=new SpsWardrobe({...io,read:async()=> 'null'});
+await assert.rejects(invalid.load(),/invalid_index/);
+console.log('SPS loading detects observed concurrent publication and malformed index');

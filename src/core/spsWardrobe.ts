@@ -31,7 +31,7 @@ function slot(value: unknown): SpsSlot {
 }
 function manifest(text: string): Manifest {
   const data = JSON.parse(text) as Manifest;
-  if (data.version !== 2 || typeof data.revision !== 'string' || !Number.isInteger(data.capacity)
+  if (!data || data.version !== 2 || typeof data.revision !== 'string' || !Number.isInteger(data.capacity)
     || data.capacity < 100 || data.capacity > SPS_MAX_SLOTS
     || (data.capacity !== SPS_MAX_SLOTS && data.capacity % 100 !== 0)
     || !data.slots || typeof data.slots !== 'object' || Array.isArray(data.slots)) throw new Error('sps_invalid_index');
@@ -79,7 +79,7 @@ export class SpsWardrobe {
         const rawChunk = await this.read(key);
         if (rawChunk === null) throw new Error('sps_missing_legacy_chunk');
         const data = JSON.parse(rawChunk) as {version: number; outfits: unknown[]; names: unknown[]};
-        if (data.version !== 1 || !Array.isArray(data.outfits) || !Array.isArray(data.names)
+        if (!data || data.version !== 1 || !Array.isArray(data.outfits) || !Array.isArray(data.names)
           || data.outfits.length > 300 || data.names.length > 300) throw new Error('sps_invalid_legacy_chunk');
         const base = (Number(key.split('/').at(-1)) - 1) * 300;
         for (let i = 0; i < Math.max(data.outfits.length, data.names.length); i++) {
@@ -91,6 +91,9 @@ export class SpsWardrobe {
       }
       this.index = null;
     }
+    // Do not expose an already superseded snapshot as editable. This detects observed
+    // changes only: eventually consistent reads cannot provide a server-side CAS.
+    if (await this.read(SPS_MANIFEST_KEY) !== raw) throw new Error('sps_remote_changed');
     const capacity = spsCapacity(rows.filter(row => row?.outfit.length).length, rows.length - 1);
     this.rows = Array.from({length: capacity}, (_, i) => rows[i] ?? emptySpsSlot());
     this.indexText = raw;

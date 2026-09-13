@@ -574,5 +574,13 @@
   "wardrobe-saving": "正在儲存衣櫃…",
   "wardrobe-loading": "正在載入衣櫃…",
   "wardrobe-retry": "重新載入",
-  "wardrobe-sps-overflow": "舊衣櫃在第 984 格以後仍有資料，已停止遷移並保留來源。請先使用舊版匯出或整理服裝。"
+  "wardrobe-sps-overflow": "舊衣櫃在第 984 格以後仍有資料，已停止遷移並保留來源。請先使用舊版匯出或整理服裝。",
+  "wardrobe-maintenance-failed": "維護失敗。請保留備份，重新載入衣櫃後再試。",
+  "wardrobe-archive-done": "已匯出封存：有 {{n}} 筆紀錄未被目前讀取的索引引用，未刪除任何資料。",
+  "wardrobe-drawing-none": "此衣櫃沒有內嵌的 AEE 舊繪圖。",
+  "wardrobe-drawing-confirm": "要先匯出衣櫃備份，再將 {{n}} 張內嵌繪圖上傳至 SPS 公開圖片空間嗎？全部上傳成功後才儲存衣櫃引用。請保留備份，舊版 AEE 可能無法讀取新引用。",
+  "wardrobe-drawing-done": "繪圖已遷移並儲存衣櫃，請保留下載的備份。",
+  "wardrobe-maintenance-hint": "操作針對目前選取的衣櫃。SPS 封存可透過衣櫃匯入選擇服裝與還原位置；匯出不會刪除資料。",
+  "wardrobe-drawing-migrate": "備份並遷移舊繪圖",
+  "wardrobe-archive-export": "匯出 SPS 封存與報告"
 }

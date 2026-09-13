@@ -574,5 +574,13 @@
   "wardrobe-saving": "Saving wardrobe…",
   "wardrobe-loading": "Loading wardrobe…",
   "wardrobe-retry": "Reload",
-  "wardrobe-sps-overflow": "The legacy wardrobe contains data beyond slot 984. Migration stopped; original data is preserved. Export or reorganize it using the previous version first."
+  "wardrobe-sps-overflow": "The legacy wardrobe contains data beyond slot 984. Migration stopped; original data is preserved. Export or reorganize it using the previous version first.",
+  "wardrobe-maintenance-failed": "Maintenance failed. Keep your backup and reload the wardrobe before retrying.",
+  "wardrobe-archive-done": "Archive exported: {{n}} records are not referenced by the observed index. Nothing was deleted.",
+  "wardrobe-drawing-none": "No embedded AEE drawings were found in this wardrobe.",
+  "wardrobe-drawing-confirm": "Export a wardrobe backup, then upload {{n}} embedded drawings to public SPS image storage? Outfit references will be saved after all uploads succeed. Keep the backup; older AEE versions may not read the new references.",
+  "wardrobe-drawing-done": "Drawings migrated and wardrobe saved. Keep the downloaded backup.",
+  "wardrobe-maintenance-hint": "Tools apply to the selected wardrobe. SPS archives can be opened through wardrobe import to choose outfits and destinations. Exporting does not delete data.",
+  "wardrobe-drawing-migrate": "Back up and migrate old drawings",
+  "wardrobe-archive-export": "Export SPS archive and report"
 }

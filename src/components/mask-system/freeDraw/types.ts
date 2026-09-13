@@ -22,12 +22,10 @@ export type SlotSessionPhase = 'loading' | 'editing' | 'saving' | 'closing';
 export interface SlotEditSession {
   player: Character;
   member: number | undefined;
-  readonly id: number;
   readonly slot: Slot;
   readonly character: Character;
   readonly item: Item;
   phase: SlotSessionPhase;
-  dirty: boolean;
   hasDrawing: boolean;
   snapshot: ImageData | null;
   initialState: SlotSessionState | null;

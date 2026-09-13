@@ -6,7 +6,7 @@ const manifest='liko-aee:wardrobe/v2/index';
 function load(path){const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,TextEncoder,structuredClone,require:()=>load('src/core/spsWardrobe.ts')});return exports;}
 const {archiveSpsWardrobe}=load('src/core/spsMaintenance.ts');
 const live='liko-aee:wardrobe/v2/slot/0/abc',old='liko-aee:wardrobe/v2/slot/0/def';
-const records={[manifest]:JSON.stringify({version:2,slots:{0:live}}),[live]:'live',[old]:'old','foreign/key':'secret'};
+const records={[manifest]:JSON.stringify({version:2,revision:'abc',capacity:100,slots:{0:live}}),[live]:'live',[old]:'old','foreign/key':'secret'};
 const io={list:async()=>Object.keys(records),read:async key=>records[key]??null,check(){}};
 const archive=await archiveSpsWardrobe(io,1);
 assert.equal(archive.entries['foreign/key'],undefined);
@@ -58,3 +58,15 @@ assert.equal((await fileModule.parseWardrobeFile(JSON.stringify({format:'aee-war
 assert.equal((await fileModule.parseWardrobeFile(JSON.stringify([outfit]))).length,1);
 await assert.rejects(fileModule.parseWardrobeFile(JSON.stringify({...snapshot,entries:{}})),/incomplete_archive/);
 console.log('Wardrobe file entry point supports archives and existing formats');
+// Live loading and archival must reject the same invalid index, not produce an unrestorable archive.
+const {SpsWardrobe}=load('src/core/spsWardrobe.ts');
+for(const invalidIndex of [
+ {version:2,revision:'abc',capacity:99,slots:{0:live}},
+ {version:2,revision:'abc',capacity:100,slots:{1:live}},
+ {version:2,revision:'abc',capacity:100,slots:{0:'liko-aee:wardrobe/v2/slot/0/not-a-record'}},
+]){
+ const invalidIO={...io,read:async key=>key===manifest?JSON.stringify(invalidIndex):records[key]??null};
+ await assert.rejects(archiveSpsWardrobe(invalidIO,1),/invalid_index/);
+ await assert.rejects(new SpsWardrobe({...invalidIO,write:async()=>{throw Error('unexpected write');}}).load(),/invalid_index/);
+}
+console.log('Live and archived wardrobes share strict index validation');

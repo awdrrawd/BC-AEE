@@ -32,7 +32,6 @@ for (let i = 0; i < SLOT_COUNT; i++) slots.push(makeSlot(i));
 // Compatibility view of the explicit editor session. New asynchronous code
 // must retain SlotEditSession instead of comparing this slot-only binding.
 export let A: Slot | null = null;
-let sessionSequence = 0;
 let activeSession: SlotEditSession | null = null;
 
 export function beginEditSession(slot: Slot, character: Character, item: Item): SlotEditSession {
@@ -42,14 +41,12 @@ export function beginEditSession(slot: Slot, character: Character, item: Item): 
   slot.loading = true;
   A = slot;
   activeSession = {
-    id: ++sessionSequence,
     player: Player,
     member: Player?.MemberNumber,
     slot,
     character,
     item,
     phase: 'loading',
-    dirty: false,
     hasDrawing: false,
     snapshot: null,
     initialState: null,
@@ -89,12 +86,6 @@ export function setSessionPhase(session: SlotEditSession, phase: SlotSessionPhas
   session.phase = phase;
   session.slot.loading = phase !== 'editing';
   return true;
-}
-
-export function markSessionDirty(slot: Slot, hasDrawing?: boolean) {
-  if (!activeSession || activeSession.slot !== slot || activeSession.phase !== 'editing') return;
-  activeSession.dirty = true;
-  if (hasDrawing !== undefined) activeSession.hasDrawing = hasDrawing;
 }
 
 export function isEditorInteractive(): boolean {

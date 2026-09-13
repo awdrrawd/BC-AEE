@@ -178,7 +178,6 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
     const category = categorise(group);
     if (category === 'cloth') return false;                 // clothing is always a full replace
     if (replaceBody && category === 'body') return false;   // body swapped only with "include body"
-    //if (category === 'item' && !includeItems) return false; // 造成試穿服裝時，拘束被脫掉的原因
     return true;                                            // the wearer's own body/hair (and kept items) stay
   });
 
@@ -194,8 +193,9 @@ interface SlotSnapshot {
 }
 
 function snapshotSlots(source: WardrobeSource, indices: readonly number[]): SlotSnapshot[] {
+  const current = wardrobeIdentity();
   return indices.map(index => ({index, outfit: structuredClone(source.outfitAt(index)), name: source.nameAt(index),
-    meta: structuredClone(getSlotMeta(source.id, index)), current: wardrobeIdentity()}));
+    meta: structuredClone(getSlotMeta(source.id, index)), current}));
 }
 
 /**
@@ -372,27 +372,6 @@ export function exportWornToClipboard() {
       console.warn('🐈‍⬛ [AEE] Failed to write the worn outfit code to the clipboard', error);
       showToast(t('wardrobe-toast-export-failed'));
     });
-}
-
-/** Applies a pasted outfit code directly onto the target character. */
-export function importCodeToWorn(code: string) {
-  const bundle = decodeBundles(code)?.[0];
-  if (!bundle) {
-    showToast(t('wardrobe-toast-import-failed'));
-    return;
-  }
-  const character = getTargetCharacter();
-  try {
-    applyOutfit(character, bundle);
-  } catch (error) {
-    console.warn('🐈‍⬛ [AEE] Failed to wear the imported outfit', error);
-    showToast(t('wardrobe-toast-import-failed'));
-    return;
-  }
-  CharacterRefresh(character, false);
-  if (!getWardrobeState().triedOn) setWardrobeState({triedOn: true});
-  bumpWardrobeData();
-  showToast(t('wardrobe-toast-imported'));
 }
 
 async function importOutfitFromCodeImpl(index: number, code: string) {

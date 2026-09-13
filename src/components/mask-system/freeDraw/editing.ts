@@ -2,7 +2,7 @@
 // sits between slots.ts (invalidateSlot) and maskToggle.ts (isSlotMasked),
 // both of which several other modules need independently of this.
 
-import {A, getActiveSession, invalidateSlot, markSessionDirty, slotHasDrawing} from './slots';
+import {A, getActiveSession, invalidateSlot, slotHasDrawing} from './slots';
 import {State} from './editorState';
 import {isSlotMasked, syncVisCompanion} from './maskToggle';
 
@@ -12,7 +12,7 @@ export function afterEdit() {
   invalidateSlot(A);
   const session = getActiveSession();
   if (!session || session.slot !== A || session.phase !== 'editing') return;
-  markSessionDirty(A, slotHasDrawing(A));
+  session.hasDrawing = slotHasDrawing(A);
   const C = session.character;
   if (!C) return;
   // A brand-new drawing has no saved CustomDraw yet. Wear its Vis companion

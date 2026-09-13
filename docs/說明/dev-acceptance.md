@@ -2,15 +2,15 @@
 
 [文件索引](../README.md) · [SPS 衣櫃](./sps-wardrobe.md) · [SPS 繪圖](./sps-free-draw.md)
 
-此處測的是 `codex/sps-maintenance`，不是落後的 `dev` 分支。測試結果請記錄提交 SHA、遊戲版本、瀏覽器、AEE 載入來源、其他插件及日期；同為 0.9.4 不代表載入了相同程式。
+這批功能已由 PR #35 合併到 `main`。原 `codex/sps-maintenance` 與 `codex/dev-review` 分支已移除；後續整理在 `codex/wardrobe-cleanup`，舊 `dev` 已封存為標籤 `archive/dev-before-migration`。測試結果請記錄提交 SHA、遊戲版本、瀏覽器、AEE 載入來源、其他插件及日期；同為 0.9.4 不代表載入了相同程式。
 
 ## 1. 載入正確版本
 
-先確認工作目錄沒有未提交修改，再切換分支：
+測試已合併功能時使用 main；若要驗證本次整理，將下面的 main 換成 codex/wardrobe-cleanup。先確認工作目錄沒有未提交修改，再切換分支：
 
 ```powershell
 git fetch origin
-git switch codex/sps-maintenance
+git switch main
 git pull --ff-only
 git rev-parse HEAD
 npm ci
@@ -95,4 +95,4 @@ node scripts/create-wardrobe-test-file.mjs sample.json test-90-188.json 99 90
 
 ## 本輪實際驗證紀錄
 
-本地回歸 24/24 通過，測試資料產生器 ESLint 通過，文件連結檢查通過；上一筆程式提交的建置、6 項架構頁測試與 Lint 通過（41 則既有警告）。已在 Codex 內建瀏覽器開啟 R131 並由使用者登入，但尚未載入測試 AEE，故不計為任何衣櫃實機案例通過。待 Chrome／Edge 的功能驗收結果補入。
+本地回歸 24/24 通過，測試資料產生器 ESLint 通過，文件連結檢查通過；上一筆程式提交的建置、6 項架構頁測試與 Lint 通過（41 則既有警告）。使用者已於自己的瀏覽器載入 AEE，明確回報保存與 metadata、首尾翻頁、封存還原、繪圖歷史四項正常。之後回覆「應該沒有問題」未逐項說明容量、斷線與舊圖遷移結果，這三項保留未逐項確認；未把概括回覆當作所有故障情境通過。

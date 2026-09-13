@@ -5,7 +5,7 @@
 
 import type {AnyProps, Slot} from './types';
 import {VIS_SLOTS, PROP_KEY, PROP_SPS_KEY, MPRIO_MIN, MPRIO_MAX, MPRIO_BAR_X, MPRIO_BAR_W, MASK_PRIORITY} from '../constants';
-import {A, getActiveSession, invalidateSlot, findSlotItem, markSessionDirty} from './slots';
+import {A, getActiveSession, invalidateSlot, findSlotItem} from './slots';
 
 // Property key on the DrawingBoard item that remembers this slot's mask
 // priority across on/off toggles + reloads (and syncs to other players).
@@ -149,7 +149,6 @@ export function toggleSlotMask() {
     applyMaskPriority(C, A); // honour the remembered priority on the fresh companion
     A.isMask = true;
   }
-  markSessionDirty(A);
   syncVisCompanion(C, A);
   invalidateSlot(A);
   // Mask/Vis changes are transaction-local until Accept. A local canvas rebuild
@@ -189,7 +188,6 @@ export function commitMaskPriority() {
     priorityPreviewTimer = null;
   }
   const C = session.character;
-  markSessionDirty(A);
   applyMaskPriority(C, A);
   invalidateSlot(A);
   if (C && typeof CharacterLoadCanvas === 'function') CharacterLoadCanvas(C);

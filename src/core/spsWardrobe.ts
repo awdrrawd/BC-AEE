@@ -3,6 +3,8 @@ import type {WardrobeSlotMeta} from './types';
 export const SPS_MAX_SLOTS = 984;
 export const SPS_MANIFEST_KEY = 'liko-aee:wardrobe/v2/index';
 const RECORD_PREFIX = 'liko-aee:wardrobe/v2/slot/';
+export const isSpsRecordKey = (key: string): boolean => /^liko-aee:wardrobe\/v2\/slot\/(0|[1-9]\d*)\/[a-f0-9-]+$/.test(key);
+export const isSpsLegacyKey = (key: string): boolean => /^liko-aee:wardon\/[1-9]\d*$/.test(key);
 export interface SpsSlot {outfit: ItemBundle[]; name: string; meta: WardrobeSlotMeta}
 interface Manifest {version: 2; revision: string; capacity: number; slots: Record<string, string>}
 export interface SpsWardrobeIO {
@@ -29,7 +31,7 @@ function slot(value: unknown): SpsSlot {
   }
   return data;
 }
-function manifest(text: string): Manifest {
+export function parseSpsManifest(text: string): Manifest {
   const data = JSON.parse(text) as Manifest;
   if (!data || data.version !== 2 || typeof data.revision !== 'string' || !Number.isInteger(data.capacity)
     || data.capacity < 100 || data.capacity > SPS_MAX_SLOTS
@@ -37,7 +39,7 @@ function manifest(text: string): Manifest {
     || !data.slots || typeof data.slots !== 'object' || Array.isArray(data.slots)) throw new Error('sps_invalid_index');
   for (const [index, key] of Object.entries(data.slots)) {
     if (!/^(0|[1-9]\d*)$/.test(index) || Number(index) >= data.capacity
-      || typeof key !== 'string' || !key.startsWith(`${RECORD_PREFIX}${index}/`)) throw new Error('sps_invalid_index');
+      || typeof key !== 'string' || !isSpsRecordKey(key) || !key.startsWith(`${RECORD_PREFIX}${index}/`)) throw new Error('sps_invalid_index');
   }
   return data;
 }
@@ -60,7 +62,7 @@ export class SpsWardrobe {
     const raw = await this.read(SPS_MANIFEST_KEY);
     const rows: SpsSlot[] = [];
     if (raw !== null) {
-      const data = manifest(raw);
+      const data = parseSpsManifest(raw);
       rows.push(...Array.from({length: data.capacity}, emptySpsSlot));
       // Bounded requests: do not fan out hundreds of authenticated reads.
       const entries = Object.entries(data.slots);
@@ -74,7 +76,7 @@ export class SpsWardrobe {
       this.index = data;
     } else {
       const keys = await this.io.list(); this.io.check();
-      const chunks = keys.filter(key => /^liko-aee:wardon\/[1-9]\d*$/.test(key));
+      const chunks = keys.filter(isSpsLegacyKey);
       for (const key of chunks) {
         const rawChunk = await this.read(key);
         if (rawChunk === null) throw new Error('sps_missing_legacy_chunk');

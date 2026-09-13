@@ -116,11 +116,6 @@ export function resetWardrobeScreen(target: Character) {
   dismissPrompt();
 }
 
-/** Marks that a try-on changed the worn look, so the revert control can appear. */
-export function markTriedOn() {
-  if (!getWardrobeState().triedOn) setWardrobeState({triedOn: true});
-}
-
 /** Restores the character to exactly how it looked when the wardrobe was opened. */
 export function revertTryOn() {
   const {entryAppearance, target} = getWardrobeState();

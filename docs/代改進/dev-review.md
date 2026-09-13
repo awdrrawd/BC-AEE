@@ -86,6 +86,12 @@ dev 把 npm test 設為 `vitest run src` 並新增 Vitest，但該獨有提交�
 
 每批保留現有 lint、scripts tests、docs、architecture browser 與 build 門檻。儲存與繪圖還需新增針對實際失敗模式的測試，以及遊戲內驗收；架構圖瀏覽器測試不能替代功能驗收。
 
-本輪已在同一分支進行上述功能修改；保留本審查作為設計依據，原 dev 的固定 journal、自動刪舊資料與 vendor OAuth 未採用。遠端 main、dev 與使用者雲端資料未修改。
+上述功能已分批合併到 main；保留本審查作為設計依據，原 dev 的固定 journal、自動刪舊資料與 vendor OAuth 未採用。
 
 2026-09-13 後續：於 codex/sps-maintenance 補上已核對官方協定的 cursor 分頁、唯讀衣櫃封存與手動舊圖批次遷移。未採用 dev 的自動刪除；服務端缺少條件更新，跨裝置同時保存仍無完整保證。真實 BC／SPS 驗收與其他未完成項目仍需追蹤。
+
+## 分支收尾與程式整理（2026-09-13）
+
+codex/dev-review 與 codex/sps-maintenance 已完整合併，遠端分支已移除，本地分支亦已刪除。dev 的獨有提交 801179f432b9c6c9349716d6169878ed91d9861e 已保留在遠端標籤 archive/dev-before-migration，再刪除遠端 dev；需要追溯時可從標籤讀取原始實作。它不再作為合併來源。
+
+本次在 codex/wardrobe-cleanup 檢查衣櫃、SPS 與繪圖 session 的呼叫關係：移除未使用的直接穿戴代碼入口、試穿狀態包裝與舊 key 常數；移除只寫不讀的 session id／dirty。hasDrawing、人物／物品身分、載入／保存狀態與舊格式讀取仍有實際用途，予以保留。SPS 載入、封存與還原共用索引及 key 驗證；遷移前後的來源檢查共用函式，兩個檢查時點仍保留。

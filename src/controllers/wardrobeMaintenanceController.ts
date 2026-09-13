@@ -1,10 +1,10 @@
-import {activeWardrobeSource} from '@/core/wardrobeStorage';
+import {activeWardrobeSource, type WardrobeSource} from '@/core/wardrobeStorage';
 import {wardrobeIdentity, wardrobeMutation} from '@/core/wardrobeMutation';
 import {backupWardrobeSource, downloadJson} from '@/core/wardrobeFile';
 import {bumpWardrobeData} from '@/core/wardrobeStore';
 import {listSpsKeys, readSpsText} from '@/core/sps';
 import {archiveSpsWardrobe} from '@/core/spsMaintenance';
-import {prepareWardrobeDrawings, scanWardrobeDrawings} from '@/core/wardrobeDrawingMigration';
+import {prepareWardrobeDrawings, scanWardrobeDrawings, type DrawingMigrationSlot} from '@/core/wardrobeDrawingMigration';
 import {uploadSpsBlob} from '@/components/mask-system/freeDraw/spsDrawing';
 import {askConfirm} from '@/core/prompts';
 import {showToast} from '@/util/toast';
@@ -34,6 +34,14 @@ export async function exportSpsArchive() {
     }, source);
   } catch (error) { failed(error); }
 }
+function assertDrawingPlanUnchanged(source: WardrobeSource, plan: readonly DrawingMigrationSlot[]) {
+  for (const row of plan) {
+    if (source.nameAt(row.index) !== row.name || JSON.stringify(source.outfitAt(row.index)) !== JSON.stringify(row.before)) {
+      throw new Error('wardrobe_changed');
+    }
+  }
+}
+
 export async function migrateEmbeddedWardrobeDrawings() {
   const source = activeWardrobeSource();
   const check = checkedIdentity();
@@ -45,11 +53,7 @@ export async function migrateEmbeddedWardrobeDrawings() {
     check();
     if (activeWardrobeSource() !== source) return;
     await wardrobeMutation(false, async () => {
-      for (const row of plan) {
-        if (source.nameAt(row.index) !== row.name || JSON.stringify(source.outfitAt(row.index)) !== JSON.stringify(row.before)) {
-          throw new Error('wardrobe_changed');
-        }
-      }
+      assertDrawingPlanUnchanged(source, plan);
       // Standard wardrobe backup is importable through the existing import dialog.
       if (!backupWardrobeSource(source)) throw new Error('backup_empty');
       const prepared = await prepareWardrobeDrawings(plan, async (slot, embedded) => {
@@ -64,9 +68,7 @@ export async function migrateEmbeddedWardrobeDrawings() {
         return ref;
       }, check);
       check();
-      for (const row of plan) {
-        if (source.nameAt(row.index) !== row.name || JSON.stringify(source.outfitAt(row.index)) !== JSON.stringify(row.before)) throw new Error('wardrobe_changed');
-      }
+      assertDrawingPlanUnchanged(source, plan);
       for (const row of prepared) source.writeSlot(row.index, row.outfit, row.name);
       try {
         if (!await source.persist(prepared.map(row => row.index))) throw new Error('save_failed');

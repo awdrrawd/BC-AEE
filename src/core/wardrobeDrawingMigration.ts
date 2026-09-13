@@ -3,7 +3,7 @@ import type {WardrobeSource} from './wardrobeStorage';
 export interface DrawingMigrationSlot {index: number; name: string; before: ItemBundle[]; count: number}
 // Only migrate AEE drawing boards; arbitrary third-party CustomDraw properties are untouched.
 const drawingGroups = ['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3'];
-export function drawingSlot(group: string): number { return drawingGroups.indexOf(group); }
+function drawingSlot(group: string): number { return drawingGroups.indexOf(group); }
 export function scanWardrobeDrawings(source: WardrobeSource): DrawingMigrationSlot[] {
   const result: DrawingMigrationSlot[] = [];
   for (let index = 0; index < source.size(); index++) {

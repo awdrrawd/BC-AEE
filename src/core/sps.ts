@@ -1,7 +1,6 @@
 import {studioOauthHeader} from '@/core/studioOauth';
 
 export const SPS_ORIGIN = 'https://storage.bondage-studio.org';
-export const SPS_WARDROBE_PREFIX = 'liko-aee:wardon/';
 export const SPS_KEY_BUDGET = 10 * 1024 * 1024;
 
 async function timedFetch(url: string, init: RequestInit = {}): Promise<Response> {
@@ -39,8 +38,7 @@ export async function readSpsText(key: string): Promise<string | null> {
   const response = await spsRequest(key);
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`SPS ${response.status}`);
-  const text = await response.text();
-  return text;
+  return response.text();
 }
 
 export async function writeSpsText(key: string, text: string): Promise<void> {

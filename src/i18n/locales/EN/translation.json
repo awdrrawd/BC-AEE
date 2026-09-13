@@ -580,7 +580,7 @@
   "wardrobe-drawing-none": "No embedded AEE drawings were found in this wardrobe.",
   "wardrobe-drawing-confirm": "Export a wardrobe backup, then upload {{n}} embedded drawings to public SPS image storage? Outfit references will be saved after all uploads succeed. Keep the backup; older AEE versions may not read the new references.",
   "wardrobe-drawing-done": "Drawings migrated and wardrobe saved. Keep the downloaded backup.",
-  "wardrobe-maintenance-hint": "Tools apply to the selected wardrobe. The SPS archive is a diagnostic backup, not a wardrobe import file; it does not delete data.",
+  "wardrobe-maintenance-hint": "Tools apply to the selected wardrobe. SPS archives can be opened through wardrobe import to choose outfits and destinations. Exporting does not delete data.",
   "wardrobe-drawing-migrate": "Back up and migrate old drawings",
   "wardrobe-archive-export": "Export SPS archive and report"
 }

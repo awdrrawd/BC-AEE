@@ -580,7 +580,7 @@
   "wardrobe-drawing-none": "此衣櫃沒有內嵌的 AEE 舊繪圖。",
   "wardrobe-drawing-confirm": "要先匯出衣櫃備份，再將 {{n}} 張內嵌繪圖上傳至 SPS 公開圖片空間嗎？全部上傳成功後才儲存衣櫃引用。請保留備份，舊版 AEE 可能無法讀取新引用。",
   "wardrobe-drawing-done": "繪圖已遷移並儲存衣櫃，請保留下載的備份。",
-  "wardrobe-maintenance-hint": "操作針對目前選取的衣櫃。SPS 封存是診斷備份，不能當作衣櫃匯入檔，也不會刪除資料。",
+  "wardrobe-maintenance-hint": "操作針對目前選取的衣櫃。SPS 封存可透過衣櫃匯入選擇服裝與還原位置；匯出不會刪除資料。",
   "wardrobe-drawing-migrate": "備份並遷移舊繪圖",
   "wardrobe-archive-export": "匯出 SPS 封存與報告"
 }

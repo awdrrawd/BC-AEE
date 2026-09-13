@@ -1,4 +1,5 @@
-import {SPS_MANIFEST_KEY} from './spsWardrobe';
+import {SPS_MANIFEST_KEY, SpsWardrobe} from './spsWardrobe';
+import type {PendingImport} from './types';
 
 interface MaintenanceIO {
   list(): Promise<string[]>;
@@ -8,6 +9,33 @@ interface MaintenanceIO {
 const recordPattern = /^liko-aee:wardrobe\/v2\/slot\/(0|[1-9]\d*)\/[a-f0-9-]+$/;
 const legacyPattern = /^liko-aee:wardon\/[1-9]\d*$/;
 const MAX_BACKUP_BYTES = 32 * 1024 * 1024;
+
+/** Decode only the archived published wardrobe; never replay historical records or contact SPS. */
+export async function recoverSpsArchive(value: unknown): Promise<PendingImport[]> {
+  const archive = value as {format?: unknown; version?: unknown; entries?: unknown} | null;
+  if (!archive || archive.format !== 'aee-sps-archive' || archive.version !== 1
+    || !archive.entries || typeof archive.entries !== 'object' || Array.isArray(archive.entries)) throw new Error('sps_invalid_archive');
+  const entries = new Map<string, string>();
+  let bytes = 0;
+  const encoder = new TextEncoder();
+  for (const [key, text] of Object.entries(archive.entries)) {
+    if ((key !== SPS_MANIFEST_KEY && !recordPattern.test(key) && !legacyPattern.test(key))
+      || typeof text !== 'string') throw new Error('sps_invalid_archive');
+    bytes += encoder.encode(text).byteLength;
+    if (bytes > MAX_BACKUP_BYTES) throw new Error('sps_backup_too_large');
+    entries.set(key, text);
+  }
+  if (!entries.has(SPS_MANIFEST_KEY) && ![...entries.keys()].some(key => legacyPattern.test(key))) throw new Error('sps_incomplete_archive');
+  const wardrobe = new SpsWardrobe({
+    read: async key => entries.get(key) ?? null,
+    list: async () => [...entries.keys()],
+    write: async () => { throw new Error('sps_archive_read_only'); },
+    check() {},
+  });
+  await wardrobe.load();
+  return wardrobe.rows.flatMap((row, sourceIndex) => row.outfit.length
+    ? [{outfit: row.outfit, name: row.name, meta: row.meta, sourceIndex}] : []);
+}
 
 /** Read-only archive. Absence from one index is NOT permission to delete a record:
  * another device may still be preparing its commit, and the service has no CAS.

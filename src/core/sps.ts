@@ -51,10 +51,27 @@ export async function writeSpsText(key: string, text: string): Promise<void> {
 }
 
 export async function listSpsKeys(): Promise<string[]> {
-  const response = await spsRequest('');
-  if (!response.ok) throw new Error(`SPS ${response.status}`);
-  const data = await response.json() as {keys?: unknown};
-  return Array.isArray(data.keys) ? data.keys.filter((key): key is string => typeof key === 'string') : [];
+  const player = Player;
+  const member = player?.MemberNumber;
+  const keys = new Set<string>();
+  const cursors = new Set<string>();
+  let cursor: string | null = null;
+  for (let page = 0; page < 100; page++) {
+    if (Player !== player || Player?.MemberNumber !== member) throw new Error('sps_account_changed');
+    const query = cursor === null ? '' : `?cursor=${encodeURIComponent(cursor)}`;
+    const response = await authenticated(`${SPS_ORIGIN}/player/data${query}`);
+    if (!response.ok) throw new Error(`SPS ${response.status}`);
+    const data = await response.json() as {ok?: boolean; keys?: unknown; cursor?: unknown};
+    if (Player !== player || Player?.MemberNumber !== member) throw new Error('sps_account_changed');
+    if (!data || data.ok === false || !Array.isArray(data.keys)
+      || !data.keys.every(key => typeof key === 'string')) throw new Error('sps_invalid_key_page');
+    for (const key of data.keys) keys.add(key);
+    if (data.cursor === null) return [...keys];
+    if (typeof data.cursor !== 'string' || !data.cursor || cursors.has(data.cursor)) throw new Error('sps_invalid_cursor');
+    cursor = data.cursor;
+    cursors.add(cursor);
+  }
+  throw new Error('sps_page_limit');
 }
 
 export async function readSpsPublic(owner: number, key: string, revision?: string): Promise<ArrayBuffer | null> {

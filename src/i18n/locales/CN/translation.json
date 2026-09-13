@@ -574,5 +574,13 @@
   "wardrobe-saving": "正在保存衣柜…",
   "wardrobe-loading": "正在加载衣柜…",
   "wardrobe-retry": "重新加载",
-  "wardrobe-sps-overflow": "旧衣柜在第 984 格以后仍有数据，已停止迁移并保留来源。请先使用旧版导出或整理服装。"
+  "wardrobe-sps-overflow": "旧衣柜在第 984 格以后仍有数据，已停止迁移并保留来源。请先使用旧版导出或整理服装。",
+  "wardrobe-maintenance-failed": "维护失败。请保留备份，重新载入衣柜后再试。",
+  "wardrobe-archive-done": "已导出存档：有 {{n}} 条记录未被当前读取的索引引用，未删除任何数据。",
+  "wardrobe-drawing-none": "此衣柜没有内嵌的 AEE 旧绘图。",
+  "wardrobe-drawing-confirm": "要先导出衣柜备份，再将 {{n}} 张内嵌绘图上传至 SPS 公开图片空间吗？全部上传成功后才保存衣柜引用。请保留备份，旧版 AEE 可能无法读取新引用。",
+  "wardrobe-drawing-done": "绘图已迁移并保存衣柜，请保留下载的备份。",
+  "wardrobe-maintenance-hint": "操作针对当前选取的衣柜。SPS 存档是诊断备份，不能作为衣柜导入文件，也不会删除数据。",
+  "wardrobe-drawing-migrate": "备份并迁移旧绘图",
+  "wardrobe-archive-export": "导出 SPS 存档与报告"
 }

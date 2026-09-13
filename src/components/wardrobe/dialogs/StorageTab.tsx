@@ -4,6 +4,8 @@ import {settings} from '@/core/settings';
 import {fbcWardrobeUsage} from '@/core/wardrobeStorage';
 import {SettingRow} from '@/components/ui/SettingRow';
 import {Button} from '@/components/ui/Button';
+import {useWardrobeStore} from '@/core/wardrobeStore';
+import {exportSpsArchive, migrateEmbeddedWardrobeDrawings} from '@/controllers/wardrobeMaintenanceController';
 
 const ROW_CLASS = 'flex shrink-0 rounded-lg border border-white/8 bg-black/35 px-4 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)';
 
@@ -25,6 +27,7 @@ function Gauge({label, hint, used, budget}: {label: string; hint: string; used: 
 
 export function StorageTab() {
   const fbc = fbcWardrobeUsage();
+  const state = useWardrobeStore();
   return <div className="flex flex-col gap-3">
     <SettingRow label={t('wardrobe-setting-confirm-save')} setting={settings.wardrobeConfirmSave} density="stage"/>
     <SettingRow label={t('wardrobe-setting-96-slots')} setting={settings.wardrobeExtended} density="stage"
@@ -46,6 +49,13 @@ export function StorageTab() {
           OAuth
         </Button>
       </div>
+    </div>
+    <div className={`${ROW_CLASS} flex-col gap-3 py-3`}>
+      <p className="text-[15px] text-zinc-400">{t('wardrobe-maintenance-hint')}</p>
+      <Button density="stage" disabled={state.saving || (state.source === 'sps' && state.spsStatus !== 'ready')}
+              onClick={() => void migrateEmbeddedWardrobeDrawings()}>{t('wardrobe-drawing-migrate')}</Button>
+      <Button density="stage" disabled={state.saving || state.source !== 'sps' || state.spsStatus !== 'ready'}
+              onClick={() => void exportSpsArchive()}>{t('wardrobe-archive-export')}</Button>
     </div>
     <div className="mt-auto flex flex-col gap-3 pt-3">
       <Gauge label={t('wardrobe-capacity-label')} hint={t('wardrobe-capacity-hint')} {...fbc}/>

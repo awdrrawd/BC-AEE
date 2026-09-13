@@ -87,3 +87,5 @@ dev 把 npm test 設為 `vitest run src` 並新增 Vitest，但該獨有提交�
 每批保留現有 lint、scripts tests、docs、architecture browser 與 build 門檻。儲存與繪圖還需新增針對實際失敗模式的測試，以及遊戲內驗收；架構圖瀏覽器測試不能替代功能驗收。
 
 本輪已在同一分支進行上述功能修改；保留本審查作為設計依據，原 dev 的固定 journal、自動刪舊資料與 vendor OAuth 未採用。遠端 main、dev 與使用者雲端資料未修改。
+
+2026-09-13 後續：於 codex/sps-maintenance 補上已核對官方協定的 cursor 分頁、唯讀衣櫃封存與手動舊圖批次遷移。未採用 dev 的自動刪除；服務端缺少條件更新，跨裝置同時保存仍無完整保證。真實 BC／SPS 驗收與其他未完成項目仍需追蹤。

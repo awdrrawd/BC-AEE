@@ -1,3 +1,4 @@
+import {sanitizeHeartLock} from '@/util/heartLock';
 import type {PendingImport, WardrobeSlotMeta} from '@/core/types';
 import {decodeBundles} from '@/util/appearanceBundle';
 import {recoverSpsArchive} from '@/core/spsMaintenance';
@@ -42,7 +43,7 @@ export function collectWardrobeSlots(source: WardrobeSource = activeWardrobeSour
       name: source.nameAt(index),
       favorite: meta.favorite,
       tags: meta.tags,
-      outfit,
+      outfit: outfit.map(sanitizeHeartLock),
     });
   }
   return slots;

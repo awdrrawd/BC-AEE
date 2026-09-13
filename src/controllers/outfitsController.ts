@@ -1,3 +1,4 @@
+import {sanitizeHeartLock, protectedGroup} from '@/util/heartLock';
 import {wardrobeMutation, wardrobeIdentity} from '@/core/wardrobeMutation';
 import {t} from '@/i18n/i18n';
 import {bundleAppearance, decodeBundles, encodeBundle, stripLock, wearBundle} from '@/util/appearanceBundle';
@@ -138,7 +139,7 @@ function buildOutfitBundle(character: Character): ItemBundle[] {
   const bodyDonor = (isSelfCharacter(character) || includeBody) ? character : Player;
   const body = bodyDonor.Appearance.filter(item => categorise(item.Asset.Group) === 'body');
 
-  const bundle = bundleAppearance([...worn, ...body]);
+  const bundle = bundleAppearance([...worn, ...body]).map(sanitizeHeartLock);
   // "Include lock" off → the saved outfit carries no padlocks.
   return settings.wardrobeIncludeLock.get() ? bundle : bundle.map(stripLock);
 }
@@ -152,6 +153,7 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
 
   const wear = new Map<AssetGroupName, ItemBundle>();
   for (const entry of bundle) {
+    if (protectedGroup(character, entry.Group)) continue;
     const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
     if (!asset) continue;
     const category = categorise(asset.Group);
@@ -174,6 +176,7 @@ function applyOutfit(character: Character, bundle: ItemBundle[]) {
 
   character.Appearance = character.Appearance.filter(item => {
     const group = item.Asset.Group;
+    if (protectedGroup(character, group.Name)) return true;
     if (wear.has(group.Name)) return true; // outfit provides it → re-applied below
     const category = categorise(group);
     if (category === 'cloth') return false;                 // clothing is always a full replace
@@ -230,7 +233,7 @@ async function saveOutfitImpl(index: number, name: string) {
       return;
     }
     const snapshots = snapshotSlots(source, [index]);
-    source.writeSlot(index, bundle, resolved);
+    source.writeSlot(index, bundle.map(sanitizeHeartLock), resolved);
     if (!await commitWardrobeChanges(source, snapshots)) return;
   } catch (error) {
     console.error('🐈‍⬛ [AEE] ❌ Failed to save the outfit', error);
@@ -250,7 +253,7 @@ async function saveOutfitMetaImpl(index: number, name: string, tags: string[]) {
 
   const resolved = name.trim().slice(0, 40) || slotName(index);
   const snapshots = snapshotSlots(source, [index]);
-  source.writeSlot(index, source.outfitAt(index), resolved);
+  source.writeSlot(index, source.outfitAt(index).map(sanitizeHeartLock), resolved);
   setSlotMeta(source.id, index, {tags});
   if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
@@ -382,7 +385,7 @@ async function importOutfitFromCodeImpl(index: number, code: string) {
     return;
   }
   const snapshots = snapshotSlots(source, [index]);
-  source.writeSlot(index, bundle, snapshots[0].name);
+  source.writeSlot(index, bundle.map(sanitizeHeartLock), snapshots[0].name);
   if (!await commitWardrobeChanges(source, snapshots)) return;
   bumpWardrobeData();
   showToast(t('wardrobe-toast-imported'));
@@ -446,7 +449,7 @@ async function applyImportsImpl(plan: readonly { pending: PendingImport; target:
 
   const snapshots = snapshotSlots(source, entries.map(entry => entry.target));
   for (const {pending, target} of entries) {
-    source.writeSlot(target, pending.outfit, pending.name ? pending.name.slice(0, 40) : source.nameAt(target));
+    source.writeSlot(target, pending.outfit.map(sanitizeHeartLock), pending.name ? pending.name.slice(0, 40) : source.nameAt(target));
   }
   for (const {pending, target} of entries) {
     if (pending.meta) setSlotMeta(source.id, target, pending.meta);

@@ -37,7 +37,7 @@ export function LayerButtonRow({id, name, color, selected}: {
     >{name}</button>
     <button
       className="relative mr-1 h-[30px] w-[30px] shrink-0 overflow-hidden rounded border border-(--aee-accent-55) bg-[repeating-conic-gradient(#333_0%_25%,#222_0%_50%)] bg-size-[6px_6px] transition hover:border-(--aee-accent) focus-visible:outline-2 focus-visible:outline-(--aee-accent)"
-      title={t('toggle-bar-color-picker-button-title')}
+      data-aee-tooltip={t('toggle-bar-color-picker-button-title')}
       aria-label={`${name}: ${t('toggle-bar-color-picker-button-title')}`}
       onClick={() => {
         selectLayer(id);

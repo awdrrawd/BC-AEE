@@ -8,6 +8,10 @@ updates:
       time: '09:00'
       timezone: Asia/Taipei
     open-pull-requests-limit: 5
+    # Match the Node 22 runtime used by CI until it is upgraded deliberately.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
     groups:
       npm-compatible:
         patterns: ['*']

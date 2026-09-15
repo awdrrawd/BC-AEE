@@ -80,7 +80,7 @@ export function EditSection({state, layerId, toolOnly = null, showHeader = true}
         <PropRow label="Y" value={sy.toFixed(2)} ctrl="sy" deltas={[-0.3, -0.1, 0.1, 0.3]}/>
       </div> : null}
       {(!toolOnly || toolOnly === 'skew') ? <PropGroup
-        title={<span>{t('edit-section-skew-group-title')} <span className="cursor-help" title={t('experimental-feature-tooltip')}>⚠️</span></span>}
+        title={<span>{t('edit-section-skew-group-title')} <span className="cursor-help" data-aee-tooltip={t('experimental-feature-tooltip')}>⚠️</span></span>}
         dragMode="skew"
         dragLabel={t('edit-section-skew-drag-label')} activeDrag={state.activeDrag}>
         <PropRow label="X°" value={(layerOverride.SkewX ?? 0).toFixed(1)} ctrl="skx" deltas={[-5, -1, 1, 5]}/>

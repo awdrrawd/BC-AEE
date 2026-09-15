@@ -49,6 +49,41 @@ function enter() {
 }
 
 let {craft, item} = enter();
+// BC creates separate assets/items for each supported placement of a craft.
+const mouthAsset = {Name: asset.Name, Group: {Name: 'ItemMouth'}};
+const otherAsset = {Name: 'Other', Group: {Name: 'ItemFeet'}};
+const mouth = {Asset: mouthAsset, Color: 'Red', Property: {
+  ...craft.ItemProperty, TypeRecord: {placement: 1}, LayerTranslationX: {Front: 99},
+}};
+const unrelated = {Asset: otherAsset, Property: {Rotation: 123}};
+const originalMouthProperty = mouth.Property;
+character.Appearance = [item, mouth, unrelated];
+context.CraftingAssets = {[asset.Name]: [asset, mouthAsset]};
+item.Color = ['Blue'];
+item.Property.TranslationX = 34;
+item.Property.LayerRotation.Front = 60;
+item.Property.LayerOverrides = [{FlipX: true}];
+const redraw = hooks.get('CharacterLoadCanvas');
+redraw([character], () => {
+  assert.equal(mouth.Property.TranslationX, 34, 'All placements move before rendering');
+  assert.equal(mouth.Property.LayerRotation.Front, 60);
+  assert.equal(mouth.Property.LayerOverrides[0].FlipX, true);
+  assert.equal(mouth.Property.LayerTranslationX, undefined, 'Reset propagates');
+  assert.equal(mouth.Property.TypeRecord.placement, 1, 'Placement-specific state survives');
+  assert.equal(mouth.Color[0], 'Blue');
+  assert.notEqual(mouth.Color, item.Color);
+  assert.notEqual(mouth.Property.LayerRotation, item.Property.LayerRotation);
+});
+assert.equal(originalMouthProperty.TranslationX, undefined, 'Shared property is not mutated');
+assert.equal(craft.ItemProperty.LayerRotation.Front, 20, 'Preview does not save early');
+assert.equal(unrelated.Property.Rotation, 123);
+item.Property.TranslationX = 50;
+redraw([{Appearance: [item, mouth]}], () => {});
+assert.equal(mouth.Property.TranslationX, 34, 'Other characters are excluded');
+character.Appearance = [mouth, unrelated];
+redraw([character], () => {});
+assert.equal(mouth.Property.TranslationX, 34, 'Rebuilt preview excludes stale editor item');
+character.Appearance = [item, mouth, unrelated];
 item.Property.Rotation = 45;
 item.Property.ScaleX = 1.5;
 item.Property.LayerRotation.Front = 80;

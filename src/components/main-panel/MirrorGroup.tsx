@@ -8,7 +8,7 @@ import {MirrorButton} from '@/components/main-panel/MirrorButton';
 
 export function MirrorGroup({layerOverride, activeDrag = null}: { layerOverride: AeeLayerOverride & { Opacity: number }; activeDrag?: DragMode }) {
   return <div className="mb-2">
-    <div className="mb-1 text-sm text-zinc-100">{t('mirror-group-mode-title')} / {t('mirror-group-copy-title')} <span className="cursor-help" title={t('experimental-feature-tooltip')}>⚠️</span></div>
+    <div className="mb-1 text-sm text-zinc-100">{t('mirror-group-mode-title')} / {t('mirror-group-copy-title')} <span className="cursor-help" data-aee-tooltip={t('experimental-feature-tooltip')}>⚠️</span></div>
     <div className="mb-2 flex items-center justify-between gap-2">
         <span className="w-14 shrink-0 text-sm text-zinc-100">{t('mirror-group-mode-title')}</span>
         <div className="flex items-center gap-1">

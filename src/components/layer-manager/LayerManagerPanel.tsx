@@ -40,7 +40,7 @@ function LayerManagerRow({row, target}: { row: LayerRow; target: Character }) {
     onMouseLeave={() => stopHoverHighlight(true)}
   >
     <button className="min-w-0 flex-1 text-left" onClick={() => { stopHoverHighlight(true); openLayerRowColor(target, row); }}
-            title={t('layer-manager-open-color-tooltip')}>
+            data-aee-tooltip={t('layer-manager-open-color-tooltip')}>
       <div className="truncate text-sm text-[var(--aee-text-strong)]">
         {row.groupLabel} <span className="text-zinc-500">&gt;</span> {row.itemLabel} <span className="text-zinc-500">&gt;</span> {row.partLabel}
       </div>

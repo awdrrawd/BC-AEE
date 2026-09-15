@@ -24,14 +24,16 @@ export function PreviewPanel({state}: { state: WardrobeState }) {
   return <Panel soft
                 className={cn('aee-rise-in relative', portrait ? 'min-w-0 flex-1' : 'w-115 shrink-0')}
                 style={{animationDelay: '180ms'}}>
-    {cancelEnabled && state.triedOn && state.entryAppearance ? <Button
-      density="stage"
-      className="absolute left-2 top-2 z-10 h-10 w-10"
-      onClick={revertTryOn}
-      icon={<Undo2 className="h-5 w-5"/>}
-      aria-label={t('wardrobe-revert-tryon')}
-      title={t('wardrobe-revert-tryon')}
-    /> : null}
+    {cancelEnabled && state.triedOn && state.entryAppearance ? <div className="absolute left-2 top-2 z-10">
+      <Button
+        density="stage"
+        className="h-11 w-15"
+        onClick={revertTryOn}
+        icon={<Undo2 className="h-9 w-9"/>}
+        aria-label={t('wardrobe-revert-tryon')}
+        title={t('wardrobe-revert-tryon')}
+      />
+    </div> : null}
 
     <div
       className={canPan ? 'flex-1 cursor-grab overflow-hidden active:cursor-grabbing' : 'flex-1 overflow-hidden'}

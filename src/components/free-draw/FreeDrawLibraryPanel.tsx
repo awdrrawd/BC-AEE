@@ -131,7 +131,7 @@ export function FreeDrawLibraryPanel() {
       </header>
       <div className="grid shrink-0 grid-cols-[1fr_110px] gap-3 border-y border-white/10 p-4">
         <button className={`h-11 overflow-hidden text-ellipsis whitespace-nowrap rounded-lg border px-3 text-lg font-bold transition ${State.useSps ? 'border-green-400 bg-green-900/55 text-green-100' : 'border-[var(--aee-border)] bg-white/5'}`}
-                title={t('free-draw-mode-tooltip')} onClick={() => { State.useSps = !State.useSps; setTick(value => value + 1); }}>
+                data-aee-tooltip={t('free-draw-mode-tooltip')} onClick={() => { State.useSps = !State.useSps; setTick(value => value + 1); }}>
           {State.useSps ? t('free-draw-mode-sps') : t('free-draw-mode-embedded')}
         </button>
         <button className={`h-11 rounded-lg border px-3 text-lg font-bold transition ${deleteMode ? 'border-red-400 bg-red-900/60 text-red-100' : 'border-red-500/60 bg-white/5 text-red-200'}`}

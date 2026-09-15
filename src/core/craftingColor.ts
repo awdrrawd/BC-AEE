@@ -4,6 +4,7 @@ const craftingLayerProperties = [
   'OverridePriority', 'TranslationX', 'TranslationY', 'ScaleX', 'ScaleY', 'Rotation',
   'LayerTranslationX', 'LayerTranslationY', 'LayerScaleX', 'LayerScaleY', 'LayerRotation',
 ] as const;
+const craftingPreviewProperties = [...craftingLayerProperties, 'LayerOverrides'] as const;
 
 export interface CraftingColorSession {
   craft: CraftingItemSelected;
@@ -38,4 +39,28 @@ export function saveCraftingColorSession(session: CraftingColorSession | null, s
     else property[key] = CommonCloneDeep(value) as never;
   }
   return true;
+}
+
+// CraftingUpdatePreview wears a separate item for every eligible body group.
+// Keep those copies in step with the item edited by ItemColor, before BC sorts
+// and renders its layers. Never copy extended-item state between body groups.
+export function syncCraftingColorPreview(session: CraftingColorSession | null, character: Character): void {
+  if (!session || CurrentScreen !== 'Crafting' || character !== session.character
+    || character !== CraftingPreview || CraftingSelectedItem !== session.craft
+    || !character.Appearance?.includes(session.item)
+    || typeof CraftingAssets === 'undefined') return;
+
+  const assets = CraftingAssets[session.item.Asset.Name] ?? [];
+  for (const item of character.Appearance) {
+    if (item === session.item || !assets.includes(item.Asset)) continue;
+    // Replace only drawing properties; unrelated nested state is never mutated.
+    const property = {...item.Property};
+    for (const key of craftingPreviewProperties) {
+      const value = session.item.Property?.[key];
+      if (value == null) delete property[key];
+      else property[key] = CommonCloneDeep(value) as never;
+    }
+    item.Property = property;
+    item.Color = CommonCloneDeep(session.item.Color);
+  }
 }

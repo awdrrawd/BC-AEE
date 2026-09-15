@@ -10,5 +10,5 @@ export function HoldButton({onTrigger, className, children, title, ariaLabel}: {
   ariaLabel?: string;
 }) {
   const handlers = useHoldRepeat(onTrigger);
-  return <button type="button" className={className} title={title} aria-label={ariaLabel} {...handlers}>{children}</button>;
+  return <button type="button" className={className} data-aee-tooltip={title} aria-label={ariaLabel} {...handlers}>{children}</button>;
 }

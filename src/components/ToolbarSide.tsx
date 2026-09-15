@@ -275,7 +275,7 @@ function EditControlPanel({state, partsAction}: {state: AeeState; partsAction: R
       <div className="grid h-10 grid-cols-[45px_minmax(0,1fr)_45px] items-center gap-2">
         <button type="button" className="flex h-[30px] w-[45px] items-center justify-center rounded border border-(--aee-accent-55) bg-(--aee-control-bg) text-zinc-200 hover:border-(--aee-accent)"
                 style={{width: 45, height: 30, minHeight: 30, padding: 0}}
-                title={t('main-panel-deselect-button-title')} onClick={leaveSelectedPart}><Undo2 className="h-4.5 w-4.5"/></button>
+                data-aee-tooltip={t('main-panel-deselect-button-title')} onClick={leaveSelectedPart}><Undo2 className="h-4.5 w-4.5"/></button>
         <span className="min-w-0 truncate text-center text-sm font-bold text-white">{layerName}</span>
         <button className="relative h-[30px] w-[45px] shrink-0 justify-self-end overflow-hidden rounded border border-(--aee-accent-55) bg-[repeating-conic-gradient(#222_0%_25%,#111_0%_50%)] bg-size-[6px_6px] hover:border-(--aee-accent)"
                 style={{width: 45, height: 30, minHeight: 30, padding: 0}}

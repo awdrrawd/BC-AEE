@@ -1,6 +1,6 @@
 import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
-import {beginCraftingColorSession, saveCraftingColorSession, type CraftingColorSession} from '@/core/craftingColor';
+import {beginCraftingColorSession, saveCraftingColorSession, syncCraftingColorPreview, type CraftingColorSession} from '@/core/craftingColor';
 import {getState} from '@/core/store';
 import {syncCurrentContext} from '@/core/context';
 import {getCanvasRect, getCurrentItem, getEditableParts, getLayerColor, getLayerDisplayName, getLayerGroupMembers, getOpacity} from '@/core/bc';
@@ -19,6 +19,11 @@ import {drawAboveGridIfNeeded} from '@/controllers/backgroundController';
 export function installItemColorHooks() {
   let craftingColorSession: CraftingColorSession | null = null;
   installLayerDiagnostics();
+
+  bcAeeModSdk.hookFunction('CharacterLoadCanvas', 10, (args, next) => {
+    syncCraftingColorPreview(craftingColorSession, args[0]);
+    return next(args);
+  });
 
   bcAeeModSdk.hookFunction('ItemColorDraw', 0, (args, next) => {
     if (args[0]) runtime.itemColorChar = args[0];

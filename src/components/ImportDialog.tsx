@@ -79,7 +79,7 @@ function ImportDiffPicker({dialog, state}: {dialog: ImportDiffDialog; state: Aee
           </label>
         </header>
         <div className={`grid shrink-0 ${DIFF_GRID_COLS} items-center gap-2 border-b border-l-2 border-transparent border-b-zinc-700 bg-zinc-900/70 px-2 py-2 text-base font-semibold text-zinc-400`}>
-          <label className="flex cursor-pointer items-center justify-center" title={t('toolbar-select-all')}>
+          <label className="flex cursor-pointer items-center justify-center" data-aee-tooltip={t('toolbar-select-all')}>
             <input type="checkbox" checked={visible.length > 0 && visibleSelected === visible.length}
                    onChange={event => toggleVisible(event.target.checked)} className="accent-(--aee-accent)"/>
           </label>

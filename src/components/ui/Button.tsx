@@ -24,6 +24,7 @@ export function Button({
                          iconOnly = false,
                          className,
                          children,
+                         title,
                          type = 'button',
                          ...props
                        }: ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -36,6 +37,7 @@ export function Button({
   const effectiveTone = selected && tone === 'default' ? 'primary' : tone;
   return <button
     type={type}
+    data-aee-tooltip={title}
     className={cn(
       'group relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-(--aee-panel-radius) border transition-colors',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--aee-accent-55)',

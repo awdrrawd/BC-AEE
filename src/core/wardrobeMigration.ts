@@ -41,7 +41,7 @@ function hasLayerValue(property: Record<string, unknown>, key: string, layerName
 }
 
 function originalLayerPositions(character: Character, asset: Asset, property: Record<string, unknown>) {
-  const item = {Asset: asset, Property: CommonCloneDeep(property)} as Item;
+  const item: Item = {Asset: asset, Property: CommonCloneDeep(property), Color: ['Default'], Difficulty: 0};
   const left = PropertyLayerOrigin.getOriginal(item, 'DrawingLeft');
   const top = PropertyLayerOrigin.getOriginal(item, 'DrawingTop');
   // CharacterPreview renders wardrobe cards in the default pose. Resolve the

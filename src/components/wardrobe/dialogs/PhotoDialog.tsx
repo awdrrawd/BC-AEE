@@ -281,7 +281,7 @@ export function PhotoDialog({onClose}: { onClose: () => void }) {
             {POSES.map((pose, index) => <button
               key={pose.name}
               type="button"
-              title={t(pose.labelKey)}
+              data-aee-tooltip={t(pose.labelKey)}
               onClick={() => applyPhotoPose(index)}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border p-1.5 transition',

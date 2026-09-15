@@ -1,3 +1,4 @@
+import {sanitizeHeartLock, protectedGroup, preserveHeartLocks} from '@/util/heartLock';
 import {t} from '@/i18n/i18n';
 import {mutateState} from '@/core/store';
 import {askText} from '@/core/prompts';
@@ -67,7 +68,11 @@ export async function importBcxFromText(character: Character, rawText: string) {
 
   const beforePaste = CharacterAppearanceStringify(character);
   try {
-    CharacterAppearancePaste(character, clipboardText, false);
+    preserveHeartLocks(character, () => {
+      CharacterAppearancePaste(character, clipboardText, false);
+      character.Appearance = bundleAppearance(character.Appearance).map(sanitizeHeartLock)
+        .map(entry => itemFromBundle(character, entry)).filter((item): item is Item => item !== null);
+    });
     if (CharacterAppearanceStringify(character) !== beforePaste) return;
   } catch {
     // Fall through to the parse-error toast below.
@@ -104,7 +109,9 @@ export function buildDiffList(character: Character, bundle: ItemBundle[]): Impor
   const appearance = character.Appearance;
   const bundleGroups = new Set<AssetGroupName>();
 
-  for (const entry of bundle) {
+  for (const rawEntry of bundle) {
+    const entry = sanitizeHeartLock(rawEntry);
+    if (protectedGroup(character, entry.Group)) continue;
     const incoming = itemFromBundle(character, entry);
     if (!incoming) continue;
 
@@ -127,6 +134,7 @@ export function buildDiffList(character: Character, bundle: ItemBundle[]): Impor
 
   for (const item of appearance) {
     const group = item.Asset.Group;
+    if (protectedGroup(character, group.Name)) continue;
     if (bundleGroups.has(group.Name)) continue;
     if (!group.AllowNone) continue; // a mandatory slot can't be emptied
     const category = categorizeGroup(group.Name);
@@ -152,9 +160,9 @@ export function applyImportPreview(
 ) {
   const {character, diffs, originalAppearance} = dialog;
 
-  CharacterAppearanceRestore(character, originalAppearance);
+  preserveHeartLocks(character, () => CharacterAppearanceRestore(character, originalAppearance));
   for (const diff of diffs) {
-    if (!selectedGroups.has(diff.group)) continue;
+    if (!selectedGroups.has(diff.group) || protectedGroup(character, diff.group)) continue;
     // "Apply locks" off → wear the incoming item without its padlock.
     if (diff.entry) wearBundle(character, applyLock ? diff.entry : stripLock(diff.entry));
     else InventoryRemove(character, diff.group, false);
@@ -186,17 +194,17 @@ export function cancelImport(dialog: ImportDiffDialog) {
     // introduced by the live preview behind on some game versions. Rebuild
     // from the independent deep bundle captured before previewing so Cancel
     // is an exact rollback rather than merely closing the picker.
-    CharacterAppearanceRestore(dialog.character, dialog.originalAppearance);
+    preserveHeartLocks(dialog.character, () => CharacterAppearanceRestore(dialog.character, dialog.originalAppearance));
     const originalItems = dialog.originalBundle
       .map(entry => itemFromBundle(dialog.character, entry))
       .filter((item): item is Item => item !== null);
-    dialog.character.Appearance = originalItems;
+    preserveHeartLocks(dialog.character, () => { dialog.character.Appearance = originalItems; });
     CharacterRefresh(dialog.character, false);
   } catch (error) {
     console.error('[AEE] Failed to cancel appearance import:', error);
     // Keep the native snapshot as a final fallback if bundle reconstruction
     // failed partway through.
-    CharacterAppearanceRestore(dialog.character, dialog.originalAppearance);
+    preserveHeartLocks(dialog.character, () => CharacterAppearanceRestore(dialog.character, dialog.originalAppearance));
     CharacterRefresh(dialog.character, false);
   } finally {
     closeImportDialog();

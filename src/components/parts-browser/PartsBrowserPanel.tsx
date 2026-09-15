@@ -61,8 +61,8 @@ export function PartsBrowserPanel({state, open, onClose}: {state: AeeState; open
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-3">
       <span className="mr-auto text-[19px] font-bold text-white">{t('parts-browser-title')}</span>
       <div className="grid h-9 w-[92px] grid-cols-2 overflow-hidden rounded border border-(--aee-accent-55)">
-        <button type="button" title={t('parts-browser-list-view')} className={`flex items-center justify-center ${mode === 'list' ? 'bg-(--aee-accent-35) text-white' : 'bg-(--aee-control-bg) text-zinc-300'}`} onClick={() => setMode('list')}><List className="h-5.5 w-5.5"/></button>
-        <button type="button" title={t('parts-browser-grid-view')} className={`flex items-center justify-center border-l border-(--aee-accent-55) ${mode === 'grid' ? 'bg-(--aee-accent-35) text-white' : 'bg-(--aee-control-bg) text-zinc-300'}`} onClick={() => setMode('grid')}><Grid3x2 className="h-5.5 w-5.5"/></button>
+        <button type="button" data-aee-tooltip={t('parts-browser-list-view')} className={`flex items-center justify-center ${mode === 'list' ? 'bg-(--aee-accent-35) text-white' : 'bg-(--aee-control-bg) text-zinc-300'}`} onClick={() => setMode('list')}><List className="h-5.5 w-5.5"/></button>
+        <button type="button" data-aee-tooltip={t('parts-browser-grid-view')} className={`flex items-center justify-center border-l border-(--aee-accent-55) ${mode === 'grid' ? 'bg-(--aee-accent-35) text-white' : 'bg-(--aee-control-bg) text-zinc-300'}`} onClick={() => setMode('grid')}><Grid3x2 className="h-5.5 w-5.5"/></button>
       </div>
       <Button iconOnly title={t('parts-browser-magnify')} className="h-9 w-9" selected={magnify} onClick={() => { stopHoverHighlight(true); setMagnify(value => !value); }}><Search className="h-5.5 w-5.5"/></Button>
       <Button iconOnly tone="danger" className="h-9 w-9" onClick={onClose}><X className="h-5.5 w-5.5"/></Button>

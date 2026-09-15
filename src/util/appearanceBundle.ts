@@ -1,3 +1,4 @@
+import {sanitizeHeartLock, protectedGroup} from './heartLock';
 export function bundleAppearance(items: readonly Item[]): ItemBundle[] {
   return CommonCloneDeep(ServerAppearanceBundle(items));
 }
@@ -17,7 +18,7 @@ const LOCK_PROPERTY_KEYS = [
  */
 export function stripLock(entry: ItemBundle): ItemBundle {
   if (!entry.Property) return entry;
-  const property: ItemProperties = {...entry.Property};
+  const property: ItemProperties = {...sanitizeHeartLock(entry).Property};
   for (const key of LOCK_PROPERTY_KEYS) delete property[key];
   if (Array.isArray(property.Effect)) {
     const effect = property.Effect.filter(name => name !== 'Lock');
@@ -36,7 +37,8 @@ export function itemFromBundle(character: Character, entry: ItemBundle): Item | 
 }
 
 export function wearBundle(character: Character, entry: ItemBundle): Item | null {
-  const item = itemFromBundle(character, entry);
+  if (protectedGroup(character, entry.Group)) return null;
+  const item = itemFromBundle(character, sanitizeHeartLock(entry));
   if (!item) return null;
 
   CharacterAppearanceSetItem(character, item.Asset.Group.Name, null); // no asset = empty the group
@@ -45,7 +47,7 @@ export function wearBundle(character: Character, entry: ItemBundle): Item | null
 }
 
 export function encodeBundle(bundle: ItemBundle[]): string {
-  return LZString.compressToBase64(JSON.stringify(bundle));
+  return LZString.compressToBase64(JSON.stringify(bundle.map(sanitizeHeartLock)));
 }
 
 export function decodeBundles(code: string): ItemBundle[][] | null {

@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Scan source files only; tracked dist bundles otherwise retrigger watch builds. */
+@import "tailwindcss" source(".");
 
 @keyframes aee-rgb {
     0% {

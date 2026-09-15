@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import pageCssPlugin from './vite-plugin-page-css'
+import pageCssPlugin from './vite-plugin-page-css.ts'
 import packageJson from './package.json' with { type: 'json' }
 import {fileURLToPath, URL} from "node:url";
 

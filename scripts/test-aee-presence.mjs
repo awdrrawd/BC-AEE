@@ -8,6 +8,7 @@ const hooks = new Map(), sent = [], timers = [];
 const player = {MemberNumber: 1, OnlineSharedSettings: {AEEItemFont: 'old', OtherMod: true}};
 const other = {MemberNumber: 2, OnlineSharedSettings: {AEE: {Version: 'old', Enabled: true, FreeDraw: true}}};
 const globals = {window: {Liko: {AEE: {}}}, Player: player, ChatRoomCharacter: [player, other],
+  CommonIsArray: Array.isArray,
   ChatRoomMessage() {}, ChatRoomSync() {},
   ServerPlayerIsInChatRoom: () => inRoom,
   bcModSdk: {getModsInfo: () => active ? [{name: 'Liko - AEE'}] : []},
@@ -97,6 +98,24 @@ for (const group of ['SingleGloveFX', 'ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3
 }
 hooks.get('InventoryRemove')([other, 'Cloth'], () => ++calls);
 assert.equal(calls, 1, 'ordinary BC removal is unchanged');
+const requestedGroups = ['ItemCanvas1', 'Cloth'];
+const options = {refresh: false};
+hooks.get('InventoryRemove')([other, requestedGroups, options], args => {
+  assert.deepEqual(Array.from(args[1]), ['Cloth'], 'R132 batch removal filters unsupported AEE groups');
+  assert.equal(args[2], options);
+  return [];
+});
+assert.deepEqual(requestedGroups, ['ItemCanvas1', 'Cloth'], 'caller arrays are not mutated');
+const blockedItem = other.Appearance[0];
+const ordinaryItem = {Asset: {Group: {Name: 'Cloth'}}};
+const removed = hooks.get('InventoryRemoveItems')([other, [blockedItem, ordinaryItem], options], args => {
+  assert.deepEqual(Array.from(args[1]), [ordinaryItem], 'direct item removal enforces the same capability rules');
+  assert.equal(args[2], options);
+  return args[1];
+});
+assert.deepEqual(Array.from(removed), [ordinaryItem]);
+assert.equal(hooks.get('InventoryRemoveItems')([other, blockedItem], () => assert.fail('unsupported item removed')).length, 0);
+assert.equal(hooks.get('InventoryRemove')([other, ['ItemCanvas1']], () => assert.fail('unsupported group removed')).length, 0);
 const before = sent.length; timers[0]();
 assert.equal(sent.length, before, 'unloaded SDK cannot keep announcing');
 console.log('AEE presence, shared settings and group access tests passed.');

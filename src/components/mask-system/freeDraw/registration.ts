@@ -8,6 +8,7 @@ import {
 } from '../constants';
 import {maskLabel} from '../translations';
 import {slots} from './slots';
+import {freeDrawExtendedConfig} from './extendedConfig';
 
 // The full static target list — NOT filtered by what's currently loaded. BC uses
 // TextureMask.Groups purely as Map keys (CommonDraw.js): a name that doesn't
@@ -68,7 +69,7 @@ function registerDrawGroup(i: number): boolean {
     Name: DRAW_ASSET,
     Value: 0, Wear: true, Extended: true, AlwaysInteract: true, Random: false,
     RemoveItemOnRemove: removeOnRemove,
-  }, {}, {Group: g});
+  }, {[g]: {[DRAW_ASSET]: freeDrawExtendedConfig(i)}}, {Group: g});
   setDesc(g, DRAW_ASSET, maskLabel('mask-free-draw-name', {n: i + 1}));
   return assetExists(g, DRAW_ASSET);
 }

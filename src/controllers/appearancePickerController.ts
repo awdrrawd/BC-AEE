@@ -669,9 +669,8 @@ function openItemEditor(group: AssetGroup): boolean {
   if (!character || typeof AppearanceItemColor !== 'function') return false;
   const item = InventoryGet(character, group.Name);
   if (!item || !item.Asset.Layer?.some(layer => !layer.CopyLayerColor && layer.AllowColorize && !layer.HideColoring)) return false;
-  character.FocusGroup = group as AssetItemGroup;
   const mode = CharacterAppearanceMode;
-  AppearanceItemColor(character, item, group.Name, mode === 'Cloth' || mode === 'Color' ? mode : '');
+  AppearanceItemColor(character, item, group, mode === 'Cloth' || mode === 'Color' ? mode : '');
   hovered = null;
   return true;
 }

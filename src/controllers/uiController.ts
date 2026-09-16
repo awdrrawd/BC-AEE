@@ -612,7 +612,7 @@ export function installSettingEffects() {
     if (!enabled) stopHoverTryOn();
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
-        AppearanceMenuBuild(CharacterAppearanceSelection);
+        AppearanceMenuBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup);
       }
     } catch {
       // The appearance menu may not exist while settings are changed elsewhere.
@@ -624,7 +624,7 @@ export function installSettingEffects() {
     if (enabled) settings.characterPreviewActive.set(true);
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
-        AppearanceMenuBuild(CharacterAppearanceSelection);
+        AppearanceMenuBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup);
       }
     } catch {
       // The appearance menu may not exist while settings are changed elsewhere.
@@ -633,7 +633,7 @@ export function installSettingEffects() {
   settings.characterPreviewActive.onChange(() => {
     try {
       if (typeof AppearanceMenuBuild === 'function' && CharacterAppearanceSelection) {
-        AppearanceMenuBuild(CharacterAppearanceSelection);
+        AppearanceMenuBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup);
       }
       // AppearancePreviewUseCharacter() is hooked and now reflects the new
       // toggle state, but AppearancePreviews[] is a cache that BC only
@@ -643,9 +643,9 @@ export function installSettingEffects() {
       if (
         typeof AppearancePreviewBuild === 'function' &&
         CharacterAppearanceMode === 'Cloth' &&
-        CharacterAppearanceSelection?.FocusGroup
+        CharacterAppearanceSelectedGroup
       ) {
-        AppearancePreviewBuild(CharacterAppearanceSelection, true);
+        AppearancePreviewBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup, true);
       }
     } catch {
       // The appearance menu may not exist while settings are changed elsewhere.

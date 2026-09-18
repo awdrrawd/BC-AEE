@@ -239,9 +239,8 @@ export function openLayerRowColor(target: Character, row: LayerRow): boolean {
   if (!colorable || typeof AppearanceItemColor !== 'function') return false;
   closeLayerManagerPanel();
   const group = row.item.Asset.Group;
-  if (group) target.FocusGroup = group as AssetItemGroup;
   const mode = CharacterAppearanceMode;
-  AppearanceItemColor(target, row.item, row.groupName as AssetGroupName, mode === 'Wardrobe' || mode === 'Cloth' || mode === 'Color' ? mode : '');
+  AppearanceItemColor(target, row.item, group, mode === 'Cloth' || mode === 'Color' ? mode : '');
   return true;
 }
 

@@ -46,7 +46,7 @@ export function WardrobeMigrationDialog({onClose}: { onClose: () => void }) {
   const spsEnabled = useSetting(settings.wardrobeSpsEnabled);
 
   const selected = (slot: WardrobeMigrationSlot, part: WardrobeMigrationPart) =>
-    choices[partKey(slot.index, part)] ?? true;
+    !part.conflict && (choices[partKey(slot.index, part)] ?? true);
   const chosenParts = slots.reduce((count, slot) => count + slot.parts.filter(part => selected(slot, part)).length, 0);
   const chosenOutfits = slots.filter(slot => slot.parts.some(part => selected(slot, part))).length;
   const focusedAfter = focused
@@ -166,9 +166,12 @@ function MigrationSlotRow({slot, focused, open, selected, onFocus, onToggle, onP
       const asset = AssetGet(getTargetCharacter().AssetFamily, part.group, part.name);
       return <div key={part.bundleIndex} className={cn('grid items-center gap-2 border-b border-white/5 px-2 py-2 text-center last:border-b-0', GRID)}>
         <span/><span className="truncate text-[23px] text-zinc-300">{asset?.Group.Description ?? part.group}</span>
-        <span className="truncate text-left text-[25px] text-zinc-200">{asset?.Description ?? part.name}</span>
+        <span className="text-left text-[25px] text-zinc-200">{asset?.Description ?? part.name}
+          <small className="block break-words text-[16px] text-zinc-400">{part.fields.join(", ")}</small>
+          {part.conflict ? <small className="block text-[16px] text-amber-300">{t('wardrobe-migration-conflict')}</small> : null}
+        </span>
         {[false, true].map(value => <label key={String(value)} className="flex cursor-pointer justify-center">
-          <input type="radio" name={`migration-${slot.index}-${part.bundleIndex}`} checked={selected(part) === value}
+          <input type="radio" name={`migration-${slot.index}-${part.bundleIndex}`} disabled={part.conflict} checked={selected(part) === value}
                  onChange={() => onPart(part, value)} className="h-4 w-4 accent-(--aee-accent)"/>
         </label>)}
         <span className="text-[24px] text-white">{part.layers}</span>

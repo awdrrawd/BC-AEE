@@ -1,6 +1,6 @@
-# R132Beta3 相容性調整
+# R132 相容性調整
 
-此變更位於 `fix/R132`，以提供的 `Bondage-College-Mirror-bondageclub` R132Beta3 原始碼及 `bc-stubs@132.0.0-Beta.3` 為準。這是 R132 專用分支，未宣告向下相容 R131。
+最初以提供的 `Bondage-College-Mirror-bondageclub` R132Beta3 原始碼及 `bc-stubs@132.0.0-Beta.3` 完成適配，2026-09-18 再核對正式 R132 快照。這是 R132 專用分支，未宣告向下相容 R131。
 
 ## 已修正
 
@@ -23,67 +23,37 @@
 - R132Beta3 目前保留 `LayerOverrides`、`wceOverrideHide` 的壓縮相容處理，AEE 的傾斜／鏡射及隱藏資料不需全面重寫。標準變形欄位仍走原生序列化。
 - 單手套已有 typed config，其側別與範圍由 `TypeRecord` 和選項資料重建。自訂部位名稱也未以 `$` 開頭。
 
-## R132 衣櫃資料遷移評估（尚未實作）
+## 正式 R132 補正（2026-09-18）
 
-2026-09-16 補充：此處的 R131 FIX 指衣櫃內「舊資料遷移（R131）」功能，不是一般 API 相容性修補。本次僅記錄評估，未修改遷移器或編輯器。前述已修正項目及自動測試**未涵蓋以下圖層鍵問題**，不能據此判定舊衣櫃資料已完整相容。
+核對本機鏡像的 `Scripts/Game.js`：`GameVersion = "R132"`；CHANGELOG 更新到 2026-09-16。上游 commits 網頁本次無法讀取，因此本次結論限於提供的正式版快照。
 
-### 已確認：未命名圖層的變形資料鍵改變
+- 編輯器的未命名圖層統一讀寫空字串鍵 `""`，不再使用資產名稱。正式版 `Layering.UpdateProperty` 仍以 truthy 判斷單層；AEE 對空字串直接寫入原生 map，避免誤改整件物品。
+- 衣櫃遷移新增 `LayerTranslationX/Y`、`LayerScaleX/Y`、`LayerRotation` 的 R131 舊鍵轉換；即使沒有 `LayerOverrides` 也能偵測。
+- 更舊的 `LayerOverrides` 直接轉成 R132 原生鍵，保留原本位置換算、整件物品變形與 AEE 傾斜／鏡射。既有原生值優先，重複遷移不再改變結果。
+- 僅當資產含未命名圖層、且沒有同名的具名圖層時才轉換。新舊鍵並存、數值無效、缺少資產或鍵有歧義時，整件保留並標示衝突，禁止選取遷移。
+- 沿用選取、前後預覽及備份流程，列出受影響欄位；入口改標 R132。儲存前檢查衣櫃是否已變更，防止舊預覽覆蓋新資料。
+- 62 個靜態 hook 名稱在正式版來源重新核對，皆存在。原生壓縮、bundle 轉換與 extended callback 摘錄已比對；解壓縮測試更新為正式版「有 TypeRecord 也執行完整 Init」。
 
-比對本機 R131 與 R132Beta3 快照的 `Scripts/CommonDraw.js`，`getTransform` 中的圖層鍵由 `layer.Name ?? asset.Name` 改成 `layer.Name ?? ""`。因此，未命名圖層使用物品名稱保存的變形值，在 R132 繪圖時不會按舊鍵讀取。這是資料鍵變更，目前沒有證據需要全面更改座標倍率。
+### 使用方式與限制
 
-```js
-// R131：未命名圖層使用物品名稱
-LayerTranslationX: { "ExampleAsset": 20 }
-// R132：未命名圖層使用空字串
-LayerTranslationX: { "": 20 }
-```
+在衣櫃設定開啟「舊資料遷移（R132）」，分別檢查線上、本地與 SPS 的預覽，建議選「先備份，再遷移」。程式更新本身不會自動改寫使用者衣櫃。
 
-| 欄位 | 可能症狀 |
-| --- | --- |
-| `LayerTranslationX`、`LayerTranslationY` | 原本的圖層位移失效 |
-| `LayerScaleX`、`LayerScaleY` | 原本的圖層縮放失效 |
-| `LayerRotation` | 原本的圖層旋轉失效 |
-
-初估為 **1 類已確認的資料遷移問題，涉及 5 個欄位**。影響條件是資產含未命名圖層，且保存了對應的舊鍵變形值；具名圖層與整件物品的 `TranslationX/Y`、`ScaleX/Y`、`Rotation` 不因這項鍵變更而一律需要遷移。尚未掃描使用者衣櫃，無法估計受影響套數或比例。以上結論限於目前檢視的本機快照，正式 R132 仍需重新核對。
-
-### 待修正的三處邏輯
-
-| 範圍 | 現況 | 建議處理 |
-| --- | --- | --- |
-| 衣櫃遷移偵測與轉換 | `src/core/wardrobeMigration.ts` 的 `migratableLayerCount` 主要檢查 `LayerOverrides`，會漏掉已轉成 R131 原生格式、僅剩舊鍵的資料 | 增加五種原生圖層變形 map 的舊鍵偵測與遷移 |
-| 現有 R131 遷移器 | `originalLayerPositions` 仍以 `layer.Name ?? asset.Name` 決定輸出鍵，在 R132 執行仍可能產生不適用的資料 | 讓舊 `LayerOverrides` 直接轉成 R132 適用格式；保留既有位置與整件物品變形的換算語意 |
-| 編輯器讀寫 | `src/core/bc.ts` 的 `setLayerOverride`、`getLayerOverride` 仍將未命名圖層映射到物品名稱 | 同步調整讀寫，避免修復存檔後又寫入舊格式 |
-
-實作陷阱：R132Beta3 的 `Scripts/Layering.js` 中，`Layering.UpdateProperty` 仍使用 `if (layerName)` 區分單層與整件物品。直接將空字串傳給此函式，會寫入整件物品的屬性；AEE 自己的 fallback 也有相同判斷。因此不能只替換圖層鍵，必須明確區分「未命名圖層」與「全部圖層／整件物品」。原生 Layering 面板的單層輸入則直接寫入 `Layer*` map。
-
-### 建議的 R132 FIX 行為與驗收
-
-- 沿用衣櫃遷移的選取、前後預覽及備份流程，顯示受影響服裝、部件與欄位；已轉換資料再次執行應保持不變。
-- 根據實際資產圖層判斷，不能將所有等於物品名稱的鍵盲目改成空字串；物品名稱可能同時是真實的具名圖層名稱。
-- 新舊鍵同時存在、資產不存在或圖層對應有歧義時，標示衝突並保留原資料，不直接覆蓋或刪除。
-- 驗證僅有舊原生 map、僅有舊 `LayerOverrides`、混合兩者、已有 R132 新鍵、具名圖層及整件物品變形等情境。
-- 驗證未命名圖層在編輯、保存、重新載入及同步後仍一致，且不會誤改整件物品的變形。
-
-### 待驗證風險，不列為已確認的遷移需求
-
-| 項目 | 目前判斷／後續核對 |
-| --- | --- |
-| 資產圖層新增、刪除或重排 | `LayerOverrides` 以索引對應圖層，若資產定義變更可能錯位；尚未完成逐資產差異盤點，不能宣稱普遍發生 |
-| 自由繪圖舊資料 | 前述 baseline 登記已處理壓縮識別；仍需實際衣櫃還原與跨玩家驗收。若資料先前已被丟棄，遷移器無法憑空重建，需要備份 |
-| `LayerOverrides`／`wceOverrideHide` | Beta3 暫時保留相容處理，目前無全面重寫依據；正式版需再核對序列化規則 |
+本次沒有逐一比對所有資產圖層的增刪或重排。索引式 `LayerOverrides` 若因資產改版錯位，仍須個別檢查；已遺失的繪圖資料也只能從備份還原。自由繪圖、其他插件及跨玩家同步仍需遊戲內驗收。
 
 ## 自動驗證
 
 - `npm test`：包括新增的 `test-r132-appearance.mjs`、`test-r132-compatibility.mjs`，以及補強的槽位存取測試。
 - `npm run lint`、`npm run build`、`npm run check:docs`。
-- `scripts/fixtures/r132-item-runtime.js` 是所提供 R132Beta3 鏡像的原函式摘錄，檔首記錄來源，每個來源區段附 SHA256。測試直接在 VM 執行壓縮／解壓縮、bundle 轉換、NOARCH 初始化與 callback 建立邏輯；資產登記表與繪圖 UI 使用替身。
+- `scripts/fixtures/r132-item-runtime.js` 是所提供正式 R132 鏡像的原函式摘錄，檔首記錄來源，每個來源區段附 SHA256。測試直接在 VM 執行壓縮／解壓縮、bundle 轉換、NOARCH 初始化與 callback 建立邏輯；資產登記表與繪圖 UI 使用替身。
 - 覆蓋內嵌圖片、SPS 引用、預設值省略、清空圖片、舊完整屬性存檔、外觀大小估算、跨兩個獨立 VM 的還原、資產重載、顏色入口及選取分類重建。
 
 2026-09-16 驗證結果：27/27 回歸腳本、6/6 架構瀏覽器測試通過；型別、建置、文件連結、翻譯檢查通過。瀏覽器測試使用 `PLAYWRIGHT_CHANNEL=msedge`（本機沒有 Playwright 內附 Chromium）。Lint 為 0 errors，保留現有 41 個 React 警告；建置仍有 ModSDK CommonJS／ESM 與 chunk 大小警告，翻譯檢查仍有其他語言既有缺字提示。
 
+2026-09-18 正式版補正驗證：28/28 回歸腳本、6/6 架構瀏覽器測試通過；型別、建置、文件連結及翻譯檢查通過。新增測試涵蓋五種未命名圖層讀寫（有／無原生 Layering API）、舊鍵／舊 override／混合格式、衝突與缺少資產、重複遷移、儲存失敗回復及過期預覽。Lint 仍為 0 errors、41 個既有警告；建置與其他語言缺字提示同前。發布產物 `dist/assets/app.js` 已重新建置。
+
 ## 遊戲內驗收
 
-自動測試不等同完整遊戲畫面或實際伺服器同步測試。分支可用現有的本地 loader 測試：執行 `npm run dev`，載入 `loader.local.user.js`，重新開啟 R132Beta3。一般 `loader.user.js` 仍指向正式 GitHub Pages，不能用它判斷本機分支是否生效。
+自動測試不等同完整遊戲畫面或實際伺服器同步測試。分支可用現有的本地 loader 測試：執行 `npm run dev`，載入 `loader.local.user.js`，重新開啟 R132。一般 `loader.user.js` 仍指向正式 GitHub Pages，不能用它判斷本機分支是否生效。
 
 1. 在服裝分類切換人物預覽及懸停試穿，確認預覽立即更新，原生按鈕仍可操作。
 2. 由角色部件拾取與圖層管理器進入調色；返回時確認分類與色彩正常。

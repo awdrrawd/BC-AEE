@@ -1,9 +1,9 @@
-// Function excerpts from the supplied Bondage Club R132Beta3 mirror.
+// Function excerpts from the supplied Bondage Club R132 release mirror (GameVersion R132, changelog 2026-09-16).
 // Executable code is unchanged; upstream-only lint directives are omitted.
 // Source: https://gitgud.io/BondageProjects/Bondage-College (Scripts/*).
 // Executed in a VM by test-r132-compatibility.mjs; UI/asset registries are stubbed.
 
-// Item.js SHA256 96fadf563359a41b0388a45a0894e2423237e0f8386a3a2a79fb958152b54187
+// Item.js SHA256 d0ac48f919447062cd00f037d695505dafbbdaeeb3d38fdfdd3b7db034bbcfe7
 let ItemPropertiesDummy = null;
 
 function ItemPropertiesCompress(item, options=null) {
@@ -120,11 +120,8 @@ function ItemPropertiesDecompress(item, properties) {
 	}
 
 	if (item.Asset.Extended) {
-		if (propertiesUnsanitized.TypeRecord) {
-			ExtendedItemSetOptionByRecord(C, item, propertiesUnsanitized.TypeRecord, { push: false, refresh: false });
-		} else {
-			ExtendedItemInit(C, item, false, false);
-		}
+		// Init will respect the `TypeRecord` values assigned further up above
+		ExtendedItemInit(C, item, false, false);
 	}
 	return item.Property;
 }

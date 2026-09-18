@@ -237,9 +237,11 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
       const nativeValue = clampNativeTransform(item, nativeProperty, rawValue);
       const lo = item.Property.LayerOverrides?.[index];
       if (lo) delete lo[key];
-      if (layering) {
+      // R132 uses an empty key for unnamed layers, but UpdateProperty
+      // treats it as a whole-item edit. Write that map directly instead.
+      if (layering && layerName !== '') {
         layering.UpdateProperty(item, nativeProperty, nativeValue, layerName);
-      } else if (layerName) {
+      } else if (layerName !== undefined) {
         const property = item.Property as ItemProperties & Record<string, unknown>;
         const layerValues = (property[`Layer${nativeProperty}`] ??= {}) as Record<string, number>;
         layerValues[layerName] = nativeValue;
@@ -248,7 +250,7 @@ export function setLayerOverride(item: Item, layerIdx: LayerId, key: LayerOverri
       }
     };
     if (layerIdx === 'all') update(0);
-    else indices.forEach(index => update(index, item.Asset?.Layer?.[index]?.Name ?? item.Asset?.Name));
+    else indices.forEach(index => update(index, item.Asset?.Layer?.[index]?.Name ?? ''));
     refreshAfterLayerEdit();
     return;
   }
@@ -334,7 +336,7 @@ export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverr
   const layerOverride = item?.Property?.LayerOverrides?.[index] || {};
   const opacity = getOpacity(item, idx) ?? 1;
   if (!item) return {...layerOverride, Opacity: opacity};
-  const layerName = item.Asset?.Layer?.[index]?.Name ?? item.Asset?.Name ?? '';
+  const layerName = item.Asset?.Layer?.[index]?.Name ?? '';
   const props = item.Property ?? {};
   const layerValue = (name: 'TranslationX' | 'TranslationY' | 'ScaleX' | 'ScaleY' | 'Rotation') =>
     idx === 'all' ? (props[name] as number | undefined) : (props[`Layer${name}`] as Record<string, number> | undefined)?.[layerName];

@@ -20,6 +20,14 @@ import {Panel} from '@/components/ui/Panel';
 import {TextInput} from '@/components/ui/Fields';
 import {ArrowDown, ArrowUp} from '@/components/main-panel/icons/Icons';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
+import {settings} from '@/core/settings';
+import {setLayerManagerHover} from '@/controllers/appearancePickerController';
+import {useEffect, useRef} from 'react';
+
+function clearLayerManagerHover() {
+  setLayerManagerHover(null);
+  stopHoverHighlight(true);
+}
 
 const FILTER_MODES: LayerManagerFilterMode[] = ['all', 'custom', 'default'];
 
@@ -27,6 +35,10 @@ const FILTER_MODES: LayerManagerFilterMode[] = ['all', 'custom', 'default'];
 // portion of the canvas, off to one side so the character underneath isn't
 // immediately covered — the user drags it wherever suits their outfit.
 function LayerManagerRow({row, target}: { row: LayerRow; target: Character }) {
+  const hovered = useRef(false);
+  useEffect(() => () => {
+    if (hovered.current) clearLayerManagerHover();
+  }, []);
   const commit = (raw: string) => {
     const parsed = Number.parseInt(raw, 10);
     if (Number.isNaN(parsed)) return;
@@ -36,10 +48,17 @@ function LayerManagerRow({row, target}: { row: LayerRow; target: Character }) {
 
   return <div
     className="flex items-center gap-3 border-b border-zinc-800/70 px-3 py-2 last:border-b-0 hover:bg-white/[0.03]"
-    onMouseEnter={() => startHoverHighlight(row.item, String(row.layerIndex))}
-    onMouseLeave={() => stopHoverHighlight(true)}
+    onMouseEnter={() => {
+      hovered.current = true;
+      setLayerManagerHover(row.item, row.layerIndex);
+      if (settings.hoverHighlight.get()) startHoverHighlight(row.item, String(row.layerIndex));
+    }}
+    onMouseLeave={() => {
+      hovered.current = false;
+      clearLayerManagerHover();
+    }}
   >
-    <button className="min-w-0 flex-1 text-left" onClick={() => { stopHoverHighlight(true); openLayerRowColor(target, row); }}
+    <button className="min-w-0 flex-1 text-left" onClick={() => { clearLayerManagerHover(); openLayerRowColor(target, row); }}
             data-aee-tooltip={t('layer-manager-open-color-tooltip')}>
       <div className="truncate text-sm text-[var(--aee-text-strong)]">
         {row.groupLabel} <span className="text-zinc-500">&gt;</span> {row.itemLabel} <span className="text-zinc-500">&gt;</span> {row.partLabel}
@@ -78,6 +97,9 @@ export function LayerManagerPanel({state}: { state: AeeState }) {
   const lm = state.layerManager;
   const target = lm.target;
   const canvasRect = state.canvasRect;
+  useEffect(() => {
+    if (lm.open) return clearLayerManagerHover;
+  }, [lm.open, target]);
 
   if (!lm.open || !canvasRect || !target) return null;
 
@@ -89,7 +111,7 @@ export function LayerManagerPanel({state}: { state: AeeState }) {
   const rows = buildLayerRows(target);
   const filtered = sortLayerRows(filterLayerRows(rows, lm.search, lm.filterMode), lm.sortDirection);
   const close = () => {
-    stopHoverHighlight(true);
+    clearLayerManagerHover();
     requestCloseLayerManagerPanel();
   };
 

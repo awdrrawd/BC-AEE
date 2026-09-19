@@ -14,10 +14,12 @@ function client() {
   let enabled = true;
   const context = vm.createContext({console, exports: {},
     CommonKeys: Object.keys, CommonEntries: Object.entries,
-    CommonCloneDeep: structuredClone, CommonIsArray: Array.isArray,
+    CommonCloneDeep: value => JSON.parse(JSON.stringify(value)), CommonIsArray: Array.isArray,
+    CommonArrayConcatDedupe: (target, values) => { for (const value of values) if (!target.includes(value)) target.push(value); },
     CommonIsObject: value => value != null && typeof value === 'object' && !Array.isArray(value),
     CommonCapitalize: value => value[0].toUpperCase() + value.slice(1),
     CharacterLoadSimple: () => ({Appearance: []}),
+    CharacterAppearanceSetItem: (character, group) => { character.Appearance = character.Appearance.filter(item => item.Asset.Group.Name !== group); },
     CharacterRefresh: () => calls.push('refresh'), ChatRoomCharacterItemUpdate: () => calls.push('sync'),
     NoArchItemDataLookup: {},
     ExtendedArchetype: {NOARCH: 'noarch', TYPED: 'typed'},
@@ -126,6 +128,66 @@ const legacy = receiver.bundle.itemFromBundle(wearer, {Group: group, Name: name,
   Property: {CustomDraw: 'old-save', OffsetX: 14, OffsetY: -9, MaskPriority: 37}});
 assert.equal(legacy.Property.CustomDraw, 'old-save', 'existing full-property outfits still load');
 assert.equal(legacy.Property.OffsetX, 14);
+
+// Exercise the wardrobe's exact bundle -> JSON storage -> wear path with a
+// timed lock, crafting metadata and AEE/native transforms.
+for (const client of [sender, receiver]) {
+  client.context.NoArchItemDataLookup.ItemMiscTimerPadlock = {
+    baselineProperty: {RemoveTimer: -1, ShowTimer: true, RemoveItem: false},
+  };
+}
+const lockedItem = makeItem({CustomDraw: 'saved drawing', LockedBy: 'TimerPadlock', LockMemberNumber: 123,
+  RemoveTimer: 123456789, ShowTimer: false, Effect: ['Lock'], Opacity: [0.3],
+  LayerRotation: {'': 30}, LayerOverrides: [{SkewX: 12}], wceOverrideHide: ['Cloth']});
+lockedItem.Craft = {Name: 'Example', Description: 'Saved craft'};
+lockedItem.Difficulty = 8;
+const saved = plain(sender.bundle.bundleItem(lockedItem));
+const snapshot = structuredClone(saved);
+const dressed = receiver.bundle.wearBundle(wearer, saved);
+assert.equal(wearer.Appearance[0], dressed);
+assert.equal(dressed.Property.RemoveTimer, 123456789);
+assert.ok(dressed.Property.Effect.includes('Lock'), 'R132 restores the compressed Lock effect');
+assert.deepEqual(plain(dressed.Craft), lockedItem.Craft);
+assert.equal(dressed.Difficulty, 8);
+for (const key of ['Opacity', 'LayerRotation', 'LayerOverrides', 'wceOverrideHide']) {
+  assert.deepEqual(plain(dressed.Property[key]), lockedItem.Property[key]);
+}
+const unlocked = receiver.bundle.wearBundle(wearer, receiver.bundle.stripLock(saved));
+assert.equal(unlocked.Property.LockedBy, undefined);
+assert.equal(unlocked.Property.RemoveTimer, undefined, 'exclude-lock must remove R132 timer data');
+assert.ok(!unlocked.Property.Effect?.includes('Lock'));
+assert.equal(wearer.Appearance.length, 1, 'wear replaces the group');
+assert.deepEqual(saved, snapshot, 'wear/strip lock must not mutate the stored outfit');
+
+// A regular typed restraint uses the same native serializer. Its registered
+// Init callback is stubbed here; compression/decompression themselves are BC's.
+for (const client of [sender, receiver]) {
+  const asset = {Name: 'TypedCuffs', Group: {Name: 'ItemArms'}, Extended: true, Archetype: 'typed'};
+  const data = {asset, archetype: 'typed', name: 'typed', baselineProperty: {Text: ''}};
+  data.options = [0, 1].map(index => ({OptionType: 'TypedItemOption', ParentData: data,
+    Property: {Effect: index ? ['Block'] : []}}));
+  client.assets.set('ItemArms/TypedCuffs', asset);
+  client.data.set('ItemArms/TypedCuffs', data);
+  client.context.InventoryItemArmsTypedCuffsInit = (dummy, item, push, refresh) => {
+    assert.equal(push, false);
+    assert.equal(refresh, false);
+    const index = item.Property.TypeRecord?.typed ?? 0;
+    item.Property.TypeRecord = {typed: index};
+    item.Property.Effect = [...data.options[index].Property.Effect];
+  };
+}
+const typed = {Asset: sender.assets.get('ItemArms/TypedCuffs'),
+  Property: {TypeRecord: {typed: 1, UnknownOldModule: 2}, Effect: ['Block'], LayerScaleX: {'': 1.5}}};
+const typedBefore = structuredClone(typed.Property);
+const typedSaved = plain(sender.bundle.bundleItem(typed));
+assert.deepEqual(typed.Property, typedBefore, 'R132 option normalization cannot mutate worn properties during save');
+assert.deepEqual(typedSaved.Property.TypeRecord, {typed: 1});
+assert.equal(typedSaved.Property.Effect, undefined, 'R132 omits derived option effects');
+const typedWorn = receiver.bundle.wearBundle(wearer, typedSaved);
+assert.deepEqual(plain(typedWorn.Property.TypeRecord), {typed: 1});
+assert.deepEqual(plain(typedWorn.Property.Effect), ['Block'], 'wear must invoke the native extended-item initialization path');
+assert.deepEqual(plain(typedWorn.Property.LayerScaleX), {'': 1.5});
+assert.doesNotThrow(() => sender.bundle.bundleItem({Asset: typed.Asset}), 'items without properties must still save');
 
 wearer.Appearance = [embedded];
 const session = {character: wearer, item: embedded};

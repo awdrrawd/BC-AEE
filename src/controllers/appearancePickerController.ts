@@ -60,6 +60,19 @@ let layerLabels: Array<{index: number; x: number; y: number; w: number; h: numbe
 let hoveredLayerIndex: number | null = null;
 let outlineCanvas: HTMLCanvasElement | null = null;
 let layerContentSignature = '';
+let managerHover: {item: Item; index: number} | null = null;
+let managerCaptures: DrawCapture[] = [];
+let managerFrame: DrawCapture[] = [];
+
+export function setLayerManagerHover(item: Item | null, index = -1): void {
+  managerHover = item ? {item, index} : null;
+  managerCaptures = [];
+  managerFrame = [];
+  if (item && settings.hoverOutlinePanel.get()) {
+    const character = pickerCharacter();
+    if (character) CharacterLoadCanvas(character);
+  }
+}
 
 const OUTLINE_WIDTH = 3;
 const OUTLINE_SAMPLES = 20;
@@ -152,6 +165,9 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   // Keep transparent layers available for thumbnails, but exclude them from
   // whole-item hit testing so invisible pixels never become pick targets.
   if (options?.Alpha === 0) return capture;
+  if (managerHover && trackedItem === managerHover.item && runtime.currentDrawLayerIndex === managerHover.index) {
+    managerFrame.push(capture);
+  }
   // Whole-item picking needs an asset owner. Per-layer picking can still use
   // CommonDraw's authoritative item/layer context for non-standard URLs.
   if (!asset) return capture;
@@ -169,6 +185,10 @@ export function commitAppearancePickerFrame() {
   if (frameDrawAt) {
     drawAt = frameDrawAt;
     frameDrawAt = null;
+  }
+  if (managerFrame.length) {
+    managerCaptures = managerFrame;
+    managerFrame = [];
   }
   // BC may draw the target character again without passing its layers through
   // the capture path. Only replace a good frame when a new frame actually has
@@ -273,6 +293,11 @@ export function invalidateAppearancePicker() {
 export function drawAppearancePickerOutline() {
   drawDetailedLayerPicker();
   const state = getState();
+  if (state.layerManager?.open && managerHover && settings.hoverOutlinePanel.get()) {
+    const map = canvasMap();
+    if (map) drawCaptureOutline(managerCaptures, map);
+    return;
+  }
   if (layerPickerEnabled() && state.layerPickerMode === 'normal') {
     const index = pickLayerAt(MouseX, MouseY)[0];
     if (index != null) drawLayerOutline(index);

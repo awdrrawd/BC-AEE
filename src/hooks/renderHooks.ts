@@ -36,6 +36,10 @@ export function installRenderHooks() {
     if (item?.Asset?.Layer && layer) {
       runtime.currentDrawLayerItem = item;
       runtime.currentDrawLayerIndex = item.Asset.Layer.indexOf(layer);
+      // R132's AppearanceLayers contains shallow copies of the asset layers.
+      if (runtime.currentDrawLayerIndex < 0) {
+        runtime.currentDrawLayerIndex = item.Asset.Layer.findIndex(candidate => candidate.Name === layer.Name);
+      }
     } else {
       runtime.currentDrawLayerItem = null;
       runtime.currentDrawLayerIndex = null;

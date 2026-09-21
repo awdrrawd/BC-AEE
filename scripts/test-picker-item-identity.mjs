@@ -20,7 +20,7 @@ const dependencies = {
 };
 const exports = {};
 const source = fs.readFileSync(new URL('../src/controllers/appearancePickerController.ts', import.meta.url), 'utf8')
-  + '\nexport {frame, layerFrame, matchAsset};';
+  + '\nexport {frame, layerFrame, matchAsset, isPickerLayerVisible};';
 vm.runInNewContext(ts.transpileModule(source, {
   compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022},
 }).outputText, {exports, require: name => dependencies[name] ?? {},
@@ -68,3 +68,24 @@ runtime.currentDrawLayerItem = {Asset: first.Asset};
 exports.captureAppearanceImage(url, 70, 80);
 assert.equal(exports.layerFrame.size, 0, 'a different Item sharing the same Asset cannot supply editor layers');
 console.log('Picker item identity regression passed');
+
+runtime.currentDrawLayerItem = first;
+runtime.currentDrawLayerIndex = 0;
+first.Property = {Opacity: [0]};
+assert.equal(exports.isPickerLayerVisible(0), false, 'zero opacity hides labels even with older cached captures');
+const invisible = exports.captureAppearanceImage(url, 0, 0, {Alpha: 0});
+assert.equal(invisible.pickable, false);
+assert.ok(exports.layerFrame.get(0).includes(invisible), 'transparent thumbnail data remains available');
+first.Property.Opacity = 0.5;
+assert.equal(exports.isPickerLayerVisible(0), true);
+runtime.hoverFlashData = {item: first};
+assert.equal(exports.captureAppearanceImage(url, 0, 0, {Alpha: 0}).pickable, true, 'flash does not flicker labels');
+first.Property.Opacity = 0;
+assert.equal(exports.isPickerLayerVisible(0), false, 'flashing cannot expose a permanently transparent layer');
+delete first.Property.Opacity;
+first.Asset.Layer[0].Opacity = 0;
+assert.equal(exports.isPickerLayerVisible(0), false, 'asset opacity defaults are respected');
+first.Asset.Layer[0].Opacity = 1;
+character.AppearanceLayers = [];
+assert.equal(exports.isPickerLayerVisible(0), false, 'disabled layers cannot leave cached labels');
+console.log('Transparent picker labels, thumbnails, defaults and hover flash regression passed');

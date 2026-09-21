@@ -4,6 +4,7 @@ import {useHoldRepeat} from '@/components/ui/useHoldRepeat';
 import {resetButtonClass, stepButtonClass} from '@/components/main-panel/styles';
 import {tallRangeClass} from '@/components/main-panel/styles';
 import {RangeCenterMark} from '@/components/ui/RangeCenterMark';
+import {useRangeWheel} from '@/components/ui/useRangeWheel';
 
 export const MirrorAxisInput = memo(function MirrorAxisInput({label, ctrl, value}: {
   label: string;
@@ -11,6 +12,8 @@ export const MirrorAxisInput = memo(function MirrorAxisInput({label, ctrl, value
   value: number
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const rangeRef = useRef<HTMLInputElement>(null);
+  useRangeWheel(rangeRef, next => setEditProperty(ctrl, next));
   const dec = useHoldRepeat(() => stepEditProperty(ctrl, -0.1));
   const inc = useHoldRepeat(() => stepEditProperty(ctrl, 0.1));
   useEffect(() => {
@@ -34,7 +37,7 @@ export const MirrorAxisInput = memo(function MirrorAxisInput({label, ctrl, value
     </div>
     </div>
     <div className="relative flex items-center">
-      <input type="range" min={-10} max={10} step={0.01} value={value} className={tallRangeClass}
+      <input ref={rangeRef} type="range" min={-10} max={10} step={0.01} value={value} className={tallRangeClass}
              onChange={event => setEditProperty(ctrl, Number(event.target.value))}/>
       <RangeCenterMark/>
     </div>

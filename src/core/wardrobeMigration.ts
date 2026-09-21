@@ -9,6 +9,8 @@ export interface WardrobeMigrationPart {
   group: AssetGroupName;
   name: string;
   layers: number;
+  fields: string[];
+  conflict?: boolean;
 }
 
 export interface WardrobeMigrationSlot {
@@ -51,13 +53,9 @@ function originalLayerPositions(character: Character, asset: Asset, property: Re
   const coordinateCharacter = Object.create(character) as Character;
   coordinateCharacter.DrawPose = [];
   return asset.Layer.map(layer => {
-    // PropertyLayerOrigin indexes an unnamed asset layer with "", while BC's
-    // native LayerTranslation* properties address that same layer by the asset
-    // name. Keep the lookup key and persistence key separate; using the asset
-    // name for both made the origin lookup fall back to zero and added the
-    // asset's original absolute position a second time during migration.
+    // R132 uses the empty key for unnamed layers in both APIs.
     const originKey = layer.Name ?? '';
-    const name = layer.Name ?? asset.Name;
+    const name = originKey;
     let x = legacyNumber(left[originKey]) ?? legacyNumber(layer.DrawingLeft) ?? 0;
     let y = legacyNumber(top[originKey]) ?? legacyNumber(layer.DrawingTop) ?? 0;
     try {
@@ -101,43 +99,45 @@ function nativeRenderedPosition(base: number, itemTranslation: number): number {
   return base + BC_WEBGL_TRANSLATION_FACTOR * itemTranslation;
 }
 
-function migratableLayerCount(entry: ItemBundle, character: Character): number {
-  const property = entry.Property as (ItemProperties & Record<string, unknown>) | undefined;
-  const overrides = property?.LayerOverrides;
-  const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
-  if (!property || !Array.isArray(overrides) || !asset) return 0;
-  let origins: ReturnType<typeof originalLayerPositions>;
-  try { origins = originalLayerPositions(character, asset, property); } catch { return 0; }
-  let count = 0;
-  overrides.forEach((raw, index) => {
-    if (!raw || typeof raw !== 'object' || !origins[index]) return;
-    const override = raw as unknown as Record<string, unknown>;
-    const origin = origins[index];
-    const left = legacyNumber(override.DrawingLeft);
-    const top = legacyNumber(override.DrawingTop);
-    const position = (left !== null && !hasLayerValue(property, 'TranslationX', origin.name)
-        && differs(left, nativeRenderedPosition(origin.x, propertyNumber(property, 'TranslationX'))))
-      || (top !== null && !hasLayerValue(property, 'TranslationY', origin.name)
-        && differs(top, nativeRenderedPosition(origin.y, propertyNumber(property, 'TranslationY'))));
-    const scaleX = legacyNumber(override.ScaleX);
-    const scaleY = legacyNumber(override.ScaleY);
-    const rotation = legacyNumber(override.Rotation);
-    const transform = (scaleX !== null && differs(scaleX, 1) && !hasLayerValue(property, 'ScaleX', origin.name))
-      || (scaleY !== null && differs(scaleY, 1) && !hasLayerValue(property, 'ScaleY', origin.name))
-      || (rotation !== null && differs(rotation, 0) && !hasLayerValue(property, 'Rotation', origin.name));
-    if (position || transform) count++;
+const NATIVE_LAYER_FIELDS = ['LayerTranslationX', 'LayerTranslationY', 'LayerScaleX', 'LayerScaleY', 'LayerRotation'] as const;
+
+function migrateNativeKeys(entry: ItemBundle, asset: Asset | null): {fields: string[]; conflict: boolean} {
+  const property = entry.Property;
+  const fields = NATIVE_LAYER_FIELDS.filter(key => {
+    const map = property?.[key];
+    return map && Object.hasOwn(map, entry.Name);
   });
-  return count;
+  if (!asset && Array.isArray(property?.LayerOverrides)
+    && property.LayerOverrides.some(layer => layer && ['DrawingLeft', 'DrawingTop', 'ScaleX', 'ScaleY', 'Rotation']
+      .some(key => legacyNumber((layer as unknown as Record<string, unknown>)[key]) !== null))) {
+    return {fields: [...fields, 'LayerOverrides'], conflict: true};
+  }
+  if (!fields.length) return {fields: [], conflict: false};
+  if (!asset) return {fields, conflict: true};
+  if (!asset.Layer.some(layer => layer.Name == null)) return {fields: [], conflict: false};
+  // An actual named layer may own the old key. Never guess or overwrite a
+  // newer value, even if one field would otherwise be safe to migrate.
+  if (asset.Layer.some(layer => layer.Name === entry.Name)
+    || fields.some(key => Object.hasOwn(property![key]!, '')
+      || !Number.isFinite(property![key]![entry.Name]))) return {fields, conflict: true};
+  for (const key of fields) {
+    const map = property![key]!;
+    map[''] = map[entry.Name];
+    delete map[entry.Name];
+  }
+  return {fields, conflict: false};
 }
 
-function migrateEntry(entry: ItemBundle, character: Character): boolean {
+function migrateEntry(entry: ItemBundle, character: Character): {layers: number; fields: string[]; conflict?: boolean} {
   const property = entry.Property as (ItemProperties & Record<string, unknown>) | undefined;
   const overrides = property?.LayerOverrides;
   const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
-  if (!property || !Array.isArray(overrides) || !asset) return false;
+  const native = migrateNativeKeys(entry, asset);
+  const renamedUnnamedLayer = native.fields.length > 0;
+  const result = {layers: renamedUnnamedLayer ? 1 : 0, ...native};
+  if (native.conflict || !property || !Array.isArray(overrides) || !asset) return result;
   let origins: ReturnType<typeof originalLayerPositions>;
-  try { origins = originalLayerPositions(character, asset, property); } catch { return false; }
-  let changed = false;
+  try { origins = originalLayerPositions(character, asset, property); } catch { return result; }
 
   overrides.forEach((raw, index) => {
     if (!raw || typeof raw !== 'object' || !origins[index]) return;
@@ -170,6 +170,7 @@ function migrateEntry(entry: ItemBundle, character: Character): boolean {
     if (rotation !== null && differs(rotation, 0) && !hasLayerValue(property, 'Rotation', origin.name)) {
       values.push(['Rotation', 'Rotation', rotation - propertyNumber(property, 'Rotation')]);
     }
+    if (values.length && !(renamedUnnamedLayer && asset.Layer[index].Name == null)) result.layers++;
     for (const [legacyKey, nativeKey, value] of values) {
       const propertyKey = `Layer${nativeKey}`;
       const layerValues = property[propertyKey] && typeof property[propertyKey] === 'object'
@@ -177,10 +178,10 @@ function migrateEntry(entry: ItemBundle, character: Character): boolean {
         : (property[propertyKey] = {}) as Record<string, number>;
       layerValues[origin.name] = value;
       delete override[legacyKey];
-      changed = true;
+      if (!result.fields.includes(propertyKey)) result.fields.push(propertyKey);
     }
   });
-  return changed;
+  return result;
 }
 
 export function buildWardrobeMigrationOutfit(
@@ -189,18 +190,18 @@ export function buildWardrobeMigrationOutfit(
   selected: (part: WardrobeMigrationPart) => boolean,
 ): ItemBundle[] {
   const outfit = CommonCloneDeep(slot.before) as ItemBundle[];
-  for (const part of slot.parts) if (selected(part)) migrateEntry(outfit[part.bundleIndex], character);
+  for (const part of slot.parts) if (!part.conflict && selected(part)) migrateEntry(outfit[part.bundleIndex], character);
   return outfit;
 }
 
 export function scanWardrobeMigration(source: WardrobeSource, character: Character): WardrobeMigrationSlot[] {
   const slots: WardrobeMigrationSlot[] = [];
   for (let index = 0; index < source.size(); index++) {
-    const before = source.outfitAt(index);
+    const before = CommonCloneDeep(source.outfitAt(index));
     if (!before.length) continue;
     const parts = before.flatMap((entry, bundleIndex) => {
-      const layers = migratableLayerCount(entry, character);
-      return layers ? [{bundleIndex, group: entry.Group, name: entry.Name, layers}] : [];
+      const result = migrateEntry(CommonCloneDeep(entry), character);
+      return result.layers ? [{bundleIndex, group: entry.Group, name: entry.Name, ...result}] : [];
     });
     if (!parts.length) continue;
     const slot: WardrobeMigrationSlot = {
@@ -215,6 +216,8 @@ export function scanWardrobeMigration(source: WardrobeSource, character: Charact
 export async function applyWardrobeMigration(source: WardrobeSource, slots: readonly WardrobeMigrationSlot[]): Promise<boolean> {
   return wardrobeMutation(false, async () => {
     const current = wardrobeIdentity();
+    if (slots.some(slot => source.nameAt(slot.index) !== slot.name
+      || JSON.stringify(source.outfitAt(slot.index)) !== JSON.stringify(slot.before))) return false;
     const snapshots = slots.map(slot => ({index: slot.index, outfit: source.outfitAt(slot.index), name: source.nameAt(slot.index)}));
     for (const slot of slots) source.writeSlot(slot.index, slot.after, slot.name);
     try { if (await source.persist(slots.map(slot => slot.index))) return current(); }

@@ -31,6 +31,16 @@ export function installAeeGroupAccess(): void {
   bcAeeModSdk.hookFunction('CharacterAppearanceSetItem', 1, (args, next) =>
     canUseAeeGroup(args[0], args[1]) ? next(args) : null);
   bcAeeModSdk.hookFunction('InventoryRemove', 1, (args, next) => {
-    if (canUseAeeGroup(args[0], args[1])) return next(args);
+    const [character, groups, options] = args;
+    if (typeof groups === 'string') return canUseAeeGroup(character, groups) ? next(args) : [];
+    const allowed = groups.filter(group => canUseAeeGroup(character, group));
+    return allowed.length ? next([character, allowed, options]) : [];
+  });
+  // R132 also removes items directly, without going through InventoryRemove.
+  bcAeeModSdk.hookFunction('InventoryRemoveItems', 1, (args, next) => {
+    const [character, items, options] = args;
+    const allowed = (CommonIsArray(items) ? items : [items])
+      .filter(item => canUseAeeGroup(character, item.Asset.Group.Name));
+    return allowed.length ? next([character, allowed, options]) : [];
   });
 }

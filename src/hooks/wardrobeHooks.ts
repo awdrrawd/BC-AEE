@@ -10,7 +10,7 @@ const WARDROBE_SCREEN_NAME: string = 'WardrobePlus';
 interface WardrobeBundleExtras {
   AEE: 1;
   D?: number;
-  C?: CraftingItem;
+  C?: ItemBundle['Craft'];
   H?: AssetGroupName[];
 }
 

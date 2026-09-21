@@ -89,6 +89,21 @@ export function buildLayerRows(C: Character): LayerRow[] {
     const groupLabel = asset.Group?.Description || groupName;
     const itemLabel = asset.Description || asset.Name;
     for (const [layerIndex, layer] of asset.Layer.entries()) {
+      // AppearanceLayers contains copies, already filtered by BC for types,
+      // poses, hidden groups and texture masks. Compare ownership and name.
+      if (Array.isArray(C.AppearanceLayers) && !C.AppearanceLayers.some(active =>
+        active.Asset === asset && active.Name === layer.Name)) continue;
+      const opacity = item.Property?.Opacity;
+      // Match CommonDraw's bounded name lookup, including legacy short arrays.
+      let slot = 0;
+      if (Array.isArray(opacity)) {
+        for (let index = 0; index < asset.Layer.length && index < opacity.length; index++) {
+          if (asset.Layer[index].Name === layer.Name) slot = index;
+        }
+      }
+      const value = Array.isArray(opacity) ? opacity[slot] : opacity;
+      const effectiveOpacity = Math.min(layer.MaxOpacity ?? 1, Math.max(layer.MinOpacity ?? 0, value ?? layer.Opacity ?? 1));
+      if (effectiveOpacity <= 0) continue;
       const effectiveKey = layer.Name ?? '';
       rows.push({
         id: `${groupName}::${effectiveKey}`,
@@ -239,9 +254,8 @@ export function openLayerRowColor(target: Character, row: LayerRow): boolean {
   if (!colorable || typeof AppearanceItemColor !== 'function') return false;
   closeLayerManagerPanel();
   const group = row.item.Asset.Group;
-  if (group) target.FocusGroup = group as AssetItemGroup;
   const mode = CharacterAppearanceMode;
-  AppearanceItemColor(target, row.item, row.groupName as AssetGroupName, mode === 'Wardrobe' || mode === 'Cloth' || mode === 'Color' ? mode : '');
+  AppearanceItemColor(target, row.item, group, mode === 'Cloth' || mode === 'Color' ? mode : '');
   return true;
 }
 

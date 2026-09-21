@@ -60,7 +60,7 @@ function rowButtonX(item: Item | null, group: AssetGroup): number {
 }
 
 function rebuildAppearanceMenu() {
-  if (CharacterAppearanceSelection) AppearanceMenuBuild(CharacterAppearanceSelection);
+  if (CharacterAppearanceSelection) AppearanceMenuBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup);
 }
 
 function copyFrom(character: Character, groupName: AssetGroupName) {

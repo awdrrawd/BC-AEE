@@ -1,6 +1,9 @@
 import {sanitizeHeartLock, protectedGroup} from './heartLock';
 export function bundleAppearance(items: readonly Item[]): ItemBundle[] {
-  return CommonCloneDeep(ServerAppearanceBundle(items));
+  // R132 compression normalizes TypeRecord in place while gathering options.
+  // Saving/copying an outfit must not modify the currently worn item.
+  const snapshots = items.map(item => ({...item, Property: item.Property ? CommonCloneDeep(item.Property) : item.Property}));
+  return CommonCloneDeep(ServerAppearanceBundle(snapshots));
 }
 
 // Every lock-related field BC stores on an item's Property (see ItemProperties "Lock properties").
@@ -8,7 +11,7 @@ const LOCK_PROPERTY_KEYS = [
   'LockedBy', 'LockMemberNumber', 'LockMemberName', 'LockMessage',
   'Password', 'LockPickSeed', 'CombinationNumber', 'MemberNumberListKeys',
   'Hint', 'LockSet', 'RemoveItem', 'RemoveOnUnlock', 'ShowTimer',
-  'EnableRandomInput', 'MemberNumberList',
+  'EnableRandomInput', 'MemberNumberList', 'RemoveTimer',
 ] as const satisfies readonly (keyof ItemProperties)[];
 
 /**

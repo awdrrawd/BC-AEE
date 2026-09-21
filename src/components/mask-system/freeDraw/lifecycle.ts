@@ -230,12 +230,6 @@ export function slotExit() {
   detachListeners();
 }
 
-export function slotInit(_i: number, C: Character, Item: Item, Push = true, Refresh = true): boolean {
-  if (!CommonIsObject(Item.Property)) Item.Property = {};
-  if (Refresh) CharacterRefresh(C, Push, false);
-  return false;
-}
-
 function closeFocusedItem() {
   if (typeof DialogLeaveFocusItem === 'function') {
     DialogLeaveFocusItem();

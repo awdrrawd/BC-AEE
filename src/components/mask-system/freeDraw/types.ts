@@ -2,6 +2,15 @@
 // other module in this folder can import from here without risking a cycle.
 
 export type AnyProps = Record<string, unknown>;
+declare global {
+  interface ItemProperties {
+    CustomDraw?: string;
+    CustomDrawSPS?: import('./spsDrawing').SpsDrawRef | null;
+    OffsetX?: number;
+    OffsetY?: number;
+    MaskPriority?: number;
+  }
+}
 export type Box = {x: number; y: number; w: number; h: number};
 
 export interface SlotSessionState {

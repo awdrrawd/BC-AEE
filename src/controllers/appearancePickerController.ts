@@ -8,6 +8,8 @@ import {applyPickerMatrix, invertPickerPoint, type PickerMatrix} from '@/core/pi
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
 export type DrawCapture = {
+  /** Transparent renders remain useful for thumbnails, but are not pick targets. */
+  pickable?: boolean;
   matrices: PickerMatrix[];
   url: string;
   /** Translation-only fallback when no shader matrix was captured. */
@@ -141,6 +143,7 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   const translationX = transform?.TranslationX ?? 0;
   const translationY = transform?.TranslationY ?? 0;
   const capture: DrawCapture = {
+    pickable: options?.Alpha !== 0,
     matrices: [],
     url: source,
     x: x + translationX,
@@ -156,6 +159,11 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
     invert: !!transform?.Invert,
     order,
   };
+  // Flashing is an editor preview, not a change to the item's visibility.
+  if (isEditedItem && layerIndex >= 0
+    && (runtime.hoverFlashData?.item === state.item || runtime.hoverCharFlashData?.item === state.item)) {
+    capture.pickable = true;
+  }
   if (layerCaptureEnabled() && layerIndex >= 0) {
     const layerList = layerFrame.get(layerIndex) ?? [];
     layerList.push(capture);
@@ -361,14 +369,33 @@ function handleLayerPickerClick(x: number, y: number): boolean {
   return true;
 }
 
+function isPickerLayerVisible(index: number): boolean {
+  const item = getState().item;
+  const layer = item?.Asset.Layer[index];
+  if (!item || !layer) return false;
+  const active = pickerCharacter()?.AppearanceLayers;
+  if (active && !active.some(candidate => candidate.Asset === item.Asset && candidate.Name === layer.Name)) return false;
+  const opacity = item.Property?.Opacity;
+  let slot = 0;
+  if (Array.isArray(opacity)) {
+    for (let i = 0; i < item.Asset.Layer.length && i < opacity.length; i++) {
+      if (item.Asset.Layer[i].Name === layer.Name) slot = i;
+    }
+  }
+  const value = Array.isArray(opacity) ? opacity[slot] : opacity;
+  return Math.min(layer.MaxOpacity ?? 1, Math.max(layer.MinOpacity ?? 0, value ?? layer.Opacity ?? 1)) > 0;
+}
+
 function pickLayerAt(x: number, y: number): number[] {
   const map = canvasMap();
   if (!map || !layerPickerEnabled()) return [];
   const point = screenToCanvas(x, y, map);
   const hits: Array<{index: number; order: number; area: number}> = [];
   for (const [index, list] of layerCaptures) {
+    if (!isPickerLayerVisible(index)) continue;
     let opaque = false, area = 0;
     for (const cap of list) {
+      if (cap.pickable === false) continue;
       const image = pickImage(cap.url);
       const alpha = image ? alphaData(cap.url, image) : null;
       const width = image?.naturalWidth || image?.width || 0;
@@ -407,8 +434,10 @@ function drawDetailedLayerPicker() {
   }
   const rows: LabelRow[] = [];
   for (const [index, list] of layerCaptures) {
+    if (!isPickerLayerVisible(index)) continue;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const cap of list) {
+      if (cap.pickable === false) continue;
       const image = pickImage(cap.url);
       const alpha = image ? alphaData(cap.url, image) : null;
       const width = image?.naturalWidth || image?.width || 0;

@@ -33,6 +33,7 @@ export function SettingsTab() {
       <SettingRow label={t('settings-hide-unnecessary-appearance-buttons')} setting={settings.hideUnnecessaryAppearanceButtons}
                   tooltip={t('settings-hide-unnecessary-appearance-buttons-tooltip')}/>
       <SettingRow label={t('settings-hide-lscg-layers-panel')} setting={settings.hideLscgLayers}/>
+      <SettingRow label={t('settings-hide-bcx-import-export')} setting={settings.hideBcxImportExport}/>
       <SettingRow label={t('settings-hide-arousal-ui')} setting={settings.hideArousalUi}/>
     </section>
     <AboutAee/>

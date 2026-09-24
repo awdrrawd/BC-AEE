@@ -122,6 +122,7 @@ export const settings = {
   characterPreviewActive: bool('characterPreviewActive', true),
   enableCopyPaste: bool('enableCopyPaste', false),
   hideLscgLayers: bool('hideLscgLayers', false),
+  hideBcxImportExport: bool('hideBcxImportExport', false),
   hideArousalUi: bool('hideArousalUi', false),
   enableAeeMenu: bool('enableAeeMenu', false),
   hideUnnecessaryAppearanceButtons: bool('hideUnnecessaryAppearanceButtons', false),

@@ -1,6 +1,7 @@
 import {bundleAppearance} from '@/util/appearanceBundle';
 import {PROP_KEY, PROP_SPS_KEY} from '../constants';
 import type {AnyProps, SlotEditSession} from './types';
+import {createSpsDrawRef} from './spsDrawing';
 
 export const APPEARANCE_WARN_BYTES = 140_000;
 export const APPEARANCE_UPLOAD_BYTES = 160_000;
@@ -11,22 +12,28 @@ export function canvasEmbeddedData(canvas: HTMLCanvasElement): string {
   return typeof LZString !== 'undefined' ? LZString.compressToBase64(dataUrl) : dataUrl;
 }
 
-function projectedAppearance(session: SlotEditSession, compressed: string): readonly Item[] {
+function projectedAppearance(session: SlotEditSession, compressed: string, useSps: boolean): readonly Item[] {
   const {character: C, item} = session;
   if (!C.Appearance.includes(item)) throw new Error('free_draw_item_not_in_appearance');
   const property: AnyProps = {...(item.Property as AnyProps | undefined)};
-  if (compressed) property[PROP_KEY] = compressed;
+  if (!useSps && compressed) property[PROP_KEY] = compressed;
   else delete property[PROP_KEY];
   delete property[PROP_SPS_KEY];
+  if (useSps && session.hasDrawing) {
+    const owner = Player?.MemberNumber;
+    if (typeof owner !== 'number') throw new Error('sps_account_unavailable');
+    // SHA-256 hex always occupies 64 ASCII bytes, so no image encoding or upload is needed.
+    property[PROP_SPS_KEY] = createSpsDrawRef(owner, session.slot.index, '0'.repeat(64));
+  }
   return C.Appearance.map(value => value === item ? {...value, Property: property} : value);
 }
 
 // Deliberately throws on projection/serialization failures. Callers must block
 // embedded saving or display a conservative warning; returning zero here would
 // turn every estimator failure into permission to exceed the server limit.
-export function projectedAppearanceBytes(compressed: string, session: SlotEditSession): number {
+export function projectedAppearanceBytes(compressed: string, session: SlotEditSession, useSps = false): number {
   const C = session.character;
-  const appearance = bundleAppearance(projectedAppearance(session, compressed));
+  const appearance = bundleAppearance(projectedAppearance(session, compressed, useSps));
   return new TextEncoder().encode(JSON.stringify(['AccountUpdate', {
     Appearance: appearance,
     AssetFamily: C.AssetFamily || 'Female3DCG',

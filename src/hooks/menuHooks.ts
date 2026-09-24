@@ -62,6 +62,11 @@ function isEditablePasteTarget(event: ClipboardEvent): boolean {
 }
 
 export function installMenuHooks() {
+  settings.hideBcxImportExport.onChange(() => {
+    if (isInAppearanceScreen() && CharacterAppearanceSelection) {
+      AppearanceMenuBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup);
+    }
+  });
   document.addEventListener('paste', event => {
     if (!settings.pasteImport.get()) return;
     if (CharacterAppearanceMode !== '') return;
@@ -77,6 +82,11 @@ export function installMenuHooks() {
 
   bcAeeModSdk.hookFunction('AppearanceMenuBuild', 10, (args, next) => {
     next(args);
+    // BCX adds these after next() at priority 5. Our priority 10 wrapper
+    // filters the final menu so drawing and click positions remain aligned.
+    if (settings.hideBcxImportExport.get()) {
+      AppearanceMenu = AppearanceMenu.filter(button => !['BCX_Import', 'BCX_Export'].includes(button));
+    }
     if (CharacterAppearanceMode === '' && settings.hairCharacterPreview.get()) {
       AppearanceMenu = AppearanceMenu.filter(button => button !== 'Character');
     }

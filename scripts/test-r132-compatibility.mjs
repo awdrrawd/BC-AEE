@@ -81,6 +81,8 @@ function client() {
   const bundle = load('src/util/appearanceBundle.ts');
   deps['@/util/appearanceBundle'] = bundle;
   context.TextEncoder = TextEncoder;
+  deps['@/core/sps'] = {SPS_ORIGIN: 'https://storage.bondage-studio.org'};
+  deps['./spsDrawing'] = load('src/components/mask-system/freeDraw/spsDrawing.ts');
   const sizes = load('src/components/mask-system/freeDraw/appearanceSize.ts');
   return {context, constants, groups, assets, data, calls, registration, bundle, sizes,
     setEnabled: value => { enabled = value; }};
@@ -194,6 +196,26 @@ const session = {character: wearer, item: embedded};
 assert.ok(sender.sizes.projectedAppearanceBytes('x'.repeat(20_000), session)
   > sender.sizes.projectedAppearanceBytes('x', session) + 19_000,
   'R132 compression must not make the upload size estimator ignore drawing bytes');
+
+sender.context.Player = {MemberNumber: 123};
+const spsSession = {...session, hasDrawing: true, slot: {index: 0}};
+const beforeSpsEstimate = structuredClone(embedded.Property);
+const spsBytes = sender.sizes.projectedAppearanceBytes('', spsSession, true);
+assert.equal(spsBytes, sender.sizes.projectedAppearanceBytes('x'.repeat(20_000), spsSession, true),
+  'SPS estimates must exclude embedded image bytes');
+const actualReference = {o: 123, s: 0, r: 'a'.repeat(64), m: 'image/png',
+  u: `https://storage.bondage-studio.org/public/data/123/liko-aee:FreeDrawBlob/${'a'.repeat(64)}`, v: 4};
+const actualProperty = {...embedded.Property, CustomDrawSPS: actualReference};
+delete actualProperty.CustomDraw;
+const actualBytes = new TextEncoder().encode(JSON.stringify(['AccountUpdate', {
+  Appearance: sender.bundle.bundleAppearance([{...embedded, Property: actualProperty}]),
+  AssetFamily: wearer.AssetFamily,
+}])).byteLength;
+assert.equal(spsBytes, actualBytes, 'SPS estimate must match the serialized real reference');
+const emptyBytes = sender.sizes.projectedAppearanceBytes('', {...spsSession, hasDrawing: false}, true);
+assert.ok(spsBytes > emptyBytes && spsBytes - emptyBytes < 2_000,
+  'One SPS reference should add less than 2 KB');
+assert.deepEqual(embedded.Property, beforeSpsEstimate, 'SPS estimation must not mutate worn data');
 
 // New BC callback registration must preserve the custom UI on every asset reload.
 sender.context[`${prefix}Load`]();

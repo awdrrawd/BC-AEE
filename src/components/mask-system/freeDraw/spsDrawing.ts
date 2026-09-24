@@ -11,6 +11,10 @@ const SLOT_LIMIT = 3_300_000;
 const HEADER_SIZE = MAGIC.length + 3 * (1 + 32 + 4);
 
 export interface SpsDrawRef {o: number; s: number; r: string; m: string; u: string; v?: 2 | 3 | 4}
+export function createSpsDrawRef(owner: number, slot: number, revision: string, mime = 'image/png'): SpsDrawRef {
+  return {o: owner, s: slot, r: revision, m: mime,
+    u: `${SPS_ORIGIN}/public/data/${owner}/${contentKey(revision)}`, v: 4};
+}
 interface Entry {mime: string; hash: Uint8Array; data: Uint8Array}
 
 const empty = (): Entry => ({mime: '', hash: new Uint8Array(32), data: new Uint8Array()});
@@ -125,11 +129,10 @@ export async function uploadSpsBlob(slot: number, blob: Blob): Promise<SpsDrawRe
   check();
   await writeSpsPublic(key, blob);
   check();
-  const url = `${SPS_ORIGIN}/public/data/${owner}/${key}`;
   const objectUrl = await imageSource(blob);
   check();
   remember(`${owner}:${slot}:${revision}`, objectUrl);
-  return {o: owner!, s: slot, r: revision, m: blob.type || 'image/png', u: url, v: 4};
+  return createSpsDrawRef(owner!, slot, revision, blob.type || 'image/png');
 }
 
 export async function uploadSpsDrawing(slot: number, canvas: HTMLCanvasElement): Promise<SpsDrawRef> {

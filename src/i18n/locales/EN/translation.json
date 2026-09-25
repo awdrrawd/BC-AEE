@@ -384,7 +384,7 @@
   "wardrobe-appearance-hint-2": "UI Style changes buttons, panels, borders and glow effects at once.",
   "wardrobe-import-title": "Wardrobe Import",
   "wardrobe-migration-entry": "Migrate old data (R132)",
-  "wardrobe-migration-conflict": "Conflicting layer keys or missing asset; original data preserved.",
+  "wardrobe-migration-conflict": "Conflicting layer keys, missing asset, or transform cannot be preserved; original data retained.",
   "wardrobe-migration-title": "Legacy Wardrobe Migration",
   "wardrobe-migration-list": "Outfits to correct ({n} selected)",
   "wardrobe-migration-column-label": "Label",

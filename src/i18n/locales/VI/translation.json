@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "Kiểu giao diện thay đổi nút, bảng, viền và hiệu ứng phát sáng cùng lúc.",
   "wardrobe-import-title": "Nhập tủ đồ",
   "wardrobe-migration-entry": "Di chuyển dữ liệu cũ (R132)",
-  "wardrobe-migration-conflict": "Khóa lớp xung đột hoặc thiếu tài nguyên; giữ nguyên dữ liệu gốc.",
+  "wardrobe-migration-conflict": "Xung đột khóa lớp, thiếu tài nguyên hoặc không thể giữ nguyên phép biến đổi; giữ nguyên dữ liệu gốc.",
   "wardrobe-migration-title": "Di chuyển dữ liệu tủ đồ cũ",
   "wardrobe-migration-list": "Trang phục cần hiệu chỉnh (đã chọn {n})",
   "wardrobe-migration-column-label": "Nhóm",

@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "UIスタイルはボタン、パネル、枠線、発光効果を一度に変更します。",
   "wardrobe-import-title": "ワードローブのインポート",
   "wardrobe-migration-entry": "旧データを移行（R132）",
-  "wardrobe-migration-conflict": "レイヤーキーの競合、またはアセットがありません。元のデータを保持します。",
+  "wardrobe-migration-conflict": "レイヤーキーの競合、アセットの不足、または変形を維持できないため、元のデータを保持します。",
   "wardrobe-migration-title": "旧ワードローブデータの移行",
   "wardrobe-migration-list": "補正対象の衣装（{n}件選択）",
   "wardrobe-migration-column-label": "分類",

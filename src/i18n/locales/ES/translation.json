@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "El estilo de interfaz cambia botones, paneles, bordes y efectos de brillo a la vez.",
   "wardrobe-import-title": "Importar armario",
   "wardrobe-migration-entry": "Migrar datos antiguos (R132)",
-  "wardrobe-migration-conflict": "Claves de capa en conflicto o recurso ausente; se conservan los datos originales.",
+  "wardrobe-migration-conflict": "Claves de capa en conflicto, recurso ausente o transformación que no se puede conservar; se mantienen los datos originales.",
   "wardrobe-migration-title": "Migración de datos antiguos",
   "wardrobe-migration-list": "Conjuntos por corregir ({n} seleccionados)",
   "wardrobe-migration-column-label": "Grupo",

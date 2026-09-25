@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "Стиль інтерфейсу змінює кнопки, панелі, межі та ефекти сяйва одночасно.",
   "wardrobe-import-title": "Імпорт гардероба",
   "wardrobe-migration-entry": "Перенести старі дані (R132)",
-  "wardrobe-migration-conflict": "Конфлікт ключів шарів або відсутній предмет; вихідні дані збережено.",
+  "wardrobe-migration-conflict": "Конфлікт ключів шарів, відсутній предмет або неможливо зберегти перетворення; вихідні дані збережено.",
   "wardrobe-migration-title": "Перенесення старих даних гардероба",
   "wardrobe-migration-list": "Образи для виправлення (вибрано: {n})",
   "wardrobe-migration-column-label": "Група",

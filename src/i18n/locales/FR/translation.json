@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "Le style d'interface change les boutons, panneaux, bordures et effets de lueur d'un coup.",
   "wardrobe-import-title": "Importer une garde-robe",
   "wardrobe-migration-entry": "Migrer les anciennes données (R132)",
-  "wardrobe-migration-conflict": "Conflit de clés de calque ou ressource manquante ; données originales conservées.",
+  "wardrobe-migration-conflict": "Conflit de clés de calque, ressource absente ou transformation impossible à préserver ; données originales conservées.",
   "wardrobe-migration-title": "Migration des anciennes données",
   "wardrobe-migration-list": "Tenues à corriger ({n} sélectionnées)",
   "wardrobe-migration-column-label": "Groupe",

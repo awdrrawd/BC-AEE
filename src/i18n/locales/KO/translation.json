@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "UI 스타일은 버튼, 패널, 테두리, 광채 효과를 한 번에 변경합니다.",
   "wardrobe-import-title": "옷장 가져오기",
   "wardrobe-migration-entry": "이전 데이터 마이그레이션 (R132)",
-  "wardrobe-migration-conflict": "레이어 키 충돌 또는 에셋 누락으로 원본 데이터를 유지합니다.",
+  "wardrobe-migration-conflict": "레이어 키 충돌, 에셋 누락 또는 변형을 유지할 수 없어 원본 데이터를 보존합니다.",
   "wardrobe-migration-title": "이전 옷장 데이터 마이그레이션",
   "wardrobe-migration-list": "보정할 의상 ({n}개 선택)",
   "wardrobe-migration-column-label": "분류",

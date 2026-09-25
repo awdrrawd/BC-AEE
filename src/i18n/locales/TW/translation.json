@@ -384,7 +384,7 @@
   "wardrobe-appearance-hint-2": "整體風格會同時改變按鈕、面板、邊框與發光效果。",
   "wardrobe-import-title": "衣櫃匯入",
   "wardrobe-migration-entry": "舊資料遷移（R132）",
-  "wardrobe-migration-conflict": "圖層鍵衝突或缺少資產，保留原資料。",
+  "wardrobe-migration-conflict": "圖層鍵衝突、缺少資產或變形無法等效轉換，保留原資料。",
   "wardrobe-migration-title": "舊衣櫃資料遷移",
   "wardrobe-migration-list": "待補正服裝（已選 {n}）",
   "wardrobe-migration-column-label": "標籤",

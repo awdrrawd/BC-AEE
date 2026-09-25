@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "نمط الواجهة يغيّر الأزرار واللوحات والحدود وتأثيرات التوهّج دفعة واحدة.",
   "wardrobe-import-title": "استيراد الخزانة",
   "wardrobe-migration-entry": "ترحيل البيانات القديمة (R132)",
-  "wardrobe-migration-conflict": "تعارض في مفاتيح الطبقات أو مورد مفقود؛ تم الاحتفاظ بالبيانات الأصلية.",
+  "wardrobe-migration-conflict": "تعارض في مفاتيح الطبقات أو مورد مفقود أو تعذّر الحفاظ على التحويل؛ تم الاحتفاظ بالبيانات الأصلية.",
   "wardrobe-migration-title": "ترحيل بيانات الخزانة القديمة",
   "wardrobe-migration-list": "الأزياء المطلوب تصحيحها ({n} محددة)",
   "wardrobe-migration-column-label": "المجموعة",

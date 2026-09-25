@@ -384,7 +384,7 @@
   "wardrobe-appearance-hint-2": "整体风格会同时改变按钮、面板、边框与发光效果。",
   "wardrobe-import-title": "衣柜导入",
   "wardrobe-migration-entry": "旧数据迁移（R132）",
-  "wardrobe-migration-conflict": "图层键冲突或缺少资产，保留原数据。",
+  "wardrobe-migration-conflict": "图层键冲突、缺少资产或变形无法等效转换，保留原数据。",
   "wardrobe-migration-title": "旧衣柜数据迁移",
   "wardrobe-migration-list": "待修正服装（已选 {n}）",
   "wardrobe-migration-column-label": "标签",

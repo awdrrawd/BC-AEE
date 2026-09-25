@@ -55,7 +55,7 @@ const fields = ['LayerTranslationX', 'LayerTranslationY', 'LayerScaleX', 'LayerS
 let outfit;
 const source = {size: () => 1, outfitAt: () => outfit, nameAt: () => 'Test', writeSlot: (_, v) => {outfit = v;}, persist: async () => true};
 function scan(property) {
-  outfit = [{Group: 'Cloth', Name: 'Example', Property: structuredClone(property)}];
+  outfit = [{Group: asset?.Group.Name ?? 'Cloth', Name: asset?.Name ?? 'Example', Property: structuredClone(property)}];
   const original = structuredClone(outfit);
   const result = migration.scanWardrobeMigration(source, character);
   assert.deepEqual(outfit, original, 'scan does not mutate saved outfits');
@@ -98,7 +98,76 @@ assert.equal(plan[0].parts[0].conflict, true);
 plan = scan({LayerOverrides: [{DrawingLeft: 30}]});
 assert.equal(plan[0].parts[0].conflict, true, 'missing legacy asset is reported');
 asset = originalAsset;
+// User's Luzi eyes: five layers at 355 degrees on the left and 5 on the
+// right. BC clamps native rotation instead of wrapping the legacy angle.
+asset = {...originalAsset, Layer: Array.from({length: 5}, (_, i) => ({Name: `Eye${i}`}))};
+for (const [legacy, expected] of [[355, -5], [5, 5], [-355, 5], [715, -5], [360, 0]]) {
+  const eye = scan({LayerOverrides: Array.from({length: 5}, () => ({Rotation: legacy, Opacity: 1}))});
+  const migrated = eye[0].after[0].Property;
+  for (let i = 0; i < 5; i++) {
+    const native = Math.max(-180, Math.min(180, migrated.LayerRotation[`Eye${i}`]));
+    assert.equal(native, expected);
+    assert.ok(Math.abs(Math.sin(native * Math.PI / 180) - Math.sin(legacy * Math.PI / 180)) < 1e-10);
+    assert.ok(Math.abs(Math.cos(native * Math.PI / 180) - Math.cos(legacy * Math.PI / 180)) < 1e-10);
+    assert.equal(migrated.LayerOverrides[i].Rotation, undefined);
+    assert.equal(migrated.LayerOverrides[i].Opacity, 1);
+  }
+}
+asset = originalAsset;
+// The same rotation path handles every group, not only the user's eyes.
+// Exercise named/unnamed layers, item-level rotation and angles on both sides
+// of the native clamp boundary. Compare the rendered direction, not just data.
+for (const group of ['Cloth', 'ClothLower', 'HairFront', 'HairBack', 'Hat', 'Gloves', 'Shoes', 'ItemNeckAccessories', 'CustomAccessory']) {
+  for (const layerName of [null, 'Front']) {
+    asset = {...originalAsset, Group: {Name: group}, Layer: [{Name: layerName}]};
+    for (const itemRotation of [-30, 0, 45]) {
+      for (const rotation of [-715, -355, -181, -180, 5, 180, 181, 270, 355, 360, 715]) {
+        const plan = scan({Rotation: itemRotation, LayerOverrides: [{Rotation: rotation}]});
+        const property = plan[0].after[0].Property;
+        const rendered = Math.max(-180, Math.min(180, property.Rotation + property.LayerRotation[layerName ?? '']));
+        const label = `${group}/${layerName ?? '(unnamed)'}: ${rotation}, item ${itemRotation}`;
+        assert.ok(Math.abs(Math.sin(rendered * Math.PI / 180) - Math.sin(rotation * Math.PI / 180)) < 1e-10, label);
+        assert.ok(Math.abs(Math.cos(rendered * Math.PI / 180) - Math.cos(rotation * Math.PI / 180)) < 1e-10, label);
+        assert.equal(property.Rotation, itemRotation, 'other layers retain their whole-item rotation');
+        outfit = plain(plan[0].after);
+        assert.equal(migration.scanWardrobeMigration(source, character).length, 0, 'repeated migration is stable');
+      }
+    }
+    const native = scan({LayerRotation: {[layerName ?? '']: 12}, LayerOverrides: [{Rotation: 355}]});
+    assert.equal(native.length, 0, 'existing native rotation takes precedence in every group');
+  }
+}
+asset = originalAsset;
 assert.equal(scan({LayerTranslationX: {'': 10}, TranslationX: 5}).length, 0);
+// Legacy scaling multiplies the existing shader dimensions. BC multiplies
+// item/layer scales too, but clamps their product: verify both axes and names.
+for (const name of [null, 'Front']) {
+  asset = {...originalAsset, Layer: [{Name: name}]};
+  for (const key of ['ScaleX', 'ScaleY']) {
+    for (const base of [0.01, 0.5, 1, 2, 3]) {
+      for (const factor of [-1, 0, 0.001, 0.01, 0.5, 1, 1.5, 2, 3, 5]) {
+        const input = {[key]: base, LayerOverrides: [{[key]: factor, Rotation: 355}]};
+        const result = scan(input);
+        const expected = base * factor;
+        const compatible = expected >= 0.01 && expected <= 3;
+        if (!compatible) {
+          assert.equal(result[0].parts[0].conflict, true, `${key}: ${base} * ${factor}`);
+          assert.deepEqual(plain(result[0].after), outfit, 'unsafe size and other edits remain untouched');
+          assert.deepEqual(plain(migration.buildWardrobeMigrationOutfit(result[0], character, () => true)), outfit);
+        } else {
+          assert.ok(!result[0].parts[0].conflict);
+          const property = result[0].after[0].Property;
+          const rendered = Math.max(0.01, Math.min(3, property[key] * (property[`Layer${key}`]?.[name ?? ''] ?? 1)));
+          assert.ok(Math.abs(rendered - expected) < 1e-10);
+          assert.equal(property[key], base, 'item scale is preserved for other layers');
+        }
+      }
+    }
+    assert.equal(scan({[`Layer${key}`]: {[name ?? '']: 0.5}, LayerOverrides: [{[key]: 5}]}).length, 0,
+      'existing native scaling is authoritative');
+  }
+}
+asset = originalAsset;
 plan = scan(maps);
 outfit[0].Property.TranslationY = 99;
 assert.equal(await migration.applyWardrobeMigration(source, plan), false, 'stale plan must not overwrite subsequent edits');

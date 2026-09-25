@@ -388,7 +388,7 @@
   "wardrobe-appearance-hint-2": "Стиль интерфейса меняет кнопки, панели, границы и эффекты свечения сразу.",
   "wardrobe-import-title": "Импорт гардероба",
   "wardrobe-migration-entry": "Перенести старые данные (R132)",
-  "wardrobe-migration-conflict": "Конфликт ключей слоёв или отсутствует предмет; исходные данные сохранены.",
+  "wardrobe-migration-conflict": "Конфликт ключей слоёв, отсутствует предмет или невозможно сохранить преобразование; исходные данные сохранены.",
   "wardrobe-migration-title": "Перенос старых данных гардероба",
   "wardrobe-migration-list": "Наряды для исправления (выбрано: {n})",
   "wardrobe-migration-column-label": "Группа",

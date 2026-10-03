@@ -1,5 +1,6 @@
 import {memo, useEffect, useRef} from 'react';
 import {rangeClass} from '@/components/main-panel/styles';
+import {useRangeWheel} from '@/components/ui/useRangeWheel';
 
 export const RangeInput = memo(function RangeInput({min, max, step, value, onChange, className}: {
   min: number;
@@ -10,6 +11,7 @@ export const RangeInput = memo(function RangeInput({min, max, step, value, onCha
   className?: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  useRangeWheel(ref, onChange);
 
   useEffect(() => {
     if (ref.current && document.activeElement !== ref.current) {
@@ -27,4 +29,4 @@ export const RangeInput = memo(function RangeInput({min, max, step, value, onCha
     defaultValue={value}
     onInput={event => onChange(Number((event.target as HTMLInputElement).value))}
   />;
-}, (prev, next) => prev.value === next.value && prev.min === next.min && prev.max === next.max && prev.step === next.step && prev.className === next.className);
+});

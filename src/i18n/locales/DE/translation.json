@@ -1,4 +1,5 @@
 {
+  "settings-hide-bcx-import-export": "BCX-Import-/Export-Schaltflächen ausblenden",
   "mask-single-glove-name": "🐾Einzelhandschuh",
   "mask-single-glove-select": "Einzelhandschuh wählen (Seite + Bereich)",
   "mask-glove-l-gloves": "Links · Handschuhe",
@@ -387,7 +388,7 @@
   "wardrobe-appearance-hint-2": "Der UI-Stil ändert Buttons, Panels, Ränder und Leuchteffekte auf einmal.",
   "wardrobe-import-title": "Kleiderschrank-Import",
   "wardrobe-migration-entry": "Altdaten migrieren (R132)",
-  "wardrobe-migration-conflict": "Konflikt bei Ebenenschlüsseln oder fehlendes Asset; Originaldaten bleiben erhalten.",
+  "wardrobe-migration-conflict": "Ebenenschlüsselkonflikt, fehlendes Asset oder nicht erhaltbare Transformation; Originaldaten bleiben erhalten.",
   "wardrobe-migration-title": "Migration alter Kleiderschrankdaten",
   "wardrobe-migration-list": "Zu korrigierende Outfits ({n} ausgewählt)",
   "wardrobe-migration-column-label": "Gruppe",

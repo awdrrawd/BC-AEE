@@ -3,6 +3,7 @@ import {clamp} from '@/util/math';
 import {HoldButton} from '@/components/ui/HoldButton';
 import {resetButtonClass, stepButtonClass, tallRangeClass} from '@/components/main-panel/styles';
 import {RangeCenterMark} from '@/components/ui/RangeCenterMark';
+import {useRangeWheel} from '@/components/ui/useRangeWheel';
 
 export const SliderRow = memo(function SliderRow({label, value, min, max, step, display, inputValue, stepDelta = step, onChange, onReset}: {
   label: string;
@@ -21,6 +22,7 @@ export const SliderRow = memo(function SliderRow({label, value, min, max, step, 
 
   const inputRef = useRef<HTMLInputElement>(null);
   const rangeRef = useRef<HTMLInputElement>(null);
+  useRangeWheel(rangeRef, onChange);
   useEffect(() => {
     if (inputRef.current && document.activeElement !== inputRef.current) {
       inputRef.current.value = displayValue;
@@ -68,4 +70,4 @@ export const SliderRow = memo(function SliderRow({label, value, min, max, step, 
       <RangeCenterMark/>
     </div>
   </div>;
-}, (prev, next) => prev.value === next.value && prev.min === next.min && prev.max === next.max && prev.display === next.display && prev.inputValue === next.inputValue && prev.stepDelta === next.stepDelta);
+});

@@ -1,5 +1,6 @@
 import {wardrobeMutation, wardrobeIdentity} from './wardrobeMutation';
 import type {WardrobeSource} from '@/core/wardrobeStorage';
+import type {AeeLayerOverride} from '@/core/types';
 
 type LegacyTransform = 'DrawingLeft' | 'DrawingTop' | 'ScaleX' | 'ScaleY' | 'Rotation';
 const BC_WEBGL_TRANSLATION_FACTOR = 2;
@@ -85,6 +86,25 @@ function differs(a: number, b: number): boolean {
   return Math.abs(a - b) > 0.0001;
 }
 
+function incompatibleScaleFields(property: Record<string, unknown>, overrides: AeeLayerOverride[], asset: Asset): string[] {
+  const fields = new Set<string>();
+  const nativeScale = (value: number) => Math.max(0.01, Math.min(3, value));
+  overrides.forEach((override, index) => {
+    const layer = asset.Layer[index];
+    if (!override || !layer) return;
+    for (const key of ['ScaleX', 'ScaleY'] as const) {
+      const factor = legacyNumber(override[key]);
+      if (factor === null || !differs(factor, 1) || hasLayerValue(property, key, layer.Name ?? '')) continue;
+      const base = legacyNumber(property[key]) ?? 1;
+      // The old shader multiplied the already-rendered dimensions. Native BC
+      // instead clamps AFTER combining item and layer scales. Do not migrate
+      // an item when that changes its size or removes a negative-scale flip.
+      if (differs(nativeScale(base) * factor, nativeScale(base * factor))) fields.add(`Layer${key}`);
+    }
+  });
+  return [...fields];
+}
+
 /**
  * BC currently applies TranslationX/Y twice on its WebGL path: once when it
  * builds drawX/drawY in CommonDraw, and once again in GLDraw's transform
@@ -136,6 +156,12 @@ function migrateEntry(entry: ItemBundle, character: Character): {layers: number;
   const renamedUnnamedLayer = native.fields.length > 0;
   const result = {layers: renamedUnnamedLayer ? 1 : 0, ...native};
   if (native.conflict || !property || !Array.isArray(overrides) || !asset) return result;
+  const incompatibleScales = incompatibleScaleFields(property, overrides, asset);
+  if (incompatibleScales.length) return {
+    layers: Math.max(1, result.layers),
+    fields: [...new Set([...result.fields, ...incompatibleScales])],
+    conflict: true,
+  };
   let origins: ReturnType<typeof originalLayerPositions>;
   try { origins = originalLayerPositions(character, asset, property); } catch { return result; }
 
@@ -168,7 +194,10 @@ function migrateEntry(entry: ItemBundle, character: Character): {layers: number;
       values.push(['ScaleY', 'ScaleY', scaleY]);
     }
     if (rotation !== null && differs(rotation, 0) && !hasLayerValue(property, 'Rotation', origin.name)) {
-      values.push(['Rotation', 'Rotation', rotation - propertyNumber(property, 'Rotation')]);
+      // Legacy rotations wrap through 360; BC clamps the combined native angle
+      // to [-180, 180]. In particular, 355 must become -5, never clamp to 180.
+      const signedRotation = ((rotation + 180) % 360 + 360) % 360 - 180;
+      values.push(['Rotation', 'Rotation', signedRotation - propertyNumber(property, 'Rotation')]);
     }
     if (values.length && !(renamedUnnamedLayer && asset.Layer[index].Name == null)) result.layers++;
     for (const [legacyKey, nativeKey, value] of values) {

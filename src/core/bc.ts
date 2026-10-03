@@ -319,16 +319,23 @@ export function getOpacity(item: Item | null, idx: LayerId): number | null {
       const slot = getOpacitySlot(item, index);
       if (seenSlots.has(slot)) continue;
       seenSlots.add(slot);
-      const value = Array.isArray(item.Property?.Opacity) ? item.Property.Opacity[slot] ?? 1 : 1;
+      const value = getOpacity(item, String(index)) ?? 1;
       if (commonValue === null) commonValue = value;
       else if (Math.abs(value - commonValue!) > 0.005) return null;
     }
     return commonValue;
   }
   const index = parseInt(idx, 10);
-  const slot = getOpacitySlot(item, index);
+  const layer = item.Asset?.Layer?.[index];
   const rawOpacity = item?.Property?.Opacity;
-  return Array.isArray(rawOpacity) ? rawOpacity[slot] : (typeof rawOpacity === 'number' ? rawOpacity : 1);
+  let slot = 0;
+  if (Array.isArray(rawOpacity)) {
+    for (let i = 0; i < (item.Asset?.Layer?.length ?? 0) && i < rawOpacity.length; i++) {
+      if (item.Asset.Layer[i].Name === layer?.Name) slot = i;
+    }
+  }
+  const value = Array.isArray(rawOpacity) ? rawOpacity[slot] : rawOpacity;
+  return clamp(value ?? layer?.Opacity ?? 1, layer?.MinOpacity ?? 0, layer?.MaxOpacity ?? 1);
 }
 
 export function getLayerOverride(item: Item | null, idx: LayerId): AeeLayerOverride & { Opacity: number } {

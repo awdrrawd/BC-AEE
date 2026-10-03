@@ -3,6 +3,7 @@ import {resetEditProperty, setEditProperty, stepEditProperty} from '@/controller
 import {resetButtonClass, stepButtonClass, tallRangeClass} from '@/components/main-panel/styles';
 import {HoldButton} from '@/components/ui/HoldButton';
 import {RangeCenterMark} from '@/components/ui/RangeCenterMark';
+import {useRangeWheel} from '@/components/ui/useRangeWheel';
 
 export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   label: string;
@@ -19,6 +20,8 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
   };
   const [min, max, rangeStep] = bounds[ctrl] ?? [-100, 100, step];
   const inputRef = useRef<HTMLInputElement>(null);
+  const rangeRef = useRef<HTMLInputElement>(null);
+  useRangeWheel(rangeRef, next => setEditProperty(ctrl, next));
   useEffect(() => {
     if (inputRef.current && document.activeElement !== inputRef.current) {
       inputRef.current.value = String(value);
@@ -50,7 +53,7 @@ export const PropRow = memo(function PropRow({label, value, ctrl, deltas}: {
       </div>
     </div>
     <div className="relative flex items-center">
-      <input type="range" className={tallRangeClass} min={min} max={max} step={rangeStep}
+      <input ref={rangeRef} type="range" className={tallRangeClass} min={min} max={max} step={rangeStep}
              value={Math.max(min, Math.min(max, numericValue))}
              onChange={event => setEditProperty(ctrl, Number(event.target.value))}/>
       <RangeCenterMark/>

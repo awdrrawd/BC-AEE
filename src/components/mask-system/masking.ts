@@ -4,6 +4,7 @@
 import bcAeeModSdk from '@/modsdk';
 import {NAKED_DATAURL} from './assets';
 import {LRUCache} from './lruCache';
+import {installTransformedMaskHooks} from './transformedMasks';
 import {
   DRAW_GROUP_PREFIX,
   MASK_IMAGE_CACHE_SIZE,
@@ -201,6 +202,7 @@ let buildingChar: Character | null = null;
 export function getBuildingChar(): Character | null { return buildingChar; }
 
 export function installImageHooks(): boolean {
+  installTransformedMaskHooks();
   if (!glLoadImageHooked && typeof GLDrawLoadImage === 'function') {
     bcAeeModSdk.hookFunction('GLDrawLoadImage', 10, glLoadImageHook as never);
     glLoadImageHooked = true;

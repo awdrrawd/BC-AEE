@@ -49,8 +49,8 @@ export function FreeDrawLibraryPanel() {
       const session = getActiveSession();
       if (!session) { setUsage(null); return; }
       try {
-        const compressed = session.hasDrawing ? canvasEmbeddedData(session.slot.canvas) : '';
-        setUsage(projectedAppearanceBytes(compressed, session));
+        const compressed = !State.useSps && session.hasDrawing ? canvasEmbeddedData(session.slot.canvas) : '';
+        setUsage(projectedAppearanceBytes(compressed, session, State.useSps));
       } catch {
         // Unknown is not a measured zero or a fabricated threshold value.
         setUsage(null);

@@ -1,6 +1,7 @@
 import {t} from '@/i18n/i18n';
 
 import {bundleItem, wearBundle} from '@/util/appearanceBundle';
+import {copyAppearanceToGroup} from '@/util/copyAppearance';
 import {COPY_ICON, PASTE_ICON} from '@/controllers/copyPasteIcons';
 import {settings} from '@/core/settings';
 
@@ -72,7 +73,11 @@ function copyFrom(character: Character, groupName: AssetGroupName) {
 
 function pasteTo(character: Character, groupName: AssetGroupName) {
   if (!copyBuffer) return;
-  if (wearBundle(character, {...copyBuffer.entry, Group: groupName})) CharacterLoadCanvas(character);
+  if (!canPasteToGroup(character, character.AssetFamily, groupName, copyBuffer)) return;
+  const target = AssetGet(character.AssetFamily, groupName, copyBuffer.entry.Name);
+  if (!target) return;
+  const entry = copyAppearanceToGroup(character, copyBuffer.entry, copyBuffer.asset, target);
+  if (wearBundle(character, entry)) CharacterRefresh(character, false, false);
 }
 
 export function drawCopyBufferPreview(x: number, y: number, size: number, character: Character | null, fallbackIcon: string): void {

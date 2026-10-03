@@ -10,7 +10,7 @@ function load(file, deps = {}, globals = {}, extra = '') {
   }).outputText, {exports, require: name => deps[name] ?? {}, ...globals});
   return exports;
 }
-const bc = load('src/core/bc.ts');
+const bc = load('src/core/bc.ts', {'@/util/math': {clamp: (v, min, max) => Math.min(max, Math.max(min, v))}});
 const manager = load('src/controllers/layerManagerController.ts', {'@/core/bc': bc});
 const asset = {Name: 'Example', Group: {Name: 'Cloth'}, Layer: []};
 asset.Layer = ['Front', 'Disabled', 'Transparent', 'DefaultZero', null].map((Name, i) =>
@@ -22,9 +22,16 @@ assert.deepEqual(Array.from(rows(), r => r.effectiveKey), ['Front', '']);
 assert.equal(rows()[1].priority, 12);
 assert.equal(rows()[1].layerIndex, 4, 'filtering must retain the original physical index');
 item.Property.Opacity = 0;
+assert.equal(bc.getOpacity(item, 'all'), 0, 'whole-item numeric opacity is shown accurately');
 assert.equal(rows().length, 0);
 item.Property.Opacity = 0.5;
+assert.equal(bc.getOpacity(item, 'all'), 0.5);
 assert.equal(rows().length, 4, 'numeric property overrides asset defaults');
+delete item.Property.Opacity;
+assert.equal(bc.getOpacity(item, '3'), 0, 'native layer defaults are shown accurately');
+assert.equal(bc.getOpacity(item, 'all'), null, 'different layer defaults are mixed');
+item.Property.Opacity = [0.25];
+assert.equal(bc.getOpacity(item, '4'), 0.25, 'short opacity arrays use the native slot-zero fallback');
 character.AppearanceLayers = [];
 assert.equal(rows().length, 0, 'an empty native draw list means no enabled layers');
 

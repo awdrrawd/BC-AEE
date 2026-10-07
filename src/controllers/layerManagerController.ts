@@ -20,23 +20,13 @@
 
 import {t} from '@/i18n/i18n';
 import {syncCharacterToRoom} from '@/features/mask';
-import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {getState, mutateState} from '@/core/store';
-import {clampPanelPosition} from '@/core/overlay';
 import type {LayerManagerFilterMode, LayerManagerSortDirection} from '@/core/types';
 
 export const LAYER_MANAGER_PANEL_WIDTH = 560;
 export const LAYER_MANAGER_PANEL_MIN_HEIGHT = 420;
 
 type PropsWithOverride = { OverridePriority?: number | Record<string, number> };
-
-function isGroupsScreen(): boolean {
-  return CharacterAppearanceMode === '' && !isAppearanceOverlayActive();
-}
-
-export function isLayerManagerAvailable(): boolean {
-  return isGroupsScreen();
-}
 
 export function layerManagerTooltip(): string {
   return t('layer-manager-tooltip');
@@ -223,15 +213,6 @@ export function setLayerManagerSearch(search: string) {
   });
 }
 
-export function cycleLayerManagerFilterMode() {
-  const order: LayerManagerFilterMode[] = ['all', 'custom', 'default'];
-  const current = getState().layerManager.filterMode;
-  const next = order[(order.indexOf(current) + 1) % order.length];
-  mutateState(draft => {
-    draft.layerManager.filterMode = next;
-  });
-}
-
 export function setLayerManagerFilterMode(mode: LayerManagerFilterMode) {
   mutateState(draft => {
     draft.layerManager.filterMode = mode;
@@ -257,15 +238,4 @@ export function openLayerRowColor(target: Character, row: LayerRow): boolean {
   const mode = CharacterAppearanceMode;
   AppearanceItemColor(target, row.item, group, mode === 'Cloth' || mode === 'Color' ? mode : '');
   return true;
-}
-
-export function moveLayerManagerPanel(left: number, top: number) {
-  const canvasRect = getState().canvasRect;
-  const clamped = canvasRect
-    ? clampPanelPosition(left, top, canvasRect, LAYER_MANAGER_PANEL_WIDTH, LAYER_MANAGER_PANEL_MIN_HEIGHT)
-    : {left, top};
-  mutateState(draft => {
-    draft.layerManager.left = clamped.left;
-    draft.layerManager.top = clamped.top;
-  });
 }

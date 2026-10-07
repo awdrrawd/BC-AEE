@@ -54,19 +54,6 @@ export function selectLayer(layerId: LayerId) {
   });
 }
 
-export function deselectLayer() {
-  stopHoverHighlight(true);
-  mutateState(draft => {
-    draft.selectedLayer = null;
-  });
-}
-
-export function toggleCollapse() {
-  mutateState(draft => {
-    draft.collapsed = !draft.collapsed;
-  });
-}
-
 function clearCanvasToolState(draft: AeeState) {
   clearCanvasGesture(draft);
   draft.transformOverlay.mode = null;
@@ -295,13 +282,6 @@ export function setColorPickerCollapsed(collapsed: boolean) {
   });
 }
 
-export function moveColorPicker(left: number, top: number) {
-  mutateState(draft => {
-    draft.colorPicker.left = left;
-    draft.colorPicker.top = top;
-  });
-}
-
 export function openLayerColorPicker(layerId: LayerId) {
   const item = getCurrentItem();
   const storedColor = getLayerColor(item, layerId);
@@ -313,11 +293,6 @@ export function openLayerColorPicker(layerId: LayerId) {
     setLayerColor(currentItem, layerId, hex);
     if (!preview) forceUiUpdate();
   }, false, 100, isDefault);
-}
-
-export function openSelectedLayerColorPicker() {
-  const state = getState();
-  openLayerColorPicker(state.selectedLayer ?? 'all');
 }
 
 export function openOpacityOverlay(anchor?: OverlayAnchor) {

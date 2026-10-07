@@ -32,6 +32,14 @@ function hoverTryOnIcon(scope: 'clothing' | 'item'): string {
   return isHoverTryOnEnabled(scope) ? GAME_ICONS.public : GAME_ICONS.private;
 }
 
+function hoverTryOnTip(scope: 'clothing' | 'item'): string {
+  return t(isHoverTryOnEnabled(scope) ? 'hover-tryon-button-on' : 'hover-tryon-button-off');
+}
+
+function characterPreviewTip(): string {
+  return t(settings.characterPreviewActive.get() ? 'character-preview-button-on' : 'character-preview-button-off');
+}
+
 function characterPreviewIcon(): string {
   return settings.characterPreviewActive.get() ? GAME_ICONS.character : GAME_ICONS.characterOff;
 }
@@ -144,10 +152,10 @@ export function installMenuHooks() {
       drawPartsFilterBadge(partsFilterX, 25);
     }
     if (hoverTryOnIndex >= 0 && !isAppearanceOverlayActive()) {
-      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon('clothing'), t('settings-hover-tryon-tooltip'));
+      DrawButton(x + 117 * hoverTryOnIndex, 25, 90, 90, '', 'White', hoverTryOnIcon('clothing'), hoverTryOnTip('clothing'));
     }
     if (charPreviewIndex >= 0 && !isAppearanceOverlayActive()) {
-      DrawButton(x + 117 * charPreviewIndex, 25, 90, 90, '', 'White', characterPreviewIcon(), t('settings-character-preview-tooltip'));
+      DrawButton(x + 117 * charPreviewIndex, 25, 90, 90, '', 'White', characterPreviewIcon(), characterPreviewTip());
     }
   });
 
@@ -200,7 +208,7 @@ export function installMenuHooks() {
       DialogMenuButton = menu;
     }
     if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
-      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon('item'), t('settings-hover-tryon-tooltip'));
+      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon('item'), hoverTryOnTip('item'));
     }
     return result;
   });

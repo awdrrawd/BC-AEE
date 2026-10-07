@@ -120,7 +120,7 @@ export function LayerManagerPanel({state}: { state: AeeState }) {
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-700 bg-zinc-900 px-3">
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-(--aee-accent)">{t('layer-manager-title')}</span>
         <button className="h-[25px] w-[35px] rounded border border-red-800 bg-red-950/60 text-red-200 transition hover:border-red-300 hover:bg-red-900"
-                onClick={close}>×</button>
+                data-aee-tooltip={t('layer-manager-close-tooltip')} aria-label={t('layer-manager-close-tooltip')} onClick={close}>×</button>
       </div>
     <div className="flex shrink-0 items-center gap-2 border-b border-zinc-800 px-3 py-2">
       <TextInput

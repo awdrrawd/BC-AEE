@@ -29,11 +29,14 @@ export function StorageTab() {
   const fbc = fbcWardrobeUsage();
   const state = useWardrobeStore();
   return <div className="flex flex-col gap-3">
-    <SettingRow label={t('wardrobe-setting-confirm-save')} setting={settings.wardrobeConfirmSave} density="stage"/>
+    <SettingRow label={t('wardrobe-setting-confirm-save')} setting={settings.wardrobeConfirmSave} density="stage"
+                tooltip={t('wardrobe-setting-confirm-save-tooltip')}/>
     <SettingRow label={t('wardrobe-setting-96-slots')} setting={settings.wardrobeExtended} density="stage"
                 tooltip={t('wardrobe-setting-96-slots-hint')}/>
-    <SettingRow label={t('wardrobe-setting-shared')} setting={settings.wardrobeShared} density="stage"/>
-    <SettingRow label={t('wardrobe-setting-sps')} setting={settings.wardrobeSpsEnabled} density="stage"/>
+    <SettingRow label={t('wardrobe-setting-shared')} setting={settings.wardrobeShared} density="stage"
+                tooltip={t('wardrobe-setting-shared-tooltip')}/>
+    <SettingRow label={t('wardrobe-setting-sps')} setting={settings.wardrobeSpsEnabled} density="stage"
+                tooltip={t('wardrobe-setting-sps-tooltip')}/>
     <div className={`${ROW_CLASS} items-center justify-between gap-3 py-3`}>
       <div>
         <div className="text-[22px] text-[#f0eee4]">{t('wardrobe-sps-about')}</div>

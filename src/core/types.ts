@@ -5,7 +5,6 @@ export type EditToolMode = 'parts' | 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' 
 export type DragMode = 'xy' | 'rot' | 'scale' | 'skew' | 'mirror' | null;
 export type TransformOverlayMode = Exclude<DragMode, null> | 'mirror';
 export type LayerId = 'all' | string;
-export type UnknownFunction = (...args: unknown[]) => unknown;
 export type LayerOverrideKey =
   | 'DrawingLeft'
   | 'DrawingTop'
@@ -21,37 +20,10 @@ export type LayerOverrideKey =
   | 'MirrorCopyV'
   | 'MirrorCopyAxisX'
   | 'MirrorCopyAxisY';
-export type SettingKey =
-  | 'hoverHighlight'
-  | 'hoverHighlightChar'
-  | 'hoverTryOn'
-  | 'enableCopyPaste'
-  | 'hideLscgLayers'
-  | 'hideBcxImportExport'
-  | 'rightClickExitDrag'
-  | 'showCharCtrl'
-  | 'enableAeeMenu'
-  | 'hideUnnecessaryAppearanceButtons'
-  | 'useAeeColorPicker'
-  | 'pasteImport'
-  | 'bcWheelScroll'
-  | 'enablePartsFilter';
 
 export type PartsFilterMode = 'all' | 'has' | 'empty';
 export type LayerManagerFilterMode = 'all' | 'custom' | 'default';
 export type LayerManagerSortDirection = 'asc' | 'desc';
-export type EditControl =
-  | 'x'
-  | 'y'
-  | 'op'
-  | 'sx'
-  | 'sy'
-  | 'rot'
-  | 'skx'
-  | 'sky'
-  | 'fcx'
-  | 'fcy'
-  | 'mc';
 
 export interface LayerPositionOverride {
   '': number;
@@ -138,7 +110,6 @@ export interface BeforeDrawResult {
 }
 
 export type HookNext<Args extends unknown[] = unknown[], Result = unknown> = (args: Args) => Result;
-export type HookCallback<Args extends unknown[] = unknown[], Result = unknown> = (args: Args, next: HookNext<Args, Result>) => Result;
 
 export interface CanvasRect {
   left: number;
@@ -311,11 +282,6 @@ export interface Rect {
   y: number;
   w: number;
   h: number;
-}
-
-export interface AnchoredRect extends Rect {
-  cx: number;
-  cy: number;
 }
 
 export type BackgroundChoiceType = 'color' | 'image' | 'upload' | 'url' | 'custom';

@@ -176,30 +176,6 @@ export function currentLanguage(): string {
   return lastLanguage || DEFAULT_LANGUAGE;
 }
 
-export function isZh(): boolean {
-  const language = currentLanguage();
-  return language === 'CN' || language === 'TW';
-}
-
-export function formatLocalizedText(
-  value: LocalizedText | undefined,
-  language = currentLanguage(),
-  fallback = '',
-): string {
-  if (typeof value === 'string') return value || fallback;
-  if (!value) return fallback;
-
-  const normalizedLanguage = language.toLowerCase();
-  const matchedLanguage = Object.keys(value).find(key => key.toLowerCase() === normalizedLanguage);
-
-  return value[language]
-    || (matchedLanguage ? value[matchedLanguage] : undefined)
-    || value.EN
-    || value.en
-    || Object.values(value)[0]
-    || fallback;
-}
-
 export function t(key: string, variables?: Record<string, string | number>): string {
   const options: TOptions = {
     defaultValue: `missing translation: ${key}`,

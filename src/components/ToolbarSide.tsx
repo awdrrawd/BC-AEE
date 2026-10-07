@@ -51,8 +51,10 @@ import {GAME_ICONS} from '@/components/icons/iconSources';
 
 type ManagePanel = 'settings' | null;
 
-function ToolButton({title, icon, selected, active, disabled = false, activeTone = 'purple', onClick, className = ''}: {
+function ToolButton({title, tip, icon, selected, active, disabled = false, activeTone = 'purple', onClick, className = ''}: {
   title: string;
+  /** Longer hover description; `title` stays the short accessible name. */
+  tip?: string;
   icon: ReactNode;
   selected?: boolean;
   active?: boolean;
@@ -64,7 +66,7 @@ function ToolButton({title, icon, selected, active, disabled = false, activeTone
   return <button
     type="button"
     draggable={false}
-    data-aee-tooltip={title}
+    data-aee-tooltip={tip ?? title}
     aria-label={title}
     aria-pressed={selected || active}
     disabled={disabled}
@@ -78,6 +80,13 @@ function ToolButton({title, icon, selected, active, disabled = false, activeTone
     onClick={onClick}>
     <span className="flex h-[34px] w-[34px] items-center justify-center [&>svg]:h-full [&>svg]:w-full [&>img]:h-full [&>img]:w-full [&>img]:object-contain">{icon}</span>
   </button>;
+}
+
+// Item dialogs cycle off -> detail -> off; clothing cycles off -> normal -> detail -> off.
+function layerPickerTip(state: AeeState): string {
+  if (state.layerPickerMode === 'detail') return t('toolbar-layer-picker-tip-detail');
+  if (state.layerPickerMode === 'normal') return t('toolbar-layer-picker-tip-normal');
+  return t(state.item?.Asset?.Group?.Category === 'Item' ? 'toolbar-layer-picker-tip-off-detail' : 'toolbar-layer-picker-tip-off-normal');
 }
 
 function GameIcon({src}: {src: string}) {
@@ -199,7 +208,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
       </Panel>
       {displayEditing && state.toolbarLayout === 'free' && state.selectedLayer !== null ?
         <div className="pointer-events-auto absolute left-[87px] top-[12px] z-40">
-          <ToolButton title={t('free-transform-title')} selected={state.editTool === 'gizmo'}
+          <ToolButton title={t('free-transform-title')} tip={t('free-transform-tooltip')} selected={state.editTool === 'gizmo'}
                       disabled={!!state.activeDrag} icon={<FreeTransformIcon/>} onClick={openTool('gizmo')}/>
         </div> : null}
       <div className={`aee-panel-collapse-motion absolute left-[80px] top-0 z-10 h-[1000px] overflow-hidden ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
@@ -316,21 +325,21 @@ function ResidentButtons({state, managePanel, setManagePanel, assetSearchOpen, s
   const appearancePick = useSetting(settings.appearancePick);
   return <>
     <div className="flex flex-col gap-[7px]">
-      <ToolButton title={t('menu-export-tooltip')} icon={<Upload/>} onClick={() => exportBcxAppearance(CharacterAppearanceSelection)}/>
-      <ToolButton title={t('menu-import-tooltip')} icon={<Download/>} onClick={() => CharacterAppearanceSelection && void importBcxAppearanceWithCategory(CharacterAppearanceSelection)}/>
-      <ToolButton title={t('layer-manager-title')} active={state.layerManager.open} icon={<GameIcon src={GAME_ICONS.layering}/>} onClick={() => toggleLayerManagerPanel()}/>
+      <ToolButton title={t('menu-export-label')} tip={t('menu-export-tooltip')} icon={<Upload/>} onClick={() => exportBcxAppearance(CharacterAppearanceSelection)}/>
+      <ToolButton title={t('menu-import-label')} tip={t('menu-import-tooltip')} icon={<Download/>} onClick={() => CharacterAppearanceSelection && void importBcxAppearanceWithCategory(CharacterAppearanceSelection)}/>
+      <ToolButton title={t('layer-manager-title')} tip={t('layer-manager-toolbar-tooltip')} active={state.layerManager.open} icon={<GameIcon src={GAME_ICONS.layering}/>} onClick={() => toggleLayerManagerPanel()}/>
       <ToolButton title={partsFilterTooltip()} active={state.partsFilterMode !== 'all'}
                   activeTone={state.partsFilterMode === 'empty' ? 'orange' : 'purple'}
                   icon={<GameIcon src={GAME_ICONS.dress}/>} onClick={() => cyclePartsFilterMode()}/>
-      <ToolButton title={hideRestraintsTooltip()} active={isHideRestraintsActive()} icon={<GameIcon src={GAME_ICONS.hideRestraints}/>} onClick={() => toggleHideRestraints()}/>
+      <ToolButton title={hideRestraintsTooltip()} tip={t(isHideRestraintsActive() ? 'hide-restraints-tip-on' : 'hide-restraints-tip-off')} active={isHideRestraintsActive()} icon={<GameIcon src={GAME_ICONS.hideRestraints}/>} onClick={() => toggleHideRestraints()}/>
       {CurrentScreen === 'Appearance' ?
-        <ToolButton title={t('settings-appearance-pick')} active={appearancePick}
+        <ToolButton title={t('settings-appearance-pick')} tip={t('appearance-pick-tooltip')} active={appearancePick}
                     icon={<Scan/>} onClick={() => settings.appearancePick.toggle()}/> : null}
-      <ToolButton title={t('asset-parts-search-title')} selected={assetSearchOpen} icon={<Search/>} onClick={() => setAssetSearchOpen(!assetSearchOpen)}/>
+      <ToolButton title={t('asset-parts-search-title')} tip={t('asset-parts-search-tooltip')} selected={assetSearchOpen} icon={<Search/>} onClick={() => setAssetSearchOpen(!assetSearchOpen)}/>
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
-      {CurrentScreen === 'Appearance' || CurrentScreen === 'Crafting' ? <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/> : null}
-      <ToolButton title={t('main-panel-tab-settings')} selected={managePanel === 'settings'} icon={<SettingsIcon/>} onClick={() => setManagePanel(managePanel === 'settings' ? null : 'settings')}/>
+      {CurrentScreen === 'Appearance' || CurrentScreen === 'Crafting' ? <ToolButton title={t('settings-appearance-view-control')} tip={t('view-control-tooltip')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/> : null}
+      <ToolButton title={t('main-panel-tab-settings')} tip={t('settings-button-tooltip')} selected={managePanel === 'settings'} icon={<SettingsIcon/>} onClick={() => setManagePanel(managePanel === 'settings' ? null : 'settings')}/>
     </div>
   </>;
 }
@@ -342,29 +351,30 @@ function EditingButtons({state, openTool}: {state: AeeState; openTool: (tool: Ed
     : state.transformOverlay.mode === tool || (state.opacityOverlay.open && tool === 'opacity');
   return <>
     <div className="flex flex-col gap-[7px]">
-      <ToolButton title={t('toggle-bar-parts-button-title')} selected={state.partsOpen} icon={<PartsIcon/>} onClick={openTool('parts')}/>
-      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} disabled={!!state.activeDrag || !!state.transformOverlay.mode || state.editTool === 'gizmo'}
+      <ToolButton title={t('toggle-bar-parts-button-title')} tip={t('toolbar-tip-parts')} selected={state.partsOpen} icon={<PartsIcon/>} onClick={openTool('parts')}/>
+      <ToolButton title={t(`toolbar-layer-picker-${state.layerPickerMode}`)} tip={layerPickerTip(state)} disabled={!!state.activeDrag || !!state.transformOverlay.mode || state.editTool === 'gizmo'}
                   active={state.layerPickerMode !== 'off'} activeTone={state.layerPickerMode === 'detail' ? 'orange' : 'purple'}
                   icon={<Scan/>} onClick={() => cycleLayerPickerMode()}/>
-      <ToolButton title={t('toggle-bar-position-button-title')} disabled={!selected} selected={selected && selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
-      <ToolButton title={t('toggle-bar-rotation-button-title')} disabled={!selected} selected={selected && selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>
-      <ToolButton title={t('toggle-bar-scale-button-title')} disabled={!selected} selected={selected && selectedTool('scale')} icon={<Scaling/>} onClick={openTool('scale')}/>
-      <ToolButton title={t('toggle-bar-skew-button-title')} disabled={!selected} selected={selected && selectedTool('skew')} icon={<TiltIcon/>} onClick={openTool('skew')}/>
-      <ToolButton title={t('mirror-group-title')} disabled={!selected} selected={selected && selectedTool('mirror')} icon={<FlipHorizontal2/>} onClick={openTool('mirror')}/>
+      <ToolButton title={t('toggle-bar-position-button-title')} tip={t('toolbar-tip-position')} disabled={!selected} selected={selected && selectedTool('xy')} icon={<Move/>} onClick={openTool('xy')}/>
+      <ToolButton title={t('toggle-bar-rotation-button-title')} tip={t('toolbar-tip-rotation')} disabled={!selected} selected={selected && selectedTool('rot')} icon={<RotateIcon/>} onClick={openTool('rot')}/>
+      <ToolButton title={t('toggle-bar-scale-button-title')} tip={t('toolbar-tip-scale')} disabled={!selected} selected={selected && selectedTool('scale')} icon={<Scaling/>} onClick={openTool('scale')}/>
+      <ToolButton title={t('toggle-bar-skew-button-title')} tip={t('toolbar-tip-skew')} disabled={!selected} selected={selected && selectedTool('skew')} icon={<TiltIcon/>} onClick={openTool('skew')}/>
+      <ToolButton title={t('mirror-group-title')} tip={t('toolbar-tip-mirror')} disabled={!selected} selected={selected && selectedTool('mirror')} icon={<FlipHorizontal2/>} onClick={openTool('mirror')}/>
       <div className="my-[7px] h-px w-[56px] bg-zinc-600"/>
-      <ToolButton title={t('main-panel-tab-opacity')} selected={state.editTool === 'opacity'} icon={<TransparentIcon/>} onClick={openTool('opacity')}/>
-      <ToolButton title={t('main-panel-tab-layers')} selected={state.editTool === 'layers'} icon={<Layers3/>} onClick={openTool('layers')}/>
+      <ToolButton title={t('main-panel-tab-opacity')} tip={t('toolbar-tip-opacity')} selected={state.editTool === 'opacity'} icon={<TransparentIcon/>} onClick={openTool('opacity')}/>
+      <ToolButton title={t('main-panel-tab-layers')} tip={t('toolbar-tip-layers')} selected={state.editTool === 'layers'} icon={<Layers3/>} onClick={openTool('layers')}/>
       {getLayeringHideGroups(state.item).length > 0
-        ? <ToolButton title={t('layering-hide-title')} selected={state.editTool === 'layeringHide'}
+        ? <ToolButton title={t('layering-hide-title')} tip={t('toolbar-tip-layering-hide')} selected={state.editTool === 'layeringHide'}
                       icon={<GameIcon src={GAME_ICONS.private}/>} onClick={openTool('layeringHide')}/>
         : null}
-      {selected ? <ToolButton title={t('toggle-bar-reset-transforms-button-title')} icon={<RotateCcw/>} onClick={() => resetSelectedTransforms()}/> : null}
+      {selected ? <ToolButton title={t('toggle-bar-reset-transforms-button-title')} tip={t('toolbar-tip-reset')} icon={<RotateCcw/>} onClick={() => resetSelectedTransforms()}/> : null}
     </div>
     <div className="mt-auto flex flex-col gap-[7px]">
       <ToolButton title={state.toolbarLayout === 'neat' ? t('toolbar-mode-neat') : t('toolbar-mode-free')}
+                  tip={state.toolbarLayout === 'neat' ? t('toolbar-tip-mode-neat') : t('toolbar-tip-mode-free')}
                   icon={state.toolbarLayout === 'neat' ? <NeatLayoutIcon/> : <FreeLayoutIcon/>} onClick={() => setToolbarLayout(state.toolbarLayout === 'neat' ? 'free' : 'neat')}/>
-      <ToolButton title={t('settings-appearance-view-control')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
-      <ToolButton title={t('main-panel-tab-settings')} selected={state.editTool === 'settings'} icon={<SettingsIcon/>} onClick={openTool('settings')}/>
+      <ToolButton title={t('settings-appearance-view-control')} tip={t('view-control-tooltip')} active={state.charControl.open} icon={<SlidersHorizontal/>} onClick={() => toggleCharControlOpen()}/>
+      <ToolButton title={t('main-panel-tab-settings')} tip={t('settings-button-tooltip')} selected={state.editTool === 'settings'} icon={<SettingsIcon/>} onClick={openTool('settings')}/>
     </div>
   </>;
 }

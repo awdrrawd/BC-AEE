@@ -37,7 +37,3 @@ export function getLayerThumbnail(index: number | 'all', max = 160): string | nu
   if (result) cache.set(key, result);
   return result;
 }
-
-export function clearLayerThumbnailCache() {
-  cache.clear();
-}

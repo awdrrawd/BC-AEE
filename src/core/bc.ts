@@ -61,10 +61,6 @@ export function getCanvas(): HTMLCanvasElement | null {
 export const CANVAS_WIDTH = 2000;
 export const CANVAS_HEIGHT = 1000;
 
-export function canvasScale(rect: CanvasRect | null): number {
-  return rect ? rect.width / CANVAS_WIDTH : 1;
-}
-
 export function getCanvasRect(): CanvasRect | null {
   const canvas = getCanvas();
   if (!canvas) return null;

@@ -4,7 +4,7 @@ import {Select} from '@/components/ui/Fields';
 export function LanguageSelect() {
   const value = getUiLanguageSetting();
   return <div className="flex items-center justify-between gap-2 border-b border-zinc-800 px-1 py-2 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)"
-              data-aee-tooltip={t('settings-language-label')}>
+              data-aee-tooltip={t('settings-language-tooltip')}>
     <span className="text-xs text-zinc-300">{t('settings-language-label')}</span>
     <Select
       value={value}

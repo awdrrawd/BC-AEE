@@ -12,7 +12,8 @@ export function ItemFontSelect() {
     ? t('settings-item-font-default')
     : findSystemFont(value)?.name ?? findCustomFont(value)?.name ?? value;
 
-  return <div className="flex items-center justify-between gap-2 border-b border-zinc-800 px-1 py-2 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)">
+  return <div className="flex items-center justify-between gap-2 border-b border-zinc-800 px-1 py-2 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)"
+              data-aee-tooltip={t('settings-item-font-tooltip')}>
     <span className="shrink-0 text-xs text-zinc-300">{t('settings-item-font-label')}</span>
     <button
       type="button"

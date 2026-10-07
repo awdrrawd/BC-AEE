@@ -44,11 +44,6 @@ export function setGridPx(px: number) {
   saveBgAndRefresh();
 }
 
-export function setGridOpacity(opacity: number) {
-  getViewSettings().bgGridOpacity.set(clamp(opacity, 0, 1));
-  saveBgAndRefresh();
-}
-
 export function setGridLayer(layer: 'below' | 'above') {
   getViewSettings().bgGridLayer.set(layer);
   saveBgAndRefresh();

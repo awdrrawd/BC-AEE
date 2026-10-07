@@ -10,8 +10,6 @@ export const SHAPE_TOOLS = [
   'moon', 'lightning', 'flower', 'teardrop',
 ] as const;
 
-export type ShapeTool = typeof SHAPE_TOOLS[number];
-
 export const SHAPE_EMOJI: Record<string, string> = {
   line: '／', rect: '▭', square: '▢', circle: '◯', ellipse: '⬭',
   triangle: '△', rtriangle: '◺', diamond: '◇', pentagon: '⬠', hexagon: '⬡',

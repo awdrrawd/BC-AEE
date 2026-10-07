@@ -9,6 +9,7 @@ const TOGGLE_ROWS: Array<{ labelKey: string; setting: BooleanSetting }> = [
   {labelKey: 'wardrobe-setting-cancel-tryon', setting: settings.wardrobeCancelTryOn},
   {labelKey: 'wardrobe-setting-portrait', setting: settings.wardrobePortrait},
 ];
+// Each row's hover text lives under `<labelKey>-tooltip`.
 
 const ROW_CLASS = 'flex h-[50px] shrink-0 items-center rounded-lg border border-white/8 bg-black/35 px-4 transition-colors hover:border-(--aee-accent-55) hover:bg-(--aee-accent-16)';
 
@@ -16,7 +17,7 @@ export function GeneralTab() {
   const language = getUiLanguageSetting();
 
   return <div className="flex flex-col gap-3">
-    <div className={`${ROW_CLASS} justify-between gap-4`} data-aee-tooltip={t('wardrobe-language')}>
+    <div className={`${ROW_CLASS} justify-between gap-4`} data-aee-tooltip={t('settings-language-tooltip')}>
       <span className="text-[26px] text-[#f0eee4]">{t('wardrobe-language')}</span>
       <Select
         density="stage"
@@ -31,6 +32,7 @@ export function GeneralTab() {
       </Select>
     </div>
 
-    {TOGGLE_ROWS.map(row => <SettingRow key={row.setting.key} label={t(row.labelKey)} setting={row.setting} density="stage"/>)}
+    {TOGGLE_ROWS.map(row => <SettingRow key={row.setting.key} label={t(row.labelKey)} setting={row.setting} density="stage"
+                                  tooltip={t(`${row.labelKey}-tooltip`)}/>)}
   </div>;
 }

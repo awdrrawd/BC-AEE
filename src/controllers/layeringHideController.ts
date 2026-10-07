@@ -22,10 +22,6 @@ export function getLayeringHiddenGroups(item: Item | null): AssetGroupName[] {
   return Array.isArray(override) ? override.filter(group => defaultHide(item).includes(group)) : defaultHide(item);
 }
 
-export function hasLayeringHideOverride(item: Item | null): boolean {
-  return Array.isArray(item?.Property?.wceOverrideHide);
-}
-
 function readWceOverrides(): WceOverrideSetting {
   try {
     const compressed = Player?.ExtensionSettings?.WCEOverrides;

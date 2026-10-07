@@ -126,7 +126,8 @@ export function FreeDrawLibraryPanel() {
   return <section className="fixed z-1000001 flex h-[1000px] w-[430px] flex-col overflow-hidden border-r-2 border-[var(--aee-accent)] bg-[#100d18]/96 text-lg text-white shadow-2xl backdrop-blur"
              style={{left: rect.left, top: rect.top, transform: `scale(${scaleX}, ${scaleY})`, transformOrigin: 'top left'}}
              onPointerDown={stop} onClick={stop}>
-      <header className="flex h-16 shrink-0 items-center justify-center bg-[#1b1627] px-5 text-[22px] font-bold">
+      <header className="flex h-16 shrink-0 items-center justify-center bg-[#1b1627] px-5 text-[22px] font-bold"
+              data-aee-tooltip={t('free-draw-library-tooltip')}>
         {t('free-draw-library-title')}
       </header>
       <div className="grid shrink-0 grid-cols-[1fr_110px] gap-3 border-y border-white/10 p-4">
@@ -159,7 +160,8 @@ export function FreeDrawLibraryPanel() {
         </div>
       </div>
 
-      <footer className="pointer-events-none shrink-0 border-t-2 bg-[#17131f] px-4 py-4" style={{borderColor: accent}}>
+      <footer className="shrink-0 border-t-2 bg-[#17131f] px-4 py-4" style={{borderColor: accent}}
+              data-aee-tooltip={t(usage !== null && usage >= APPEARANCE_UPLOAD_BYTES ? 'free-draw-size-danger-tooltip' : 'free-draw-size-tooltip')}>
       <div className="mb-2 flex items-center justify-between text-lg font-bold">
         <span>{t('free-draw-size-title')}</span><span style={{color: accent}}>{usage === null ? '—' : formatBytesK(usage)} / 160K</span>
       </div>

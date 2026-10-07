@@ -164,15 +164,6 @@ export const MPRIO_BAR_X = 1615, MPRIO_BAR_W = 360;
 export const BOUNDS_X = MPRIO_FRAME_X, BOUNDS_W = MPRIO_FRAME_W;
 export const BOUNDS_Y = 560, BOUNDS_H = 50;
 
-// Toolbar button states. Two deliberately different colours, because they mean
-// two different things: cyan marks the ONE tool currently selected (exclusive,
-// and obvious from what happens when you draw), green marks a MODE left
-// switched on — 遮罩 / 對稱 / 填滿 / 外框 are the ones you can forget about and
-// then wonder why the next stroke behaves oddly.
-export const BTN_TOOL_ON = 'cyan';
-export const BTN_MODE_ON = '#4CAF50';
-export const BTN_OFF = 'White';
-
 // Shape picker panel (y=290). Gap 5, 5 per row.
 export const PICKER_X = 1485, PICKER_Y = 290, PICKER_W = 490;
 export const PICKER_ITEM = 90, PICKER_GAP = 5, PICKER_PAD = 10, PICKER_PER_ROW = 5;
@@ -183,24 +174,18 @@ export const SEL_HANDLE = 14;
 
 // Edit panel: move / rotate / scale.
 export const EDIT_PANEL_X = 1485, EDIT_PANEL_Y = 290, EDIT_PANEL_W = 490, EDIT_PANEL_H = 210;
-export const LABEL_Y = EDIT_PANEL_Y + 10, LABEL_H = 32;
+export const LABEL_H = 32;
 export const MOVE_STEP = 5;
 export const ROTATE_STEP = 15;
 export const SCALE_STEP = 0.1;
-
-export const PAD_BTN = 40;
-export const PAD_UP_X = EDIT_PANEL_X + 50, PAD_UP_Y = EDIT_PANEL_Y + 60;
-export const PAD_LEFT_X = EDIT_PANEL_X, PAD_LEFT_Y = EDIT_PANEL_Y + 105;
-export const PAD_RIGHT_X = EDIT_PANEL_X + 95, PAD_RIGHT_Y = EDIT_PANEL_Y + 105;
-export const PAD_DOWN_X = EDIT_PANEL_X + 50, PAD_DOWN_Y = EDIT_PANEL_Y + 150;
-
-export const ROTATE_BTN = 60;
-export const ROTATE_CCW_X = EDIT_PANEL_X + 165, ROTATE_CW_X = EDIT_PANEL_X + 245, ROTATE_Y = EDIT_PANEL_Y + 60;
-export const ROTATE_BAR_X = EDIT_PANEL_X + 165, ROTATE_BAR_Y = EDIT_PANEL_Y + 130, ROTATE_BAR_W = 140, ROTATE_BAR_H = 40;
-
-export const SCALE_BTN = 60;
-export const SCALE_MINUS_X = EDIT_PANEL_X + 325, SCALE_PLUS_X = EDIT_PANEL_X + 405, SCALE_Y = EDIT_PANEL_Y + 60;
-export const SCALE_BAR_X = EDIT_PANEL_X + 325, SCALE_BAR_Y = EDIT_PANEL_Y + 130, SCALE_BAR_W = 140, SCALE_BAR_H = 40;
+export const PAD_UP_Y = EDIT_PANEL_Y + 60;
+export const PAD_LEFT_Y = EDIT_PANEL_Y + 105;
+export const PAD_RIGHT_Y = EDIT_PANEL_Y + 105;
+export const PAD_DOWN_Y = EDIT_PANEL_Y + 150;
+export const ROTATE_CW_X = EDIT_PANEL_X + 245, ROTATE_Y = EDIT_PANEL_Y + 60;
+export const ROTATE_BAR_Y = EDIT_PANEL_Y + 130, ROTATE_BAR_W = 140, ROTATE_BAR_H = 40;
+export const SCALE_PLUS_X = EDIT_PANEL_X + 405, SCALE_Y = EDIT_PANEL_Y + 60;
+export const SCALE_BAR_Y = EDIT_PANEL_Y + 130, SCALE_BAR_W = 140, SCALE_BAR_H = 40;
 
 // Derived toolbar X positions.
 export const EXIT_ICON_X = row1X('exit');

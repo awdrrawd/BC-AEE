@@ -1,6 +1,5 @@
 import type {LayerId} from '@/core/types';
 import {
-  getAssetBaseXY,
   batchLayerEdits,
   getCanvas,
   getCanvasRect,
@@ -406,8 +405,4 @@ export function installDragHandlers() {
     });
     hideTouchBlocker();
   }, true);
-}
-
-export function getLayerBaseXYForDisplay(item: Item, layerId: LayerId) {
-  return getAssetBaseXY(item, layerId);
 }

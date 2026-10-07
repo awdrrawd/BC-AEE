@@ -1,7 +1,6 @@
 import {getCanvas} from '@/core/bc';
 import {clamp} from '@/util/math';
 import {getState, mutateState} from '@/core/store';
-import {settings} from '@/core/settings';
 import {getViewSettings} from '@/core/viewSettings';
 import {runtime} from '@/core/runtime';
 import {isInAppearanceScreen, updateAppearanceScreenState} from '@/core/appearanceScreenMachine';
@@ -26,14 +25,6 @@ export function toggleCharControlOpen() {
       draft.charControl.hideSubOpen = false;
     }
   });
-}
-
-export function toggleExpandDirection() {
-  settings.ctrlExpandUp.toggle();
-}
-
-export function toggleSubDirection() {
-  settings.ctrlSubLeft.toggle();
 }
 
 export function toggleBgSubOpen() {

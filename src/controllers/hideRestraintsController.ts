@@ -1,15 +1,6 @@
 import {runtime} from '@/core/runtime';
 import {t} from '@/i18n/i18n';
-import {isAppearanceOverlayActive} from '@/controllers/copyPasteController';
 import {isInAppearanceScreen} from '@/core/appearanceScreenMachine';
-
-function isGroupsScreen(): boolean {
-  return CharacterAppearanceMode === '' && !isAppearanceOverlayActive();
-}
-
-export function isHideRestraintsAvailable(): boolean {
-  return isGroupsScreen();
-}
 
 export function isHideRestraintsActive(): boolean {
   return runtime.hideRestraints;

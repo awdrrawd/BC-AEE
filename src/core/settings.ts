@@ -124,14 +124,10 @@ export const settings = {
   hideLscgLayers: bool('hideLscgLayers', false),
   hideBcxImportExport: bool('hideBcxImportExport', false),
   hideArousalUi: bool('hideArousalUi', false),
-  enableAeeMenu: bool('enableAeeMenu', false),
   hideUnnecessaryAppearanceButtons: bool('hideUnnecessaryAppearanceButtons', false),
   useAeeColorPicker: bool('useAeeColorPicker', false),
   pasteImport: bool('pasteImport', false),
   bcWheelScroll: bool('bcWheelScroll', false),
-  enablePartsFilter: bool('enablePartsFilter', false),
-  enableLayerManager: bool('enableLayerManager', false),
-  enableHideRestraints: bool('enableHideRestraints', false),
   enableWardrobe: bool('enableWardrobe', false),
   enableFreeDraw: bool('enableFreeDraw', true),
   // Item (TextItem) font: 'default' = no override, otherwise a fonts.ts font id.
@@ -139,10 +135,8 @@ export const settings = {
   // Apply other players' shared item-font choices (needs the font locally). Off by default.
   loadOthersFont: bool('loadOthersFont', false),
 
-  showCharCtrl: bool('showCharCtrl', false),
   hideCloseup: bool('hideCloseup', false),
   hideFullbody: bool('hideFullbody', false),
-  fullbodyOffsetX: value('fullbodyOffsetX', 0),
   charCtrlPos: value<CtrlPos | null>('charCtrlPos', null),
   ctrlExpandUp: bool('ctrlExpandUp', true),
   ctrlSubLeft: bool('ctrlSubLeft', true),

@@ -15,6 +15,7 @@ import {
 import {settings} from '@/core/settings';
 import {commitAppearancePickerFrame, drawAppearancePickerOutline, handleAppearancePickerClick} from '@/controllers/appearancePickerController';
 import {drawAboveGridIfNeeded} from '@/controllers/backgroundController';
+import {restoreItemFromColorBackup} from '@/core/itemColorCancel';
 
 export function installItemColorHooks() {
   let craftingColorSession: CraftingColorSession | null = null;
@@ -79,6 +80,28 @@ export function installItemColorHooks() {
 
   bcAeeModSdk.hookFunction('ColorPickerUnload', 0, (args, next) => {
     closeAeeBcColorPicker();
+    return next(args);
+  });
+
+  // R133 only restores Color/Opacity on Cancel; put the whole item back first
+  // (see core/itemColorCancel.ts). Both hooks mirror the guards of BC's own
+  // cancel branches, so nothing is restored where R132 would not have.
+  const restoreFromBackup = () => {
+    if (!ItemColorItem || !ItemColorBackup || !ItemColorCharacter) return;
+    try {
+      restoreItemFromColorBackup(ItemColorItem, ItemColorBackup, AppearanceItemParse);
+    } catch (error: unknown) {
+      console.warn('[AEE] Failed to restore the item on colour Cancel:',
+        error instanceof Error ? error.message : String(error));
+    }
+  };
+  bcAeeModSdk.hookFunction('ItemColorExitClick', 0, (args, next) => {
+    // In colour-picker mode Cancel only closes the picker and is not an item restore.
+    if (ItemColorCurrentMode !== ItemColorMode.COLOR_PICKER) restoreFromBackup();
+    return next(args);
+  });
+  bcAeeModSdk.hookFunction('ItemColorCancelAndExit', 0, (args, next) => {
+    restoreFromBackup();
     return next(args);
   });
 

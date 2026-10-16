@@ -4,6 +4,7 @@ import {bundleAppearance, wearBundle} from '@/util/appearanceBundle';
 import {CHARACTER_HEIGHT, CHARACTER_WIDTH, drawCharacterTo} from '@/util/characterCanvas';
 import {getTargetCharacter} from '@/core/wardrobeStore';
 import {collectDrawImages} from '@/core/drawImageTracker';
+import {isImagePending, releaseNamedTextures} from '@/core/bcImageCompat';
 
 const RESOLUTION = 0.5;
 const PICTURE_WIDTH = CHARACTER_WIDTH * RESOLUTION;
@@ -14,22 +15,13 @@ const FINAL_QUIET_FRAMES = 2;
 let previewSerial = 0;
 
 function allComplete(urls: readonly string[]): boolean {
-  for (const url of urls) {
-    const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
-    // A removed entry is allowed to reach the final rebuild; BC will request it
-    // again there if it is still required by this character.
-    if (image && image.complete === false) return false;
-  }
-  return true;
+  // A removed entry is allowed to reach the final rebuild; BC will request it
+  // again there if it is still required by this character.
+  return !urls.some(isImagePending);
 }
 
 function pendingImageKeys(keys: readonly string[]): string[] {
-  const pending: string[] = [];
-  for (const key of keys) {
-    const image = GLDrawImageCache.get(key) ?? DrawCacheImage.get(key);
-    if (image?.complete === false) pending.push(key);
-  }
-  return pending;
+  return keys.filter(isImagePending);
 }
 
 interface Props {
@@ -298,21 +290,8 @@ function releaseCanvas(canvas: HTMLCanvasElement | null | undefined) {
 }
 
 function releasePreviewTextures(characterId: string) {
-  const prefix = `${characterId}__`;
-  const gl = GLDrawCanvas?.GL;
-  const textureCache = gl?.textureCache;
-
-  if (gl && textureCache) {
-    for (const [key, data] of textureCache) {
-      if (!key.startsWith(prefix)) continue;
-      gl.deleteTexture(data.texture);
-      textureCache.delete(key);
-    }
-  }
-
-  for (const key of GLDrawImageCache.keys()) {
-    if (key.startsWith(prefix)) GLDrawImageCache.delete(key);
-  }
+  // R132 cached each preview canvas by name; R133 draws them uncached (no-op).
+  releaseNamedTextures(`${characterId}__`);
 }
 
 function discard(character: Character) {

@@ -250,6 +250,9 @@ export function applyBgHook() {
 
   CanvasRenderingContext2D.prototype.drawImage = function (img: CanvasImageSource, ...rest: unknown[]) {
     const drawOriginal = () => Reflect.apply(originalDrawImage, this, [img, ...rest]);
+    // This wraps every 2D drawImage on the page, so leave immediately outside the two screens
+    // we handle instead of reading img.src (a URL-resolving getter) for each call.
+    if (CurrentScreen !== 'Appearance' && CurrentScreen !== 'Crafting') return drawOriginal();
     // R132: <img>.src. R133: ImageBitmap has no src, use the URL DrawRoomBackground is drawing.
     const source = roomBackgroundUrl ?? ('src' in img && typeof img.src === 'string' ? img.src : '');
     const isViewBackground = CurrentScreen === 'Appearance' && source.includes('Backgrounds/Dressing')

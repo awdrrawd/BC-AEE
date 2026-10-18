@@ -61,10 +61,13 @@ export function alignDrawingMask(gl: WebGL2RenderingContext, matrix: Float32List
   if (!Number.isFinite(det) || Math.abs(det) < 1e-10) return;
 
   canvas ??= document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  // Assigning width/height reallocates the backing store even when unchanged, so only resize on change.
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+  ctx.resetTransform();
+  ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, width, height);
   for (const {layer, image} of layers) {

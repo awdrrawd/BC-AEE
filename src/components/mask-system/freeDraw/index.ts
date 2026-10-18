@@ -27,13 +27,13 @@
 //   lifecycle.ts       - extended-item load/exit, enter/leave/cancel/apply
 //   ui.ts             - toolbar drawing + click routing
 
-import {syncSlots} from './lifecycle';
+import {syncSlots, abortFreeDrawEditing} from './lifecycle';
 import {onKeyDown} from './ui';
 import {renderOverlay} from './overlay';
 import {cacheDrawArgs} from './geometry';
 import {registerFreeDrawGroups, applyFreeDrawNames, setFreeDrawAvailability} from './registration';
 
-export {registerFreeDrawGroups, applyFreeDrawNames, setFreeDrawAvailability, syncSlots, cacheDrawArgs, renderOverlay};
+export {registerFreeDrawGroups, applyFreeDrawNames, setFreeDrawAvailability, abortFreeDrawEditing, syncSlots, cacheDrawArgs, renderOverlay};
 
 export function installFreeDrawCallbacks() {
   // Item callbacks are registered through the NOARCH config, including after

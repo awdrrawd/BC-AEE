@@ -31,13 +31,31 @@ const DEFAULT_QUICK_COLORS: SavedColor[] = [
   '#8E8E93', '#A2845E',
 ].map(hex => ({...hexToHsv(hex), a: 255}));
 
+const RECENT_COLOR_SLOTS = 12;
+
+function isSavedColor(value: unknown): value is SavedColor {
+  if (!value || typeof value !== 'object') return false;
+  const color = value as Record<string, unknown>;
+  return ['h', 's', 'v', 'a'].every(key => typeof color[key] === 'number' && Number.isFinite(color[key] as number));
+}
+
 function loadRecentColors(): (SavedColor | null)[] {
   try {
-    const parsed = JSON.parse(localStorage.getItem(RECENT_COLORS_KEY) || '[]') as SavedColor[];
-    return [...parsed.slice(0, 12), ...Array<SavedColor | null>(12).fill(null)].slice(0, 12);
+    const parsed: unknown = JSON.parse(localStorage.getItem(RECENT_COLORS_KEY) || '[]');
+    const colors = Array.isArray(parsed) ? parsed.filter(isSavedColor).slice(0, RECENT_COLOR_SLOTS) : [];
+    return [...colors, ...Array<SavedColor | null>(RECENT_COLOR_SLOTS).fill(null)].slice(0, RECENT_COLOR_SLOTS);
   } catch {
-    return Array<SavedColor | null>(12).fill(null);
+    return Array<SavedColor | null>(RECENT_COLOR_SLOTS).fill(null);
   }
+}
+
+/** Persisting is best-effort: storage may be full, blocked or unavailable (private/embedded contexts). */
+function persistRecentColors(colors: readonly (SavedColor | null)[]): void {
+  try {
+    const saved = colors.filter(Boolean);
+    if (saved.length) localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(saved));
+    else localStorage.removeItem(RECENT_COLORS_KEY);
+  } catch { /* keep the in-memory palette working */ }
 }
 
 const BC_HEADING_GAP = 4;
@@ -516,20 +534,26 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
             className="text-[17px] uppercase tracking-wide text-zinc-400">{t('color-picker-saved-section-label')}</span>
           <span className="flex-1"/>
           <Button className="min-h-9 rounded-full px-4 py-1 text-[17px]"
-                  onClick={() => setRecent(items => {
+                  onClick={() => {
+                    // Compute from the current state and persist outside the updater: updaters must stay pure
+                    // (React may run them twice) and a storage failure must not throw into React.
                     const nextColor = {...hsv, a: alpha};
-                    const next = [nextColor, ...items.filter(item => item && hsvaString(item.h, item.s, item.v, item.a) !== hsvaString(nextColor.h, nextColor.s, nextColor.v, nextColor.a))].slice(0, 12) as (SavedColor | null)[];
-                    while (next.length < 12) next.push(null);
-                    localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next.filter(Boolean)));
-                    return next;
-                  })}>
+                    const key = hsvaString(nextColor.h, nextColor.s, nextColor.v, nextColor.a);
+                    const next: (SavedColor | null)[] = [
+                      nextColor,
+                      ...recent.filter((item): item is SavedColor => !!item && hsvaString(item.h, item.s, item.v, item.a) !== key),
+                    ].slice(0, RECENT_COLOR_SLOTS);
+                    while (next.length < RECENT_COLOR_SLOTS) next.push(null);
+                    setRecent(next);
+                    persistRecentColors(next);
+                  }}>
             {t('color-picker-save-button')}
           </Button>
           <Button className="min-h-9 rounded-full px-4 py-1 text-[17px]"
                   onClick={() => {
-                    const empty = Array<SavedColor | null>(12).fill(null);
+                    const empty = Array<SavedColor | null>(RECENT_COLOR_SLOTS).fill(null);
                     setRecent(empty);
-                    localStorage.removeItem(RECENT_COLORS_KEY);
+                    persistRecentColors(empty);
                   }}>
             {t('color-picker-clear-button')}
           </Button>

@@ -1,3 +1,4 @@
+import bcAeeModSdk from '@/modsdk';
 import {getCanvas, getCanvasRect} from '@/core/bc';
 import {mutateState} from '@/core/store';
 import {runtime} from '@/core/runtime';
@@ -221,14 +222,36 @@ export function drawBgGrid(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElem
   ctx.restore();
 }
 
+// R133 decodes images to ImageBitmap (DrawImageCache), which has no `.src`, so the
+// drawImage hook below can no longer recognise the background by its URL. R133
+// draws every room background through DrawRoomBackground(url, ...), so remember
+// that URL while it runs and let the drawImage hook use it instead.
+let roomBackgroundUrl: string | null = null;
+let roomBackgroundHooked = false;
+
+export function installRoomBackgroundHook() {
+  if (roomBackgroundHooked || typeof DrawRoomBackground !== 'function') return;
+  roomBackgroundHooked = true;
+  bcAeeModSdk.hookFunction('DrawRoomBackground' as never, 5, ((args: unknown[], next: (a: unknown[]) => unknown) => {
+    roomBackgroundUrl = typeof args[0] === 'string' ? args[0] : null;
+    try {
+      return next(args);
+    } finally {
+      roomBackgroundUrl = null;
+    }
+  }) as never);
+}
+
 export function applyBgHook() {
+  installRoomBackgroundHook();
   if (runtime.originalCanvasDrawImage) return;
   const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage;
   runtime.originalCanvasDrawImage = originalDrawImage;
 
   CanvasRenderingContext2D.prototype.drawImage = function (img: CanvasImageSource, ...rest: unknown[]) {
     const drawOriginal = () => Reflect.apply(originalDrawImage, this, [img, ...rest]);
-    const source = 'src' in img && typeof img.src === 'string' ? img.src : '';
+    // R132: <img>.src. R133: ImageBitmap has no src, use the URL DrawRoomBackground is drawing.
+    const source = roomBackgroundUrl ?? ('src' in img && typeof img.src === 'string' ? img.src : '');
     const isViewBackground = CurrentScreen === 'Appearance' && source.includes('Backgrounds/Dressing')
       || CurrentScreen === 'Crafting' && source.includes('Backgrounds/CraftingWorkshop');
     if (isViewBackground) {

@@ -1,10 +1,7 @@
 /.idea
-# 只追蹤可供 Loader 直接載入的發布本體；其他 build 產物仍忽略。
-/dist/*
-!/dist/assets/
-/dist/assets/*
-!/dist/assets/main.js
-!/dist/assets/app.js
+# dist 是 build 產物：由 CI 在 main 重新建置並部署到 GitHub Pages，不納入版本控制，
+# 避免各分支重新 build 後在壓縮檔上互相衝突。
+/dist
 /node_modules
 /BondageClub
 

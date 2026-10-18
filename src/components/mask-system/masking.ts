@@ -5,6 +5,7 @@ import bcAeeModSdk from '@/modsdk';
 import {NAKED_DATAURL} from './assets';
 import {LRUCache} from './lruCache';
 import {installTransformedMaskHooks} from './transformedMasks';
+import {seedDrawImage, uploadImageToTexture, usesImageCache} from '@/core/bcImageCompat';
 import {
   DRAW_GROUP_PREFIX,
   MASK_IMAGE_CACHE_SIZE,
@@ -31,6 +32,7 @@ let LastGL: BCGLContext | null = null;
 let glLoadImageHooked = false;
 let drawGetImageHooked = false;
 let glAppearanceBuildHooked = false;
+let maskSeedHooked = false;
 
 function transparentPx(): string {
   const c = document.createElement('canvas');
@@ -68,35 +70,37 @@ function texCacheFor(gl: BCGLContext): LRUCache<string, TexInfo> {
   }
   return m;
 }
+// R133 removed DrawRefreshCharacterForImage. On R133 the mask is only ever
+// built once the image is ready, so flag every character that wears one of our
+// masks for a redraw instead.
+function refreshCharactersAfterDecode(img: HTMLImageElement) {
+  try {
+    if (!usesImageCache()) { DrawRefreshCharacterForImage(img); return; }
+    for (const c of Character) if (characterUsesOurMasks(c)) c.MustDraw = true;
+  } catch { /* ignore */ }
+}
+
 function ensureDecoded(dataUrl: string): HTMLImageElement {
   let img = ourImageCache.get(dataUrl);
   if (!img) {
     img = new Image();
     ourImageCache.set(dataUrl, img);
     // Fires once per NEW image; the ensuing rebuild binds synchronously.
-    img.addEventListener('load', () => { try { DrawRefreshCharacterForImage(img!); } catch { /* ignore */ } });
+    img.addEventListener('load', () => refreshCharactersAfterDecode(img!));
     img.addEventListener('error', () => console.error('[AEE Mask] 遮罩圖片載入失敗'));
     img.src = dataUrl;
   }
   return img;
 }
 
-// GLDrawLoadImage hook: return our per-content injected texture for mask URLs.
-function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, string]) => unknown) {
-  const gl = args[0], url = args[1];
-  LastGL = gl;
-
-  // BC can call GLDrawLoadImage with a non-string url (e.g. a temp-canvas name
-  // that resolved to null); never assume `.includes` exists → pass straight
-  // through so we don't crash the whole draw.
-  if (typeof url !== 'string') return next(args);
-
+// Resolve the dataURL for one of OUR mask URLs, or null if `url` is not ours.
+function resolveMaskDataUrl(url: string): string | null {
   let dataUrl: string | null = null;
   for (const name in MaskImageProviders) {
     if (url.includes(name)) {
       const p = MaskImageProviders[name];
-      // A throwing provider must NOT propagate: this hook runs inside
-      // GLDrawLoadTextureAlphaMask → an uncaught throw here takes down the whole
+      // A throwing provider must NOT propagate: this runs inside the mask
+      // build → an uncaught throw here takes down the whole
       // character draw (screen fails to load). Swallow → transparent fallback.
       try {
         dataUrl = typeof p === 'function' ? p() : p;
@@ -107,6 +111,41 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
       if (dataUrl) break;
     }
   }
+  return dataUrl;
+}
+
+// R133 only. GLDrawLoadTextureAlphaMask no longer goes through GLDrawLoadImage;
+// it reads each mask layer from DrawImageCache. Put our per-content images
+// there before BC looks. Entries are re-seeded on every build, so BC purging
+// them is harmless; until the <img> has decoded BC just gets an empty mask for
+// that frame and the character is redrawn on load.
+function seedMaskLayersHook(args: [BCGLContext, number, number, number, number, TextureAlphaMask[] | undefined],
+                            next: (a: typeof args) => unknown) {
+  LastGL = args[0];
+  const layers = args[5];
+  if (Array.isArray(layers)) {
+    for (const layer of layers) {
+      const url = layer?.Url;
+      if (typeof url !== 'string') continue;
+      const dataUrl = resolveMaskDataUrl(url);
+      if (dataUrl) seedDrawImage(url, ensureDecoded(dataUrl));
+    }
+  }
+  return next(args);
+}
+
+// GLDrawLoadImage hook: return our per-content injected texture for mask URLs.
+// (R132: mask path. R133: only reached if one of our URLs is drawn as a normal layer.)
+function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, string]) => unknown) {
+  const gl = args[0], url = args[1];
+  LastGL = gl;
+
+  // BC can call GLDrawLoadImage with a non-string url (e.g. a temp-canvas name
+  // that resolved to null); never assume `.includes` exists → pass straight
+  // through so we don't crash the whole draw.
+  if (typeof url !== 'string') return next(args);
+
+  const dataUrl = resolveMaskDataUrl(url);
   if (!dataUrl) return next(args); // not our asset → original flow
 
   const cache = texCacheFor(gl);
@@ -118,12 +157,14 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   // 無條件覆蓋：這裡的 url 只會匹配到「我們自己的遮罩資產」，img 一定是我們
   // 解好的正確內容。若用 !has 當守衛，一旦某次競態下原生先塞了一張 404/壞圖
   // （width 0），之後就永遠不會被覆蓋 → 遮罩靜默失效。
-  GLDrawImageCache.set(url, img);
+  // (R132 only — R133's ImageCache has no `set`, and its mask path is fed by
+  // seedMaskLayersHook instead.)
+  if (!usesImageCache()) GLDrawImageCache.set(url, img);
   let ti = cache.get(dataUrl);
   if (ti) {
     if (!ti.ready && img.complete && img.naturalWidth) { // deferred upload once decoded
       gl.bindTexture(gl.TEXTURE_2D, ti.texture);
-      GLDrawBingImageToTextureInfo(gl as never, img, ti);
+      uploadImageToTexture(gl, img, ti);
       ti.ready = true;
     }
     return ti;
@@ -136,7 +177,7 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   if (img.complete && img.naturalWidth) {
-    GLDrawBingImageToTextureInfo(gl as never, img, ti);
+    uploadImageToTexture(gl, img, ti);
     ti.ready = true;
   } else {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
@@ -188,6 +229,9 @@ function drawGetImageHook(args: [string], next: (a: [string]) => unknown) {
       if (rule.match(src)) {
         let im = previewImgCache.get(src);
         if (!im) { im = new Image(); im.src = rule.url(); previewImgCache.set(src, im); }
+        // R133's DrawGetImage returns undefined until an image is ready and
+        // callers just test truthiness; R132 callers expect an <img> always.
+        if (usesImageCache() && !(im.complete && im.naturalWidth > 0)) return undefined;
         return im;
       }
     }
@@ -206,6 +250,10 @@ export function installImageHooks(): boolean {
   if (!glLoadImageHooked && typeof GLDrawLoadImage === 'function') {
     bcAeeModSdk.hookFunction('GLDrawLoadImage', 10, glLoadImageHook as never);
     glLoadImageHooked = true;
+  }
+  if (!maskSeedHooked && usesImageCache() && typeof GLDrawLoadTextureAlphaMask === 'function') {
+    bcAeeModSdk.hookFunction('GLDrawLoadTextureAlphaMask', 10, seedMaskLayersHook as never);
+    maskSeedHooked = true;
   }
   if (!drawGetImageHooked && typeof DrawGetImage === 'function') {
     bcAeeModSdk.hookFunction('DrawGetImage', 10, drawGetImageHook as never);

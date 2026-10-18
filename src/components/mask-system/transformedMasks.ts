@@ -1,5 +1,6 @@
 import bcAeeModSdk from '@/modsdk';
 import {DRAW_GROUPS, drawMaskGroupName} from './constants';
+import {getLoadedImage, type BcDrawable} from '@/core/bcImageCompat';
 
 const maskPaths = DRAW_GROUPS.map(group => `/${drawMaskGroupName(group)}/`);
 const isDrawingMask = (url: string) => maskPaths.some(path => url.includes(path));
@@ -12,7 +13,7 @@ interface MaskDraw {
   height?: number;
   x?: number;
   y?: number;
-  layers?: Array<{layer: TextureAlphaMask; image: HTMLImageElement}>;
+  layers?: Array<{layer: TextureAlphaMask; image: BcDrawable}>;
 }
 let drawing: MaskDraw | undefined;
 let installed = false;
@@ -33,8 +34,11 @@ export function installTransformedMaskHooks() {
   bcAeeModSdk.hookFunction('GLDrawLoadTextureAlphaMask', -100, (args, next) => {
     const texture = next(args);
     if (drawing && drawing.gl === args[0] && args[1] > 1 && args[2] > 1 && args[5]?.some(layer => isDrawingMask(layer.Url))) {
-      const layers = args[5].map(layer => ({layer, image: GLDrawImageCache.get(layer.Url)}));
-      if (layers.every(({image}) => image?.complete && image.naturalWidth > 0)) {
+      // getLoadedImage hides the R132 (<img> in a Map) / R133 (ImageCache) difference
+      // and returns null for anything that has not finished loading.
+      const loaded = args[5].map(layer => ({layer, image: getLoadedImage(layer.Url)}));
+      const layers = loaded.filter((entry): entry is {layer: TextureAlphaMask; image: BcDrawable} => !!entry.image);
+      if (layers.length === loaded.length) {
         Object.assign(drawing, {texture, width: args[1], height: args[2], x: args[3], y: args[4], layers});
       }
     }

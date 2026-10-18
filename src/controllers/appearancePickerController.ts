@@ -5,6 +5,7 @@ import {getState, mutateState} from '@/core/store';
 import {getCurrentCharacter, getLayerDisplayName, getLayerGroupMembers} from '@/core/bc';
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
 import {applyPickerMatrix, invertPickerPoint, type PickerMatrix} from '@/core/pickerTransform';
+import {getLoadedImage} from '@/core/bcImageCompat';
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
 export type DrawCapture = {
@@ -850,8 +851,10 @@ function screenToCanvas(x: number, y: number, map: CanvasMap) {
   return {x: (x - map.ox) / map.sx, y: (y - map.oy) / map.sy + map.yStart};
 }
 
+// R133 keeps layer pixels in DrawImageCache as ImageBitmaps (R132: <img> in a
+// Map); getLoadedImage hides that. The 1px check skips BC's placeholder textures.
 function pickImage(url: string): HTMLImageElement | null {
-  const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
+  const image = getLoadedImage(url);
   return image && (image.naturalWidth || image.width) > 1 ? image : null;
 }
 

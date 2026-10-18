@@ -2,20 +2,42 @@ import {test, expect} from '@playwright/test';
 import fs from 'node:fs';
 import ts from 'typescript';
 
-const source = ts.transpileModule(fs.readFileSync('src/components/mask-system/transformedMasks.ts', 'utf8'), {
+const transpile = file => ts.transpileModule(fs.readFileSync(file, 'utf8'), {
   compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022},
 }).outputText;
+const source = transpile('src/components/mask-system/transformedMasks.ts');
+// The real compat layer, so both BC image-cache generations are exercised.
+const compatSource = transpile('src/core/bcImageCompat.ts');
 
-test('drawing mask intersects final rendered pixels, including moved and rotated items', async ({page}) => {
-  const result = await page.evaluate(async source => {
+// R132 keeps decoded <img> elements in a Map; R133 replaces it with an ImageCache
+// whose get() returns a CachedImage (isLoaded()/data) and a bitmap as its data.
+for (const bcCache of ['R132 Map cache', 'R133 ImageCache']) {
+test(`drawing mask intersects final rendered pixels, including moved and rotated items (${bcCache})`, async ({page}) => {
+  const result = await page.evaluate(async ({source, compatSource, bcCache}) => {
     const hooks = new Map();
     const exports = {};
+    const compat = {};
+    new Function('exports', compatSource)(compat);
     const require = name => name === '@/modsdk'
       ? {default: {hookFunction: (name, _, callback) => hooks.set(name, callback)}}
-      : {DRAW_GROUPS: ['ItemCanvas1'], drawMaskGroupName: group => `${group}Mask`};
+      : name === '@/core/bcImageCompat'
+        ? compat
+        : {DRAW_GROUPS: ['ItemCanvas1'], drawMaskGroupName: group => `${group}Mask`};
     window.GLDrawImage = () => {};
     window.GLDrawLoadTextureAlphaMask = () => {};
-    window.GLDrawImageCache = new Map();
+    const r133 = bcCache === 'R133 ImageCache';
+    const decoded = new Map();
+    if (r133) {
+      window.GLDrawDecodeImage = () => {}; // marks the runtime as R133
+      window.DrawImageCache = {
+        has: url => decoded.has(url),
+        get: url => decoded.get(url) ?? {isLoaded: () => false, data: null},
+      };
+      window.GLDrawImageCache = {has: () => false, get: () => ({isLoaded: () => false, data: null})};
+    } else {
+      window.GLDrawImageCache = new Map();
+      window.DrawCacheImage = new Map();
+    }
     eval(source);
     exports.installTransformedMaskHooks();
     const shape = document.createElement('canvas');
@@ -26,7 +48,8 @@ test('drawing mask intersects final rendered pixels, including moved and rotated
     image.src = shape.toDataURL();
     await image.decode();
     const url = 'Assets/Female3DCG/ItemCanvas1Mask/ItemCanvas1MaskA.png';
-    GLDrawImageCache.set(url, image);
+    if (r133) decoded.set(url, {isLoaded: () => true, data: await createImageBitmap(image)});
+    else GLDrawImageCache.set(url, image);
     const layer = {Url: url, X: 0, Y: 0, Mode: 'destination-out'};
     const uploaded = document.createElement('canvas');
     const nativeTexture = {}, binding = {};
@@ -92,10 +115,11 @@ test('drawing mask intersects final rendered pixels, including moved and rotated
     const before = uploads;
     hooks.get('GLDrawImage')(['ordinary.png', gl, 0,0,{},0], () => exports.alignDrawingMask(gl, new Float32Array(16)));
     return {cases, untouched: uploads === before};
-  }, source);
+  }, {source, compatSource, bcCache});
   expect(result.cases.every(value => value.differences === 0)).toBe(true);
   expect(result.cases.every(value => value.binding)).toBe(true);
   expect(result.cases[0].bow).toBe(255);
   expect(result.cases[0].nativeBowAlpha).toBe(0);
   expect(result.untouched).toBe(true);
 });
+}

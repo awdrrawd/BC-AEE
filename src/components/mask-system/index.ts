@@ -5,7 +5,7 @@
 import bcAeeModSdk from '@/modsdk';
 import {installImageHooks, bustMaskTexture} from './masking';
 import {registerSingleGlove, reconcileSingleGlove, applySingleGloveNames} from './singleGlove';
-import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames, setFreeDrawAvailability} from './freeDraw';
+import {registerFreeDrawGroups, installFreeDrawCallbacks, syncSlots, cacheDrawArgs, renderOverlay, applyFreeDrawNames, setFreeDrawAvailability, abortFreeDrawEditing} from './freeDraw';
 import {settings} from '@/core/settings';
 import {installMaskTranslations} from './translations';
 import {installPeerDetection, isAeeMember} from '@/core/aeePresence';
@@ -16,7 +16,9 @@ import {
   DRAW_ASSET,
   drawMaskGroupName,
   drawVisibleGroupName,
+  MASK_INSTALL_FAST_ATTEMPTS,
   MASK_INSTALL_RETRY_MS,
+  MASK_INSTALL_SLOW_RETRY_MS,
   MASK_SYNC_REPUSH_DELAY_MS,
 } from './constants';
 
@@ -241,6 +243,7 @@ export function installMaskSystem() {
 
   settings.enableFreeDraw.onChange(enabled => {
     if (enabled) registerFreeDrawGroups();
+    else abortFreeDrawEditing();
     setFreeDrawAvailability(enabled);
     try {
       if (typeof CharacterLoadCanvas === 'function') {
@@ -253,7 +256,10 @@ export function installMaskSystem() {
 
   // BC assets / draw functions may not be ready the instant the bundle loads;
   // retry until image hooks, registration, and draw hooks are all in place.
-  const timer = setInterval(() => {
+  // Poll quickly at first, then back off: if a hook never becomes available (e.g. a BC update
+  // renamed a function) this must not keep re-running every installer twice a second forever.
+  let attempts = 0;
+  const attemptInstall = () => {
     const imageHooksReady = installImageHooks();
     const registered = registerAll();
     tryHookDrawCharacter();
@@ -268,7 +274,10 @@ export function installMaskSystem() {
     }
     if (imageHooksReady && registered && drawHooked && sanitizeHooked && callbacksInstalled
       && assetReloadHooked && appearanceSyncHooked && peerDetectionReady) {
-      clearInterval(timer);
+      return;
     }
-  }, MASK_INSTALL_RETRY_MS);
+    attempts++;
+    setTimeout(attemptInstall, attempts < MASK_INSTALL_FAST_ATTEMPTS ? MASK_INSTALL_RETRY_MS : MASK_INSTALL_SLOW_RETRY_MS);
+  };
+  setTimeout(attemptInstall, MASK_INSTALL_RETRY_MS);
 }

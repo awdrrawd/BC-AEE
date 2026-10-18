@@ -70,11 +70,16 @@ function isEditablePasteTarget(event: ClipboardEvent): boolean {
 }
 
 export function installMenuHooks() {
-  settings.hideBcxImportExport.onChange(() => {
+  // AppearanceMenu is built once per screen/mode entry, so every setting that adds or filters
+  // its buttons must rebuild it on change; otherwise the old buttons stay until the next rebuild.
+  const rebuildAppearanceMenu = () => {
     if (isInAppearanceScreen() && CharacterAppearanceSelection) {
       AppearanceMenuBuild(CharacterAppearanceSelection, CharacterAppearanceSelectedGroup);
     }
-  });
+  };
+  for (const setting of [settings.hideBcxImportExport, settings.hideUnnecessaryAppearanceButtons, settings.enableCopyPaste]) {
+    setting.onChange(rebuildAppearanceMenu);
+  }
   document.addEventListener('paste', event => {
     if (!settings.pasteImport.get()) return;
     if (CharacterAppearanceMode !== '') return;

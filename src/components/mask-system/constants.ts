@@ -114,6 +114,9 @@ export const isDrawMaskGroupName = (name: string) => name.startsWith(DRAW_GROUP_
 // Runtime registration timings. They share one owner so retry
 // behaviour cannot silently drift across the mask modules.
 export const MASK_INSTALL_RETRY_MS = 500;
+/** After this many fast attempts (~60 s) installation keeps retrying, but at the slow interval. */
+export const MASK_INSTALL_FAST_ATTEMPTS = 120;
+export const MASK_INSTALL_SLOW_RETRY_MS = 5000;
 export const MASK_SYNC_REPUSH_DELAY_MS = 600;
 
 export const DRAW_X = 500, DRAW_Y = 0;

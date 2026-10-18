@@ -230,6 +230,17 @@ export function slotExit() {
   detachListeners();
 }
 
+/**
+ * Called when free draw is switched off. An open editor would otherwise stay live but invisible
+ * (the overlay is hidden while the setting is off), so drop any unsaved edit and close the dialog.
+ * Worn drawings are untouched, which keeps re-enabling lossless.
+ */
+export function abortFreeDrawEditing() {
+  if (!getActiveSession()) return;
+  slotExit();
+  closeFocusedItem();
+}
+
 function closeFocusedItem() {
   if (typeof DialogLeaveFocusItem === 'function') {
     DialogLeaveFocusItem();

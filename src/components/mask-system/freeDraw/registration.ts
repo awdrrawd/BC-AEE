@@ -68,8 +68,15 @@ function registerDrawGroup(i: number): boolean {
   safeAssetAdd(group, {
     Name: DRAW_ASSET,
     Value: 0, Wear: true, Extended: true, AlwaysInteract: true, Random: false,
+    // The board only stores editor data and has no image file. Declare the layer
+    // image-less up front so BC never requests Assets/Female3DCG/ItemCanvasN/DrawingBoard.png
+    // (the default layer has HasImage=true, which caused a 404 on first registration).
+    Layer: [{HasImage: false}],
     RemoveItemOnRemove: removeOnRemove,
   }, {[g]: {[DRAW_ASSET]: freeDrawExtendedConfig(i)}}, {Group: g});
+  // Belt and braces: also clear it on the freshly built asset object.
+  const added = AssetGet(FAMILY, g, DRAW_ASSET) as unknown as {Layer?: Array<{HasImage: boolean}>} | null;
+  for (const layer of added?.Layer ?? []) layer.HasImage = false;
   setDesc(g, DRAW_ASSET, maskLabel('mask-free-draw-name', {n: i + 1}));
   return assetExists(g, DRAW_ASSET);
 }

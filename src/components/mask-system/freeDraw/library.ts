@@ -11,7 +11,7 @@ export interface LibraryEntry {
   name: string;
   mime: string;
   hash: string;
-  data: Uint8Array;
+  data: Uint8Array<ArrayBuffer>;
 }
 
 const empty = (): LibraryEntry => ({name: '', mime: '', hash: '', data: new Uint8Array()});

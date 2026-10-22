@@ -15,7 +15,7 @@ export function createSpsDrawRef(owner: number, slot: number, revision: string, 
   return {o: owner, s: slot, r: revision, m: mime,
     u: `${SPS_ORIGIN}/public/data/${owner}/${contentKey(revision)}`, v: 4};
 }
-interface Entry {mime: string; hash: Uint8Array; data: Uint8Array}
+interface Entry {mime: string; hash: Uint8Array; data: Uint8Array<ArrayBuffer>}
 
 const empty = (): Entry => ({mime: '', hash: new Uint8Array(32), data: new Uint8Array()});
 const cache = new Map<string, string>();

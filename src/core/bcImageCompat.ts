@@ -14,6 +14,12 @@
 type AnyRecord = Record<string, unknown>;
 const win = globalThis as unknown as AnyRecord;
 
+/** R132's draw caches were plain Maps of <img> elements; the R133 stubs no longer describe them. */
+type LegacyImageMap = Map<string, HTMLImageElement>;
+const legacyGlImages = () => win.GLDrawImageCache as LegacyImageMap | undefined;
+const legacyDrawImages = () => win.DrawCacheImage as LegacyImageMap | undefined;
+const legacyImage = (url: string) => legacyGlImages()?.get(url) ?? legacyDrawImages()?.get(url);
+
 /** The subset of R133's `CachedImage` that this module relies on. */
 interface CachedImageLike {
   state: string;
@@ -76,7 +82,7 @@ export function getLoadedImage(url: string): BcDrawable | null {
     const entry = imageCache('DrawImageCache')?.get(url);
     return entry?.isLoaded() && entry.data ? entry.data as BcDrawable : null;
   }
-  const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
+  const image = legacyImage(url);
   if (!image || image.complete === false) return null;
   return (image.naturalWidth || image.width) > 0 ? image : null;
 }
@@ -93,8 +99,7 @@ export function isImagePending(url: string): boolean {
     }
     return false;
   }
-  const image = GLDrawImageCache.get(url) ?? DrawCacheImage.get(url);
-  return image?.complete === false;
+  return legacyImage(url)?.complete === false;
 }
 
 /**
@@ -103,7 +108,7 @@ export function isImagePending(url: string): boolean {
  */
 export function releaseNamedTextures(prefix: string): void {
   if (usesImageCache()) return;
-  const gl = GLDrawCanvas?.GL;
+  const gl = GLDrawCanvas?.GL as (WebGL2RenderingContext & {textureCache?: Map<string, {texture: WebGLTexture}>}) | undefined;
   const textureCache = gl?.textureCache;
   if (gl && textureCache) {
     for (const [key, data] of textureCache) {
@@ -112,9 +117,21 @@ export function releaseNamedTextures(prefix: string): void {
       textureCache.delete(key);
     }
   }
-  for (const key of GLDrawImageCache.keys()) {
-    if (key.startsWith(prefix)) GLDrawImageCache.delete(key);
+  const images = legacyGlImages();
+  if (!images) return;
+  for (const key of [...images.keys()]) {
+    if (key.startsWith(prefix)) images.delete(key);
   }
+}
+
+/** R132 only: make BC's own GL cache return `image` for `url` (R133's ImageCache is fed by `seedDrawImage`). */
+export function setLegacyGlImage(url: string, image: HTMLImageElement): void {
+  legacyGlImages()?.set(url, image);
+}
+
+/** R132 only: ask BC to redraw characters wearing `image` once it has decoded (removed in R133). */
+export function refreshCharactersForLegacyImage(image: HTMLImageElement): void {
+  (win.DrawRefreshCharacterForImage as ((image: HTMLImageElement) => void) | undefined)?.(image);
 }
 
 /** Marker for entries we put into BC's cache ourselves. */

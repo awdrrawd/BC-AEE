@@ -5,7 +5,7 @@ import bcAeeModSdk from '@/modsdk';
 import {NAKED_DATAURL} from './assets';
 import {LRUCache} from './lruCache';
 import {installTransformedMaskHooks} from './transformedMasks';
-import {seedDrawImage, uploadImageToTexture, usesImageCache} from '@/core/bcImageCompat';
+import {refreshCharactersForLegacyImage, seedDrawImage, setLegacyGlImage, uploadImageToTexture, usesImageCache} from '@/core/bcImageCompat';
 import {
   DRAW_GROUP_PREFIX,
   MASK_IMAGE_CACHE_SIZE,
@@ -75,7 +75,7 @@ function texCacheFor(gl: BCGLContext): LRUCache<string, TexInfo> {
 // masks for a redraw instead.
 function refreshCharactersAfterDecode(img: HTMLImageElement) {
   try {
-    if (!usesImageCache()) { DrawRefreshCharacterForImage(img); return; }
+    if (!usesImageCache()) { refreshCharactersForLegacyImage(img); return; }
     for (const c of Character) if (characterUsesOurMasks(c)) c.MustDraw = true;
   } catch { /* ignore */ }
 }
@@ -159,7 +159,7 @@ function glLoadImageHook(args: [BCGLContext, string], next: (a: [BCGLContext, st
   // （width 0），之後就永遠不會被覆蓋 → 遮罩靜默失效。
   // (R132 only — R133's ImageCache has no `set`, and its mask path is fed by
   // seedMaskLayersHook instead.)
-  if (!usesImageCache()) GLDrawImageCache.set(url, img);
+  if (!usesImageCache()) setLegacyGlImage(url, img);
   let ti = cache.get(dataUrl);
   if (ti) {
     if (!ti.ready && img.complete && img.naturalWidth) { // deferred upload once decoded

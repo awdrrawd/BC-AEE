@@ -44,9 +44,10 @@ for (const withApi of [true, false]) {
   assert.equal(item.Property.LayerRotation[''], 30);
   window.Layering = api;
 }
+let decodeBundle = () => null;
 const migration = load('src/core/wardrobeMigration.ts', {
   require: () => ({wardrobeMutation: async (_, fn) => fn(), wardrobeIdentity: () => () => true}),
-  CommonCloneDeep: structuredClone, AssetGet: () => asset, PoseType: {DEFAULT: ''}, CanvasUpperOverflow: 100,
+  CommonCloneDeep: structuredClone, AssetGet: () => asset, ServerBundledItemToAppearanceItem: (...args) => decodeBundle(...args), PoseType: {DEFAULT: ''}, CanvasUpperOverflow: 100,
   PropertyLayerOrigin: {getOriginal: () => ({'': 0})},
   CommonDrawComputeDrawingCoordinates: c => {assert.deepEqual(plain(c.DrawPose), []); return {X: 10, Y: 120};},
   console,
@@ -176,4 +177,20 @@ const before = structuredClone(outfit);
 source.persist = async () => false;
 assert.equal(await migration.applyWardrobeMigration(source, plan), false);
 assert.deepEqual(outfit, before, 'failed persistence restores originals');
-console.log('R132 unnamed layer editing, migrations, conflicts, idempotence and persistence checks passed.');
+// R133 bundles hold layer maps as compressed strings. They are expanded through BC before the legacy keys are
+// migrated, so newer data is kept; if BC cannot expand them, nothing is overwritten and the item is reported.
+asset = originalAsset;
+decodeBundle = () => ({Property: {LayerTranslationX: {'': 4}}});
+plan = scan({LayerTranslationX: 'AQID', LayerOverrides: [{DrawingLeft: 50, ScaleY: 1.7}]});
+prop = plan[0].after[0].Property;
+assert.deepEqual(plain(prop.LayerTranslationX), {'': 4}, 'expanded native map takes precedence over the legacy override');
+assert.equal(prop.LayerScaleY[''], 1.7);
+decodeBundle = () => { throw new Error('cannot decode'); };
+plan = scan({LayerTranslationX: 'AQID', LayerOverrides: [{DrawingLeft: 50, ScaleY: 1.7}]});
+assert.equal(plan[0].parts[0].conflict, true);
+assert.equal(plan[0].after[0].Property.LayerTranslationX, 'AQID', 'compressed data is never overwritten with a guess');
+assert.equal(plan[0].after[0].Property.LayerScaleY, undefined);
+decodeBundle = () => null;
+plan = scan({LayerScaleX: 'AQID'});
+assert.equal(plan.length, 0, 'a compressed map without legacy data needs no migration');
+console.log('R132 unnamed layer editing, migrations, conflicts, idempotence, persistence and R133 compressed-map checks passed.');

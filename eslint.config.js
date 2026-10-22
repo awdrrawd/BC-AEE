@@ -28,10 +28,16 @@ export default tseslint.config([
       'react-hooks/refs': 'warn',
       'react-hooks/immutability': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
+      // Verbose logging goes through the single debug switch in src/core/debug.ts.
+      'no-console': ['error', {allow: ['warn', 'error', 'info']}],
     },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+  },
+  {
+    files: ['src/core/debug.ts'],
+    rules: {'no-console': 'off'},
   },
 ])

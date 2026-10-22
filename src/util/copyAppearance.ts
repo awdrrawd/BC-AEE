@@ -14,17 +14,26 @@ export function copyAppearanceToGroup(character: Character, entry: ItemBundle, s
   const sourceIndices = target.Layer.map(layer => source.Layer.findIndex(candidate =>
     (candidate.Name ?? '') === (layer.Name ?? '')));
 
+  // R133 stores these maps in bundles as compressed strings that are indexed by the source asset's layers,
+  // so read the expanded form from the decoded source item. Writing the expanded object back is valid:
+  // BC accepts either form when it loads a bundle. R132 bundles already hold the objects.
+  const expanded = sourceItem?.Property as Record<string, unknown> | undefined;
+  const stored = property as unknown as Record<string, unknown>;
   for (const key of layerMaps) {
-    const values = property[key];
-    if (!values || typeof values !== 'object' || Array.isArray(values)) continue;
+    const values = expanded?.[key] ?? stored[key];
+    if (!values || typeof values !== 'object' || Array.isArray(values)) {
+      // A compressed string that could not be expanded would be read against the wrong layers on the target.
+      if (typeof stored[key] === 'string') delete stored[key];
+      continue;
+    }
     const mapped: Record<string, number> = {};
     target.Layer.forEach((layer, index) => {
       const sourceLayer = source.Layer[sourceIndices[index]];
       if (!sourceLayer) return;
       const name = sourceLayer.Name ?? '';
-      if (Object.hasOwn(values, name)) mapped[layer.Name ?? ''] = values[name];
+      if (Object.hasOwn(values, name)) mapped[layer.Name ?? ''] = (values as Record<string, number>)[name];
     });
-    property[key] = mapped;
+    stored[key] = mapped;
   }
   if (Array.isArray(property.Opacity)) {
     const values = property.Opacity;

@@ -15,6 +15,7 @@
 | `Build` | 前兩個 job 通過後執行 TypeScript／Vite 建置、輸出 JS／CSS 原始及 gzip 體積、檢查 README 版本同步 | 失敗不部署。體積是該次提交的報告，目前不比較基準或設定阻擋門檻。 |
 | `Deploy Pages` | 只部署同一次 main 工作流建置並上傳的 `dist/` artifact | 使用 `github-pages` environment；只有此 job 取得 `pages: write`、`id-token: write`。 |
 | Dependabot | 每週一台北時間 09:00 檢查 npm 與 GitHub Actions | 建立更新 PR，不自動合併；npm minor／patch 分組，`bc-stubs` 與 major 更新獨立。 |
+| BC compatibility | 每週一台北時間 09:00（可手動執行，可指定 BC 分支或標籤）以[程式碼鏡像](https://github.com/awdrrawd/Bondage-College-Mirror/tree/bondageclub)比對 AEE 掛鉤的 BC 函式，見 [bc-compat.yml](../../.github/workflows/bc-compat.yml) | 與基準不同時建立或更新一則標籤為 `bc-compat` 的 issue；不阻擋 PR 與部署，只有檢查本身出錯才讓該工作流失敗。需要 `issues: write`，不需額外 Secrets；可用儲存庫變數 `BC_REPO_URL`、`BC_REF` 換來源。 |
 
 `pull_request` 指向 main 時執行檢查與建置；main push 執行檢查、建置與部署。Actions 頁面的 **Run workflow** 可手動執行；選擇 main 會在通過後部署，其他分支只檢查與建置。新的 PR 提交取消同一 PR 的舊檢查，main 執行不主動中止進行中的部署。
 
@@ -22,7 +23,7 @@
 
 ## 你需要在 GitHub 設定的部分
 
-1. **先提交、推送這批變更並合併到 main。** `package.json`、`package-lock.json`、scripts、tests、Playwright 設定、docs、兩份 `.github` YAML 都要一起提交；不要提交 `node_modules`、瀏覽器下載或測試報告。只有分支上的 `dependabot.yml` 不會啟用預設分支的定期更新。
+1. **先提交、推送這批變更並合併到 main。** `package.json`、`package-lock.json`、scripts、tests、Playwright 設定、docs、三份 `.github` YAML 都要一起提交；不要提交 `node_modules`、瀏覽器下載或測試報告。只有分支上的 `dependabot.yml` 不會啟用預設分支的定期更新。
 2. **Settings → Actions → General：確認允許 GitHub Actions 執行。** 若有 action 白名單，須允許本工作流使用的 GitHub 官方 `actions/*`。不用將預設 Workflow permissions 改成整個儲存庫可寫；工作流自行為部署 job 宣告所需權限。
 3. **Settings → Pages → Build and deployment → Source：選擇 GitHub Actions。** 如果原本就是此模式，保持即可。設定後第一次 main 執行會使用既有 Pages 網址。[GitHub 官方設定說明](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 4. **Settings → Environments → github-pages：確認部署規則允許 main。** 建議 Deployment branches and tags 限定 main。若想要完全自動部署，不設定 Required reviewers；若你保留此審核規則，每次部署就需要手動批准。工作流已指定 environment，尚未存在時 GitHub 可以建立，但分支保護設定仍須你確認。
@@ -63,6 +64,8 @@ Remove-Item Env:PLAYWRIGHT_CHANNEL
 ```
 
 這只影響本機選擇；GitHub Linux runner 仍安裝 Playwright Chromium。失敗時從 Actions 執行頁下載 `architecture-report`，解壓後執行 `npx playwright show-report <playwright-report 目錄>`。[Playwright CI 文件](https://playwright.dev/docs/ci-intro)
+
+BC compatibility 的用法與基準更新見[上游與模組相容性追蹤](../持續追蹤/upstream-compatibility.md)。GitHub 會在公開倉庫 60 天沒有活動後停用排程工作流，停用時到 Actions 頁手動重新啟用即可。
 
 調整 `package.json` 版本後執行 `npm run sync-version` 並提交 README；Build 會檢查版本同步，避免 CI 產生未提交的版本修正。工作流不會自行 commit、push、合併更新 PR 或覆寫已追蹤的 dist 檔案；Pages 使用當次建置產物。
 

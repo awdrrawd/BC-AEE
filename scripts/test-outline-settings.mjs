@@ -3,16 +3,20 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-const code = ts.transpileModule(fs.readFileSync(new URL('../src/core/settings.ts', import.meta.url), 'utf8'), {
+const transpile = file => ts.transpileModule(fs.readFileSync(new URL(file, import.meta.url), 'utf8'), {
   compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022},
 }).outputText;
+const code = transpile('../src/core/settings.ts');
+const storageCode = transpile('../src/core/storage.ts');
 function load(saved) {
+  const localStorage = {getItem: () => JSON.stringify(saved), setItem: () => {}};
+  const storage = {};
+  vm.runInNewContext(storageCode, {exports: storage, localStorage});
   const exports = {};
-  vm.runInNewContext(code, {exports, require: () => ({}), localStorage: {
-    getItem: () => JSON.stringify(saved), setItem: () => {},
-  }});
+  vm.runInNewContext(code, {exports, require: name => name === '@/core/storage' ? storage : {}, localStorage});
   return exports.settings;
 }
+
 for (const [saved, enabled, color] of [
   [{}, false, 'theme'],
   [{hoverOutlineColor: 'off'}, false, 'theme'],

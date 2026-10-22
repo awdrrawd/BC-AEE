@@ -120,16 +120,37 @@ function nativeRenderedPosition(base: number, itemTranslation: number): number {
 }
 
 const NATIVE_LAYER_FIELDS = ['LayerTranslationX', 'LayerTranslationY', 'LayerScaleX', 'LayerScaleY', 'LayerRotation'] as const;
+type NativeLayerField = typeof NATIVE_LAYER_FIELDS[number];
+// In a bundle R133 holds these as compressed strings; R132 and decoded items hold per-layer objects.
+type LayerFieldMaps = Partial<Record<NativeLayerField, Record<string, number> | string>>;
+
+/** R133: replace compressed layer maps with their expanded objects so the legacy-key logic sees R132's shape. */
+function expandCompressedLayerMaps(entry: ItemBundle, character: Character): void {
+  const property = entry.Property as unknown as LayerFieldMaps | undefined;
+  if (!property || !NATIVE_LAYER_FIELDS.some(key => typeof property[key] === 'string')) return;
+  let decoded: Record<string, unknown> | undefined;
+  try {
+    decoded = ServerBundledItemToAppearanceItem(character.AssetFamily, CommonCloneDeep(entry))?.Property as Record<string, unknown> | undefined;
+  } catch { /* left compressed; the caller reports a conflict instead of overwriting */ }
+  for (const key of NATIVE_LAYER_FIELDS) {
+    const map = decoded?.[key];
+    if (typeof property[key] === 'string' && map && typeof map === 'object') property[key] = {...map} as Record<string, number>;
+  }
+}
 
 function migrateNativeKeys(entry: ItemBundle, asset: Asset | null): {fields: string[]; conflict: boolean} {
-  const property = entry.Property;
-  const fields = NATIVE_LAYER_FIELDS.filter(key => {
+  const property = entry.Property as unknown as (LayerFieldMaps & {LayerOverrides?: unknown[]}) | undefined;
+  const mapOf = (key: NativeLayerField): Record<string, number> | undefined => {
     const map = property?.[key];
+    return map && typeof map === 'object' ? map : undefined;
+  };
+  const fields = NATIVE_LAYER_FIELDS.filter(key => {
+    const map = mapOf(key);
     return map && Object.hasOwn(map, entry.Name);
   });
   if (!asset && Array.isArray(property?.LayerOverrides)
     && property.LayerOverrides.some(layer => layer && ['DrawingLeft', 'DrawingTop', 'ScaleX', 'ScaleY', 'Rotation']
-      .some(key => legacyNumber((layer as unknown as Record<string, unknown>)[key]) !== null))) {
+      .some(key => legacyNumber((layer as Record<string, unknown>)[key]) !== null))) {
     return {fields: [...fields, 'LayerOverrides'], conflict: true};
   }
   if (!fields.length) return {fields: [], conflict: false};
@@ -138,10 +159,10 @@ function migrateNativeKeys(entry: ItemBundle, asset: Asset | null): {fields: str
   // An actual named layer may own the old key. Never guess or overwrite a
   // newer value, even if one field would otherwise be safe to migrate.
   if (asset.Layer.some(layer => layer.Name === entry.Name)
-    || fields.some(key => Object.hasOwn(property![key]!, '')
-      || !Number.isFinite(property![key]![entry.Name]))) return {fields, conflict: true};
+    || fields.some(key => Object.hasOwn(mapOf(key)!, '')
+      || !Number.isFinite(mapOf(key)![entry.Name]))) return {fields, conflict: true};
   for (const key of fields) {
-    const map = property![key]!;
+    const map = mapOf(key)!;
     map[''] = map[entry.Name];
     delete map[entry.Name];
   }
@@ -149,13 +170,18 @@ function migrateNativeKeys(entry: ItemBundle, asset: Asset | null): {fields: str
 }
 
 function migrateEntry(entry: ItemBundle, character: Character): {layers: number; fields: string[]; conflict?: boolean} {
-  const property = entry.Property as (ItemProperties & Record<string, unknown>) | undefined;
+  const property = entry.Property as unknown as (ItemProperties & Record<string, unknown>) | undefined;
   const overrides = property?.LayerOverrides;
   const asset = AssetGet(character.AssetFamily, entry.Group, entry.Name);
   const native = migrateNativeKeys(entry, asset);
   const renamedUnnamedLayer = native.fields.length > 0;
   const result = {layers: renamedUnnamedLayer ? 1 : 0, ...native};
   if (native.conflict || !property || !Array.isArray(overrides) || !asset) return result;
+  expandCompressedLayerMaps(entry, character);
+  if (NATIVE_LAYER_FIELDS.some(key => typeof property[key] === 'string')) {
+    // Newer compressed data that could not be expanded must never be overwritten with a guess.
+    return {layers: Math.max(1, result.layers), fields: [...new Set([...result.fields, ...NATIVE_LAYER_FIELDS.filter(key => typeof property[key] === 'string')])], conflict: true};
+  }
   const incompatibleScales = incompatibleScaleFields(property, overrides, asset);
   if (incompatibleScales.length) return {
     layers: Math.max(1, result.layers),

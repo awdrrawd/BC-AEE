@@ -63,3 +63,18 @@
 6. 分別測試 AEE 單獨載入及與已適配 R132 的 ECHO／LSCG 同時載入。
 
 此分支不會自動修復其他插件的相容性問題，也不會將 R132 發布到 main。
+
+## R133 補正（2026-10-23）
+
+`bc-stubs` 升到 `133.0.0`，以鏡像的 R133 原始碼核對。上方 R132 的說明仍保留作為歷史；程式現在同時處理新舊圖片快取（`bcImageCompat.ts`）。
+
+| 範圍 | R133 的差異 | AEE 調整 |
+| --- | --- | --- |
+| 圖片快取舊 API | `DrawCacheImage`、`DrawRefreshCharacterForImage`、`gl.textureCache`、`GLDrawImageCache` 的 Map 介面已不在型別中 | 只在 `bcImageCompat.ts` 以舊版介面存取，`masking.ts` 改呼叫其匯出函式；放棄 R132 時一併刪除 |
+| 存檔包裡的圖層欄位 | `LayerTranslationX/Y`、`LayerScaleX/Y`、`LayerRotation`、`OverridePriority` 在 bundle 中是壓縮字串，依來源資產的圖層順序編碼 | 跨群組複製改由解碼後的來源物品讀取展開值，無法展開時丟棄該欄位，不再保留會被目標圖層誤讀的字串 |
+| 衣櫃舊資料遷移 | 同上 | 遷移前先透過 BC 展開壓縮字串；展開失敗時整件標示衝突，不覆寫較新的資料 |
+| `ItemPropertiesMinimized` | bundle 的 Property 型別與即時物品的 `ItemProperties` 不同 | 鎖相關欄位兩者位置相同，以明確轉型處理；`stripLock` 改用 Minimized 型別 |
+| `DrawGetImage` | 回傳 `ImageBitmap`，沒有 `src` | 資源搜尋面板找不到 `src` 時使用原網址。注意：目前版本因此不會套用自訂資產管理器（例如 ECHO）的網址改寫，需要另外的作法才能恢復 |
+
+遊戲內行為未驗證；請在 R133 實測跨群組複製、衣櫃舊資料遷移與資源搜尋縮圖。
+

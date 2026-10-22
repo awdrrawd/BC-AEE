@@ -18,7 +18,9 @@ const globals = {localStorage: {
   setItem: (key, value) => storage.set(key, value),
 }};
 function loadSettings(player) {
-  return load('src/core/settings.ts', {}, {...globals, Player: player}).exports.settings;
+  // settings.ts persists through the real storage module, backed by the same fake localStorage.
+  const storageModule = load('src/core/storage.ts', {}, globals).exports;
+  return load('src/core/settings.ts', {'@/core/storage': storageModule}, {...globals, Player: player}).exports.settings;
 }
 const settings = loadSettings(null);
 settings.hairCharacterPreview.set(true);

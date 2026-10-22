@@ -12,7 +12,7 @@ const LOCK_PROPERTY_KEYS = [
   'Password', 'LockPickSeed', 'CombinationNumber', 'MemberNumberListKeys',
   'Hint', 'LockSet', 'RemoveItem', 'RemoveOnUnlock', 'ShowTimer',
   'EnableRandomInput', 'MemberNumberList', 'RemoveTimer',
-] as const satisfies readonly (keyof ItemProperties)[];
+] as const satisfies readonly (keyof ItemPropertiesMinimized)[];
 
 /**
  * Returns a copy of the bundle entry with any padlock removed — clears the lock
@@ -21,7 +21,7 @@ const LOCK_PROPERTY_KEYS = [
  */
 export function stripLock(entry: ItemBundle): ItemBundle {
   if (!entry.Property) return entry;
-  const property: ItemProperties = {...sanitizeHeartLock(entry).Property};
+  const property: ItemPropertiesMinimized = {...sanitizeHeartLock(entry).Property};
   for (const key of LOCK_PROPERTY_KEYS) delete property[key];
   if (Array.isArray(property.Effect)) {
     const effect = property.Effect.filter(name => name !== 'Lock');

@@ -1,4 +1,5 @@
 import {settings} from '@/core/settings';
+import {readJson, readText, removeKey, STORAGE_KEYS} from '@/core/storage';
 import type {WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
 import {bumpWardrobeData, getWardrobeState, setWardrobeState} from '@/core/wardrobeStore';
 import {type LocalWardrobeRecord, readLocalWardrobeRecord, writeLocalWardrobeRecord} from '@/core/wardrobeDb';
@@ -12,10 +13,10 @@ const DEFAULT_WARDROBE_SIZE = 24;
 const EXPANDED_WARDROBE_SIZE = 96;
 const LOCAL_WARDROBE_SIZE = 288;
 
-const CUSTOM_BG_KEY = 'liko-aee-wardrobe-bg';
+const CUSTOM_BG_KEY = STORAGE_KEYS.wardrobeBackground;
 const CUSTOM_BG_ID = 'wardrobe';
-const LOCAL_WARDROBE_PREFIX = 'liko-aee-wardrobe-local:';
-const LEGACY_ONLINE_BACKUP_PREFIX = 'liko-aee-wardrobe-backup:';
+const LOCAL_WARDROBE_PREFIX = STORAGE_KEYS.localWardrobePrefix;
+const LEGACY_ONLINE_BACKUP_PREFIX = STORAGE_KEYS.onlineBackupPrefix;
 
 // Shared expanded-wardrobe key: WCE and LCE both store their 24→96 extension here (LZString+JSON),
 // so pointing AEE at the same key makes all three read/write one 96-slot online wardrobe.
@@ -212,12 +213,10 @@ function localWardrobeKey(): string {
 
 /** Legacy localStorage payload, kept only to migrate old data into IndexedDB. */
 function readLegacyLocalWardrobe(): StoredLocalWardrobe | null {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(localWardrobeKey()) || 'null') as StoredLocalWardrobe | null;
-    return parsed && Array.isArray(parsed.outfits) && Array.isArray(parsed.names) ? parsed : null;
-  } catch {
-    return null;
-  }
+  return readJson<StoredLocalWardrobe | null>(localWardrobeKey(), null, value => {
+    const stored = value as StoredLocalWardrobe | null;
+    return !!stored && Array.isArray(stored.outfits) && Array.isArray(stored.names);
+  });
 }
 
 function fillLocalArrays(outfits: readonly unknown[], names: readonly unknown[]) {
@@ -265,7 +264,7 @@ async function loadLocalWardrobe() {
       record = {scope, outfits: legacy.outfits as ItemBundle[][], names: legacy.names as string[]};
       try {
         await writeLocalWardrobeRecord(record);
-        localStorage.removeItem(localWardrobeKey());
+        removeKey(localWardrobeKey());
       } catch (error) {
         console.warn('🐈‍⬛ [AEE] Failed to migrate the local wardrobe to IndexedDB', error);
       }
@@ -375,11 +374,7 @@ export function reloadWardrobeData() {
   migrateSlotMeta();
   if (!purgedLegacyBackup) {
     purgedLegacyBackup = true;
-    try {
-      localStorage.removeItem(LEGACY_ONLINE_BACKUP_PREFIX + accountScope());
-    } catch {
-      // localStorage can be unavailable in private or embedded contexts.
-    }
+    removeKey(LEGACY_ONLINE_BACKUP_PREFIX + accountScope());
   }
   // Never shrink below what WCE/LCE (or the game) already set — that would truncate their
   // in-memory expansion. AEE's own display size comes from onlineSource.size(), not this global.
@@ -512,13 +507,12 @@ async function loadCustomBackground() {
   let blob = await readBackgroundBlob(CUSTOM_BG_ID).catch(() => null);
   if (!blob) {
     // One-time migration from the old localStorage data URL representation.
-    let legacy: string | null = null;
-    try { legacy = localStorage.getItem(CUSTOM_BG_KEY); } catch { /* unavailable */ }
+    const legacy = readText(CUSTOM_BG_KEY);
     if (legacy) {
       const source = await fetch(legacy).then(response => response.blob());
       blob = await imageFileToWebp(new File([source], 'wardrobe-background', {type: source.type}), 0.95);
       await writeBackgroundBlob(CUSTOM_BG_ID, blob);
-      try { localStorage.removeItem(CUSTOM_BG_KEY); } catch { /* unavailable */ }
+      removeKey(CUSTOM_BG_KEY);
     }
   }
   if (blob) setCustomBackgroundBlob(blob);
@@ -538,7 +532,7 @@ export async function writeCustomBackground(file: File): Promise<boolean> {
     const blob = await imageFileToWebp(file, 0.95);
     await writeBackgroundBlob(CUSTOM_BG_ID, blob);
     setCustomBackgroundBlob(blob);
-    try { localStorage.removeItem(CUSTOM_BG_KEY); } catch { /* unavailable */ }
+    removeKey(CUSTOM_BG_KEY);
     return true;
   } catch (error) {
     console.warn('🐈‍⬛ [AEE] Failed to store the custom wardrobe background', error);

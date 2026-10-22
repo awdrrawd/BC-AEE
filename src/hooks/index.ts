@@ -15,8 +15,10 @@ import {installMaskSystem} from '@/features/mask';
 import {installOnboarding} from '@/hooks/onboardingHooks';
 import {installHiddenArousalHook} from '@/hooks/hiddenArousalHook';
 import {installDrawingHooks} from '@/hooks/drawingHooks';
+import {installDebugApi} from '@/core/debug';
 
 export function installAeeHooks() {
+  installDebugApi();
   installHiddenArousalHook();
   installSettingEffects();
   installDrawingHooks();

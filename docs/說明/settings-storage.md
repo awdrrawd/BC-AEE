@@ -35,6 +35,24 @@
 
 判定對方是否正在啟用 AEE 必須先通過即時狀態握手，不能只因線上資料仍存在就認定啟用；確認在線後才讀取分享的能力設定。
 
+## localStorage 存取與除錯開關
+
+所有 `localStorage` 讀寫都經過 `src/core/storage.ts`，其他檔案不直接呼叫。它提供 `readText`／`writeText`／`removeKey` 與帶格式檢查的 `readJson`／`writeJson`，行為一致：
+
+- 儲存空間不存在、被封鎖（連讀取 `localStorage` 屬性都可能丟例外）或已滿時不丟例外；讀取回傳預設值，寫入回傳 `false`。
+- JSON 損毀或格式不符視為沒有資料。
+- 寫入失敗時，每個 key 每次載入只在主控台警告一次，不洗版。
+- key 集中在 `STORAGE_KEYS`，不可改名，既有使用者的資料就存在這些 key 下。
+
+| Key | 內容 |
+| --- | --- |
+| `liko-aee-settings` | 本地共用偏好（`settings.ts`） |
+| `liko-aee-recent-colors` | 顏色選擇器的最近使用顏色 |
+| `liko-aee-debug` | 除錯開關，存在時為 `1` |
+| `liko-aee-wardrobe-bg`、`liko-aee-wardrobe-local:*`、`liko-aee-wardrobe-backup:*` | 舊版資料，只用於遷移到 IndexedDB 後移除 |
+
+除錯日誌只有一個開關，由 `src/core/debug.ts` 管理，預設關閉並保存在同一個瀏覽器。在遊戲主控台執行 `Liko.AEE.debug(true)` 開啟、`Liko.AEE.debug(false)` 關閉，不需重新載入。`debugLog()` 只在開啟時輸出；`likoAeeDumpLayers()` 這類使用者明確呼叫的診斷用 `diagLog()`／`diagTable()`，不受開關影響。警告與錯誤（`console.warn`／`console.error`）代表真實失敗，不受開關影響。ESLint 的 `no-console` 只允許 `warn`、`error`、`info`，`debug.ts` 是唯一可呼叫 `console.log`／`console.table` 的檔案。
+
 ## 不持久化的執行狀態
 
 拖曳狀態、懸停目標、試穿備份、畫布快取、同伴握手與有效期限留在記憶體。它們描述當下操作，不能當成下次登入的偏好恢復。
@@ -48,7 +66,7 @@
 - 真正的臨時狀態放在 `runtime`、元件 state/ref 或所屬控制器內，不建立第二份持久化設定副本。
 - 本地偏好不依帳戶重新載入，也不以舊的 `ExtensionSettings.AEE` 值覆蓋；切換帳戶不應要求使用者重開設定開關。
 - 目前沒有跨分頁的 `storage` 事件同步；已開啟的其他分頁不會即時套用變更，重新載入後才會讀取已保存值。
-- 本地讀取失敗或 JSON 無效時使用預設值；寫入失敗時當前操作仍可生效，但不能保證重新載入後保留。
+- 本地讀取失敗或 JSON 無效時使用預設值；寫入失敗時當前操作仍可生效，但不能保證重新載入後保留。失敗行為統一由 `src/core/storage.ts` 處理（見下節）。
 
 ## 記憶體生命週期與清理
 

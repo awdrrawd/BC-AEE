@@ -22,9 +22,10 @@ import {Button, IconButton} from '@/components/ui/Button';
 import {Panel} from '@/components/ui/Panel';
 import {ChevronRight, Clipboard, Copy, Pipette} from '@/components/main-panel/icons/Icons';
 import type {SavedColor} from '@/components/color-picker/types';
+import {readJson, removeKey, STORAGE_KEYS, writeJson} from '@/core/storage';
 
 const PANEL_WIDTH = 750;
-const RECENT_COLORS_KEY = 'liko-aee-recent-colors';
+const RECENT_COLORS_KEY = STORAGE_KEYS.recentColors;
 const DEFAULT_QUICK_COLORS: SavedColor[] = [
   '#FFFFFF', '#000000', '#FF3B30', '#FF9500', '#FFCC00',
   '#34C759', '#00C7BE', '#007AFF', '#5856D6', '#AF52DE',
@@ -40,22 +41,16 @@ function isSavedColor(value: unknown): value is SavedColor {
 }
 
 function loadRecentColors(): (SavedColor | null)[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(RECENT_COLORS_KEY) || '[]');
-    const colors = Array.isArray(parsed) ? parsed.filter(isSavedColor).slice(0, RECENT_COLOR_SLOTS) : [];
-    return [...colors, ...Array<SavedColor | null>(RECENT_COLOR_SLOTS).fill(null)].slice(0, RECENT_COLOR_SLOTS);
-  } catch {
-    return Array<SavedColor | null>(RECENT_COLOR_SLOTS).fill(null);
-  }
+  const stored = readJson<unknown[]>(RECENT_COLORS_KEY, [], Array.isArray);
+  const colors = stored.filter(isSavedColor).slice(0, RECENT_COLOR_SLOTS);
+  return [...colors, ...Array<SavedColor | null>(RECENT_COLOR_SLOTS).fill(null)].slice(0, RECENT_COLOR_SLOTS);
 }
 
 /** Persisting is best-effort: storage may be full, blocked or unavailable (private/embedded contexts). */
 function persistRecentColors(colors: readonly (SavedColor | null)[]): void {
-  try {
-    const saved = colors.filter(Boolean);
-    if (saved.length) localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(saved));
-    else localStorage.removeItem(RECENT_COLORS_KEY);
-  } catch { /* keep the in-memory palette working */ }
+  const saved = colors.filter(Boolean);
+  if (saved.length) writeJson(RECENT_COLORS_KEY, saved);
+  else removeKey(RECENT_COLORS_KEY);
 }
 
 const BC_HEADING_GAP = 4;

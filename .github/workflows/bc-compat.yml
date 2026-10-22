@@ -1,0 +1,82 @@
+name: BC compatibility
+
+# Weekly check that the Bondage Club functions AEE hooks still match the recorded baseline.
+# Drift opens (or refreshes) one issue; it never blocks a PR or a deployment.
+# The source defaults to the code mirror below; set the repository variables BC_REPO_URL / BC_REF to use another
+# one (the same names AFC's bc-compat workflow uses), or pass a branch/tag when running it by hand.
+on:
+  schedule:
+    - cron: '0 1 * * 1' # Monday 09:00 Asia/Taipei, same slot as Dependabot
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: BC branch or tag to check (empty = BC_REF variable, else the mirror's bondageclub branch)
+        required: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: bc-compat
+  cancel-in-progress: false
+
+env:
+  BC_REPO_URL: ${{ vars.BC_REPO_URL || 'https://github.com/awdrrawd/Bondage-College-Mirror.git' }}
+  BC_REF: ${{ inputs.ref || vars.BC_REF || 'bondageclub' }}
+
+jobs:
+  watch:
+    name: Compare hooks with the BC mirror
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Fetch the Bondage Club code mirror
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse --branch "$BC_REF" "$BC_REPO_URL" "$RUNNER_TEMP/bc"
+          git -C "$RUNNER_TEMP/bc" sparse-checkout set --no-cone '/Scripts/' '/Screens/**/*.js'
+      - name: Compare hooked functions with the baseline
+        id: compare
+        run: |
+          set +e
+          node scripts/check-bc-compat.mjs --bc-dir "$RUNNER_TEMP/bc" --report "$RUNNER_TEMP/report.md"
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ -f "$RUNNER_TEMP/report.md" ]; then cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          # 0 = in sync, 1 = drift (reported below); anything else is a broken check and fails the job.
+          if [ "$code" -gt 1 ]; then exit "$code"; fi
+      - name: Open or refresh the tracking issue
+        if: steps.compare.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          label=bc-compat
+          gh label create "$label" --color BFD4F2 --description "Bondage Club functions hooked by AEE changed or disappeared" --force || true
+          {
+            echo '每週檢查發現 AEE 掛鉤的 Bondage Club 函式與基準不同。請對照 BC 原始碼確認掛鉤行為，必要時調整程式；確認後在本機執行下列指令更新基準並提交：'
+            echo
+            echo '```sh'
+            echo 'node scripts/check-bc-compat.mjs --bc-dir <BC 原始碼資料夾> --update'
+            echo '```'
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/report.md"
+            echo '```'
+            echo
+            echo "此議題每週自動更新：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > "$RUNNER_TEMP/issue.md"
+          number=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file "$RUNNER_TEMP/issue.md"
+          else
+            gh issue create --title "BC 函式掛鉤與基準不同" --label "$label" --body-file "$RUNNER_TEMP/issue.md"
+          fi

@@ -15,6 +15,7 @@
     "test": "node scripts/run-tests.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:bc": "node scripts/check-bc-compat.mjs",
     "test:architecture": "playwright test",
     "report:size": "node scripts/report-bundle-size.mjs"
   },
@@ -34,17 +35,22 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.2",
-    "bc-stubs": "132.0.0",
+    "acorn": "^8.19.0",
+    "bc-stubs": "133.0.0",
     "concurrently": "^10.0.6",
     "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
     "lucide-static": "^1.57.0",
-    "socket.io-client": "^4.8.4",
     "tailwindcss": "^4.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4"
+  },
+  "overrides": {
+    "bc-stubs": {
+      "socket.io-client": "^4.8.4"
+    }
   }
 }

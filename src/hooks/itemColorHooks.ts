@@ -16,6 +16,7 @@ import {settings} from '@/core/settings';
 import {commitAppearancePickerFrame, drawAppearancePickerOutline, handleAppearancePickerClick} from '@/controllers/appearancePickerController';
 import {drawAboveGridIfNeeded} from '@/controllers/backgroundController';
 import {restoreItemFromColorBackup} from '@/core/itemColorCancel';
+import {diagLog, diagTable} from '@/core/debug';
 
 export function installItemColorHooks() {
   let craftingColorSession: CraftingColorSession | null = null;
@@ -226,26 +227,26 @@ function installLayerDiagnostics() {
       HideColoring: layer.HideColoring,
       aeeName: getLayerDisplayName(layer, index),
     }));
-    console.log(`[AEE] Asset: ${item.Asset.Group?.Name}/${item.Asset.Name} (DynamicGroupName=${item.Asset.DynamicGroupName}) - ${layers.length} layers`);
-    console.table(rows);
+    diagLog(`[AEE] Asset: ${item.Asset.Group?.Name}/${item.Asset.Name} (DynamicGroupName=${item.Asset.DynamicGroupName}) - ${layers.length} layers`);
+    diagTable(rows);
     const state = ItemColorState;
     if (state?.colorGroups) {
-      console.log('[AEE] ItemColorState.colorGroups:');
-      console.table(state.colorGroups.map(group => ({
+      diagLog('[AEE] ItemColorState.colorGroups:');
+      diagTable(state.colorGroups.map(group => ({
         name: group.name ?? '(WholeItem)',
         layerIndices: group.layers.map(l => layers.indexOf(l)).join(','),
         layerNames: group.layers.map(l => l.Name ?? '(null)').join(','),
       })));
     }
     const aeeState = getState();
-    console.log(`[AEE] AEE rows (selectedLayer=${String(aeeState.selectedLayer)}, getCurrentItem===itemColorItem: ${getCurrentItem() === item}):`);
-    console.table(getEditableParts(item).map(part => ({
+    diagLog(`[AEE] AEE rows (selectedLayer=${String(aeeState.selectedLayer)}, getCurrentItem===itemColorItem: ${getCurrentItem() === item}):`);
+    diagTable(getEditableParts(item).map(part => ({
       layerId: part.layerId,
       name: part.name,
       groupMembers: getLayerGroupMembers(item, parseInt(part.layerId, 10)).join(','),
     })));
     if (aeeState.selectedLayer != null && aeeState.selectedLayer !== 'all') {
-      console.log(`[AEE] selected part '${aeeState.selectedLayer}' -> members: ${getLayerGroupMembers(item, parseInt(aeeState.selectedLayer, 10)).join(',')}`);
+      diagLog(`[AEE] selected part '${aeeState.selectedLayer}' -> members: ${getLayerGroupMembers(item, parseInt(aeeState.selectedLayer, 10)).join(',')}`);
     }
     return rows;
   };

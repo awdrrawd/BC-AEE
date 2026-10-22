@@ -109,7 +109,9 @@ function AssetImage({src, alt, className, lazy = false, priority = false}: {src:
 }
 
 function resolveAssetUrl(url: string): string {
-  try { return DrawGetImage(url)?.src || url; } catch { return url; }
+  // Older BC returned an <img> whose src is the remapped URL; current BC returns an ImageBitmap (no src),
+  // in which case the raw URL is used. The call itself still starts BC's load.
+  try { return (DrawGetImage(url) as {src?: string} | undefined)?.src || url; } catch { return url; }
 }
 
 type Crop = {x: number; y: number; w: number; h: number};

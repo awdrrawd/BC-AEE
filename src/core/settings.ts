@@ -1,10 +1,11 @@
 import {useSyncExternalStore} from 'react';
 import type {UiStyle} from '@/core/theme';
 import type {LayerPickerMode, WardrobeSlotMeta, WardrobeSourceId} from '@/core/types';
+import {readJson, STORAGE_KEYS, writeJson} from '@/core/storage';
 
 // Device/browser preferences are shared across accounts. Account-owned data
 // belongs in wardrobe storage; public capability snapshots belong in aeePresence.
-const STORAGE_KEY = 'liko-aee-settings';
+const STORAGE_KEY = STORAGE_KEYS.settings;
 
 export interface CtrlPos {
   left: number;
@@ -27,12 +28,7 @@ class SettingsStore {
   }
 
   private static load(storageKey: string): Record<string, unknown> {
-    try {
-      const parsed: unknown = JSON.parse(localStorage.getItem(storageKey) || '{}');
-      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
-    } catch {
-      return {};
-    }
+    return readJson<Record<string, unknown>>(storageKey, {}, value => !!value && typeof value === 'object' && !Array.isArray(value));
   }
 
   read<T>(key: string, fallback: T): T {
@@ -42,11 +38,8 @@ class SettingsStore {
   write<T>(key: string, value: T, persist: boolean) {
     this.values[key] = value;
     if (!persist) return;
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.values));
-    } catch {
-      // localStorage can be unavailable in private or embedded contexts.
-    }
+    // A failed write leaves the in-memory value in effect for this session.
+    writeJson(this.storageKey, this.values);
   }
 }
 

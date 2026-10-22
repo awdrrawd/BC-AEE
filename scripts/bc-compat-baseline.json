@@ -1,0 +1,270 @@
+{
+  "gameVersion": "R133",
+  "commit": "9a6444123c85a4cbc8d91e690f2495121bbcee59",
+  "functions": {
+    "AppearanceClick": {
+      "hash": "4F00747B",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceExit": {
+      "hash": "6BC675EE",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceGroupAllowed": {
+      "hash": "36C1EF87",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceItemColor": {
+      "hash": "9AE1C6B8",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceLoad": {
+      "hash": "896C1F6D",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceMenuBuild": {
+      "hash": "C137039E",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceMenuClick": {
+      "hash": "6D808CF8",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceMenuDraw": {
+      "hash": "28FDF65B",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearancePreviewCleanup": {
+      "hash": "50BA046A",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearancePreviewUseCharacter": {
+      "hash": "7B31A039",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AppearanceRun": {
+      "hash": "30EF156C",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "AssetLoadAll": {
+      "hash": "E387A172",
+      "file": "Scripts/Asset.js"
+    },
+    "AssetTextGet": {
+      "hash": "10472620",
+      "file": "Scripts/Asset.js"
+    },
+    "CharacterAppearanceExit": {
+      "hash": "FBDEC7C0",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "CharacterAppearanceReady": {
+      "hash": "1D6DD4D0",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "CharacterAppearanceSetItem": {
+      "hash": "EE243DD1",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "CharacterAppearanceVisible": {
+      "hash": "AFFE9F3A",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "CharacterAppearanceWardrobeLoad": {
+      "hash": "20DCA651",
+      "file": "Screens/Character/Appearance/Appearance.js"
+    },
+    "CharacterCompressWardrobe": {
+      "hash": "AD648C41",
+      "file": "Scripts/Character.js"
+    },
+    "CharacterDecompressWardrobe": {
+      "hash": "F2817E0B",
+      "file": "Scripts/Character.js"
+    },
+    "CharacterLoadCanvas": {
+      "hash": "72830852",
+      "file": "Scripts/Character.js"
+    },
+    "ChatRoomMessage": {
+      "hash": "2BB4C2FD",
+      "file": "Screens/Online/ChatRoom/ChatRoom.js"
+    },
+    "ChatRoomSync": {
+      "hash": "A465AAB8",
+      "file": "Screens/Online/ChatRoom/ChatRoom.js"
+    },
+    "ChatRoomSyncMemberJoin": {
+      "hash": "2A9CB40B",
+      "file": "Screens/Online/ChatRoom/ChatRoom.js"
+    },
+    "ChatRoomSyncMemberLeave": {
+      "hash": "546FCD39",
+      "file": "Screens/Online/ChatRoom/ChatRoom.js"
+    },
+    "ColorPickerInit": {
+      "hash": "B9D68721",
+      "file": "Scripts/ColorPicker.js"
+    },
+    "ColorPickerUnload": {
+      "hash": "744CAE13",
+      "file": "Scripts/ColorPicker.js"
+    },
+    "CommonCallFunctionByNameWarn": {
+      "hash": "7F742085",
+      "file": "Scripts/Common.js"
+    },
+    "CommonClick": {
+      "hash": "9B2730D1",
+      "file": "Scripts/Common.js"
+    },
+    "CommonDrawAppearanceBuild": {
+      "hash": "A87EF679",
+      "file": "Scripts/CommonDraw.js"
+    },
+    "CommonDrawResolveLayerColor": {
+      "hash": "9C9F2BB9",
+      "file": "Scripts/CommonDraw.js"
+    },
+    "CommonSetScreen": {
+      "hash": "20207D2B",
+      "file": "Scripts/Common.js"
+    },
+    "DialogClick": {
+      "hash": "005250CA",
+      "file": "Scripts/Dialog.js"
+    },
+    "DialogDraw": {
+      "hash": "CCD17BCA",
+      "file": "Scripts/Dialog.js"
+    },
+    "DialogDrawTopMenu": {
+      "hash": "11DCAF69",
+      "file": "Scripts/Dialog.js"
+    },
+    "DialogFindPlayer": {
+      "hash": "29D7584E",
+      "file": "Scripts/Dialog.js"
+    },
+    "DialogLeaveFocusItem": {
+      "hash": "E5FEEE69",
+      "file": "Scripts/Dialog.js"
+    },
+    "DialogMenuButtonBuild": {
+      "hash": "D9A6F4A7",
+      "file": "Scripts/Dialog.js"
+    },
+    "DrawArousalMeter": {
+      "hash": "BB0755AF",
+      "file": "Scripts/Drawing.js"
+    },
+    "DrawBackNextButton": {
+      "hash": "0A746990",
+      "file": "Scripts/Drawing.js"
+    },
+    "DrawButton": {
+      "hash": "2EB14CB8",
+      "file": "Scripts/Drawing.js"
+    },
+    "DrawCharacter": {
+      "hash": "2CD2CA5F",
+      "file": "Scripts/Drawing.js"
+    },
+    "DrawGetImage": {
+      "hash": "3FCD1929",
+      "file": "Scripts/Drawing.js"
+    },
+    "DrawImageCanvas": {
+      "hash": "29C7B741",
+      "file": "Scripts/Drawing.js"
+    },
+    "DrawRoomBackground": {
+      "hash": "C71BA215",
+      "file": "Scripts/Drawing.js"
+    },
+    "DynamicDrawText": {
+      "hash": "B6F147BA",
+      "file": "Scripts/DynamicDraw.js"
+    },
+    "DynamicDrawTextArc": {
+      "hash": "8A8C3690",
+      "file": "Scripts/DynamicDraw.js"
+    },
+    "GLDrawAppearanceBuild": {
+      "hash": "F5E40C35",
+      "file": "Scripts/GLDraw.js"
+    },
+    "GLDrawImage": {
+      "hash": "3F54F639",
+      "file": "Scripts/GLDraw.js"
+    },
+    "GLDrawLoadImage": {
+      "hash": "82951BE9",
+      "file": "Scripts/GLDraw.js"
+    },
+    "GLDrawLoadTextureAlphaMask": {
+      "hash": "23ECE11E",
+      "file": "Scripts/GLDraw.js"
+    },
+    "GameClick": {
+      "hash": "99035CAD",
+      "file": "Scripts/Game.js"
+    },
+    "InventoryAllow": {
+      "hash": "470BCF51",
+      "file": "Scripts/Inventory.js"
+    },
+    "InventoryRemove": {
+      "hash": "A74C7073",
+      "file": "Scripts/Inventory.js"
+    },
+    "InventoryRemoveItems": {
+      "hash": "D847954C",
+      "file": "Scripts/Inventory.js"
+    },
+    "InventoryWear": {
+      "hash": "5D402FA0",
+      "file": "Scripts/Inventory.js"
+    },
+    "ItemColorCancelAndExit": {
+      "hash": "E031B059",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorClick": {
+      "hash": "2F99A427",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorCloseColorPicker": {
+      "hash": "13B62375",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorDraw": {
+      "hash": "5B3FC96D",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorExitClick": {
+      "hash": "2772820A",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorFireExit": {
+      "hash": "A8D5E70B",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorLoad": {
+      "hash": "FC81F098",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemColorOpenPicker": {
+      "hash": "BD3306A0",
+      "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ServerAppearanceLoadFromBundle": {
+      "hash": "1D9EE5C6",
+      "file": "Scripts/Server.js"
+    },
+    "TextLoad": {
+      "hash": "0F62E26F",
+      "file": "Scripts/Text.js"
+    }
+  }
+}

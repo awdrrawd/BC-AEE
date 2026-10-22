@@ -1,5 +1,6 @@
 import bcAeeModSdk from '@/modsdk';
 import {runtime} from '@/core/runtime';
+import {debugLog} from '@/core/debug';
 import {recordPickerMatrix} from '@/core/pickerTransform';
 import {alignDrawingMask} from '@/components/mask-system/transformedMasks';
 import type {
@@ -9,12 +10,6 @@ import type {
   WritableAsset,
   WritableAssetLayer
 } from '@/core/types';
-
-const AEE_DEBUG = false;
-
-function aeeLog(...args: unknown[]) {
-  if (AEE_DEBUG) console.log('[AEE]', ...args);
-}
 
 const windowFunctions = window as unknown as Record<string, unknown>;
 
@@ -137,7 +132,7 @@ export function installRenderHooks() {
               skewX: layerOverride.SkewX ?? 0,
               skewY: layerOverride.SkewY ?? 0,
             };
-            aeeLog('BeforeDraw', currentAppearance.Asset?.Name, layerIdx, runtime.pendingTransform);
+            debugLog('BeforeDraw', currentAppearance.Asset?.Name, layerIdx, runtime.pendingTransform);
           }
         }
       }

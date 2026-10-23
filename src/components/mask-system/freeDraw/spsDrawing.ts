@@ -39,7 +39,7 @@ export function readDrawRef(props: AnyProps | undefined): SpsDrawRef | null {
   const ref = props?.[PROP_SPS_KEY] as Partial<SpsDrawRef> | undefined;
   return ref && Number.isInteger(ref.o) && Number(ref.o) >= 0 && Number.isInteger(ref.s) && ref.s >= 0 && ref.s < 3 &&
     typeof ref.r === 'string' && /^[a-f0-9]{64}$/.test(ref.r) && typeof ref.u === 'string'
-    ? {o: ref.o, s: ref.s, r: ref.r, m: typeof ref.m === 'string' ? ref.m : 'image/png', u: ref.u,
+    ? {o: ref.o, s: ref.s, r: ref.r, m: ref.m === 'image/webp' ? 'image/webp' : 'image/png', u: ref.u,
       ...(ref.v === 2 || ref.v === 3 || ref.v === 4 ? {v: ref.v} : {})} : null;
 }
 
@@ -101,7 +101,7 @@ export async function resolveSpsDrawUrl(props: AnyProps | undefined): Promise<st
 export async function downloadSpsDrawing(ref: SpsDrawRef): Promise<Blob | null> {
   if (ref.v === 2 || ref.v === 3 || ref.v === 4) {
     const buffer = await readSpsPublic(ref.o, ref.v === 4 ? contentKey(ref.r) : ref.v === 3 ? transferKey(ref.s) : activeKey(ref.s), ref.r);
-    if (!buffer) return null;
+    if (!buffer || buffer.byteLength > SLOT_LIMIT) return null;
     const data = new Uint8Array(buffer);
     const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
     return hex(hash) === ref.r ? new Blob([data], {type: ref.m}) : null;

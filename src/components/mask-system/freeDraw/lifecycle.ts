@@ -18,6 +18,7 @@ import {attachListeners, detachListeners} from './input';
 import {t} from '@/i18n/i18n';
 import {commitSelection} from './selection';
 import {safeCurrentCharacter} from './currentCharacter';
+import {drawImageSource} from './drawSource';
 import {
   downloadSpsDrawing, readDrawRef, resolveSpsDrawUrl, uploadSpsBlob, uploadSpsDrawing,
   type SpsDrawRef,
@@ -31,7 +32,10 @@ import {
 
 async function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null, target: Character): Promise<boolean> {
   const p = item && item.Property ? (item.Property as AnyProps) : null;
-  const compressed = p ? (p[PROP_KEY] as string | undefined) : undefined;
+  // Property.CustomDraw may come from another player or an imported outfit: an invalid value counts as absent,
+  // so a valid SPS reference next to it still loads.
+  const embedded = p ? p[PROP_KEY] : undefined;
+  const compressed = typeof embedded === 'string' && embedded && drawImageSource(embedded) ? embedded : undefined;
   const remote = readDrawRef(p ?? undefined);
   // Exact content identity: PNG/LZ payloads share long prefixes, so a short
   // prefix plus length can alias two different drawings and retain stale pixels.
@@ -55,7 +59,7 @@ async function ensureSlotCanvasFromProperty(slot: Slot, item: Item | null, targe
   const promise = (async () => {
     try {
       const dataUrl = compressed
-        ? (typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed)
+        ? drawImageSource(compressed)
         : await resolveSpsDrawUrl(p ?? undefined);
       if (!dataUrl || slot._loadToken !== token) return false;
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {

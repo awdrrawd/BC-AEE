@@ -13,11 +13,20 @@ import {isSlotMasked} from './maskToggle';
 import {safeCurrentCharacter} from './currentCharacter';
 import {settings} from '@/core/settings';
 import {cachedSpsDrawUrl} from './spsDrawing';
+import {drawImageSource} from './drawSource';
 
 // Mask companion shape. During a GL build it must be the BUILDING character's
 // drawing (so remote players get their own mask). While locally editing this
 // slot, use the live board canvas; otherwise the cached 500×1000 composite of
 // that character's Property.CustomDraw (built by renderOverlay).
+// The source this character's slot should draw: a valid embedded drawing, else its (already hash-checked) SPS
+// drawing. An invalid embedded value never blocks a valid SPS reference sitting next to it.
+function overlaySource(p: AnyProps | undefined): string | null {
+  const embedded = p?.[PROP_KEY];
+  if (typeof embedded === 'string' && embedded && drawImageSource(embedded)) return embedded;
+  return cachedSpsDrawUrl(p);
+}
+
 slots.forEach((slot) => {
   const drawingImage = () => {
     if (!settings.enableFreeDraw.get()) return TRANSPARENT_DATAURL;
@@ -29,8 +38,7 @@ slots.forEach((slot) => {
     }
     const item = C ? findSlotItem(C, slot) : null;
     const p = item?.Property as AnyProps | undefined;
-    const compressed = p?.[PROP_KEY] as string | undefined;
-    const source = compressed || cachedSpsDrawUrl(p);
+    const source = overlaySource(p);
     if (!source) return TRANSPARENT_DATAURL;
     const offX = (p!.OffsetX as number) || 0, offY = (p!.OffsetY as number) || 0;
     return getOrBuildMaskComposite(source, offX, offY) ?? TRANSPARENT_DATAURL;
@@ -74,7 +82,9 @@ function getOverlayImage(compressed: string): HTMLImageElement {
     img = new Image();
     overlayImgCache.set(compressed, img);
     img.addEventListener('load', refreshMaskConsumers);
-    img.src = typeof LZString !== 'undefined' ? (LZString.decompressFromBase64(compressed) || compressed) : compressed;
+    // Only png/webp data URLs ever reach img.src; an invalid source stays an empty (never-loading) image.
+    const safe = drawImageSource(compressed);
+    if (safe) img.src = safe;
   }
   return img;
 }
@@ -126,8 +136,7 @@ export function renderOverlay(C: Character | null) {
     const item = findSlotItem(C, slot);
     if (!item) continue;
     const p = item.Property as AnyProps | undefined;
-    const compressed = p?.[PROP_KEY] as string | undefined;
-    const source = compressed || cachedSpsDrawUrl(p);
+    const source = overlaySource(p);
     const offX = (p?.OffsetX as number) || 0, offY = (p?.OffsetY as number) || 0;
     const editingThis = isSessionPreviewReady(session) && session.slot === slot && C === session.character;
 

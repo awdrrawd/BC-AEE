@@ -7,6 +7,7 @@ import {Grid3x2, List, Search, X} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {setLayerPanelHover} from '@/controllers/appearancePickerController';
 import {useLayerThumbnail} from '@/components/parts-browser/useLayerThumbnail';
+import {resolveBcImageUrl} from '@/util/bcImageUrl';
 
 type BrowserMode = 'list' | 'grid';
 
@@ -14,7 +15,7 @@ function previewUrl(item: Item): string {
   const character = CharacterAppearanceSelection;
   const suffix = character && typeof item.Asset.DynamicPreviewImage === 'function'
     ? item.Asset.DynamicPreviewImage(character) : '';
-  return `${AssetGetPreviewPath(item.Asset)}/${item.Asset.Name}${suffix}.png`;
+  return resolveBcImageUrl(`${AssetGetPreviewPath(item.Asset)}/${item.Asset.Name}${suffix}.png`);
 }
 
 /** Best-effort source art for an inactive named layer (which has no draw capture). */
@@ -23,7 +24,7 @@ function layerSourceUrl(item: Item, layerId: LayerId): string {
   const layer = item.Asset.Layer?.[Number.parseInt(layerId, 10)];
   if (!layer?.Name) return '';
   const assetPath = AssetGetPreviewPath(item.Asset).replace(/\/Preview\/?$/, '');
-  return `${assetPath}/${item.Asset.Name}_${layer.Name}.png`;
+  return resolveBcImageUrl(`${assetPath}/${item.Asset.Name}_${layer.Name}.png`);
 }
 
 export function PartsBrowserPanel({state, open, onClose}: {state: AeeState; open: boolean; onClose: () => void}) {

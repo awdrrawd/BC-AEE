@@ -3,6 +3,7 @@ import {Search, X} from '@/components/main-panel/icons/Icons';
 import {t} from '@/i18n/i18n';
 import {Panel} from '@/components/ui/Panel';
 import {fuzzyMatch, hasSearchText} from './searchText';
+import {resolveBcImageUrl} from '@/util/bcImageUrl';
 
 type Kind = 'all' | 'clothing' | 'item';
 type Occurrence = {asset: Asset; group: AssetGroup};
@@ -95,10 +96,9 @@ function AssetImage({src, alt, className, lazy = false, priority = false}: {src:
   const [attempt, setAttempt] = useState({key: sourceKey, index: 0});
   const sourceIndex = attempt.key === sourceKey ? attempt.index : 0;
   const current = sources[Math.min(sourceIndex, sources.length - 1)] ?? '';
-  // Custom-asset managers (notably ECHO) remap BC's virtual Assets/... URL to
-  // their CDN inside DrawGetImage. A raw DOM <img> bypasses that mapping and
-  // therefore 404s even though BC can draw the same layer normally.
-  const resolved = resolveAssetUrl(current);
+  // A raw DOM <img> bypasses the URL mapping custom-asset mods (notably ECHO) apply inside BC's drawing
+  // functions, so it would 404 even though BC draws the same layer normally.
+  const resolved = resolveBcImageUrl(current);
   return <img key={resolved} src={resolved} alt={alt} draggable={false} className={className}
               loading={lazy ? 'lazy' : 'eager'} fetchPriority={priority ? 'high' : 'auto'}
               onLoad={event => { event.currentTarget.style.visibility = 'visible'; }}
@@ -106,12 +106,6 @@ function AssetImage({src, alt, className, lazy = false, priority = false}: {src:
                 if (sourceIndex + 1 < sources.length) setAttempt({key: sourceKey, index: sourceIndex + 1});
                 else event.currentTarget.style.visibility = 'hidden';
               }}/>
-}
-
-function resolveAssetUrl(url: string): string {
-  // Older BC returned an <img> whose src is the remapped URL; current BC returns an ImageBitmap (no src),
-  // in which case the raw URL is used. The call itself still starts BC's load.
-  try { return (DrawGetImage(url) as {src?: string} | undefined)?.src || url; } catch { return url; }
 }
 
 type Crop = {x: number; y: number; w: number; h: number};
@@ -147,7 +141,7 @@ function AssetCanvas({src}: {src: string[]}) {
   const [attempt, setAttempt] = useState({key: sourceKey, index: 0});
   const sourceIndex = attempt.key === sourceKey ? attempt.index : 0;
   const current = src[Math.min(sourceIndex, src.length - 1)] ?? '';
-  const resolved = resolveAssetUrl(current);
+  const resolved = resolveBcImageUrl(current);
   const [loaded, setLoaded] = useState<{key: string; image: HTMLImageElement; crop: Crop} | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);

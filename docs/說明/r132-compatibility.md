@@ -74,7 +74,7 @@
 | 存檔包裡的圖層欄位 | `LayerTranslationX/Y`、`LayerScaleX/Y`、`LayerRotation`、`OverridePriority` 在 bundle 中是壓縮字串，依來源資產的圖層順序編碼 | 跨群組複製改由解碼後的來源物品讀取展開值，無法展開時丟棄該欄位，不再保留會被目標圖層誤讀的字串 |
 | 衣櫃舊資料遷移 | 同上 | 遷移前先透過 BC 展開壓縮字串；展開失敗時整件標示衝突，不覆寫較新的資料 |
 | `ItemPropertiesMinimized` | bundle 的 Property 型別與即時物品的 `ItemProperties` 不同 | 鎖相關欄位兩者位置相同，以明確轉型處理；`stripLock` 改用 Minimized 型別 |
-| `DrawGetImage` | 回傳 `ImageBitmap`，沒有 `src` | 資源搜尋面板找不到 `src` 時使用原網址。注意：目前版本因此不會套用自訂資產管理器（例如 ECHO）的網址改寫，需要另外的作法才能恢復 |
+| `DrawGetImage` | 回傳 `ImageBitmap`，沒有 `src` | 資源搜尋面板與部件瀏覽器不再靠它取得網址。自訂資產模組（ECHO 等，建立在 `@sugarch/bc-asset-manager`）把 `Assets/…png` 對應到自己的 CDN，只在 BC 的繪圖函式內改寫網址，DOM `<img>` 不會經過；改由 `src/util/bcImageUrl.ts` 套用同一份對應表（讀取共用全域 `__BC_LUZI_GLOBALS__` 中的 `ImageMapping@…`，每個函式庫版本各有自己的對應） |
 
 遊戲內行為未驗證；請在 R133 實測跨群組複製、衣櫃舊資料遷移與資源搜尋縮圖。
 

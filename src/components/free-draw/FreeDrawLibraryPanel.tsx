@@ -16,6 +16,7 @@ import {
   formatBytesK, projectedAppearanceBytes,
 } from '@/components/mask-system/freeDraw/appearanceSize';
 import {BOARD_H, BOARD_W} from '@/components/mask-system/constants';
+import {scaleStyle} from '@/util/scaleStyle';
 
 function canvasRect(): DOMRect | null {
   return (document.getElementById('MainCanvas') as HTMLCanvasElement | null)?.getBoundingClientRect() ?? null;
@@ -116,7 +117,6 @@ export function FreeDrawLibraryPanel() {
   const rect = canvasRect();
   if (!A || !rect) return null;
   const scaleX = rect.width / 2000;
-  const scaleY = rect.height / 1000;
   const pages = Array.from({length: 6}, (_, page) => peekLibraryPage(page));
   const entries = pages.every((value): value is LibraryEntry[] => value !== null) ? pages.flat() : null;
   const accent = usage === null ? '#facc15' : usage >= APPEARANCE_UPLOAD_BYTES ? '#ef4444' : usage >= APPEARANCE_WARN_BYTES ? '#facc15' : '#22c55e';
@@ -124,7 +124,7 @@ export function FreeDrawLibraryPanel() {
   const stop = (event: SyntheticEvent) => event.stopPropagation();
 
   return <section className="fixed z-1000001 flex h-[1000px] w-[430px] flex-col overflow-hidden border-r-2 border-[var(--aee-accent)] bg-[#100d18]/96 text-lg text-white shadow-2xl backdrop-blur"
-             style={{left: rect.left, top: rect.top, transform: `scale(${scaleX}, ${scaleY})`, transformOrigin: 'top left'}}
+             style={{...scaleStyle(scaleX, {left: rect.left, top: rect.top}), height: rect.height / scaleX}}
              onPointerDown={stop} onClick={stop}>
       <header className="flex h-16 shrink-0 items-center justify-center bg-[#1b1627] px-5 text-[22px] font-bold"
               data-aee-tooltip={t('free-draw-library-tooltip')}>

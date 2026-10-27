@@ -25,7 +25,7 @@ export function OutfitGrid({state, slots}: { state: WardrobeState; slots: number
   currentRef.current = current;
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
-  // The stage is rendered under a transform: scale(), so convert screen-pixel drag deltas into the
+  // The stage is rendered in scaled design coordinates, so convert screen-pixel drag deltas into the
   // stage's own coordinates — otherwise the tracked movement is scaled down and feels unresponsive.
   const {scale} = useStage();
 

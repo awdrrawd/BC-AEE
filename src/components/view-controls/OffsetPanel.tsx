@@ -22,6 +22,7 @@ import {clamp} from '@/util/math';
 import {useSetting} from '@/core/settings';
 import {getViewSettings} from '@/core/viewSettings';
 import {useAnimatedPresence} from '@/components/view-controls/useAnimatedPresence';
+import {scaleStyle} from '@/util/scaleStyle';
 
 export function OffsetPanel({state}: { state: AeeState }) {
   const presence = useAnimatedPresence(state.offset.open);
@@ -108,7 +109,7 @@ export function OffsetPanel({state}: { state: AeeState }) {
 
   return <Panel
     className={`${presence.closing ? 'aee-panel-fade-exit' : 'aee-panel-fade-enter'} fixed z-1000002 w-64`}
-    style={{left, top, transform: `scale(${state.canvasRect!.width / 2000 * 1.5})`, transformOrigin: 'top left'}}>
+    style={scaleStyle(state.canvasRect!.width / 2000 * 1.5, {left, top})}>
     <div
       className="flex min-h-[42px] cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {

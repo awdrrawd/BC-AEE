@@ -27,6 +27,7 @@ import {useSetting} from '@/core/settings';
 import {getViewSettings} from '@/core/viewSettings';
 import {localBackgroundId} from '@/core/backgroundImageStore';
 import {Pencil} from '@/components/main-panel/icons/Icons';
+import {scaleStyle} from '@/util/scaleStyle';
 
 function ColorSettingRow({color, onChange, onPick}: {
   color: string;
@@ -88,7 +89,7 @@ export function BgSettingsPanel({state}: { state: AeeState }) {
 
   return <div className="fixed z-1000002 overflow-visible">
     <Panel className="fixed w-90"
-           style={{left, top, transform: `scale(${state.canvasRect!.width / 2000 * 1.75})`, transformOrigin: 'top left'}}>
+           style={scaleStyle(state.canvasRect!.width / 2000 * 1.75, {left, top})}>
       <div
         className="flex min-h-[42px] cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-3 py-2 active:cursor-grabbing"
         onPointerDown={event => {

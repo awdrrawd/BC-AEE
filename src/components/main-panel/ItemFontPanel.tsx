@@ -19,8 +19,9 @@ import {closeFontPanel, useFontPanelOpen} from '@/core/fontPanel';
 import {Panel} from '@/components/ui/Panel';
 import {Button, IconButton} from '@/components/ui/Button';
 import {showToast} from '@/util/toast';
+import {scaleStyle} from '@/util/scaleStyle';
 
-/** Renders the font popup at App level (once open), outside MainPanel's transformed container. */
+/** Renders the font popup at App level (once open), outside MainPanel's scaled container. */
 export function ItemFontPanelHost({canvasRect}: {canvasRect: CanvasRect | null}) {
   const open = useFontPanelOpen();
   if (!open) return null;
@@ -124,7 +125,7 @@ function ItemFontPanel({canvasRect, onClose}: {canvasRect: CanvasRect | null; on
   return <Panel
     data-aee-font-panel="true"
     className="aee-control fixed z-1000002 pointer-events-auto"
-    style={{left: pos.left, top: pos.top, width, maxHeight, transform: `scale(${canvasRect.width / 2000})`, transformOrigin: 'top left'}}
+    style={{width, maxHeight, ...scaleStyle(canvasRect.width / 2000, {left: pos.left, top: pos.top})}}
   >
     <div
       className="flex shrink-0 cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-3 py-2 active:cursor-grabbing"

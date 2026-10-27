@@ -2,6 +2,7 @@ import {type ReactNode, useRef} from 'react';
 import type {CanvasRect} from '@/core/types';
 import {TOOL_PANEL_WIDTH} from '@/core/overlay';
 import {Panel} from '@/components/ui/Panel';
+import {scaleStyle} from '@/util/scaleStyle';
 
 export function FloatingPanel({
                                 canvasRect,
@@ -37,7 +38,7 @@ export function FloatingPanel({
               style={{left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height}}>
     <Panel
       className={`aee-control pointer-events-auto absolute ${className}`}
-      style={{left, top, width, transform: `scale(${scale})`, transformOrigin: 'top left'}}
+      style={{width, ...scaleStyle(scale, {left, top})}}
     >
       <div
         className="flex min-h-[48px] cursor-grab select-none items-center gap-2 border-b border-zinc-800 bg-zinc-900 px-3 active:cursor-grabbing"

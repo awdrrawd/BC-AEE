@@ -1,11 +1,12 @@
 import type {ReactNode} from 'react';
 import type {CanvasRect} from '@/core/types';
-import {CANVAS_HEIGHT, CANVAS_WIDTH} from '@/core/bc';
+import {CANVAS_WIDTH} from '@/core/bc';
 import {PORTRAIT_BASE_WIDTH, useViewport} from '@/core/orientation';
 import {backgroundStyle, isColorBackground} from '@/util/wardrobeBackground';
 import {settings, useSetting} from '@/core/settings';
 import {useBackdropPreview} from '@/core/dialogs';
 import {StageContext} from '@/components/wardrobe/stageContext';
+import {scaleStyle} from '@/util/scaleStyle';
 
 export function WardrobeStage({
                                 canvasRect,
@@ -25,9 +26,8 @@ export function WardrobeStage({
     : {left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height};
 
   const virtualWidth = portrait ? PORTRAIT_BASE_WIDTH : CANVAS_WIDTH;
-  const virtualHeight = portrait ? Math.round(PORTRAIT_BASE_WIDTH * (vh / Math.max(vw, 1))) : CANVAS_HEIGHT;
   const scaleX = rect.width / virtualWidth;
-  const scaleY = rect.height / virtualHeight;
+  const layoutHeight = rect.height / scaleX;
 
   // A solid colour the user chose stays true — only image backgrounds get the readability vignette.
   const dimmed = !previewing && !isColorBackground(bgPath);
@@ -39,8 +39,8 @@ export function WardrobeStage({
       className="relative flex origin-top-left flex-col select-none text-zinc-100"
       style={{
         width: virtualWidth,
-        height: virtualHeight,
-        transform: `scale(${scaleX}, ${scaleY})`,
+        height: layoutHeight,
+        ...scaleStyle(scaleX),
         ...backgroundStyle(bgPath),
       }}
     >

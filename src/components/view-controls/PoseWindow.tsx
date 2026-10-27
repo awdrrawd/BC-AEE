@@ -6,6 +6,7 @@ import {PoseButton} from '@/components/view-controls/PoseButton';
 import {X} from '@/components/main-panel/icons/Icons';
 import {Panel} from '@/components/ui/Panel';
 import {useAnimatedPresence} from '@/components/view-controls/useAnimatedPresence';
+import {scaleStyle} from '@/util/scaleStyle';
 
 export function PoseWindow({state}: { state: AeeState }) {
   const presence = useAnimatedPresence(state.pose.open);
@@ -15,7 +16,7 @@ export function PoseWindow({state}: { state: AeeState }) {
   const top = state.pose.top ?? Math.round(state.canvasRect.top + state.canvasRect.height * 0.08);
   return <Panel
     className={`${presence.closing ? 'aee-panel-fade-exit' : 'aee-panel-fade-enter'} fixed z-1000002`}
-    style={{left, top, width: 4 * (58 + 6) - 6 + 20, transform: `scale(${state.canvasRect.width / 2000 * 1.5})`, transformOrigin: 'top left'}}>
+    style={{width: 4 * (58 + 6) - 6 + 20, ...scaleStyle(state.canvasRect.width / 2000 * 1.5, {left, top})}}>
     <div
       className="flex min-h-[42px] cursor-grab items-center justify-between border-b border-zinc-700 bg-zinc-900 px-2.5 py-1.5 active:cursor-grabbing"
       onPointerDown={event => {

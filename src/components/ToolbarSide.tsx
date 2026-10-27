@@ -48,6 +48,7 @@ import {PartsBrowserPanel} from '@/components/parts-browser/PartsBrowserPanel';
 import {PartsBrowserButton} from '@/components/parts-browser/PartsBrowserButton';
 import {AssetPartsSearchPanel} from '@/components/asset-search/AssetPartsSearchPanel';
 import {GAME_ICONS} from '@/components/icons/iconSources';
+import {scaleStyle} from '@/util/scaleStyle';
 
 type ManagePanel = 'settings' | null;
 
@@ -180,7 +181,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
 
   return <div className="fixed z-1000000 isolate overflow-hidden pointer-events-none" style={{left: rect.left, top: rect.top, width: rect.width, height: rect.height}}>
     <div ref={toolbarRef} className={`aee-toolbar-side absolute left-0 top-0 h-[1000px] w-[130px] ${editing ? '' : 'pointer-events-auto'}`}
-         style={{transform: `scale(${scale})`, transformOrigin: 'left top'}}
+         style={scaleStyle(scale)}
          onPointerMove={!editing && !toolbarAlwaysVisible && !state.toolbarPinned ? event => {
            const x = (event.clientX - rect.left) / scale;
            if (x <= 120 && !state.toolbarHovered) setToolbarHovered(true);
@@ -202,8 +203,8 @@ export function ToolbarSide({state}: {state: AeeState}) {
                             event.stopPropagation();
                             if (!state.toolbarPinned) setToolbarPinned(true);
                           }}/> : null}
-      <Panel className={`pointer-events-auto absolute bottom-0 left-0 top-0 z-30 w-[80px] flex-col items-center rounded-none border-y-0 border-l-0 px-[9px] py-[12px] [backface-visibility:hidden] ${editing ? '' : 'aee-panel-collapse-motion'}`}
-             style={{transform: residentOpen ? 'translate3d(0,0,0)' : 'translate3d(-70px,0,0)', opacity: residentOpen ? 1 : 0}}>
+      <Panel className={`pointer-events-auto absolute bottom-0 left-0 top-0 z-30 w-[80px] flex-col items-center rounded-none border-y-0 border-l-0 px-[9px] py-[12px] ${editing ? '' : 'aee-panel-collapse-motion'}`}
+             style={{transform: residentOpen ? 'none' : 'translateX(-70px)', opacity: residentOpen ? 1 : 0}}>
         {displayEditing ? <EditingButtons state={state} openTool={openTool}/> : <ResidentButtons state={state} managePanel={managePanel} setManagePanel={setManagePanel} assetSearchOpen={assetSearchOpen} setAssetSearchOpen={setAssetSearchOpen}/>}
       </Panel>
       {displayEditing && state.toolbarLayout === 'free' && state.selectedLayer !== null ?
@@ -212,7 +213,7 @@ export function ToolbarSide({state}: {state: AeeState}) {
                       disabled={!!state.activeDrag} icon={<FreeTransformIcon/>} onClick={openTool('gizmo')}/>
         </div> : null}
       <div className={`aee-panel-collapse-motion absolute left-[80px] top-0 z-10 h-[1000px] overflow-hidden ${panelOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-           style={{width: panelWidth, transform: panelOpen ? 'translate3d(0,0,0)' : 'translate3d(calc(-100% - 80px),0,0)', opacity: panelOpen ? 1 : 0}}>
+           style={{width: panelWidth, transform: panelOpen ? 'none' : 'translateX(calc(-100% - 80px))', opacity: panelOpen ? 1 : 0}}>
         <Panel className="aee-control flex h-full w-full flex-col overflow-hidden rounded-none border-y-0 border-l-0 p-0">
           <div className="relative flex h-[52px] shrink-0 items-center justify-center border-b border-zinc-700 bg-zinc-950/80">
             <span className="aee-wave-text text-[26px] font-bold" style={{animationPlayState: panelOpen ? 'running' : 'paused'}}>AEE v{state.version}</span>

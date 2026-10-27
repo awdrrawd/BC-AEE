@@ -23,6 +23,7 @@ import {Panel} from '@/components/ui/Panel';
 import {ChevronRight, Clipboard, Copy, Pipette} from '@/components/main-panel/icons/Icons';
 import type {SavedColor} from '@/components/color-picker/types';
 import {readJson, removeKey, STORAGE_KEYS, writeJson} from '@/core/storage';
+import {scaleStyle} from '@/util/scaleStyle';
 
 const PANEL_WIDTH = 750;
 const RECENT_COLORS_KEY = STORAGE_KEYS.recentColors;
@@ -208,8 +209,8 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
     const el = cardRef.current;
     if (!el || !isMapped) return;
     const measure = () => {
-      // CSS transform does not affect layout dimensions. Never feed zoomed or
-      // constrained viewport height back into the natural-height measurement.
+      // offsetHeight is the unscaled layout height under both zoom and transform. Never feed
+      // zoomed or constrained viewport height back into the natural-height measurement.
       if (el.offsetHeight > 0) setNaturalHeight(el.offsetHeight);
     };
     measure();
@@ -394,9 +395,7 @@ export function ColorPickerPanel({state}: { state: AeeState }) {
   const panelHeight = mappedBounds ? undefined
     : rect ? Math.max(1, rect.bottom - top) * 0.97 / scale : undefined;
   const cardEl = (
-    <div ref={cardRef} style={mappedBounds
-      ? {width: PANEL_WIDTH, flexShrink: 0, transform: `scale(${scale})`, transformOrigin: 'top left'}
-      : {zoom: scale, width: PANEL_WIDTH, flexShrink: 0}}>
+    <div ref={cardRef} style={{width: PANEL_WIDTH, flexShrink: 0, ...scaleStyle(scale)}}>
       <Panel className="aee-scroll justify-between gap-3 overflow-y-auto p-4 text-lg" style={{width: PANEL_WIDTH, minWidth: 0, boxSizing: 'border-box', height: panelHeight, borderWidth: '2px'}}>
         <div className="flex items-start gap-3">
           <div className="flex shrink-0 flex-col gap-2 pt-1">

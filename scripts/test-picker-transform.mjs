@@ -14,6 +14,7 @@ function load(file, dependencies = {}, extra = '') {
 const transforms = load('src/core/pickerTransform.ts');
 const picker = load('src/controllers/appearancePickerController.ts', {
   '@/core/pickerTransform': transforms,
+  '@/core/canvasLayer': load('src/core/canvasLayer.ts'),
 }, '\nexport {captureOpaqueAt, captureScreenBounds};');
 const {withPickerMatrices, recordPickerMatrix} = transforms;
 const matrices = [];
@@ -91,6 +92,8 @@ const drawing = load('src/hooks/drawingHooks.ts', {
   '@/controllers/appearancePickerController': {captureAppearanceImage: () => hookCapture},
   '@/core/drawImageTracker': {recordDrawImage: () => {}},
   '@/core/pickerTransform': transforms,
+  '@/core/runtime': {runtime: {afterDrawContext: null}},
+  '@/core/canvasLayer': load('src/core/canvasLayer.ts'),
   '@/hooks/renderHooks': {renderGlImage: (args, next) => next(args)},
 });
 drawing.installDrawingHooks();

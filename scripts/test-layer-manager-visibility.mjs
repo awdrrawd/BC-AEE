@@ -47,6 +47,7 @@ let outline = true;
 const state = {visible: false, layerManager: {open: true}};
 runtime.currentRenderChar = character;
 const picker = load('src/controllers/appearancePickerController.ts', {
+  '@/core/canvasLayer': {CANVAS_URL_PREFIX: 'aee-canvas:', canvasSnapshotKey: () => '', getCanvasSnapshot: () => null, isCanvasSource: () => false, setCanvasSnapshot() {}},
   '@/core/runtime': {runtime}, '@/core/store': {getState: () => state},
   '@/core/bc': {getCurrentCharacter: () => character},
   '@/core/settings': {settings: {hoverOutlinePanel: {get: () => outline}, appearancePick: {get: () => false}}},

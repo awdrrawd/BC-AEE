@@ -50,6 +50,8 @@ export interface Runtime {
   inAppearanceRun: boolean;
   currentDrawLayerItem: Item | null;
   currentDrawLayerIndex: number | null;
+  /** Set only while an asset's AfterDraw hook runs (canvas-drawn layers such as text). */
+  afterDrawContext: { item: Item; layerName: string; layerIndex: number } | null;
   hideRestraints: boolean;
 }
 
@@ -100,5 +102,6 @@ export const runtime: Runtime = {
   inAppearanceRun: false,
   currentDrawLayerItem: null,
   currentDrawLayerIndex: null,
+  afterDrawContext: null,
   hideRestraints: false,
 };

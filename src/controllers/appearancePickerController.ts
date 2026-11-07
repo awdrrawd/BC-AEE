@@ -6,6 +6,13 @@ import {getCurrentCharacter, getLayerDisplayName, getLayerGroupMembers} from '@/
 import {startHoverHighlight, stopHoverHighlight} from '@/controllers/uiController';
 import {applyPickerMatrix, invertPickerPoint, type PickerMatrix} from '@/core/pickerTransform';
 import {getLoadedImage} from '@/core/bcImageCompat';
+import {
+  CANVAS_URL_PREFIX,
+  canvasSnapshotKey,
+  getCanvasSnapshot,
+  isCanvasSource,
+  setCanvasSnapshot,
+} from '@/core/canvasLayer';
 
 type DrawAt = {x: number; y: number; zoom: number; heightResize?: boolean};
 export type DrawCapture = {
@@ -117,21 +124,35 @@ export function captureAppearanceDraw(character: Character, x: number, y: number
   frameDrawAt = {x, y, zoom, heightResize};
 }
 
-export function captureAppearanceImage(source: unknown, x: number, y: number, options?: DrawOptions) {
+export function captureAppearanceImage(source: unknown, x: number, y: number, options?: DrawOptions, offsetX = 0) {
   const character = pickerCharacter();
-  if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || runtime.currentRenderChar !== character || typeof source !== 'string') return;
+  const canvasSource = isCanvasSource(source);
+  if (!(inSupportedAppearanceMode() || layerCaptureEnabled()) || runtime.currentRenderChar !== character
+    || (typeof source !== 'string' && !canvasSource)) return;
   const state = getState();
-  const trackedItem = runtime.currentDrawLayerItem;
-  const asset = trackedItem?.Asset ?? matchAsset(source, character);
+  // Canvas-drawn layers (text) have no url. Only the edited item's layer is
+  // tracked, through a private pixel snapshot addressed by a synthetic url.
+  const afterDraw = runtime.afterDrawContext;
+  if (canvasSource && (!state.item || !afterDraw || afterDraw.item !== state.item || afterDraw.layerIndex < 0)) return;
+  const url = canvasSource ? canvasSnapshotKey(afterDraw!.layerIndex, offsetX !== 0) : source as string;
+  if (canvasSource) {
+    setCanvasSnapshot(url, source);
+    alphaCache.delete(url);
+  }
+  const trackedItem = canvasSource ? afterDraw!.item : runtime.currentDrawLayerItem;
+  const asset = trackedItem?.Asset ?? matchAsset(url, character);
   // Resolve ownership once, before assigning any image to an editor layer.
   const isEditedItem = state.item && (trackedItem ? trackedItem === state.item : asset === state.item.Asset);
   let layerIndex = -1;
   if (isEditedItem) {
-    const trackedIndex = trackedItem ? runtime.currentDrawLayerIndex : null;
-    layerIndex = trackedIndex != null && trackedIndex >= 0
-      ? trackedIndex : matchCurrentItemLayer(source, state.item);
+    if (canvasSource) layerIndex = afterDraw!.layerIndex;
+    else {
+      const trackedIndex = trackedItem ? runtime.currentDrawLayerIndex : null;
+      layerIndex = trackedIndex != null && trackedIndex >= 0
+        ? trackedIndex : matchCurrentItemLayer(url, state.item);
+    }
   }
-  const order = asset ? appearanceImageOrder(asset, source, character) : -1;
+  const order = asset ? (canvasSource ? stackOrder(asset, character) : appearanceImageOrder(asset, url, character)) : -1;
   // Retain the legacy translation fallback and gizmo inputs. Picking and
   // outlines use final shader matrices populated during the scoped GL draw.
   const transform = options as (DrawOptions & {
@@ -146,7 +167,7 @@ export function captureAppearanceImage(source: unknown, x: number, y: number, op
   const capture: DrawCapture = {
     pickable: options?.Alpha !== 0,
     matrices: [],
-    url: source,
+    url,
     x: x + translationX,
     y: y + translationY,
     drawX: x,
@@ -854,6 +875,10 @@ function screenToCanvas(x: number, y: number, map: CanvasMap) {
 // R133 keeps layer pixels in DrawImageCache as ImageBitmaps (R132: <img> in a
 // Map); getLoadedImage hides that. The 1px check skips BC's placeholder textures.
 function pickImage(url: string): HTMLImageElement | null {
+  if (url.startsWith(CANVAS_URL_PREFIX)) {
+    const snapshot = getCanvasSnapshot(url);
+    return snapshot && snapshot.width > 1 ? snapshot as unknown as HTMLImageElement : null;
+  }
   const image = getLoadedImage(url);
   return image && (image.naturalWidth || image.width) > 1 ? image : null;
 }

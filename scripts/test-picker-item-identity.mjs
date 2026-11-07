@@ -13,6 +13,7 @@ const character = {Appearance: [first, second], AppearanceLayers: [...first.Asse
 const state = {visible: true, item: first, layers: first.Asset.Layer, colorPicker: {}, transformOverlay: {}, layerPickerMode: 'detail'};
 const runtime = {currentRenderChar: character, currentDrawLayerIndex: 0};
 const dependencies = {
+  '@/core/canvasLayer': {CANVAS_URL_PREFIX: 'aee-canvas:', canvasSnapshotKey: () => '', getCanvasSnapshot: () => null, isCanvasSource: () => false, setCanvasSnapshot() {}},
   '@/core/runtime': {runtime},
   '@/core/store': {getState: () => state},
   '@/core/settings': {settings: {hoverOutlinePanel: {get: () => true}, appearancePick: {get: () => true}}},

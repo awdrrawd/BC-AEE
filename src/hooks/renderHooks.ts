@@ -106,6 +106,25 @@ export function installRenderHooks() {
   bcAeeModSdk.hookFunction('CommonCallFunctionByNameWarn', 3, (args, next) => {
     const funcName = args[0];
     const params: BeforeDrawParams | undefined = args[1];
+    // AfterDraw is where text layers paint a canvas. Remember which item/layer
+    // it belongs to so GLDrawImage can apply the layer's native transform.
+    if (params?.CA && /Assets(.+)AfterDraw/i.test(funcName)) {
+      const item = params.CA;
+      let afterName = (params.L ?? '').trim();
+      if (afterName[0] === '_') afterName = afterName.slice(1);
+      const layerIndex = resolveDrawLayerIndex(item, afterName);
+      const previous = runtime.afterDrawContext;
+      runtime.afterDrawContext = {
+        item,
+        layerName: layerIndex >= 0 ? (item.Asset.Layer[layerIndex].Name ?? '') : afterName,
+        layerIndex,
+      };
+      try {
+        return next(args);
+      } finally {
+        runtime.afterDrawContext = previous;
+      }
+    }
     if (!params || !/Assets(.+)BeforeDraw/i.test(funcName)) return next(args);
 
     runtime.pendingTransform = null;

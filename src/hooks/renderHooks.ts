@@ -63,20 +63,13 @@ export function installRenderHooks() {
         });
       }
     });
-    let result: ReturnType<typeof next>;
     try {
-      result = next(args);
+      return next(args);
     } finally {
       savedPriority.forEach((original, layer) => {
         layer.Priority = original;
       });
     }
-    character.AppearanceLayers?.forEach(layer => {
-      const asset = layer.Asset?.Name;
-      const group = layer.Asset?.Group?.Name;
-      if (asset && group) runtime.assetGroupMap.set(asset, group);
-    });
-    return result;
   });
 
   bcAeeModSdk.hookFunction('CommonDrawAppearanceBuild', 1, (args, next) => {

@@ -31,9 +31,6 @@ function clearLayerManagerHover() {
 
 const FILTER_MODES: LayerManagerFilterMode[] = ['all', 'custom', 'default'];
 
-// Default spot the panel opens at (before the user ever drags it): upper
-// portion of the canvas, off to one side so the character underneath isn't
-// immediately covered — the user drags it wherever suits their outfit.
 function LayerManagerRow({row, target}: { row: LayerRow; target: Character }) {
   const hovered = useRef(false);
   useEffect(() => () => {

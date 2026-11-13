@@ -1,9 +1,9 @@
-import {useCallback, useEffect, useMemo, useState, type SyntheticEvent} from 'react';
+import {useCallback, useEffect, useMemo, useState, useSyncExternalStore, type SyntheticEvent} from 'react';
 import {t} from '@/i18n/i18n';
 import {askConfirm, askText} from '@/core/prompts';
 import {showToast} from '@/util/toast';
 import {
-  A, getActiveSession, invalidateSlot, isCurrentSession, pushUndo,
+  getActiveSession, isCurrentSession, pushUndo, subscribeEditSession,
 } from '@/components/mask-system/freeDraw/slots';
 import {afterEdit} from '@/components/mask-system/freeDraw/editing';
 import {State} from '@/components/mask-system/freeDraw/editorState';
@@ -12,7 +12,7 @@ import {
   recallLibrarySlot, saveLibrarySlot,
 } from '@/components/mask-system/freeDraw/library';
 import {
-  APPEARANCE_UPLOAD_BYTES, APPEARANCE_WARN_BYTES, canvasEmbeddedData,
+  APPEARANCE_UPLOAD_BYTES, APPEARANCE_WARN_BYTES, slotEmbeddedData,
   formatBytesK, projectedAppearanceBytes,
 } from '@/components/mask-system/freeDraw/appearanceSize';
 import {BOARD_H, BOARD_W} from '@/components/mask-system/constants';
@@ -32,7 +32,8 @@ function LibraryThumbnail({entry}: {entry: LibraryEntry}) {
 }
 
 export function FreeDrawLibraryPanel() {
-  const activeSlot = A;
+  const activeSession = useSyncExternalStore(subscribeEditSession, getActiveSession);
+  const activeSlot = activeSession?.slot;
   const [, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
@@ -45,12 +46,13 @@ export function FreeDrawLibraryPanel() {
   }, []);
 
   useEffect(() => {
+    if (!activeSession) return;
     const timer = window.setInterval(() => {
       setTick(value => value + 1);
       const session = getActiveSession();
       if (!session) { setUsage(null); return; }
       try {
-        const compressed = !State.useSps && session.hasDrawing ? canvasEmbeddedData(session.slot.canvas) : '';
+        const compressed = !State.useSps && session.hasDrawing ? slotEmbeddedData(session.slot) : '';
         setUsage(projectedAppearanceBytes(compressed, session, State.useSps));
       } catch {
         // Unknown is not a measured zero or a fabricated threshold value.
@@ -58,7 +60,7 @@ export function FreeDrawLibraryPanel() {
       }
     }, 500);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [activeSession]);
 
   useEffect(() => {
     if (!activeSlot) return;
@@ -82,7 +84,6 @@ export function FreeDrawLibraryPanel() {
         pushUndo();
         session.slot.ctx.clearRect(0, 0, BOARD_W, BOARD_H);
         session.slot.ctx.drawImage(image, 0, 0, BOARD_W, BOARD_H);
-        invalidateSlot(session.slot);
         afterEdit();
       } finally { URL.revokeObjectURL(url); }
     } catch (error) { libraryError(error); }
@@ -115,7 +116,7 @@ export function FreeDrawLibraryPanel() {
   };
 
   const rect = canvasRect();
-  if (!A || !rect) return null;
+  if (!activeSlot || !rect) return null;
   const scaleX = rect.width / 2000;
   const pages = Array.from({length: 6}, (_, page) => peekLibraryPage(page));
   const entries = pages.every((value): value is LibraryEntry[] => value !== null) ? pages.flat() : null;

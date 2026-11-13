@@ -176,19 +176,9 @@ export const PICKER_ITEM = 90, PICKER_GAP = 5, PICKER_PAD = 10, PICKER_PER_ROW =
 export const SEL_HANDLE = 14;
 
 // Edit panel: move / rotate / scale.
-export const EDIT_PANEL_X = 1485, EDIT_PANEL_Y = 290, EDIT_PANEL_W = 490, EDIT_PANEL_H = 210;
-export const LABEL_H = 32;
 export const MOVE_STEP = 5;
 export const ROTATE_STEP = 15;
 export const SCALE_STEP = 0.1;
-export const PAD_UP_Y = EDIT_PANEL_Y + 60;
-export const PAD_LEFT_Y = EDIT_PANEL_Y + 105;
-export const PAD_RIGHT_Y = EDIT_PANEL_Y + 105;
-export const PAD_DOWN_Y = EDIT_PANEL_Y + 150;
-export const ROTATE_CW_X = EDIT_PANEL_X + 245, ROTATE_Y = EDIT_PANEL_Y + 60;
-export const ROTATE_BAR_Y = EDIT_PANEL_Y + 130, ROTATE_BAR_W = 140, ROTATE_BAR_H = 40;
-export const SCALE_PLUS_X = EDIT_PANEL_X + 405, SCALE_Y = EDIT_PANEL_Y + 60;
-export const SCALE_BAR_Y = EDIT_PANEL_Y + 130, SCALE_BAR_W = 140, SCALE_BAR_H = 40;
 
 // Derived toolbar X positions.
 export const EXIT_ICON_X = row1X('exit');

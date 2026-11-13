@@ -33,6 +33,12 @@ for (let i = 0; i < SLOT_COUNT; i++) slots.push(makeSlot(i));
 // must retain SlotEditSession instead of comparing this slot-only binding.
 export let A: Slot | null = null;
 let activeSession: SlotEditSession | null = null;
+const sessionListeners = new Set<() => void>();
+
+export function subscribeEditSession(listener: () => void): () => void {
+  sessionListeners.add(listener);
+  return () => { sessionListeners.delete(listener); };
+}
 
 export function beginEditSession(slot: Slot, character: Character, item: Item): SlotEditSession {
   if (activeSession) throw new Error('free_draw_session_already_active');
@@ -54,6 +60,7 @@ export function beginEditSession(slot: Slot, character: Character, item: Item): 
       value.Asset.Group.Name === slot.maskGroup || value.Asset.Group.Name === slot.visGroup
         ? [{index, item: {...value, Property: value.Property ? CommonCloneDeep(value.Property) : undefined}}] : []),
   };
+  sessionListeners.forEach(listener => listener());
   return activeSession;
 }
 
@@ -102,12 +109,14 @@ export function endEditSession(session: SlotEditSession): boolean {
   session.slot._loadedSig = undefined;
   session.slot._loadingSig = undefined;
   session.slot._loadPromise = undefined;
+  session.slot._embeddedData = undefined;
   session.phase = 'closing';
   session.slot.loading = false;
   session.slot.undoStack.length = 0;
   session.slot.redoStack.length = 0;
   activeSession = null;
   A = null;
+  sessionListeners.forEach(listener => listener());
   return true;
 }
 
@@ -121,6 +130,7 @@ export function slotComposite(slot: Slot): string {
 }
 export function invalidateSlot(slot: Slot) {
   slot._composite = null;
+  slot._embeddedData = undefined;
   bustMaskTexture();
 }
 

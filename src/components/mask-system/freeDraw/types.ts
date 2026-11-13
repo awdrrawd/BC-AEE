@@ -61,4 +61,5 @@ export interface Slot {
   _loadPromise?: Promise<boolean>;
   loading?: boolean;
   _composite?: string | null;
+  _embeddedData?: string;
 }

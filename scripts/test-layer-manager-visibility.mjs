@@ -35,6 +35,28 @@ assert.equal(bc.getOpacity(item, '4'), 0.25, 'short opacity arrays use the nativ
 character.AppearanceLayers = [];
 assert.equal(rows().length, 0, 'an empty native draw list means no enabled layers');
 
+// Duplicate names use the last matching opacity slot; short arrays fall back to slot zero.
+const duplicateAsset = {Name: 'Duplicate', Group: {Name: 'Cloth'}, Layer: []};
+duplicateAsset.Layer = ['Same', 'Same', null, ''].map((Name, Priority) => ({Name, Priority, Asset: duplicateAsset}));
+const duplicateItem = {Asset: duplicateAsset, Property: {Opacity: [1, 0, 1, 0]}};
+const duplicateCharacter = {Appearance: [duplicateItem], AppearanceLayers: duplicateAsset.Layer.map(layer => ({...layer}))};
+assert.deepEqual(Array.from(manager.buildLayerRows(duplicateCharacter), row => row.layerIndex), [2]);
+duplicateItem.Property.Opacity = [0.5];
+assert.equal(manager.buildLayerRows(duplicateCharacter).length, 4);
+duplicateCharacter.AppearanceLayers = [{...duplicateAsset.Layer[0], Asset: {...duplicateAsset}}];
+assert.equal(manager.buildLayerRows(duplicateCharacter).length, 0, 'matching names on another asset are not visible');
+delete duplicateCharacter.AppearanceLayers;
+assert.equal(manager.buildLayerRows(duplicateCharacter).length, 4, 'missing native draw list preserves fallback behavior');
+
+let activeReads = 0;
+const largeAsset = {Name: 'Large', Group: {Name: 'Cloth'}, Layer: []};
+largeAsset.Layer = Array.from({length: 300}, (_, index) => ({Name: `Layer${index}`, Priority: index, Asset: largeAsset}));
+const largeCharacter = {Appearance: [{Asset: largeAsset}], AppearanceLayers: largeAsset.Layer.map(layer => ({
+  ...layer, get Asset() { activeReads++; return largeAsset; },
+}))};
+assert.equal(manager.buildLayerRows(largeCharacter).length, 300);
+assert.ok(activeReads <= 600, 'active draw list must be indexed once, not rescanned for each layer');
+
 const runtime = {};
 const hooks = new Map();
 load('src/hooks/renderHooks.ts', {

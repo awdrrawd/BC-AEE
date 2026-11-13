@@ -18,10 +18,15 @@ export function createExternalStore<T>(initialState: T): ExternalStore<T> {
     return () => listeners.delete(listener);
   };
   const setState = (next: T | ((current: T) => T)) => {
-    state = typeof next === 'function' ? (next as (current: T) => T)(state) : next;
+    const value = typeof next === 'function' ? (next as (current: T) => T)(state) : next;
+    if (Object.is(state, value)) return;
+    state = value;
     listeners.forEach(listener => listener());
   };
-  const patchState = (patch: Partial<T>) => setState(current => ({...current, ...patch}));
+  const patchState = (patch: Partial<T>) => {
+    const keys = Object.keys(patch) as (keyof T)[];
+    if (keys.some(key => !Object.is(state[key], patch[key]))) setState({...state, ...patch});
+  };
   const useStore = () => useSyncExternalStore(subscribe, getState, getState);
 
   return {getState, setState, patchState, subscribe, useStore};

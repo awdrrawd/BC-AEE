@@ -5,7 +5,6 @@ type HoverFlashData = { item: Item; overrides: Map<number, number> };
 
 export interface Runtime {
   currentRenderChar: Character | null;
-  assetGroupMap: Map<string, string>;
   itemColorChar: Character | null;
   itemColorItem: Item | null;
   itemColorDirty: boolean;
@@ -57,7 +56,6 @@ export interface Runtime {
 
 export const runtime: Runtime = {
   currentRenderChar: null,
-  assetGroupMap: new Map<string, string>(),
   itemColorChar: null,
   itemColorItem: null,
   itemColorDirty: false,

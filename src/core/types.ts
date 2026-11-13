@@ -109,8 +109,6 @@ export interface BeforeDrawResult {
   Opacity?: number;
 }
 
-export type HookNext<Args extends unknown[] = unknown[], Result = unknown> = (args: Args) => Result;
-
 export interface CanvasRect {
   left: number;
   top: number;
@@ -275,13 +273,6 @@ export interface PendingImport {
   name?: string;
   meta?: WardrobeSlotMeta;
   sourceIndex?: number;
-}
-
-export interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
 }
 
 export type BackgroundChoiceType = 'color' | 'image' | 'upload' | 'url' | 'custom';

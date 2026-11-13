@@ -23,9 +23,6 @@ import {syncCharacterToRoom} from '@/features/mask';
 import {getState, mutateState} from '@/core/store';
 import type {LayerManagerFilterMode, LayerManagerSortDirection} from '@/core/types';
 
-export const LAYER_MANAGER_PANEL_WIDTH = 560;
-export const LAYER_MANAGER_PANEL_MIN_HEIGHT = 420;
-
 type PropsWithOverride = { OverridePriority?: number | Record<string, number> };
 
 export function layerManagerTooltip(): string {
@@ -53,24 +50,18 @@ export interface LayerRow {
   isCustom: boolean;
 }
 
-function effectivePriority(op: number | Record<string, number> | undefined, layerName: string | null, fallback: number): number {
-  if (typeof op === 'number') return op;
-  if (op && typeof op === 'object') {
-    const v = op[layerName ?? ''];
-    if (typeof v === 'number') return v;
-  }
-  return fallback;
-}
-
-function hasOverride(op: number | Record<string, number> | undefined, layerName: string | null): boolean {
-  if (typeof op === 'number') return true;
-  if (op && typeof op === 'object') return typeof op[layerName ?? ''] === 'number';
-  return false;
-}
-
 /** Every drawable layer of every worn item, sorted back-to-front by effective priority. */
 export function buildLayerRows(C: Character): LayerRow[] {
   const rows: LayerRow[] = [];
+  // BC's draw list contains copies, so index by asset identity and layer name.
+  const activeLayers = new Map<Asset, Set<string | null>>();
+  if (Array.isArray(C.AppearanceLayers)) {
+    for (const layer of C.AppearanceLayers) {
+      let names = activeLayers.get(layer.Asset);
+      if (!names) activeLayers.set(layer.Asset, names = new Set());
+      names.add(layer.Name);
+    }
+  }
   for (const item of C.Appearance) {
     const asset = item.Asset;
     if (!asset || !Array.isArray(asset.Layer) || asset.Layer.length === 0) continue;
@@ -78,23 +69,22 @@ export function buildLayerRows(C: Character): LayerRow[] {
     const groupName = asset.Group?.Name ?? '';
     const groupLabel = asset.Group?.Description || groupName;
     const itemLabel = asset.Description || asset.Name;
-    for (const [layerIndex, layer] of asset.Layer.entries()) {
-      // AppearanceLayers contains copies, already filtered by BC for types,
-      // poses, hidden groups and texture masks. Compare ownership and name.
-      if (Array.isArray(C.AppearanceLayers) && !C.AppearanceLayers.some(active =>
-        active.Asset === asset && active.Name === layer.Name)) continue;
-      const opacity = item.Property?.Opacity;
-      // Match CommonDraw's bounded name lookup, including legacy short arrays.
-      let slot = 0;
-      if (Array.isArray(opacity)) {
-        for (let index = 0; index < asset.Layer.length && index < opacity.length; index++) {
-          if (asset.Layer[index].Name === layer.Name) slot = index;
-        }
+    const opacity = item.Property?.Opacity;
+    const opacitySlots = new Map<string | null, number>();
+    if (Array.isArray(opacity)) {
+      // BC uses the last matching name within the stored opacity array.
+      for (let index = 0; index < asset.Layer.length && index < opacity.length; index++) {
+        opacitySlots.set(asset.Layer[index].Name, index);
       }
-      const value = Array.isArray(opacity) ? opacity[slot] : opacity;
+    }
+    for (const [layerIndex, layer] of asset.Layer.entries()) {
+      if (Array.isArray(C.AppearanceLayers) && !activeLayers.get(asset)?.has(layer.Name)) continue;
+      const value = Array.isArray(opacity) ? opacity[opacitySlots.get(layer.Name) ?? 0] : opacity;
       const effectiveOpacity = Math.min(layer.MaxOpacity ?? 1, Math.max(layer.MinOpacity ?? 0, value ?? layer.Opacity ?? 1));
       if (effectiveOpacity <= 0) continue;
       const effectiveKey = layer.Name ?? '';
+      const override = typeof op === 'number' ? op : op?.[effectiveKey];
+      const isCustom = typeof override === 'number';
       rows.push({
         id: `${groupName}::${effectiveKey}`,
         item,
@@ -105,8 +95,8 @@ export function buildLayerRows(C: Character): LayerRow[] {
         effectiveKey,
         layerIndex,
         layerDefault: layer.Priority,
-        priority: effectivePriority(op, layer.Name, layer.Priority),
-        isCustom: hasOverride(op, layer.Name),
+        priority: isCustom ? override : layer.Priority,
+        isCustom,
       });
     }
   }

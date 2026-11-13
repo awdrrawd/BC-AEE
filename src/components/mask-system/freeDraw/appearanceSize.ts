@@ -1,6 +1,6 @@
 import {bundleAppearance} from '@/util/appearanceBundle';
 import {PROP_KEY, PROP_SPS_KEY} from '../constants';
-import type {AnyProps, SlotEditSession} from './types';
+import type {AnyProps, Slot, SlotEditSession} from './types';
 import {createSpsDrawRef} from './spsDrawing';
 
 export const APPEARANCE_WARN_BYTES = 140_000;
@@ -10,6 +10,11 @@ export const APPEARANCE_HARD_BYTES = 180_000;
 export function canvasEmbeddedData(canvas: HTMLCanvasElement): string {
   const dataUrl = canvas.toDataURL('image/png');
   return typeof LZString !== 'undefined' ? LZString.compressToBase64(dataUrl) : dataUrl;
+}
+
+// Estimates reuse the last committed drawing; saving always encodes the canvas afresh.
+export function slotEmbeddedData(slot: Slot): string {
+  return slot._embeddedData ??= canvasEmbeddedData(slot.canvas);
 }
 
 function projectedAppearance(session: SlotEditSession, compressed: string, useSps: boolean): readonly Item[] {

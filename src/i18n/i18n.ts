@@ -96,7 +96,6 @@ export const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
 // 以 inline style 套用最保險。手機/Mac 該 family 不存在會自動跳過、用系統國旗字型。
 export const LANG_FLAG_FONT = '"Twemoji Country Flags",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif';
 
-export type LocalizedText = string | Record<string, string>;
 
 export function normalizeLanguage(language: string | undefined): string {
   if (!language) return DEFAULT_LANGUAGE;

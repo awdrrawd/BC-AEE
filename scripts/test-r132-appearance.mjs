@@ -60,4 +60,13 @@ assert.deepEqual(previews.pop(), [character, group, true], 'preview updates even
 ui.context.CharacterAppearanceSelectedGroup = null;
 watchers.get('characterPreviewActive')(false);
 assert.equal(previews.length, 0, 'no preview build without a selected category');
+const hover = load('src/hooks/appearanceHooks.ts', {}, {
+  DialogInventory: ['hat', 'blue shirt', 'blue coat'], DialogInventoryOffset: 1,
+  CharacterAppearanceNumClothPerPage: 9, MouseX: 1250, MouseY: 125,
+}, '\nexport {findHoveredClothItem};');
+assert.equal(hover.exports.findHoveredClothItem(), 'blue shirt');
+hover.context.AppearanceInventoryBuild = () => ['blue shirt', 'blue coat'];
+assert.equal(hover.exports.findHoveredClothItem(), 'blue coat');
+hover.context.MouseX += 250;
+assert.equal(hover.exports.findHoveredClothItem(), null);
 console.log('R132 color entry points, selected-group menu updates and immediate preview refresh passed.');

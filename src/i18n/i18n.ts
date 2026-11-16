@@ -58,19 +58,21 @@ const LANGUAGE_MAP: Record<string, string> = {
   //'ar-SA': 'AR', 阿拉伯是由右至左先不使用
 };
 
+// i18next 27 起會把語言代碼正規化為小寫再查資源（EN -> en），
+// 所以註冊資源與切換語言時一律使用小寫代碼；AEE 內部仍沿用大寫代碼。
 const resources = {
-  EN: {translation: en},
-  DE: {translation: de},
-  FR: {translation: fr},
-  RU: {translation: ru},
-  CN: {translation: cn},
-  TW: {translation: tw},
-  UA: {translation: ua},
-  JA: {translation: ja},
-  KO: {translation: ko},
-  VI: {translation: vi},
-  ES: {translation: es},
-  AR: {translation: ar},
+  en: {translation: en},
+  de: {translation: de},
+  fr: {translation: fr},
+  ru: {translation: ru},
+  cn: {translation: cn},
+  tw: {translation: tw},
+  ua: {translation: ua},
+  ja: {translation: ja},
+  ko: {translation: ko},
+  vi: {translation: vi},
+  es: {translation: es},
+  ar: {translation: ar},
 } as const;
 
 // Languages the user can pick from the settings dropdown. Labels are shown in
@@ -126,7 +128,7 @@ export function setUiLanguage(code: string): void {
   settings.uiLanguage.set(code);
   const next = code ? normalizeLanguage(code) : normalizeLanguage(readBcLanguage());
   lastLanguage = next;
-  i18next.changeLanguage(next)
+  i18next.changeLanguage(next.toLowerCase())
     .then(() => refreshAppForLanguageChange())
     .catch(error => console.error(`Failed to change language to ${next}:`, error));
 }
@@ -134,8 +136,8 @@ export function setUiLanguage(code: string): void {
 i18next
   .use(initReactI18next)
   .init({
-    lng: resolveInitialLanguage(),
-    fallbackLng: DEFAULT_LANGUAGE,
+    lng: resolveInitialLanguage().toLowerCase(),
+    fallbackLng: DEFAULT_LANGUAGE.toLowerCase(),
     resources,
     initAsync: false,
     interpolation: {
@@ -154,7 +156,7 @@ i18next
     console.error('Failed to initialize i18n:', error);
   });
 
-let lastLanguage = i18next.language || DEFAULT_LANGUAGE;
+let lastLanguage = (i18next.language || DEFAULT_LANGUAGE).toUpperCase();
 
 setInterval(() => {
   // Once the user picks a language explicitly, stop following the game.
@@ -163,7 +165,7 @@ setInterval(() => {
 
   if (nextLanguage !== lastLanguage) {
     lastLanguage = nextLanguage;
-    i18next.changeLanguage(nextLanguage).catch(error => {
+    i18next.changeLanguage(nextLanguage.toLowerCase()).catch(error => {
       console.error(`Failed to change language to ${nextLanguage}:`, error);
     });
 

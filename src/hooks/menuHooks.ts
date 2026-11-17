@@ -56,9 +56,8 @@ export function injectClothingPreviewButtons(menu: typeof AppearanceMenu, hoverT
   }
 }
 
-function dialogHoverTryOnButtonX(): number {
-  const index = DialogMenuButton.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
-  return 1885 - (index >= 0 ? index : DialogMenuButton.length) * 110;
+function dialogMenuButtonX(index: number): number {
+  return 1885 - index * 110;
 }
 
 function isEditablePasteTarget(event: ClipboardEvent): boolean {
@@ -213,14 +212,14 @@ export function installMenuHooks() {
       DialogMenuButton = menu;
     }
     if (hoverTryOnIndex >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items') {
-      DrawButton(dialogHoverTryOnButtonX(), 15, 90, 90, '', 'White', hoverTryOnIcon('item'), hoverTryOnTip('item'));
+      DrawButton(dialogMenuButtonX(hoverTryOnIndex), 15, 90, 90, '', 'White', hoverTryOnIcon('item'), hoverTryOnTip('item'));
     }
     return result;
   });
 
   bcAeeModSdk.hookFunction('DialogMenuButtonBuild', 10, (args, next) => {
     const result = next(args);
-    if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && !DialogMenuButton.includes(DIALOG_HOVER_TRY_ON_BUTTON)) {
+    if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && !DialogMenuButton.includes('FilterItemsExit' as DialogMenuButtonType) && !DialogMenuButton.includes(DIALOG_HOVER_TRY_ON_BUTTON)) {
       const activityIndex = DialogMenuButton.indexOf('Activity');
       DialogMenuButton.splice(activityIndex >= 0 ? activityIndex : DialogMenuButton.length, 0, DIALOG_HOVER_TRY_ON_BUTTON);
     }
@@ -228,7 +227,8 @@ export function installMenuHooks() {
   });
 
   bcAeeModSdk.hookFunction('DialogClick', 10, (args, next) => {
-    if (settings.hoverTryOn.get() && DialogMenuMode === 'items' && MouseIn(dialogHoverTryOnButtonX(), 15, 90, 90)) {
+    const index = DialogMenuButton.indexOf(DIALOG_HOVER_TRY_ON_BUTTON);
+    if (index >= 0 && settings.hoverTryOn.get() && DialogMenuMode === 'items' && MouseIn(dialogMenuButtonX(index), 15, 90, 90)) {
       toggleHoverTryOn('item');
       return;
     }

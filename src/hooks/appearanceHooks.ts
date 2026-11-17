@@ -39,6 +39,8 @@ import {
   isLayerPickerLabelPoint,
 } from '@/controllers/appearancePickerController';
 
+declare function AppearanceInventoryBuild(): DialogInventoryItem[];
+
 const EDIT_BUTTON_SCALE = 0.7;
 let compactBackNextDepth = 0;
 let compactEditButtons: Array<{x: number; y: number; w: number; h: number; originalX: number}> = [];
@@ -471,14 +473,15 @@ function handleHoverTryOn() {
 
 // Mirror BC's Cloth-mode grid layout (Appearance.js): cells are 225x275, laid
 // out from (1250, 125) stepping +250 across and wrapping to a new row (+300)
-// once past x=1800, over the DialogInventory page window.
+// once past x=1800, over the visible inventory page.
 function findHoveredClothItem(): DialogInventoryItem | null {
   let x = 1250;
   let y = 125;
   const end = Math.min(DialogInventory.length, DialogInventoryOffset + CharacterAppearanceNumClothPerPage);
   for (let index = DialogInventoryOffset; index < end; index++) {
     if (MouseX >= x && MouseX < x + 225 && MouseY >= y && MouseY < y + 275) {
-      return DialogInventory[index];
+      const inventory = typeof AppearanceInventoryBuild === 'function' ? AppearanceInventoryBuild() : DialogInventory;
+      return inventory[index] ?? null;
     }
     x += 250;
     if (x > 1800) {

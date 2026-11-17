@@ -1,6 +1,6 @@
 {
   "gameVersion": "R134",
-  "commit": "dcf8b3eb00649c8db67f09ef93d917c35b5f220e",
+  "commit": "0333e3d45038",
   "functions": {
     "AppearanceClick": {
       "hash": "543C29BB",
@@ -259,7 +259,7 @@
       "file": "Screens/Character/ItemColor/ItemColor.js"
     },
     "ServerAppearanceLoadFromBundle": {
-      "hash": "84F1258E",
+      "hash": "20170723",
       "file": "Scripts/Server.js"
     },
     "TextLoad": {

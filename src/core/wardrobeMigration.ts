@@ -112,7 +112,10 @@ function incompatibleScaleFields(property: Record<string, unknown>, overrides: A
  * produces the same final draw position.
  */
 function nativeTranslation(legacyAbsolute: number, base: number, itemTranslation: number): number {
-  return (legacyAbsolute - base) / BC_WEBGL_TRANSLATION_FACTOR - itemTranslation;
+  // R134 validates LayerTranslationX/Y as integers (and compression rounds them);
+  // a fractional value is dropped on load, so round here. One native unit is
+  // BC_WEBGL_TRANSLATION_FACTOR px on screen, so the error is at most ~1px.
+  return Math.round((legacyAbsolute - base) / BC_WEBGL_TRANSLATION_FACTOR - itemTranslation);
 }
 
 function nativeRenderedPosition(base: number, itemTranslation: number): number {
@@ -223,7 +226,8 @@ function migrateEntry(entry: ItemBundle, character: Character): {layers: number;
       // Legacy rotations wrap through 360; BC clamps the combined native angle
       // to [-180, 180]. In particular, 355 must become -5, never clamp to 180.
       const signedRotation = ((rotation + 180) % 360 + 360) % 360 - 180;
-      values.push(['Rotation', 'Rotation', signedRotation - propertyNumber(property, 'Rotation')]);
+      // R134 requires integer LayerRotation as well.
+      values.push(['Rotation', 'Rotation', Math.round(signedRotation - propertyNumber(property, 'Rotation'))]);
     }
     if (values.length && !(renamedUnnamedLayer && asset.Layer[index].Name == null)) result.layers++;
     for (const [legacyKey, nativeKey, value] of values) {

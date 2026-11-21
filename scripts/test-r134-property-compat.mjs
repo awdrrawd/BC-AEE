@@ -19,7 +19,7 @@ function load(file, extra = {}, requires = {}) {
 const plain = value => JSON.parse(JSON.stringify(value));
 
 // ------------------------------------------------------------------ sanitizers
-const {sanitizeLayerOverrides, sanitizeHideOverride} = load('src/core/propertySanitize.ts');
+const {sanitizeLayerOverrides, sanitizeHideOverride, sanitizeFreeDrawProperties} = load('src/core/propertySanitize.ts');
 const groups = new Set(['Bra', 'Panties', 'Cloth']);
 
 {
@@ -54,20 +54,46 @@ const groups = new Set(['Bra', 'Panties', 'Cloth']);
   }
 }
 
+// ------------------------------------------------------------------ free draw fields
+const drawDeps = {
+  isDrawSource: v => typeof v === 'string' && v.startsWith('OK:'),
+  readSpsRef: props => {
+    const r = props.CustomDrawSPS;
+    return Number.isInteger(r?.o) && typeof r?.r === 'string' && /^[a-f0-9]{64}$/.test(r.r) ? {o: r.o, s: 0, r: r.r, m: 'image/png', u: String(r.u)} : null;
+  },
+};
+const goodRef = {o: 7, s: 0, r: 'a'.repeat(64), m: 'image/png', u: 'x'};
+
+{
+  const board = {CustomDraw: 'OK:abc', CustomDrawSPS: goodRef, OffsetX: -12.5, OffsetY: 40, MaskPriority: 55, PluginCustom: 1};
+  const kept = sanitizeFreeDrawProperties(board, drawDeps);
+  assert.deepEqual(plain(kept), {CustomDraw: 'OK:abc', CustomDrawSPS: goodRef, OffsetX: -12.5, OffsetY: 40, MaskPriority: 55});
+  assert.notEqual(kept.CustomDrawSPS, board.CustomDrawSPS, 'SPS reference is a copy');
+
+  assert.deepEqual(plain(sanitizeFreeDrawProperties({CustomDraw: 'http://evil/x.png', OffsetX: '5', OffsetY: Infinity, MaskPriority: 100}, drawDeps)), {},
+    'foreign URL, non-numbers and out-of-range priority are dropped');
+  assert.deepEqual(plain(sanitizeFreeDrawProperties({CustomDraw: 'OK:x'.padEnd(10), MaskPriority: 1.5, OffsetX: 99999}, drawDeps)), {CustomDraw: 'OK:x'.padEnd(10)});
+  assert.deepEqual(plain(sanitizeFreeDrawProperties({CustomDrawSPS: 'str'}, drawDeps)), {});
+  assert.deepEqual(plain(sanitizeFreeDrawProperties({CustomDrawSPS: {o: -1, r: 'zz'}}, drawDeps)), {});
+  assert.deepEqual(plain(sanitizeFreeDrawProperties(null, drawDeps)), {});
+  assert.deepEqual(plain(sanitizeFreeDrawProperties({CustomDraw: ''}, drawDeps)), {}, 'empty drawing is not restored (baseline already is empty)');
+}
+
 // ------------------------------------------------------------------ hook
-function install({validateDefined = true} = {}) {
+function install() {
   const hooks = new Map();
   const sdk = {hookFunction: (name, priority, fn) => hooks.set(name, {priority, fn})};
   const mod = load('src/hooks/propertyCompatHooks.ts', {
     AssetGroupGet: (_family, name) => (groups.has(name) ? {Name: name} : null),
-    ...(validateDefined ? {ItemPropertiesValidate: () => ({})} : {}),
-  }, {'@/modsdk': {default: sdk}, '@/core/propertySanitize': {sanitizeLayerOverrides, sanitizeHideOverride}});
+  }, {'@/modsdk': {default: sdk}, '@/core/propertySanitize': {sanitizeLayerOverrides, sanitizeHideOverride, sanitizeFreeDrawProperties},
+    '@/components/mask-system/constants': {DRAW_ASSET: 'DrawingBoard', DRAW_GROUPS: ['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3']},
+    '@/components/mask-system/freeDraw/drawSource': {drawImageSource: v => (drawDeps.isDrawSource(v) ? v : null)},
+    '@/components/mask-system/freeDraw/spsDrawing': {readDrawRef: drawDeps.readSpsRef}});
   mod.installPropertyCompatHooks();
   return hooks;
 }
 
 {
-  assert.equal(install({validateDefined: false}).size, 0, 'R132 and older without the function: nothing is hooked');
   const hooks = install();
   assert.equal(hooks.size, 1);
   const {fn} = hooks.get('ItemPropertiesValidate');
@@ -94,5 +120,27 @@ function install({validateDefined = true} = {}) {
   assert.doesNotThrow(() => fn([null, {}], dropped));
   assert.doesNotThrow(() => fn([source, undefined], () => undefined));
   assert.doesNotThrow(() => fn([source, {}], () => ({value: null})));
+}
+// Free Draw boards: restored for AEE's own assets only.
+{
+  const {fn} = install().get('ItemPropertiesValidate');
+  const dropped = () => ({value: {TranslationX: 1}, status: 'ok', errorDescriptions: {}});
+  const board = {CustomDraw: 'OK:abc', CustomDrawSPS: goodRef, OffsetX: 3, OffsetY: -4, MaskPriority: 20, TranslationX: 1};
+  const asset = group => ({Name: 'DrawingBoard', Group: {Name: group, Family: 'Female3DCG'}});
+
+  for (const group of ['ItemCanvas1', 'ItemCanvas2', 'ItemCanvas3']) {
+    const ret = fn([board, asset(group)], dropped);
+    assert.deepEqual(plain(ret.value), {TranslationX: 1, CustomDraw: 'OK:abc', CustomDrawSPS: goodRef, OffsetX: 3, OffsetY: -4, MaskPriority: 20}, `${group} drawing survives validation`);
+  }
+  // Same field names on someone else's asset are none of our business.
+  assert.deepEqual(plain(fn([board, asset('ItemArms')], dropped).value), {TranslationX: 1});
+  assert.deepEqual(plain(fn([board, {Name: 'Other', Group: {Name: 'ItemCanvas1'}}], dropped).value), {TranslationX: 1});
+  // Hostile payload on our asset: nothing unsafe is restored.
+  const hostile = fn([{CustomDraw: 'http://evil/x.png', OffsetX: 'a', MaskPriority: 500}, asset('ItemCanvas1')], dropped);
+  assert.deepEqual(plain(hostile.value), {TranslationX: 1});
+  // BC already kept a value: not overwritten.
+  const kept = fn([board, asset('ItemCanvas1')], () => ({value: {OffsetX: 99}}));
+  assert.equal(kept.value.OffsetX, 99);
+  assert.doesNotThrow(() => fn([board, undefined], dropped));
 }
 console.log('r134 property compat: ok');

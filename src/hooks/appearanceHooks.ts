@@ -121,19 +121,34 @@ export function installAppearanceHooks() {
       if (isAppearanceChar && runtime.hoverCharGroup && groupName === runtime.hoverCharGroup && runtime.hoverCharHiddenGroup.has(groupName)) return false;
     }
 
-    // CharacterAppearanceVisible reads Asset.Hide internally. Temporarily expose
-    // each item's persisted override to the native calculation, then restore the
-    // shared asset definitions before returning.
-    const changed = new Map<Asset, readonly AssetGroupName[] | undefined>();
+    // CharacterAppearanceVisible reads both Asset.Hide and Property.Hide internally.
+    // Temporarily expose each item's persisted override to the native calculation
+    // (WCE/LCE semantics: the override replaces both lists), then restore the
+    // shared asset definitions and per-item properties before returning.
+    type HideHolder = {Hide?: readonly AssetGroupName[]};
+    const restores: Array<() => void> = [];
+    const seenAssets = new Set<Asset>();
     for (const item of character?.Appearance ?? []) {
-      if (!Array.isArray(item.Property?.wceOverrideHide) || changed.has(item.Asset)) continue;
-      changed.set(item.Asset, item.Asset.Hide);
-      (item.Asset as unknown as {Hide?: readonly AssetGroupName[]}).Hide = item.Property.wceOverrideHide;
+      const override = item.Property?.wceOverrideHide;
+      if (!Array.isArray(override)) continue;
+      if (!seenAssets.has(item.Asset)) {
+        seenAssets.add(item.Asset);
+        const asset = item.Asset as unknown as HideHolder;
+        const original = asset.Hide;
+        asset.Hide = override;
+        restores.push(() => { asset.Hide = original; });
+      }
+      const property = item.Property as unknown as HideHolder;
+      if (Array.isArray(property.Hide)) {
+        const original = property.Hide;
+        property.Hide = override;
+        restores.push(() => { property.Hide = original; });
+      }
     }
     try {
       return next(args);
     } finally {
-      for (const [asset, hide] of changed) (asset as unknown as {Hide?: readonly AssetGroupName[]}).Hide = hide;
+      for (const restore of restores.reverse()) restore();
     }
   });
 

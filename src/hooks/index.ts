@@ -16,10 +16,12 @@ import {installOnboarding} from '@/hooks/onboardingHooks';
 import {installHiddenArousalHook} from '@/hooks/hiddenArousalHook';
 import {installDrawingHooks} from '@/hooks/drawingHooks';
 import {installDebugApi} from '@/core/debug';
+import {installPropertyCompatHooks} from '@/hooks/propertyCompatHooks';
 
 export function installAeeHooks() {
   installDebugApi();
   installHiddenArousalHook();
+  installPropertyCompatHooks();
   installSettingEffects();
   installDrawingHooks();
   installRenderHooks();

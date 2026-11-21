@@ -5,8 +5,16 @@ interface WceOverrideSetting {
   Hide: Record<string, AssetGroupName[]>;
 }
 
-function defaultHide(item: Item | null): AssetGroupName[] {
-  return Array.isArray(item?.Asset?.Hide) ? [...item.Asset.Hide] : [];
+/**
+ * Groups the item hides before any override: the asset's static Hide plus the
+ * per-option Property.Hide that typed/modular items set. BC checks both in
+ * CharacterAppearanceVisible, so both must be overridable and listed in the UI.
+ */
+export function defaultHide(item: Item | null): AssetGroupName[] {
+  const groups = new Set<AssetGroupName>();
+  if (Array.isArray(item?.Asset?.Hide)) item.Asset.Hide.forEach(group => groups.add(group));
+  if (Array.isArray(item?.Property?.Hide)) item.Property.Hide.forEach(group => groups.add(group));
+  return [...groups];
 }
 
 export function getLayeringHideGroups(item: Item | null): AssetGroupName[] {

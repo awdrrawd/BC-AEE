@@ -151,7 +151,7 @@
       "file": "Scripts/Dialog.js"
     },
     "DialogMenuButtonBuild": {
-      "hash": "D4955369",
+      "hash": "921EF25D",
       "file": "Scripts/Dialog.js"
     },
     "DrawArousalMeter": {
@@ -257,6 +257,10 @@
     "ItemColorOpenPicker": {
       "hash": "BD3306A0",
       "file": "Screens/Character/ItemColor/ItemColor.js"
+    },
+    "ItemPropertiesValidate": {
+      "hash": "C0015725",
+      "file": "Scripts/Item.js"
     },
     "ServerAppearanceLoadFromBundle": {
       "hash": "20170723",

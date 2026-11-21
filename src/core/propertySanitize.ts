@@ -1,5 +1,6 @@
 // BC-R134-COMPAT: pure validators for the two non-native Item.Property fields AEE owns
-// (LayerOverrides, wceOverrideHide). No BC globals are touched here so they can be unit tested.
+// (LayerOverrides, wceOverrideHide) and the Free Draw board fields (CustomDraw, CustomDrawSPS, OffsetX,
+// OffsetY, MaskPriority). No BC globals are touched here so they can be unit tested.
 //
 // Why they exist: since R134 BC's ItemPropertiesValidate() is wired into ExtendedItemInit(),
 // ValidationSanitizeProperties() and ItemPropertiesDecompress(), and it rebuilds Item.Property from
@@ -85,6 +86,42 @@ export function sanitizeHideOverride(value: unknown, groupExists: (name: string)
   for (const name of value) {
     if (typeof name !== 'string' || !groupExists(name)) return null;
     if (!out.includes(name)) out.push(name);
+  }
+  return out;
+}
+
+export interface FreeDrawRestoreDeps {
+  /** True when the string is a valid (compressed) png/webp data URL; see freeDraw/drawSource.ts. */
+  isDrawSource: (value: unknown) => boolean;
+  /** Normalized copy of a CustomDrawSPS reference, or null when invalid; see freeDraw/spsDrawing.ts. */
+  readSpsRef: (property: Record<string, unknown>) => Record<string, unknown> | null;
+}
+
+const FREE_DRAW_OFFSET_LIMIT = 10000;
+const FREE_DRAW_PRIORITY: [number, number] = [0, 99];
+
+/**
+ * BC-R134-COMPAT: the fields of an AEE Free Draw board (ItemCanvasN/DrawingBoard). R134's
+ * ItemPropertiesValidate() drops them (no PropertyData entry), after which the NOARCH Init resets the
+ * board to its baseline, i.e. the drawing is gone. Returns only values that pass validation; the source
+ * may be another player's appearance data.
+ */
+export function sanitizeFreeDrawProperties(source: unknown, deps: FreeDrawRestoreDeps): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!isPlainObject(source)) return out;
+  if (typeof source.CustomDraw === 'string' && source.CustomDraw && deps.isDrawSource(source.CustomDraw)) {
+    out.CustomDraw = source.CustomDraw;
+  }
+  if (source.CustomDrawSPS != null) {
+    const ref = isPlainObject(source.CustomDrawSPS) ? deps.readSpsRef(source) : null;
+    if (ref) out.CustomDrawSPS = {...ref};
+  }
+  for (const key of ['OffsetX', 'OffsetY'] as const) {
+    if (isNumberIn(source[key], -FREE_DRAW_OFFSET_LIMIT, FREE_DRAW_OFFSET_LIMIT)) out[key] = source[key];
+  }
+  const priority = source.MaskPriority;
+  if (Number.isInteger(priority) && isNumberIn(priority, FREE_DRAW_PRIORITY[0], FREE_DRAW_PRIORITY[1])) {
+    out.MaskPriority = priority;
   }
   return out;
 }

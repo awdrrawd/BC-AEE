@@ -37,21 +37,27 @@ function clampNativeTransform(
   value: number,
 ): number {
   const isPussy = item.Asset?.Group?.Name === 'Pussy';
+  // BC R134 validates TranslationX/Y and Rotation as integers and drops a
+  // fractional value when the item is loaded, so round before clamping. The
+  // base offset subtracted by the caller can be fractional, which used to leave
+  // values such as -6.5 in saved outfits and raise a sanitize error on every
+  // wardrobe visit. The rounding error is at most 1px.
   if (property === 'TranslationX') {
     // The official panel doesn't expose X movement for Pussy/Penis at all.
-    return isPussy ? 0 : clamp(value, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
+    return isPussy ? 0 : clamp(Math.round(value), TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
   }
   if (property === 'TranslationY') {
+    const rounded = Math.round(value);
     return isPussy
-      ? clamp(value, PUSSY_TRANSLATION_Y_BOUNDS.min, PUSSY_TRANSLATION_Y_BOUNDS.max)
-      : clamp(value, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
+      ? clamp(rounded, PUSSY_TRANSLATION_Y_BOUNDS.min, PUSSY_TRANSLATION_Y_BOUNDS.max)
+      : clamp(rounded, TRANSLATION_BOUNDS.min, TRANSLATION_BOUNDS.max);
   }
   if (property === 'ScaleX' || property === 'ScaleY') {
     return isPussy
       ? clamp(value, PUSSY_SCALE_BOUNDS.min, PUSSY_SCALE_BOUNDS.max)
       : clamp(value, SCALE_BOUNDS.min, SCALE_BOUNDS.max);
   }
-  return clamp(value, ROTATION_BOUNDS.min, ROTATION_BOUNDS.max);
+  return clamp(Math.round(value), ROTATION_BOUNDS.min, ROTATION_BOUNDS.max);
 }
 
 export function getCanvas(): HTMLCanvasElement | null {

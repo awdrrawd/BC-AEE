@@ -1,9 +1,9 @@
 {
   "gameVersion": "R134",
-  "commit": "0333e3d45038",
+  "commit": "b3afd52e44f69c4a6bcd826993679ecfb5336556",
   "functions": {
     "AppearanceClick": {
-      "hash": "543C29BB",
+      "hash": "4197DA00",
       "file": "Screens/Character/Appearance/Appearance.js"
     },
     "AppearanceExit": {
@@ -23,11 +23,11 @@
       "file": "Screens/Character/Appearance/Appearance.js"
     },
     "AppearanceMenuBuild": {
-      "hash": "A0FFC014",
+      "hash": "07C8795D",
       "file": "Screens/Character/Appearance/Appearance.js"
     },
     "AppearanceMenuClick": {
-      "hash": "297CEB01",
+      "hash": "290531B5",
       "file": "Screens/Character/Appearance/Appearance.js"
     },
     "AppearanceMenuDraw": {

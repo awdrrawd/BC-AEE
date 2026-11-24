@@ -4,8 +4,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: monday
-      time: '09:00'
+      day: saturday
+      time: '08:03'
       timezone: Asia/Taipei
     open-pull-requests-limit: 5
     # Match the Node 22 runtime used by CI until it is upgraded deliberately.
@@ -22,10 +22,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: monday
-      time: '09:00'
+      day: saturday
+      time: '08:03'
       timezone: Asia/Taipei
     groups:
       actions:
         patterns: ['*']
+        update-types: [minor, patch]
     open-pull-requests-limit: 2

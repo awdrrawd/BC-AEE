@@ -14,8 +14,8 @@
 | `Architecture browser` | Chromium 在 1280、1600、390 px 視窗驗證 16 個功能的 SVG 端點；另測舊網址轉跳、搜尋、檔案連結與縮放視窗 | 失敗阻擋建置與部署，保留截圖及 trace；HTML 報告保留 7 天。 |
 | `Build` | 前兩個 job 通過後執行 TypeScript／Vite 建置、輸出 JS／CSS 原始及 gzip 體積、檢查 README 版本同步 | 失敗不部署。體積是該次提交的報告，目前不比較基準或設定阻擋門檻。 |
 | `Deploy Pages` | 只部署同一次 main 工作流建置並上傳的 `dist/` artifact | 使用 `github-pages` environment；只有此 job 取得 `pages: write`、`id-token: write`。 |
-| Dependabot | 每週一台北時間 09:00 檢查 npm 與 GitHub Actions | 建立更新 PR，不自動合併；npm minor／patch 分組，`bc-stubs` 與 major 更新獨立。 |
-| BC compatibility | 每週一台北時間 09:00（可手動執行，可指定 BC 分支或標籤）以[程式碼鏡像](https://github.com/awdrrawd/Bondage-College-Mirror/tree/bondageclub)比對 AEE 掛鉤的 BC 函式，見 [bc-compat.yml](../../.github/workflows/bc-compat.yml) | 與基準不同時建立或更新一則標籤為 `bc-compat` 的 issue；不阻擋 PR 與部署，只有檢查本身出錯才讓該工作流失敗。需要 `issues: write`，不需額外 Secrets；可用儲存庫變數 `BC_REPO_URL`、`BC_REF` 換來源。 |
+| Dependabot | 每週六台北時間 08:03 檢查 npm 與 GitHub Actions | 建立更新 PR，不自動合併；npm minor／patch 分組，`bc-stubs` 與 major 更新獨立；新版本發布滿 7 天才提出（安全性更新不受影響）。 |
+| BC compatibility | 每週一台北時間 09:07（可手動執行，可指定 BC 分支或標籤；步驟在 Bondage-College-Mirror 的共用 workflow）以[程式碼鏡像](https://github.com/awdrrawd/Bondage-College-Mirror/tree/bondageclub)比對 AEE 掛鉤的 BC 函式，見 [bc-compat.yml](../../.github/workflows/bc-compat.yml) | 與基準不同時建立或更新一則標籤為 `bc-compat` 的 issue；不阻擋 PR 與部署，只有檢查本身出錯才讓該工作流失敗。需要 `issues: write`，不需額外 Secrets；可用儲存庫變數 `BC_REPO_URL`、`BC_REF` 換來源。 |
 
 `pull_request` 指向 main 時執行檢查與建置；main push 執行檢查、建置與部署。Actions 頁面的 **Run workflow** 可手動執行；選擇 main 會在通過後部署，其他分支只檢查與建置。新的 PR 提交取消同一 PR 的舊檢查，main 執行不主動中止進行中的部署。
 
@@ -35,7 +35,7 @@
 
 ## 本機執行與維護
 
-建議 Node.js 22，CI 固定使用同一個 major。首次安裝與完整檢查：
+建議 Node.js 24，CI 固定使用同一個 major。首次安裝與完整檢查：
 
 ```sh
 npm ci

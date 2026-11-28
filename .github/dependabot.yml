@@ -7,11 +7,14 @@ updates:
       day: saturday
       time: '08:03'
       timezone: Asia/Taipei
+    # Wait 7 days after a release before proposing it (supply-chain safety); security updates are not delayed.
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
-    # Match the Node 22 runtime used by CI until it is upgraded deliberately.
+    # @types/node follows the Node 24 runtime used by CI: allow the move to 24.x, skip later majors until CI is upgraded deliberately.
     ignore:
       - dependency-name: '@types/node'
-        update-types: [version-update:semver-major]
+        versions: ['>=25']
     groups:
       npm-compatible:
         patterns: ['*']
@@ -25,6 +28,9 @@ updates:
       day: saturday
       time: '08:03'
       timezone: Asia/Taipei
+    # Wait 7 days after a release before proposing it (supply-chain safety); security updates are not delayed.
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ['*']

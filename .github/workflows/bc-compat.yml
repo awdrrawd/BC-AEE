@@ -1,12 +1,15 @@
 name: BC compatibility
 
 # Weekly check that the Bondage Club functions AEE hooks still match the recorded baseline.
-# Drift opens one issue, updates it (with a comment) when the drift changes and closes it once everything matches again; it never blocks a PR or a deployment.
-# The source defaults to the code mirror below; set the repository variables BC_REPO_URL / BC_REF to use another
-# one (the same names AFC's bc-compat workflow uses), or pass a branch/tag when running it by hand.
+# Drift opens one issue, updates it (with a comment) when the drift changes and closes it once everything matches
+# again; it never blocks a PR or a deployment.
+# The steps live in the shared workflow awdrrawd/Bondage-College-Mirror/.github/workflows/reusable-bc-compat.yml:
+# it clones the mirror's bondageclub branch, runs `scripts/check-bc-compat.mjs --bc-dir <bc> --json --report <md>` and hands
+# the result to `scripts/bc-compat-issue.mjs`.
+# Set the repository variables BC_REPO_URL / BC_REF to use another source, or pass a branch/tag when running it by hand.
 on:
   schedule:
-    - cron: '0 1 * * 1' # Monday 09:00 Asia/Taipei, same slot as Dependabot
+    - cron: '7 1 * * 1' # Monday 09:07 Asia/Taipei, off the busy top of the hour
   workflow_dispatch:
     inputs:
       ref:
@@ -15,47 +18,21 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: bc-compat
   cancel-in-progress: false
 
-env:
-  BC_REPO_URL: ${{ vars.BC_REPO_URL || 'https://github.com/awdrrawd/Bondage-College-Mirror.git' }}
-  BC_REF: ${{ inputs.ref || vars.BC_REF || 'bondageclub' }}
-
 jobs:
   watch:
-    name: Compare hooks with the BC mirror
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Fetch the Bondage Club code mirror
-        run: |
-          git clone --depth 1 --filter=blob:none --sparse --branch "$BC_REF" "$BC_REPO_URL" "$RUNNER_TEMP/bc"
-          git -C "$RUNNER_TEMP/bc" sparse-checkout set --no-cone '/Scripts/' '/Screens/**/*.js'
-      - name: Compare hooked functions with the baseline
-        id: compare
-        run: |
-          set +e
-          node scripts/check-bc-compat.mjs --bc-dir "$RUNNER_TEMP/bc" --json --report "$RUNNER_TEMP/report.md" > "$RUNNER_TEMP/report.json"
-          code=$?
-          echo "code=$code" >> "$GITHUB_OUTPUT"
-          if [ -f "$RUNNER_TEMP/report.md" ]; then cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
-          # 0 = in sync, 1 = drift (reported below); anything else is a broken check and fails the job.
-          if [ "$code" -gt 1 ]; then exit "$code"; fi
-      - name: Sync the tracking issue (update on change, close when resolved)
-        if: steps.compare.outputs.code == '0' || steps.compare.outputs.code == '1'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: node scripts/bc-compat-issue.mjs AEE "$RUNNER_TEMP/report.json" "$RUNNER_TEMP/report.md"
+    permissions:
+      contents: read
+      issues: write
+    uses: awdrrawd/Bondage-College-Mirror/.github/workflows/reusable-bc-compat.yml@main
+    with:
+      module: AEE
+      bc-repo-url: ${{ vars.BC_REPO_URL }}
+      bc-ref: ${{ inputs.ref || vars.BC_REF }}
+      node-version: '22'
+      check-script: scripts/check-bc-compat.mjs
+      issue-script: scripts/bc-compat-issue.mjs
